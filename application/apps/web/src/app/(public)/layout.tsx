@@ -23,7 +23,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
     <>
       <PlaceholderNotice reputation={scope.reputation} catalog={scope.catalog} />
       <Navbar links={PRIMARY_NAV} ctaLabel={PRIMARY_CTA.label} ctaHref={PRIMARY_CTA.href} />
-      <main id="main">{children}</main>
+      <main id="main-content" tabIndex={-1}>{children}</main>
       <Footer
         columns={FOOTER_COLUMNS}
         legal={FOOTER_LEGAL}

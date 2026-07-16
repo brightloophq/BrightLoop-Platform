@@ -73,6 +73,7 @@ export function StageControl({
           ))}
           <select
             name="to"
+            aria-label="Move to status"
             className={styles.select}
             value={target}
             disabled={disabled || pending}
@@ -89,12 +90,13 @@ export function StageControl({
           {needsReason ? (
             <input
               name="reason"
+              aria-label="Reason for the change"
               className={styles.select}
               placeholder="Reason (required)"
               style={{ minWidth: 180 }}
             />
           ) : null}
-          {needsDate ? <input name="targetDate" type="date" className={styles.select} /> : null}
+          {needsDate ? <input name="targetDate" type="date" aria-label="Target date" className={styles.select} /> : null}
 
           {target ? (
             <button

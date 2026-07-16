@@ -104,7 +104,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
         </div>
       </aside>
 
-      <div className={styles.main}>{children}</div>
+      <main id="main-content" tabIndex={-1} className={styles.main}>{children}</main>
     </div>
   );
 }

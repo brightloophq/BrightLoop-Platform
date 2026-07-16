@@ -48,6 +48,7 @@ export default async function PackagesPage() {
             </p>
           </div>
 
+          <h2 className="sr-only">The three packages</h2>
           <div className={styles.grid}>
             {resolved.map(({ plan, modules }) => (
               <Card key={plan.id} className={styles.compareCard}>

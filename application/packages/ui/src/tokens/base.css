@@ -73,6 +73,36 @@ textarea {
   border-radius: var(--radius-sm);
 }
 
+/* Visually-hidden but available to assistive tech (WCAG — labels, headings). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Skip-to-content link (WCAG 2.4.1 Bypass Blocks). Hidden until focused. */
+.skip-link {
+  position: absolute;
+  left: var(--space-3, 12px);
+  top: -100px;
+  z-index: 1000;
+  padding: var(--space-2, 8px) var(--space-3, 12px);
+  background: var(--surface-1, #10131a);
+  color: var(--text-primary, #fff);
+  border-radius: var(--radius-sm, 6px);
+  box-shadow: var(--ring-focus);
+  transition: top 0.15s ease;
+}
+.skip-link:focus {
+  top: var(--space-3, 12px);
+}
+
 /* Honor reduced motion: entrance reveals become instant (handoff §11). */
 @media (prefers-reduced-motion: reduce) {
   *,

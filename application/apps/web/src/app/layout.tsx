@@ -18,7 +18,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   // via [data-theme="light"] (see tokens/colors.css).
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <a href="#main-content" className="skip-link">Skip to content</a>
+        {children}
+      </body>
     </html>
   );
 }

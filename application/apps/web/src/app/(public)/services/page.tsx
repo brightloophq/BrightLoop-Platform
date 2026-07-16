@@ -42,6 +42,7 @@ export default async function ServicesPage() {
             </p>
           </div>
 
+          <h2 className="sr-only">The four disciplines</h2>
           <div className={styles.serviceGrid}>
             {Object.entries(DISCIPLINE_SLUGS).map(([slug, discipline]) => {
               const copy = PLACEHOLDER_DISCIPLINE_COPY[discipline];

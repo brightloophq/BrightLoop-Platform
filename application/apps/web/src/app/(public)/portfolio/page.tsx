@@ -68,6 +68,7 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
           </p>
         </div>
 
+        <h2 className="sr-only">Case studies</h2>
         <PortfolioControls state={state} counts={counts} total={page.total}>
           {page.items.length > 0 ? (
             <>

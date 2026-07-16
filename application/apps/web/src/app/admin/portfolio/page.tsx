@@ -115,7 +115,7 @@ export default async function AdminPortfolioPage() {
                       {meta.public ? (
                         <>
                           {" · "}
-                          <Link href={`/portfolio/${p.slug}`} target="_blank">
+                          <Link href={`/portfolio/${p.slug}`} target="_blank" rel="noopener noreferrer">
                             Preview
                           </Link>
                         </>
