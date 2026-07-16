@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { PUBLISH_STATES, RATING_CATEGORIES, type PublishStatus } from "@brightloop/schema";
+import { FACETS, PUBLISH_STATES, RATING_CATEGORIES, type PublishStatus } from "@brightloop/schema";
 import { assertCapability } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
+import { isValidSlug, slugify } from "@/lib/slug";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -178,6 +179,166 @@ export async function deleteTestimonial(formData: FormData): Promise<ActionResul
 /* =============================================================================
  * PORTFOLIO PROJECTS
  * ========================================================================== */
+
+/** Read a repeated checkbox group into a validated string[]. */
+function multi(formData: FormData, field: string, vocab: readonly string[]): string[] {
+  return formData
+    .getAll(field)
+    .map(String)
+    .filter((v) => vocab.includes(v));
+}
+
+/**
+ * Create or update a portfolio project (handoff §08 · validation §09.2).
+ *
+ * INTEGRITY:
+ *   * new projects are forced to `draft` — publishing is a separate deliberate
+ *     act via the status select, never a side-effect of saving;
+ *   * `metrics` is NOT settable here. It has its own action with its own guard,
+ *     so a case study cannot acquire result numbers as a side-effect of an edit;
+ *   * `permissionLivePreview` requires a valid absolute liveUrl — the DB CHECK
+ *     enforces the same pairing, so a permissioned row cannot carry an empty URL.
+ */
+export async function saveProject(formData: FormData): Promise<ActionResult & { slug?: string }> {
+  try {
+    const { supabase } = await authorize("marketing.update");
+
+    const existingId = String(formData.get("id") ?? "").trim();
+    const name = String(formData.get("name") ?? "").trim();
+    if (!name) return { ok: false, error: "Name is required" };
+
+    // Auto-suggest from name when left blank (§09.2).
+    const rawSlug = String(formData.get("slug") ?? "").trim();
+    const slug = rawSlug ? slugify(rawSlug) : slugify(name);
+    if (!slug || !isValidSlug(slug)) {
+      return { ok: false, error: "Slug must be kebab-case (letters, numbers and hyphens)" };
+    }
+
+    const client = String(formData.get("client") ?? "").trim();
+    if (!client) return { ok: false, error: "Client is required" };
+
+    const liveUrl = String(formData.get("liveUrl") ?? "").trim();
+    const permissionLivePreview = formData.get("permissionLivePreview") === "on";
+
+    // §09.2: liveUrl must be a valid URL when permissionLivePreview is on.
+    if (permissionLivePreview) {
+      if (!liveUrl) {
+        return { ok: false, error: "A live URL is required when live preview is permitted" };
+      }
+      try {
+        const u = new URL(liveUrl);
+        if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("bad protocol");
+      } catch {
+        return { ok: false, error: "Live URL must be a valid http(s) URL" };
+      }
+    }
+
+    const year = Number(formData.get("year"));
+    if (!Number.isInteger(year) || year < 2000 || year > 2100) {
+      return { ok: false, error: "Year must be a valid year" };
+    }
+
+    const deliverablesCount = Number(formData.get("deliverablesCount") ?? 0);
+    if (!Number.isFinite(deliverablesCount) || deliverablesCount < 0) {
+      return { ok: false, error: "Deliverables count must be 0 or more" };
+    }
+
+    const tags = String(formData.get("tags") ?? "")
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean)
+      .slice(0, 12);
+
+    const completedDate = String(formData.get("completedDate") ?? "").trim() || null;
+
+    const row = {
+      slug,
+      name,
+      client,
+      industry: String(formData.get("industry") ?? "").trim(),
+      size: String(formData.get("size") ?? "").trim(),
+      country: String(formData.get("country") ?? "").trim(),
+      year,
+      services: multi(formData, "services", FACETS.service),
+      budget: String(formData.get("budget") ?? "").trim(),
+      tech: multi(formData, "tech", FACETS.tech),
+      platform: String(formData.get("platform") ?? "").trim(),
+      timeline: String(formData.get("timeline") ?? "").trim(),
+      deliverables_count: deliverablesCount,
+      completed_date: completedDate,
+      project_status: String(formData.get("projectStatus") ?? "").trim(),
+      live_url: permissionLivePreview ? liveUrl : "",
+      permission_live_preview: permissionLivePreview,
+      tags,
+      summary: String(formData.get("summary") ?? "").trim(),
+      challenge: String(formData.get("challenge") ?? "").trim(),
+      approach: String(formData.get("approach") ?? "").trim(),
+      testimonial_id: String(formData.get("testimonialId") ?? "").trim() || null,
+      seo: {
+        title: String(formData.get("seoTitle") ?? "").trim(),
+        description: String(formData.get("seoDescription") ?? "").trim(),
+        ogImage: String(formData.get("ogImage") ?? "").trim(),
+      },
+      updated_at: new Date().toISOString(),
+    };
+
+    if (existingId) {
+      const { error } = await supabase
+        .from("portfolio_projects")
+        .update(row)
+        .eq("id", existingId);
+      if (error) return { ok: false, error: friendlyDbError(error.message) };
+    } else {
+      const { error } = await supabase.from("portfolio_projects").insert({
+        ...row,
+        id: id("p"),
+        // Forced draft. Publishing is a deliberate, separate act.
+        publish: "draft",
+        featured_on_home: false,
+        awards: [],
+        hero_slot: "",
+        gallery_slots: [],
+        media: [],
+        // Undisclosed by default — result numbers have their own guarded action.
+        metrics: { disclosed: false },
+        order: 0,
+      });
+      if (error) return { ok: false, error: friendlyDbError(error.message) };
+    }
+
+    revalidateReputation(slug);
+    return { ok: true, slug };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed to save" };
+  }
+}
+
+/** Turn Postgres constraint noise into something an owner can act on. */
+function friendlyDbError(message: string): string {
+  if (/portfolio_projects_slug_key|duplicate key/i.test(message)) {
+    return "That slug is already used by another project. Slugs must be unique.";
+  }
+  if (/portfolio_projects_live_preview_needs_url/i.test(message)) {
+    return "Live preview is permitted but no URL was supplied.";
+  }
+  if (/portfolio_projects_slug_kebab/i.test(message)) {
+    return "Slug must be kebab-case (letters, numbers and hyphens).";
+  }
+  return message;
+}
+
+export async function deleteProject(formData: FormData): Promise<ActionResult> {
+  try {
+    const { supabase } = await authorize("marketing.delete");
+    const projectId = String(formData.get("id") ?? "").trim();
+    const { error } = await supabase.from("portfolio_projects").delete().eq("id", projectId);
+    if (error) return { ok: false, error: error.message };
+    revalidateReputation();
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed to delete" };
+  }
+}
 
 /** Set a project's publish status / featured flag (handoff §08 + §10.3). */
 export async function moderateProject(formData: FormData): Promise<ActionResult> {

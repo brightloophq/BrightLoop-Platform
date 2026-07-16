@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { PUBLISH, type PublishStatus } from "@brightloop/schema";
 import { disclosedMetrics } from "@brightloop/domain";
 import { toPortfolioProject } from "@brightloop/data";
-import { Alert, Badge, Card, EmptyState } from "@brightloop/ui";
+import { Alert, Badge, Button, Card, EmptyState } from "@brightloop/ui";
 import { createClient } from "@/lib/supabase/server";
 import { ModerationControls } from "../reviews/ModerationControls";
 import styles from "../cms.module.css";
@@ -49,6 +49,9 @@ export default async function AdminPortfolioPage() {
               data.
             </p>
           </div>
+          <Button variant="primary" size="md" asChild>
+            <Link href="/admin/portfolio/new">New case study</Link>
+          </Button>
         </div>
 
         {error ? (
@@ -64,7 +67,12 @@ export default async function AdminPortfolioPage() {
           <EmptyState
             icon="star"
             title="No case studies yet"
-            body="Creating case studies from scratch in the CMS lands next. Until then, projects can be inserted directly and moderated here."
+            body="Add your first one. It saves as a draft — nothing reaches the public site until you publish it."
+            action={
+              <Button variant="primary" size="md" asChild>
+                <Link href="/admin/portfolio/new">New case study</Link>
+              </Button>
+            }
           />
         ) : (
           <div className={styles.rows}>
@@ -80,7 +88,13 @@ export default async function AdminPortfolioPage() {
                 >
                   <div className={styles.rowBody}>
                     <div className={styles.rowTop}>
-                      <span className={styles.rowName}>{p.name}</span>
+                      <Link
+                        href={`/admin/portfolio/${p.id}`}
+                        className={styles.rowName}
+                        style={{ textDecoration: "none" }}
+                      >
+                        {p.name}
+                      </Link>
                       <span className={styles.rowMeta}>/{p.slug}</span>
                       <Badge tone={meta.public ? "success" : "warning"} dot>
                         {meta.label}
@@ -96,7 +110,8 @@ export default async function AdminPortfolioPage() {
                     </div>
                     <p className={styles.quote}>{p.summary}</p>
                     <p className={styles.rowMeta} style={{ marginTop: "var(--space-2)" }}>
-                      {p.industry} · {p.year} · {p.timeline}
+                      {p.industry} · {p.year} · {p.timeline} ·{" "}
+                      <Link href={`/admin/portfolio/${p.id}`}>Edit</Link>
                       {meta.public ? (
                         <>
                           {" · "}
