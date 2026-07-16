@@ -3,31 +3,43 @@
 Supabase schema for the BrightLoop platform: enums, tables, the state-transition
 guard, RLS policies, the auth claims hook, and storage buckets.
 
-> **Sprint 0 status.** These migrations are authored and reviewed but **not yet
-> applied** — there is no provisioned Supabase project. Provisioning (region, keys)
-> is Decision C and is the owner's step. Nothing here has touched production data.
+> **The SQL now lives in `application/supabase/migrations/`**, not here — that is
+> the layout the Supabase CLI requires. This package keeps the scripts and this
+> documentation. Contents were moved unchanged.
 
-## Migrations (apply in order)
+> **Status: authored, NOT applied.** A hosted project exists but these migrations
+> have never executed against it. Nothing here has touched production data.
+
+## Migrations (applied in filename order)
 
 | File | Purpose |
 |---|---|
-| `0001_enums.sql` | Postgres enums generated from `packages/schema` MACHINES + ROLES. An illegal status **value** cannot be stored. |
-| `0002_tables.sql` | The 18 canonical entities. Client is the aggregate root; every client-scoped table carries `client_id`. |
-| `0003_transition_guard.sql` | `state_transitions` (DB mirror of MACHINES), the generic `BEFORE UPDATE` trigger, and the append-only `transition_log`. An illegal status **move** is rejected by the database. |
-| `0004_rls.sql` | RLS on every table. Claim helpers (`bl_role`, `bl_client_id`, `bl_is_internal`, `bl_is_finance`) + policies. **This is the authorization boundary.** |
-| `0005_auth_claims.sql` | The custom access token hook that stamps `role` + `client_id` into the JWT. RLS depends on it. |
-| `0006_storage.sql` | Buckets (`deliverables`, `media`, `avatars`, `contracts`) + path-scoped access. Only `media` is public-read. |
+| `20260716000100_enums.sql` | Postgres enums generated from `packages/schema` MACHINES + ROLES. An illegal status **value** cannot be stored. |
+| `20260716000200_tables.sql` | The 18 canonical entities. Client is the aggregate root; every client-scoped table carries `client_id`. |
+| `20260716000300_transition_guard.sql` | `state_transitions` (DB mirror of MACHINES), the generic `BEFORE UPDATE` trigger, and the append-only `transition_log`. An illegal status **move** is rejected by the database. |
+| `20260716000400_rls.sql` | RLS on every table. Claim helpers (`bl_role`, `bl_client_id`, `bl_is_internal`, `bl_is_finance`) + policies. **This is the authorization boundary.** |
+| `20260716000500_auth_claims.sql` | The custom access token hook that stamps `role` + `client_id` into the JWT. RLS depends on it. |
+| `20260716000600_storage.sql` | Buckets (`deliverables`, `media`, `avatars`, `contracts`) + path-scoped access. Only `media` is public-read. |
+| `20260716000700_reputation.sql` | `portfolio_projects` + `testimonials`, and the anon publish gate (`public`/`featured` only). |
+
+Order is load-bearing: `0400` defines `bl_is_internal()` / `bl_client_id()`, which
+`0600` and `0700` depend on.
 
 ## Applying
 
 ```bash
-supabase link --project-ref <ref>
+export SUPABASE_ACCESS_TOKEN=<personal access token>   # or: supabase login
+supabase link --project-ref <ref>                      # prompts for the DB password
 supabase db push
 ```
 
 Then register the auth hook: **Authentication → Hooks → Custom Access Token →
-`public.custom_access_token_hook`**. Without it, no JWT carries `role`/`client_id`
-and RLS correctly denies everything.
+`public.custom_access_token_hook`**.
+
+⚠️ **Without that dashboard step, no JWT carries `role`/`client_id`, so every RLS
+policy denies and the app looks entirely broken.** That is the hook not being
+registered — not a bug. `config.toml` registers hooks for LOCAL dev only; hosted
+must be done in the dashboard.
 
 Regenerate TypeScript DB types after any migration:
 
