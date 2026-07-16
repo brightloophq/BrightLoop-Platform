@@ -218,6 +218,79 @@ export const PLACEHOLDER_GOALS: readonly Goal[] = [
   { id: "scale", label: "Scale what's working", icon: "line-chart" },
 ];
 
+/**
+ * PLACEHOLDER — assessment questions + weights (open decision 3).
+ * The scoring pipeline is real (packages/domain); these questions and weights
+ * are sample until the product owner supplies the real Health Score formula.
+ */
+export const PLACEHOLDER_ASSESSMENT = [
+  {
+    id: "brand",
+    dim: "Brand" as const,
+    q: "How strong and consistent is your brand today?",
+    options: [
+      { label: "Weak / inconsistent", score: 20 },
+      { label: "It's okay", score: 55 },
+      { label: "Strong & consistent", score: 90 },
+    ],
+  },
+  {
+    id: "web",
+    dim: "Build" as const,
+    q: "How well does your website convert visitors?",
+    options: [
+      { label: "No site / outdated", score: 15 },
+      { label: "Works, doesn't convert", score: 50 },
+      { label: "Converts well", score: 90 },
+    ],
+  },
+  {
+    id: "leads",
+    dim: "Grow" as const,
+    q: "How predictable is your lead flow?",
+    options: [
+      { label: "Unpredictable", score: 20 },
+      { label: "Some months", score: 55 },
+      { label: "Predictable pipeline", score: 90 },
+    ],
+  },
+  {
+    id: "ops",
+    dim: "Automate" as const,
+    q: "How automated are your operations & follow-up?",
+    options: [
+      { label: "All manual", score: 15 },
+      { label: "Partly", score: 50 },
+      { label: "Mostly automated", score: 90 },
+    ],
+  },
+  {
+    id: "data",
+    dim: "Grow" as const,
+    q: "Can you measure what drives growth?",
+    options: [
+      { label: "No tracking", score: 20 },
+      { label: "Basic", score: 55 },
+      { label: "Clear dashboards", score: 90 },
+    ],
+  },
+];
+
+/** The client's per-service choice → what BrightLoop will do (handoff onboarding). */
+export const PLACEHOLDER_CHOICES = [
+  { id: "have" as const, label: "Already have it", status: "Keep", icon: "check-circle", note: "We'll review your existing asset and confirm it meets professional standards." },
+  { id: "upgrade" as const, label: "Upgrade existing", status: "Improve", icon: "arrow-up-right", note: "You have this — BrightLoop will improve or redesign it to a professional standard." },
+  { id: "need" as const, label: "Build it for me", status: "Create", icon: "sparkles", note: "You don't have this yet — BrightLoop will create it from scratch." },
+];
+
+/** Status → tone/description for the Keep/Improve/Replace/Create summary. */
+export const PLACEHOLDER_STATUS_META: Record<string, { tone: string; desc: string }> = {
+  Keep: { tone: "success", desc: "Reviewed & kept as-is" },
+  Improve: { tone: "cyan", desc: "Improved to professional standard" },
+  Replace: { tone: "warning", desc: "Rebuilt — current version needs replacing" },
+  Create: { tone: "blue", desc: "Built for you from scratch" },
+};
+
 /** Why an estimate is a range, not a fixed price. Rendered beside every range. */
 export const PLACEHOLDER_RANGE_FACTORS: readonly RangeFactor[] = [
   ["Business size", "More locations, products or team members mean more to set up."],

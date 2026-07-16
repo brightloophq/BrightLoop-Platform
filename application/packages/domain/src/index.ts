@@ -31,6 +31,10 @@ export * from "./catalog/pricing.js";
 export * from "./analytics/events.js";
 export * from "./analytics/funnel.js";
 
+// Funnel — assessment scoring + configurator (Keep/Improve/Replace/Create).
+export * from "./funnel/assessment.js";
+export * from "./funnel/configurator.js";
+
 // Repository ports.
 export * from "./repositories/reputation.js";
 export * from "./repositories/catalog.js";

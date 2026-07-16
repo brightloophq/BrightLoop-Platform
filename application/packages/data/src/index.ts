@@ -45,6 +45,9 @@ export {
   PLACEHOLDER_CONTENT,
   PLACEHOLDER_RANGE_FACTORS,
   PLACEHOLDER_DISCIPLINE_COPY,
+  PLACEHOLDER_ASSESSMENT,
+  PLACEHOLDER_CHOICES,
+  PLACEHOLDER_STATUS_META,
 } from "./placeholder/catalog.dataset.js";
 
 export interface ReputationConfig {
