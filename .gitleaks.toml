@@ -1,0 +1,11 @@
+# gitleaks config for CI secret scanning (see .github/workflows/ci.yml).
+# Uses the default rule set; allowlists the env TEMPLATE, whose values are
+# deliberate placeholders (sb_secret_..., sk_test_..., whsec_..., 0x...).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Env template placeholders — not real secrets"
+paths = [
+  '''application/\.env\.example''',
+]
