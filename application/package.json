@@ -15,10 +15,12 @@
     "dev": "turbo run dev",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
-    "check": "turbo run lint typecheck test build"
+    "check": "turbo run lint typecheck test build",
+    "bootstrap:owner": "node scripts/bootstrap-owner.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@supabase/supabase-js": "^2.47.10",
     "eslint": "^9.17.0",
     "prettier": "^3.4.2",
     "turbo": "^2.3.3",

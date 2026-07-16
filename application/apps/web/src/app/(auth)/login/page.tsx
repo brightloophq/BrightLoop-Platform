@@ -1,35 +1,53 @@
+import { redirect } from "next/navigation";
 import type { Metadata } from "next";
-import { SurfaceSkeleton } from "../../_components/SurfaceSkeleton";
+import { isClientRole } from "@brightloop/schema";
+import { Eyebrow, Logo } from "@brightloop/ui";
+import { getActor } from "@/lib/auth";
+import { LoginForm } from "./LoginForm";
+import styles from "./login.module.css";
 
-export const metadata: Metadata = { title: "Sign in" };
+export const metadata: Metadata = {
+  title: "Sign in",
+  robots: { index: false, follow: false },
+};
 
 /**
- * Authentication surface — Sprint 0 skeleton.
+ * Sign-in (handoff §05 — split brand-panel + form shell).
  *
- * Sprint 0 delivers the auth PLUMBING (Supabase clients, JWT claim reading,
- * surface guards). The functional auth screens (login / signup / reset / verify)
- * are part of the public-surface sprint per handoff §05.
- *
- * Approved Decision C: email + password and magic link at V1. Google/Microsoft/
- * SSO are deferred to V2 — no provider buttons here by design.
+ * Already-signed-in users are bounced to their own surface rather than shown a
+ * login form they don't need.
  */
-export default function LoginSkeletonPage() {
+export default async function LoginPage() {
+  const actor = await getActor();
+  if (actor) redirect(isClientRole(actor.role) ? "/portal" : "/admin");
+
   return (
-    <SurfaceSkeleton
-      eyebrow="Authentication"
-      title="Sign in"
-      note={
-        <>
-          Sprint 0 scaffolding — this form is not implemented yet. Protected surfaces
-          redirect here because no Supabase project is configured, which is the correct
-          fail-closed behaviour.
-        </>
-      }
-    >
-      <p>
-        Email + password and magic link land with the auth screens. Until Supabase is
-        provisioned, every request is treated as unauthenticated.
-      </p>
-    </SurfaceSkeleton>
+    <div className={styles.shell}>
+      <aside className={styles.brandPanel}>
+        <Logo variant="lockup" height={28} />
+        <div className={styles.brandCopy}>
+          <Eyebrow>Brand · Build · Automate · Grow</Eyebrow>
+          <h1 className={styles.brandTitle}>Your business, in one loop.</h1>
+          <p className={styles.brandBody}>
+            Track your project, approve work, and see where your business stands — all in one place.
+          </p>
+        </div>
+        <p className={styles.brandFoot}>© 2026 BrightLoop</p>
+      </aside>
+
+      <main className={styles.formPanel}>
+        <div className={styles.formInner}>
+          <h2 className={styles.title}>Sign in</h2>
+          <p className={styles.sub}>Welcome back. Use your password or have a link emailed to you.</p>
+
+          <LoginForm />
+
+          <p className={styles.foot}>
+            BrightLoop accounts are created by invitation — clients are invited when their project
+            starts, and team accounts are created by the owner. There is no public sign-up.
+          </p>
+        </div>
+      </main>
+    </div>
   );
 }
