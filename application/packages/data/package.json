@@ -18,8 +18,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@brightloop/db": "workspace:*",
     "@brightloop/domain": "workspace:*",
-    "@brightloop/schema": "workspace:*"
+    "@brightloop/schema": "workspace:*",
+    "@supabase/supabase-js": "^2.47.10"
   },
   "devDependencies": {
     "typescript": "^5.7.2",

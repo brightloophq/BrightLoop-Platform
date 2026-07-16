@@ -4,6 +4,14 @@ import { DISCIPLINE_SLUGS } from "@brightloop/schema";
 import { getReputationRepository } from "@/lib/repositories";
 
 /**
+ * ISR, 5 min. A statically-captured sitemap would list whatever was published at
+ * deploy time and never learn about new case studies — the opposite of its
+ * purpose. Literal, not imported: Next requires segment config to be statically
+ * analysable. Policy: lib/revalidate.ts.
+ */
+export const revalidate = 300;
+
+/**
  * sitemap.xml — generated from PUBLISHED slugs (handoff §10.4).
  *
  * The sitemap is a publish-gate surface in its own right: listing an unpublished
@@ -19,7 +27,8 @@ import { getReputationRepository } from "@/lib/repositories";
  * indexing is switched on with real content.
  */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const slugs = await getReputationRepository().listPublishedSlugs();
+  const repo = await getReputationRepository();
+  const slugs = await repo.listPublishedSlugs();
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${SITE_ORIGIN}/`, changeFrequency: "weekly", priority: 1 },

@@ -4,6 +4,17 @@ import { canonicalUrl } from "@brightloop/domain";
 import { getReputationRepository } from "@/lib/repositories";
 import { CaseStudyView } from "../CaseStudyView";
 
+/**
+ * ISR, 5 min. Without this, a case study published in the CMS never appears —
+ * and a slug requested before publication stays cached as a 404 forever.
+ * Literal, not imported: Next requires segment config to be statically
+ * analysable. Policy: lib/revalidate.ts.
+ */
+export const revalidate = 300;
+
+/** Slugs published after the last build are rendered on demand, then cached. */
+export const dynamicParams = true;
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -14,13 +25,15 @@ interface PageProps {
  * static page generated for it.
  */
 export async function generateStaticParams() {
-  const slugs = await getReputationRepository().listPublishedSlugs();
+  const repo = await getReputationRepository();
+  const slugs = await repo.listPublishedSlugs();
   return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = await getReputationRepository().getProjectBySlug(slug);
+  const repo = await getReputationRepository();
+  const project = await repo.getProjectBySlug(slug);
   // Unpublished/missing → no metadata; the page 404s below.
   if (!project) return {};
 
@@ -51,7 +64,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /** Case study — canonical variant (handoff §05). */
 export default async function ProjectCaseStudyPage({ params }: PageProps) {
   const { slug } = await params;
-  const repo = getReputationRepository();
+  const repo = await getReputationRepository();
 
   // Publish-gated: an unpublished slug is indistinguishable from a missing one.
   const project = await repo.getProjectBySlug(slug);

@@ -84,12 +84,18 @@ importers:
 
   packages/data:
     dependencies:
+      '@brightloop/db':
+        specifier: workspace:*
+        version: link:../db
       '@brightloop/domain':
         specifier: workspace:*
         version: link:../domain
       '@brightloop/schema':
         specifier: workspace:*
         version: link:../schema
+      '@supabase/supabase-js':
+        specifier: ^2.47.10
+        version: 2.110.6
     devDependencies:
       typescript:
         specifier: ^5.7.2

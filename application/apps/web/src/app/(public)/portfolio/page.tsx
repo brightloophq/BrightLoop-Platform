@@ -35,7 +35,7 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const state = parsePortfolioParams(params);
 
-  const repo = getReputationRepository();
+  const repo = await getReputationRepository();
   const [page, counts] = await Promise.all([
     repo.listProjects({
       filters: state.filters,

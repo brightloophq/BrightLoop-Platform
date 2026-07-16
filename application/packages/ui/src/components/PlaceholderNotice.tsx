@@ -2,34 +2,45 @@ import { Icon } from "./Icon";
 import styles from "./PlaceholderNotice.module.css";
 
 export interface PlaceholderNoticeProps {
-  /** Render nothing when the bound data source is real. */
-  active: boolean;
+  /** Reputation content (case studies, testimonials, ratings) is sample data. */
+  reputation: boolean;
+  /** Catalog content (packages, module prices, estimates) is sample data. */
+  catalog: boolean;
 }
 
 /**
  * PlaceholderNotice — honest labelling of non-real content.
  *
- * Handoff integrity rule 4: "Placeholder content is labeled." Every case study,
- * testimonial, rating, company name and price currently on the public surface is
- * sample copy from the design bundle, and none of it is client-approved.
+ * Handoff integrity rule 4: "Placeholder content is labeled."
  *
- * This is driven by the repository's `source`, not a hardcoded flag — the moment
- * a real data source is bound, the notice disappears on its own. It is not a
- * substitute for the pre-launch checklist in
- * docs/handoff/13-assets-and-placeholders.md.
+ * The wording is derived from WHICH sources are still sample, not a single flag.
+ * That matters: once reputation is Supabase-backed the case studies are real,
+ * but every price is still placeholder pending open decisions 1 & 2. A single
+ * flag would drop the label at exactly that point — real work displayed beside
+ * invented prices, with nothing saying so. Each half retires independently, and
+ * the bar disappears on its own when both are real. Nobody has to remember to
+ * delete it.
  */
-export function PlaceholderNotice({ active }: PlaceholderNoticeProps) {
-  if (!active) return null;
+export function PlaceholderNotice({ reputation, catalog }: PlaceholderNoticeProps) {
+  if (!reputation && !catalog) return null;
+
+  let detail: string;
+  if (reputation && catalog) {
+    detail =
+      "Case studies, testimonials, ratings and prices on this site are placeholders from the design bundle. Nothing here is real or client-approved.";
+  } else if (catalog) {
+    detail =
+      "Package names, prices and estimates on this site are placeholders pending real pricing. Case studies and reviews are live content.";
+  } else {
+    detail =
+      "Case studies, testimonials and ratings on this site are placeholders from the design bundle and are not client-approved.";
+  }
 
   return (
     <div className={styles.bar} role="note">
       <Icon name="lightbulb" size={14} />
       <span className={styles.text}>
-        Preview — sample content.{" "}
-        <span className={styles.detail}>
-          Case studies, testimonials, ratings and prices on this site are placeholders from the design
-          bundle. Nothing here is real or client-approved.
-        </span>
+        Preview — sample content. <span className={styles.detail}>{detail}</span>
       </span>
     </div>
   );

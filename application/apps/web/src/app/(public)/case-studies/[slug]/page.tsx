@@ -4,6 +4,10 @@ import { canonicalUrl } from "@brightloop/domain";
 import { getReputationRepository } from "@/lib/repositories";
 import { CaseStudyView } from "../../portfolio/CaseStudyView";
 
+/** ISR, 5 min — see /portfolio/[slug]; same record, same staleness risk. */
+export const revalidate = 300;
+export const dynamicParams = true;
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
@@ -18,13 +22,15 @@ interface PageProps {
  * into genuinely different content, only the canonical changes.
  */
 export async function generateStaticParams() {
-  const slugs = await getReputationRepository().listPublishedSlugs();
+  const repo = await getReputationRepository();
+  const slugs = await repo.listPublishedSlugs();
   return slugs.map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const project = await getReputationRepository().getProjectBySlug(slug);
+  const repo = await getReputationRepository();
+  const project = await repo.getProjectBySlug(slug);
   if (!project) return {};
 
   return {
@@ -44,7 +50,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function LongFormCaseStudyPage({ params }: PageProps) {
   const { slug } = await params;
-  const repo = getReputationRepository();
+  const repo = await getReputationRepository();
 
   const project = await repo.getProjectBySlug(slug);
   if (!project) notFound();

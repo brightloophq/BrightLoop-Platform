@@ -18,6 +18,13 @@ import {
 import { getCatalogRepository, getReputationRepository } from "@/lib/repositories";
 import styles from "./home.module.css";
 
+/**
+ * ISR, 5 min — the featured case study comes from the CMS and must appear
+ * without a deploy. Literal, not imported: Next requires segment config to be
+ * statically analysable. Policy: lib/revalidate.ts.
+ */
+export const revalidate = 300;
+
 export const metadata: Metadata = {
   title: "BrightLoop — Brands. Systems. Growth.",
   description:
@@ -40,7 +47,7 @@ const LOOP_NODES: { discipline: Discipline; icon: string; position: string }[] =
  * proof (handoff §15: "falls back gracefully if none published").
  */
 export default async function HomePage() {
-  const reputation = getReputationRepository();
+  const reputation = await getReputationRepository();
   const catalog = getCatalogRepository();
 
   const [featured, testimonials, aggregate, modules] = await Promise.all([

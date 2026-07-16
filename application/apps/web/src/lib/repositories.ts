@@ -1,47 +1,102 @@
 import "server-only";
 
 import { createCatalogRepository, createReputationRepository } from "@brightloop/data";
-import type { CatalogRepository, ReputationRepository } from "@brightloop/domain";
+import type { CatalogRepository, DataSource, ReputationRepository } from "@brightloop/domain";
+import { createAnonClient } from "./supabase/anon";
+import { createClient } from "./supabase/server";
 
 /**
  * Repository access for Server Components.
  *
- * THE ONLY PLACE the app names a data source. Pages import these getters and
- * depend on the PORT types — they never import a placeholder dataset or a
- * concrete repository, so binding Supabase later touches only this file and the
- * factory in @brightloop/data.
+ * THE ONLY PLACE the app names a data source. Pages depend on the PORT types and
+ * these getters — never on a concrete repository or a dataset.
  *
  * `server-only` makes a client-component import a build error rather than a
- * silent bundle bloat (or a leak of the whole dataset to the browser).
+ * silent bundle bloat (or leaking the whole dataset to the browser).
+ *
+ * ⚠️ NOTHING IS CACHED HERE, DELIBERATELY.
+ * The Supabase repository holds a request-scoped client carrying the caller's
+ * session cookies. The previous version memoised the repository in a module-level
+ * variable — harmless for a static placeholder dataset, but with Supabase that
+ * would pin one user's session (and therefore one client org's RLS view) into a
+ * module that every subsequent request shares. Build them per request.
  */
-
-let reputation: ReputationRepository | null = null;
-let catalog: CatalogRepository | null = null;
 
 /**
- * Which persistence to bind. Supabase is not implemented yet (Decision C —
- * region unconfirmed), so this resolves to the placeholder source. When the
- * project exists this reads BRIGHTLOOP_DATA_SOURCE and nothing else changes.
+ * Which persistence backs reputation data.
+ *
+ * Defaults to "supabase". The env var is an escape hatch for local development
+ * without a database — it is NOT a fallback: an unset/invalid value means
+ * production, and a Supabase failure throws rather than quietly degrading to
+ * sample content.
  */
-function source(): "placeholder" | "supabase" {
-  return process.env.BRIGHTLOOP_DATA_SOURCE === "supabase" ? "supabase" : "placeholder";
+function reputationSource(): DataSource {
+  return process.env.BRIGHTLOOP_DATA_SOURCE === "placeholder" ? "placeholder" : "supabase";
 }
 
-export function getReputationRepository(): ReputationRepository {
-  reputation ??= createReputationRepository({ source: source() });
-  return reputation;
+/**
+ * Reputation repository for PUBLIC pages (portfolio, case studies, testimonials,
+ * homepage proof, sitemap).
+ *
+ * Uses the cookie-less ANON client, deliberately:
+ *   * public marketing content is not user-scoped — it looks the same to every
+ *     visitor, so there is no session worth binding;
+ *   * `generateStaticParams` and static prerendering run at BUILD time where no
+ *     request (and therefore no cookie store) exists — a cookie client throws
+ *     there, which is exactly what broke the first build after the flip;
+ *   * anon is the LEAST privileged role available. RLS gives it only
+ *     publish ∈ {public, featured}. It cannot see a draft or any client row.
+ *
+ * The admin CMS needs drafts, so it will use the session client via a separate
+ * getter — internal roles get their own RLS view. Public never should.
+ */
+export async function getReputationRepository(): Promise<ReputationRepository> {
+  const source = reputationSource();
+  if (source === "placeholder") {
+    return createReputationRepository({ source: "placeholder" });
+  }
+  return createReputationRepository({ source: "supabase", client: createAnonClient() });
+}
+
+/**
+ * Reputation repository for AUTHENTICATED surfaces (the admin Reputation CMS).
+ *
+ * Uses the request-scoped cookie client so RLS sees the caller's role claim and
+ * an internal user can read drafts. Never cached — it carries the caller's
+ * session.
+ */
+export async function getAuthedReputationRepository(): Promise<ReputationRepository> {
+  const source = reputationSource();
+  if (source === "placeholder") {
+    return createReputationRepository({ source: "placeholder" });
+  }
+  const client = await createClient();
+  return createReputationRepository({ source: "supabase", client });
 }
 
 export function getCatalogRepository(): CatalogRepository {
-  catalog ??= createCatalogRepository({ source: source() });
-  return catalog;
+  return createCatalogRepository();
 }
 
 /**
- * True while the site is serving sample content. Drives PlaceholderNotice, so
- * the label disappears automatically once real data is bound — nobody has to
- * remember to remove it.
+ * True while ANY bound source is serving non-real content — drives
+ * PlaceholderNotice.
+ *
+ * This checks the CATALOG as well as reputation, and that matters: once
+ * reputation points at Supabase, the case studies are real but every price on
+ * /packages and /services is still placeholder (open decisions 1 & 2). Keying the
+ * notice on reputation alone would drop the label at exactly the moment the site
+ * starts showing real work beside invented prices — the most misleading state
+ * available. The notice retires when the catalog is real too.
  */
 export function isServingPlaceholderData(): boolean {
-  return getReputationRepository().source === "placeholder";
+  return reputationSource() === "placeholder" || getCatalogRepository().source === "placeholder";
+}
+
+/** Which parts of the site are still sample content. Drives the notice's wording. */
+export function placeholderScope(): { reputation: boolean; catalog: boolean } {
+  return {
+    reputation: reputationSource() === "placeholder",
+    catalog: getCatalogRepository().source === "placeholder",
+  };
 }

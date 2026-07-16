@@ -57,7 +57,7 @@ export default async function TestimonialsPage({ searchParams }: PageProps) {
   // Only 4 and 5 are offered; anything else means "all".
   const minRating = parsed === 4 || parsed === 5 ? parsed : undefined;
 
-  const repo = getReputationRepository();
+  const repo = await getReputationRepository();
   const [testimonials, aggregate] = await Promise.all([
     repo.listTestimonials(minRating ? { minRating } : {}),
     repo.getAggregateRating(),
