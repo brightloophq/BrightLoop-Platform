@@ -46,9 +46,12 @@
 # The Next.js Runtime MUST be declared here to be invoked: this is a pnpm/turbo
 # monorepo built from `application/`, and Netlify's framework auto-detection does
 # not find `next` at the base (it lives in apps/web), so without this block the
-# runtime never runs and the site 404s (a bare .next is published). We also keep
-# @netlify/plugin-nextjs@^5 as a devDependency so the newer (OpenNext) runtime is
-# available; and @opentelemetry/api is a real dependency so the Edge bundler can
-# resolve it on Next.js 15 regardless of which runtime version loads.
+# runtime never runs and the site 404s (a bare .next is published).
+#
+# This uses the build image's runtime (v4), which pairs with `publish = .next`
+# and generates the SSR functions + redirect table. `@opentelemetry/api` is a
+# real dependency so its Edge Functions bundler can resolve it on Next.js 15.
+# (v5/OpenNext is a separate migration — it manages its own output and conflicts
+# with `publish = .next`, which caused an earlier "published-but-404" deploy.)
 [[plugins]]
   package = "@netlify/plugin-nextjs"
