@@ -1,57 +1,44 @@
 # =============================================================================
 # Netlify configuration — BrightLoop Platform (pnpm workspaces + Turborepo).
 #
-# WHY THIS FILE EXISTS / WHY THE PREVIOUS DEPLOY 404'd
-#   The Next.js app lives at application/apps/web and the pnpm workspace root is
-#   application/. The Git repo ROOT has no package.json. With no netlify.toml,
-#   Netlify built from the repo root, never detected a Next.js site, so the
-#   Next.js Runtime (@netlify/plugin-nextjs) never activated — no SSR functions
-#   were generated and there was no root document to serve, yielding Netlify's
-#   generic 404. This config points the build at the workspace root, builds via
-#   Turborepo (so the workspace packages @brightloop/* are compiled BEFORE the
-#   web app — they're consumed as built dist, not source), and publishes the
-#   app's real .next server build through the official Next.js Runtime.
+# RUNTIME: Next.js 15 needs the v5 (OpenNext) runtime. The legacy v4 runtime
+# (bundled in the build image, forced when the plugin is declared in [[plugins]])
+# is EOL and incompatible with Next 15 middleware — it produced a working build
+# but every route 500'd at runtime, and its Edge bundler couldn't resolve
+# @opentelemetry/api. So we do NOT declare the plugin here.
 #
-#   This is a full SSR deploy — App Router, SSR, middleware, API routes, auth,
-#   Supabase, /admin and /portal are all preserved. It is NOT a static export.
+# For Netlify to auto-detect Next.js and install the v5 runtime in a monorepo, the
+# BASE must be the app package (where `next` is a dependency) — detection at the
+# workspace root fails (no `next` there), which is why an earlier attempt 404'd.
+# The build command then reaches up to the workspace root so Turborepo compiles
+# the @brightloop/* packages (consumed as built dist) BEFORE the web app.
 #
-# REQUIRED ENVIRONMENT VARIABLES (set in Netlify UI → Site settings → Environment
-# variables; values are NOT stored here). Build-time (needed for static
-# generation + client inlining): NEXT_PUBLIC_SUPABASE_URL,
-# NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY. Runtime (server functions):
-# SUPABASE_SECRET_KEY, TURNSTILE_SECRET_KEY, NEXT_PUBLIC_TURNSTILE_SITE_KEY, and
-# (when wired) STRIPE_*, ESIGN_*, EMAIL_PROVIDER_API_KEY, N8N_WEBHOOK_SECRET.
-# Optional: NEXT_PUBLIC_PUBLIC_HOST / _PORTAL_HOST / _ADMIN_HOST for subdomain
-# surface routing (path routing works on the default *.netlify.app host).
+# This is a full SSR deploy — App Router, SSR, middleware, API routes, auth,
+# Supabase, /admin and /portal preserved. NOT a static export.
+#
+# REQUIRED ENV VARS (Netlify UI → Environment variables; values not stored here):
+#   build + client: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+#   runtime:        SUPABASE_SECRET_KEY, TURNSTILE_SECRET_KEY,
+#                   NEXT_PUBLIC_TURNSTILE_SITE_KEY, (opt) STRIPE_*, ESIGN_*,
+#                   EMAIL_PROVIDER_API_KEY, N8N_WEBHOOK_SECRET.
 # =============================================================================
 
 [build]
-  # Run install + build in the pnpm workspace root, not the repo root.
-  base = "application"
-  # Turborepo builds the workspace packages first, then the web app.
-  command = "pnpm build"
-  # The app's server build output, relative to `base`.
-  publish = "apps/web/.next"
+  # Base = the Next.js app package, so Netlify detects Next 15 and runs the v5
+  # (OpenNext) runtime. `pnpm install` here still installs the whole pnpm
+  # workspace (pnpm resolves the workspace root from a member).
+  base = "application/apps/web"
+  # Reach up to the workspace root and build via Turborepo (deps first, then web).
+  command = "cd ../.. && pnpm build"
+  # The web app's server build output, relative to base (application/apps/web/.next).
+  publish = ".next"
 
 [build.environment]
-  # The app targets Node >= 20; pin to match application/.nvmrc.
   NODE_VERSION = "22"
-  # NEXT_PUBLIC_* values are PUBLIC by design — they are inlined into the client
-  # and edge (middleware) bundles on purpose. Allow Netlify's secrets scanner to
-  # see these specific public keys in the output while it KEEPS scanning for
-  # everything else (real server secrets — SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY,
-  # etc. — remain protected and were correctly absent from the bundle).
+  # NEXT_PUBLIC_* values are PUBLIC by design (inlined into client/edge bundles).
+  # Allow the secrets scanner to see these specific public keys while it keeps
+  # scanning for real server secrets (which are correctly absent from the bundle).
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,NEXT_PUBLIC_TURNSTILE_SITE_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
 
-# The Next.js Runtime MUST be declared here to be invoked: this is a pnpm/turbo
-# monorepo built from `application/`, and Netlify's framework auto-detection does
-# not find `next` at the base (it lives in apps/web), so without this block the
-# runtime never runs and the site 404s (a bare .next is published).
-#
-# This uses the build image's runtime (v4), which pairs with `publish = .next`
-# and generates the SSR functions + redirect table. `@opentelemetry/api` is a
-# real dependency so its Edge Functions bundler can resolve it on Next.js 15.
-# (v5/OpenNext is a separate migration — it manages its own output and conflicts
-# with `publish = .next`, which caused an earlier "published-but-404" deploy.)
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+# No [[plugins]] block on purpose — with base at the app package, Netlify
+# auto-detects Next.js and installs/runs the latest v5 (OpenNext) runtime.
