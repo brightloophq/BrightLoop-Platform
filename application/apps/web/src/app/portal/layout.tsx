@@ -58,8 +58,8 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       ready: true,
       badge: unread || undefined,
     },
+    { label: "Discovery chat", href: "/portal/chat", icon: "mail", ready: true },
     { label: "Files", href: "/portal/files", icon: "layout-grid", ready: false },
-    { label: "Messages", href: "/portal/messages", icon: "mail", ready: false },
     { label: "Meetings", href: "/portal/meetings", icon: "clock", ready: false },
     { label: "Settings", href: "/portal/settings", icon: "route", ready: false },
   ];

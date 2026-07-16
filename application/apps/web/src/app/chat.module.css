@@ -1,0 +1,142 @@
+/* Discovery chat — shared by the portal thread and the admin workspace. */
+
+.thread {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.scroll {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.empty {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+  padding: var(--space-6) 0;
+}
+
+/* ---- message bubbles ---- */
+.msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 78%;
+}
+.msgMine {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+.msgTheirs {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.bubble {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.bubbleMine {
+  background: var(--surface-accent, var(--text-accent));
+  color: var(--on-accent, #fff);
+  border-bottom-right-radius: var(--radius-xs);
+}
+.bubbleTheirs {
+  background: var(--surface-2, #f1f1f4);
+  color: var(--text);
+  border-bottom-left-radius: var(--radius-xs);
+}
+
+.meta {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: 2px;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.author {
+  font-weight: 600;
+}
+
+/* ---- composer ---- */
+.composer {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-3);
+}
+.composer textarea {
+  flex: 1;
+  resize: none;
+}
+.err {
+  color: var(--text-danger, #c0392b);
+  font-size: var(--fs-xs);
+  margin-top: var(--space-1);
+}
+
+/* ---- admin two-pane workspace ---- */
+.workspace {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--space-5);
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+}
+
+.context {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  position: sticky;
+  top: var(--space-4);
+}
+.ctxSection {
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: var(--space-2);
+}
+.ctxRow {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--fs-sm);
+  padding: 2px 0;
+}
+.ctxRow span:first-child {
+  color: var(--text-muted);
+}
+
+/* ---- internal notes: visually distinct so they can't be mistaken for client-visible chat ---- */
+.noteZone {
+  background: var(--surface-warning, #fff8e1);
+  border: 1px dashed var(--border-warning, #e0c060);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+.note {
+  font-size: var(--fs-sm);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border);
+}
+.note:last-child {
+  border-bottom: none;
+}

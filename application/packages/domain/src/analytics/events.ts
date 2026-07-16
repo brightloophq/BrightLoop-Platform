@@ -18,6 +18,7 @@ export const ANALYTICS_EVENTS = [
   "assessment.start",
   "assessment.complete",
   "configurator.estimate.view",
+  "conversation.start",
   // sales / state truth (each mirrors a guarded transition)
   "lead.stage.change",
   "proposal.accept",

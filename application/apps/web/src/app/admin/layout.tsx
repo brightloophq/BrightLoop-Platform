@@ -40,6 +40,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     {
       label: "Delivery",
       items: [
+        { label: "Conversations", href: "/admin/conversations", icon: "mail", ready: true },
         { label: "Clients", href: "/admin/clients", icon: "users", ready: true },
         { label: "Projects", href: "/admin/projects", icon: "workflow", ready: true },
         { label: "Deliverables", href: "/admin/deliverables", icon: "check", ready: false },
