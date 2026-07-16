@@ -36,8 +36,15 @@
 [build.environment]
   # The app targets Node >= 20; pin to match application/.nvmrc.
   NODE_VERSION = "22"
+  # NEXT_PUBLIC_* values are PUBLIC by design — they are inlined into the client
+  # and edge (middleware) bundles on purpose. Allow Netlify's secrets scanner to
+  # see these specific public keys in the output while it KEEPS scanning for
+  # everything else (real server secrets — SUPABASE_SECRET_KEY, STRIPE_SECRET_KEY,
+  # etc. — remain protected and were correctly absent from the bundle).
+  SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,NEXT_PUBLIC_TURNSTILE_SITE_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
 
-# The official Next.js Runtime — adapts the .next server build into Netlify
-# Functions/Edge (SSR + middleware + API routes). This is what was missing.
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+# NOTE — no [[plugins]] block on purpose. The Next.js Runtime is pinned to v5
+# (OpenNext) via the @netlify/plugin-nextjs devDependency in
+# application/package.json, which Netlify auto-detects and runs. Declaring the
+# plugin here would instead force the build image's legacy v4 runtime, whose
+# Edge Functions bundler can't resolve @opentelemetry/api on Next.js 15.
