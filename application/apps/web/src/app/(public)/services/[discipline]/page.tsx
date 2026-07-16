@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { DISCIPLINE_SLUGS, disciplineFromSlug } from "@brightloop/schema";
-import { ESTIMATE_DISCLAIMER, ESTIMATE_LABEL, formatRange } from "@brightloop/domain";
 import { PLACEHOLDER_DISCIPLINE_COPY } from "@brightloop/data";
 import {
   Accordion,
@@ -13,7 +12,6 @@ import {
   Eyebrow,
   Icon,
   Section,
-  Tag,
 } from "@brightloop/ui";
 import { getCatalogRepository } from "@/lib/repositories";
 import home from "../../home.module.css";
@@ -53,10 +51,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
   if (!discipline) notFound();
 
   const catalog = getCatalogRepository();
-  const [details, rangeFactors] = await Promise.all([
-    catalog.listModuleDetailsByDiscipline(discipline),
-    catalog.listRangeFactors(),
-  ]);
+  const details = await catalog.listModuleDetailsByDiscipline(discipline);
 
   const copy = PLACEHOLDER_DISCIPLINE_COPY[discipline];
 
@@ -91,7 +86,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
           </div>
 
           <div className={styles.modules}>
-            {details.map(({ module, content, range }) => (
+            {details.map(({ module, content }) => (
               <Card key={module.id} className={styles.module}>
                 <div>
                   <h3 className={styles.moduleName}>{module.name}</h3>
@@ -135,14 +130,8 @@ export default async function ServiceDetailPage({ params }: PageProps) {
                   ) : null}
                 </div>
 
-                {/* Estimate rail — a RANGE plus the non-binding qualifier, always. */}
+                {/* Detail rail — timeline and fit, NO pricing (Sprint 5R spec §4). */}
                 <aside className={styles.rail}>
-                  <div>
-                    <span className={styles.railLabel}>{ESTIMATE_LABEL}</span>
-                    <span className={styles.railRange}>{formatRange(range)}</span>
-                    <span className={styles.railQualifier}>{ESTIMATE_DISCLAIMER}</span>
-                  </div>
-
                   <div className={styles.railMeta}>
                     <span className={styles.railRow}>
                       <span>Typical timeline</span>
@@ -174,28 +163,6 @@ export default async function ServiceDetailPage({ params }: PageProps) {
         </Container>
       </Section>
 
-      {/* ---- Why a range, not a price ---- */}
-      <Section rhythm="tight">
-        <Container width="wide">
-          <div className={home.head}>
-            <Eyebrow>About the numbers</Eyebrow>
-            <h2 className={home.title}>Why we quote a range</h2>
-            <p className={home.lede}>{ESTIMATE_DISCLAIMER}</p>
-          </div>
-
-          <div className={styles.rangeWhy}>
-            {rangeFactors.map(([factor, explanation]) => (
-              <Card key={factor}>
-                <Tag accent>{factor}</Tag>
-                <p className={styles.promise} style={{ marginTop: "var(--space-3)", marginBottom: 0 }}>
-                  {explanation}
-                </p>
-              </Card>
-            ))}
-          </div>
-        </Container>
-      </Section>
-
       {/* ---- FAQ ---- */}
       <Section rhythm="tight" inset>
         <Container width="md">
@@ -209,12 +176,12 @@ export default async function ServiceDetailPage({ params }: PageProps) {
             items={[
               {
                 id: "q1",
-                title: "Is the estimate a quote?",
+                title: "How does pricing work?",
                 content: (
                   <>
-                    No. Every figure on this site is an estimated range based on typical scope. Your
-                    binding price appears on your proposal after a strategy call, once we understand
-                    what you actually need.
+                    We don&apos;t publish rate cards. After you complete the assessment and
+                    configurator, a BrightLoop strategist prepares tailored pricing with you in a
+                    discovery conversation — scoped to exactly what you need, with no obligation.
                   </>
                 ),
               },

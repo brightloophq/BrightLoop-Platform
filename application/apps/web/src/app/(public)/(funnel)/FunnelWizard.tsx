@@ -3,18 +3,16 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { ModuleContent, ServiceModule } from "@brightloop/schema";
 import {
-  ESTIMATE_DISCLAIMER,
-  formatRange,
   healthBand,
   healthScore,
   isAssessmentComplete,
   recommendPlan,
-  resolveSelection,
+  resolveConfiguration,
   scoreDimensions,
   type AssessmentQuestion,
   type Choice,
+  type ConfigModule,
 } from "@brightloop/domain";
 import { Alert, Badge, Button, Card, Container, Eyebrow, Icon } from "@brightloop/ui";
 import {
@@ -29,8 +27,8 @@ export interface FunnelCatalog {
   questions: AssessmentQuestion[];
   goals: { id: string; label: string; icon: string }[];
   plans: { id: string; name: string; tag: string; blurb: string; modules: string[] }[];
-  modules: ServiceModule[];
-  content: Record<string, ModuleContent>;
+  /** Price-free modules — the client never receives cost data (see catalog-data). */
+  modules: ConfigModule[];
   assets: { key: string; label: string; icon: string }[];
   disciplines: readonly string[];
 }
@@ -77,12 +75,12 @@ export function FunnelWizard({ step, catalog }: { step: Step; catalog: FunnelCat
 
   const selection = useMemo(
     () =>
-      resolveSelection(catalog.modules, (mid) => catalog.content[mid] ?? null, {
+      resolveConfiguration(catalog.modules, {
         moduleIds: selectedModuleIds,
         choices: state.choices,
         inventory: state.inventory,
       }),
-    [catalog.modules, catalog.content, selectedModuleIds, state.choices, state.inventory],
+    [catalog.modules, selectedModuleIds, state.choices, state.inventory],
   );
 
   const goTo = (s: Step) => router.push(`/${s}`);
@@ -125,7 +123,7 @@ export function FunnelWizard({ step, catalog }: { step: Step; catalog: FunnelCat
           <RecommendationStep catalog={catalog} state={state} scores={scores} plan={activePlan} selection={selection} onNext={() => goTo("roadmap")} onBack={() => goTo("configurator")} />
         ) : null}
         {step === "roadmap" ? (
-          <RoadmapStep selection={selection} state={state} plan={activePlan} onBack={() => goTo("recommendation")} />
+          <RoadmapStep selection={selection} state={state} update={update} plan={activePlan} onBack={() => goTo("recommendation")} />
         ) : null}
       </div>
     </Container>
@@ -199,7 +197,7 @@ function AssessmentStep({ catalog, state, update, onNext }: { catalog: FunnelCat
 }
 
 /* ---- Step 2: Configurator -------------------------------------------------- */
-function ConfiguratorStep({ catalog, state, update, selection, onNext, onBack }: { catalog: FunnelCatalog; state: FunnelState; update: (p: Partial<FunnelState>) => void; selection: ReturnType<typeof resolveSelection>; onNext: () => void; onBack: () => void }) {
+function ConfiguratorStep({ catalog, state, update, selection, onNext, onBack }: { catalog: FunnelCatalog; state: FunnelState; update: (p: Partial<FunnelState>) => void; selection: ReturnType<typeof resolveConfiguration>; onNext: () => void; onBack: () => void }) {
   const byDiscipline = catalog.disciplines.map((d) => ({
     discipline: d,
     modules: selection.rows.filter((r) => r.module.stage === d),
@@ -212,7 +210,7 @@ function ConfiguratorStep({ catalog, state, update, selection, onNext, onBack }:
       <div className={styles.head}>
         <Eyebrow>Step 2 · Configure your package</Eyebrow>
         <h1 className={styles.title}>Tell us what you already have</h1>
-        <p className={styles.lede}>We remove what you own from the build, so you only pay for what you actually need. The estimate is a range for your planning — your real quote is built with a strategist.</p>
+        <p className={styles.lede}>We remove what you already own from the build, so your plan reflects only what you actually need. Your strategist builds the quote with you in a discovery conversation.</p>
       </div>
 
       <div className={styles.configLayout}>
@@ -249,14 +247,11 @@ function ConfiguratorStep({ catalog, state, update, selection, onNext, onBack }:
         </div>
 
         <aside className={styles.estimateRail}>
-          <span className={styles.estLabel}>Estimated range</span>
-          <span className={styles.estRange}>{formatRange([selection.low, selection.high])}</span>
-          <span className={styles.estQualifier}>{ESTIMATE_DISCLAIMER}</span>
-          {selection.savedHigh > 0 ? (
-            <div className={styles.saving}>
-              You&apos;re saving ~{formatRange([selection.savedLow, selection.savedHigh])} on things you already have.
-            </div>
-          ) : null}
+          <span className={styles.estLabel}>Your configuration</span>
+          <span className={styles.estRange}>{selection.active.length} service{selection.active.length === 1 ? "" : "s"} to build</span>
+          <span className={styles.estQualifier}>
+            {selection.kept.length > 0 ? `${selection.kept.length} kept as-is. ` : ""}Pricing is prepared with your strategist — no obligation.
+          </span>
         </aside>
       </div>
 
@@ -271,7 +266,7 @@ function ConfiguratorStep({ catalog, state, update, selection, onNext, onBack }:
 }
 
 /* ---- Step 3: Recommendation ------------------------------------------------ */
-function RecommendationStep({ scores, plan, selection, onNext, onBack }: { catalog: FunnelCatalog; state: FunnelState; scores: Record<string, number>; plan: FunnelCatalog["plans"][number] | undefined; selection: ReturnType<typeof resolveSelection>; onNext: () => void; onBack: () => void }) {
+function RecommendationStep({ scores, plan, selection, onNext, onBack }: { catalog: FunnelCatalog; state: FunnelState; scores: Record<string, number>; plan: FunnelCatalog["plans"][number] | undefined; selection: ReturnType<typeof resolveConfiguration>; onNext: () => void; onBack: () => void }) {
   const weakest = Object.entries(scores).sort((a, b) => a[1] - b[1])[0];
 
   return (
@@ -301,9 +296,8 @@ function RecommendationStep({ scores, plan, selection, onNext, onBack }: { catal
         </div>
 
         <div>
-          <span className={styles.estLabel}>Estimated range</span>
-          <span className={styles.estRange}>{formatRange([selection.low, selection.high])}</span>
-          <span className={styles.estQualifier}>{ESTIMATE_DISCLAIMER}</span>
+          <span className={styles.estLabel}>Next step</span>
+          <span className={styles.estQualifier}>Your strategist prepares tailored pricing with you — no public rate card, no obligation.</span>
         </div>
       </Card>
 
@@ -316,7 +310,10 @@ function RecommendationStep({ scores, plan, selection, onNext, onBack }: { catal
 }
 
 /* ---- Step 4: Roadmap ------------------------------------------------------- */
-function RoadmapStep({ selection, plan, onBack }: { selection: ReturnType<typeof resolveSelection>; state: FunnelState; plan: FunnelCatalog["plans"][number] | undefined; onBack: () => void }) {
+const TIMELINES = ["As soon as possible", "1–3 months", "3–6 months", "Just exploring"];
+const BUDGET_BANDS = ["Under $5k", "$5k–$15k", "$15k–$50k", "$50k+", "Not sure yet"];
+
+function RoadmapStep({ selection, state, update, plan, onBack }: { selection: ReturnType<typeof resolveConfiguration>; state: FunnelState; update: (p: Partial<FunnelState>) => void; plan: FunnelCatalog["plans"][number] | undefined; onBack: () => void }) {
   // Group active work into loop-ordered phases.
   const phases = ["Brand", "Build", "Automate", "Grow"]
     .map((d) => ({ discipline: d, items: selection.active.filter((r) => r.module.stage === d) }))
@@ -344,10 +341,45 @@ function RoadmapStep({ selection, plan, onBack }: { selection: ReturnType<typeof
         ))}
       </Card>
 
+      {/* Discovery context the strategist will see — timeline, budget comfort, notes. */}
+      <Card style={{ marginTop: "var(--space-5)" }}>
+        <h2 className={styles.question}>A few details for your strategist</h2>
+        <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", marginTop: "var(--space-3)" }}>
+          <div>
+            <span className={styles.disciplineName}>When would you like to start?</span>
+            <div className={styles.goals} style={{ marginTop: "var(--space-2)" }}>
+              {TIMELINES.map((t) => (
+                <button key={t} type="button" className={[styles.option, state.timeline === t ? styles.optionSel : null].filter(Boolean).join(" ")} onClick={() => update({ timeline: t })}>{t}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className={styles.disciplineName}>What budget range are you comfortable with?</span>
+            <div className={styles.goals} style={{ marginTop: "var(--space-2)" }}>
+              {BUDGET_BANDS.map((b) => (
+                <button key={b} type="button" className={[styles.option, state.budgetBand === b ? styles.optionSel : null].filter(Boolean).join(" ")} onClick={() => update({ budgetBand: b })}>{b}</button>
+              ))}
+            </div>
+            <p className={styles.estQualifier} style={{ marginTop: "var(--space-2)" }}>This just helps your strategist tailor the conversation. It&apos;s never shown as a price.</p>
+          </div>
+          <div>
+            <span className={styles.disciplineName}>Anything else we should know? (optional)</span>
+            <textarea
+              value={state.notes}
+              onChange={(e) => update({ notes: e.target.value })}
+              rows={3}
+              placeholder="Context, deadlines, what's driving this…"
+              aria-label="Notes for your strategist"
+              style={{ width: "100%", marginTop: "var(--space-2)", resize: "vertical" }}
+            />
+          </div>
+        </div>
+      </Card>
+
       <div style={{ marginTop: "var(--space-5)" }}>
         <Alert tone="info" title="Ready to talk it through?">
           Create your account to start a discovery conversation with a strategist. You&apos;ll
-          review this plan together, ask questions, and get a real quote — no obligation.
+          review this plan together, ask questions, and get tailored pricing — no obligation.
         </Alert>
       </div>
 

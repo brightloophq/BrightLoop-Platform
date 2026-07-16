@@ -161,24 +161,38 @@ export const PLACEHOLDER_ASSETS: readonly Asset[] = [
 
 export const PLACEHOLDER_PLANS: readonly Plan[] = [
   {
-    id: "foundation",
-    name: "Foundation",
+    id: "starter",
+    name: "Starter",
     tag: "Starter",
-    blurb: "The essentials — configured to skip what you already have.",
+    blurb: "Establish a credible brand and a site that converts — configured to skip what you already have.",
     modules: ["brand-identity", "website", "gbp", "analytics", "social"],
+    outcomes: [
+      "A professional brand identity you can stand behind",
+      "A conversion-focused website that turns visitors into enquiries",
+      "Found on Google with a complete business profile",
+    ],
+    industries: ["Local services", "Trades & home services", "Early-stage founders", "Solo professionals"],
+    timelineWeeks: [3, 6],
   },
   {
-    id: "launch",
-    name: "Launch",
+    id: "growth",
+    name: "Growth",
     tag: "Popular",
-    blurb: "Go to market with brand, site and core automation.",
+    blurb: "Go to market properly — brand, site, CRM and the automation that stops leads slipping through the cracks.",
     modules: ["brand-identity", "website", "crm", "automation", "analytics", "social", "gbp"],
+    outcomes: [
+      "Every lead captured and followed up automatically",
+      "A brand and site that command higher prices",
+      "Clear visibility of what's working, from one dashboard",
+    ],
+    industries: ["Clinics & practices", "Agencies & studios", "B2B services", "Hospitality & retail"],
+    timelineWeeks: [6, 10],
   },
   {
-    id: "transform",
-    name: "Transform",
-    tag: "",
-    blurb: "Rebrand, rebuild and overhaul operations.",
+    id: "enterprise",
+    name: "Enterprise",
+    tag: "Full loop",
+    blurb: "Rebrand, rebuild and overhaul operations across the whole growth loop, with ongoing partnership.",
     modules: [
       "brand-identity",
       "website",
@@ -190,23 +204,13 @@ export const PLACEHOLDER_PLANS: readonly Plan[] = [
       "gbp",
       "social",
     ],
-  },
-  {
-    id: "partner",
-    name: "Growth Partner",
-    tag: "Retainer",
-    blurb: "Ongoing brand, build, automate & grow.",
-    modules: [
-      "brand-identity",
-      "website",
-      "crm",
-      "automation",
-      "analytics",
-      "marketing",
-      "landing-page",
-      "social",
-      "gbp",
+    outcomes: [
+      "A cohesive brand and platform built to scale",
+      "Operations automated end to end, not just marketing",
+      "A growth partner iterating with you every month",
     ],
+    industries: ["Multi-location businesses", "Funded scale-ups", "Franchises", "Established SMEs"],
+    timelineWeeks: [10, 16],
   },
 ];
 

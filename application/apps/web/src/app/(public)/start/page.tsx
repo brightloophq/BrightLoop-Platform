@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { PLACEHOLDER_ASSESSMENT, PLACEHOLDER_CONTENT, PLACEHOLDER_MODULES, PLACEHOLDER_PLANS } from "@brightloop/data";
+import { PLACEHOLDER_ASSESSMENT, PLACEHOLDER_PLANS } from "@brightloop/data";
 import { Container, Eyebrow, Section } from "@brightloop/ui";
+import { funnelCatalog } from "../(funnel)/catalog-data";
 import { StartForm } from "./StartForm";
 import styles from "../(funnel)/funnel.module.css";
 
@@ -29,8 +30,7 @@ export default function StartPage() {
 
         <StartForm
           questions={[...PLACEHOLDER_ASSESSMENT]}
-          modules={[...PLACEHOLDER_MODULES]}
-          content={{ ...PLACEHOLDER_CONTENT }}
+          modules={funnelCatalog().modules}
           plans={PLACEHOLDER_PLANS.map((p) => ({ id: p.id, modules: [...p.modules] }))}
         />
       </Container>

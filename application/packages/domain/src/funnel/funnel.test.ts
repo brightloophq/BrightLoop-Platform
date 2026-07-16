@@ -13,6 +13,8 @@ import {
   defaultChoice,
   contribution,
   resolveSelection,
+  resolveConfiguration,
+  computeInternalEstimate,
   recommendPlan,
 } from "./configurator.js";
 
@@ -128,17 +130,51 @@ describe("resolveSelection — indicative estimate, de-duped", () => {
   });
 });
 
-describe("recommendPlan — rule-based (no LLM)", () => {
-  it("recommends by goal and average score", () => {
-    expect(recommendPlan({ a: 20 }, "launch")).toBe("foundation");
-    expect(recommendPlan({ a: 20 }, "leads")).toBe("foundation"); // avg<40
-    expect(recommendPlan({ a: 80 }, "scale")).toBe("partner");
-    expect(recommendPlan({ a: 80 }, "leads")).toBe("partner"); // avg>=72
-    expect(recommendPlan({ a: 55 }, "automate")).toBe("launch");
-    expect(recommendPlan({ a: 65 }, "leads")).toBe("transform");
+describe("recommendPlan — rule-based, 3 tiers (no LLM)", () => {
+  it("recommends Starter / Growth / Enterprise by goal and average score", () => {
+    expect(recommendPlan({ a: 20 }, "launch")).toBe("starter");
+    expect(recommendPlan({ a: 20 }, "leads")).toBe("starter"); // avg<45
+    expect(recommendPlan({ a: 80 }, "scale")).toBe("enterprise");
+    expect(recommendPlan({ a: 80 }, "leads")).toBe("enterprise"); // avg>=70
+    expect(recommendPlan({ a: 55 }, "leads")).toBe("growth"); // mid
+    expect(recommendPlan({ a: 60 }, "automate")).toBe("growth");
   });
 
   it("handles empty scores without dividing by zero", () => {
-    expect(recommendPlan({}, "leads")).toBe("foundation"); // avg 0 < 40
+    expect(recommendPlan({}, "leads")).toBe("starter"); // avg 0 < 45
+  });
+});
+
+describe("resolveConfiguration — price-free CLIENT resolver", () => {
+  const modules = [
+    { id: "brand", name: "Brand", stage: "Brand", assets: ["logo"] },
+    { id: "site", name: "Site", stage: "Build", assets: ["web"] },
+  ];
+
+  it("resolves Keep/Improve/Replace/Create with NO cost fields", () => {
+    const r = resolveConfiguration(modules, {
+      moduleIds: ["brand", "site"],
+      choices: { brand: "have", site: "need" },
+      inventory: {},
+    });
+    expect(r.rows).toHaveLength(2);
+    expect(r.active.map((x) => x.module.id)).toEqual(["site"]); // brand kept
+    expect(r.kept.map((x) => x.module.id)).toEqual(["brand"]);
+    // The result carries no pricing — the shape has no low/high/cost.
+    expect(r).not.toHaveProperty("low");
+    expect(r.rows[0]).not.toHaveProperty("cost");
+  });
+});
+
+describe("computeInternalEstimate — SERVER-only pricing", () => {
+  it("prices from the catalog and derives effort points from weeks", () => {
+    const modules = [mod({ id: "a", from: 1000, weeks: [1, 3] }), mod({ id: "b", from: 2000, weeks: [2, 4] })];
+    const est = computeInternalEstimate(modules, () => null, {
+      moduleIds: ["a", "b"],
+      choices: { a: "need", b: "need" },
+      inventory: {},
+    });
+    expect(est.high).toBeGreaterThan(est.low);
+    expect(est.effortPoints).toBe(7); // 3 + 4 upper weeks of active work
   });
 });

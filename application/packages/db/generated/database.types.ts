@@ -249,35 +249,41 @@ export type Database = {
       configurations: {
         Row: {
           assessment_id: string | null
+          budget_band: string | null
           client_id: string | null
-          estimate_high: number
-          estimate_low: number
+          goal: string | null
           id: string
           modules: Json
+          notes: string | null
           owned_assets: Json
           status: Database["public"]["Enums"]["onboarding_status"]
+          timeline: string | null
           updated_at: string
         }
         Insert: {
           assessment_id?: string | null
+          budget_band?: string | null
           client_id?: string | null
-          estimate_high?: number
-          estimate_low?: number
+          goal?: string | null
           id: string
           modules?: Json
+          notes?: string | null
           owned_assets?: Json
           status?: Database["public"]["Enums"]["onboarding_status"]
+          timeline?: string | null
           updated_at?: string
         }
         Update: {
           assessment_id?: string | null
+          budget_band?: string | null
           client_id?: string | null
-          estimate_high?: number
-          estimate_low?: number
+          goal?: string | null
           id?: string
           modules?: Json
+          notes?: string | null
           owned_assets?: Json
           status?: Database["public"]["Enums"]["onboarding_status"]
+          timeline?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1157,6 +1163,48 @@ export type Database = {
             columns: ["testimonial_id"]
             isOneToOne: false
             referencedRelation: "testimonials"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_estimates: {
+        Row: {
+          client_id: string
+          computed_at: string
+          configuration_id: string
+          effort_points: number
+          estimate_high: number
+          estimate_low: number
+        }
+        Insert: {
+          client_id: string
+          computed_at?: string
+          configuration_id: string
+          effort_points?: number
+          estimate_high?: number
+          estimate_low?: number
+        }
+        Update: {
+          client_id?: string
+          computed_at?: string
+          configuration_id?: string
+          effort_points?: number
+          estimate_high?: number
+          estimate_low?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_estimates_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pricing_estimates_configuration_id_fkey"
+            columns: ["configuration_id"]
+            isOneToOne: true
+            referencedRelation: "configurations"
             referencedColumns: ["id"]
           },
         ]

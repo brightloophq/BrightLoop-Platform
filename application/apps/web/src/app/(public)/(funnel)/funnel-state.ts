@@ -33,6 +33,12 @@ export interface FunnelState {
   choices: Record<string, Choice>;
   /** fast-track vs phased. */
   pace: "fast" | "phased";
+  /** desired timeline to start (prospect's own input). */
+  timeline: string | null;
+  /** budget comfort range the prospect is comfortable with (their input, not our price). */
+  budgetBand: string | null;
+  /** free-text context for the strategist. */
+  notes: string;
 }
 
 export const EMPTY_FUNNEL: FunnelState = {
@@ -43,6 +49,9 @@ export const EMPTY_FUNNEL: FunnelState = {
   inventory: {},
   choices: {},
   pace: "phased",
+  timeline: null,
+  budgetBand: null,
+  notes: "",
 };
 
 export function loadFunnel(): FunnelState {

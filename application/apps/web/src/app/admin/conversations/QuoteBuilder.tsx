@@ -6,6 +6,7 @@ import { Badge, Button } from "@brightloop/ui";
 import { isQuoteVisibleToClient } from "@brightloop/domain";
 import {
   createQuote,
+  createQuoteFromConfiguration,
   addQuoteItem,
   removeQuoteItem,
   updateQuoteMeta,
@@ -162,9 +163,12 @@ export function QuoteBuilder({ conversationId, clientId, quotes }: { conversatio
         ))
       )}
 
-      <div>
+      <div style={{ display: "flex", gap: "var(--space-2)", flexWrap: "wrap" }}>
+        <Button variant="primary" size="sm" disabled={busy} onClick={() => run(() => { const fd = new FormData(); fd.set("conversationId", conversationId); fd.set("clientId", clientId); return createQuoteFromConfiguration(fd); })}>
+          + Quote from configuration
+        </Button>
         <Button variant="secondary" size="sm" disabled={busy} onClick={() => run(() => { const fd = new FormData(); fd.set("conversationId", conversationId); fd.set("clientId", clientId); return createQuote(fd); })}>
-          + New quote
+          + Blank quote
         </Button>
       </div>
       {error ? <p className={styles.err}>{error}</p> : null}

@@ -2,20 +2,18 @@
 
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { ModuleContent, ServiceModule } from "@brightloop/schema";
-import { recommendPlan, resolveSelection, scoreDimensions, healthScore } from "@brightloop/domain";
+import { recommendPlan, resolveConfiguration, scoreDimensions, healthScore } from "@brightloop/domain";
 import { Alert, Button, Card, Input } from "@brightloop/ui";
 import { loadFunnel, clearFunnel } from "../(funnel)/funnel-state";
 import { createProspectAccount, type SignupState } from "./actions";
 import styles from "../(funnel)/funnel.module.css";
-import type { AssessmentQuestion } from "@brightloop/domain";
+import type { AssessmentQuestion, ConfigModule } from "@brightloop/domain";
 
 const EMPTY: SignupState = {};
 
 interface Props {
   questions: AssessmentQuestion[];
-  modules: ServiceModule[];
-  content: Record<string, ModuleContent>;
+  modules: ConfigModule[];
   plans: { id: string; modules: string[] }[];
 }
 
@@ -24,7 +22,7 @@ interface Props {
  * assessment/configuration payload, and submits it with the account details so
  * the server persists everything atomically.
  */
-export function StartForm({ questions, modules, content, plans }: Props) {
+export function StartForm({ questions, modules, plans }: Props) {
   const router = useRouter();
   const [state, action, pending] = useActionState(createProspectAccount, EMPTY);
   const [funnelJson, setFunnelJson] = useState("{}");
@@ -35,11 +33,10 @@ export function StartForm({ questions, modules, content, plans }: Props) {
     const planId = f.plan ?? recommendPlan(scores, f.goal ?? "");
     const plan = plans.find((p) => p.id === planId);
     const moduleIds = [...new Set([...(plan?.modules ?? []), ...f.added])];
-    const sel = resolveSelection(modules, (id) => content[id] ?? null, {
-      moduleIds,
-      choices: f.choices,
-      inventory: f.inventory,
-    });
+    // Price-free resolution to know which modules are active. NO pricing is
+    // computed or sent from the client — the server recomputes the internal
+    // estimate from these raw selections against the priced catalog.
+    const sel = resolveConfiguration(modules, { moduleIds, choices: f.choices, inventory: f.inventory });
     setFunnelJson(
       JSON.stringify({
         answers: f.answers,
@@ -49,11 +46,17 @@ export function StartForm({ questions, modules, content, plans }: Props) {
         plan: planId,
         modules: sel.active.map((r) => r.module.id),
         ownedAssets: Object.entries(f.inventory).filter(([, v]) => v === "have").map(([k]) => k),
-        estimateLow: sel.low,
-        estimateHigh: sel.high,
+        // raw selection inputs so the SERVER can price internally
+        moduleIds,
+        choices: f.choices,
+        inventory: f.inventory,
+        // discovery context for the strategist
+        timeline: f.timeline,
+        budgetBand: f.budgetBand,
+        notes: f.notes,
       }),
     );
-  }, [questions, modules, content, plans]);
+  }, [questions, modules, plans]);
 
   useEffect(() => {
     if (state.ok) {

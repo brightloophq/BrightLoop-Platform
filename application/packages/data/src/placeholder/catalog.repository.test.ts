@@ -52,18 +52,17 @@ describe("PlaceholderCatalogRepository — modules", () => {
 });
 
 describe("PlaceholderCatalogRepository — plans", () => {
-  it("lists the four productised plans", async () => {
+  it("lists the three productised plans (Starter / Growth / Enterprise)", async () => {
     expect((await repo.listPlans()).map((p) => p.id)).toEqual([
-      "foundation",
-      "launch",
-      "transform",
-      "partner",
+      "starter",
+      "growth",
+      "enterprise",
     ]);
   });
 
   it("resolves a plan's modules and sums an estimate RANGE", async () => {
-    const detail = await repo.getPlanDetail("foundation");
-    expect(detail?.plan.name).toBe("Foundation");
+    const detail = await repo.getPlanDetail("starter");
+    expect(detail?.plan.name).toBe("Starter");
     expect(detail?.modules.length).toBe(5);
 
     const [lo, hi] = detail!.range;
@@ -88,7 +87,7 @@ describe("PlaceholderCatalogRepository — plans", () => {
   });
 
   it("computes a delivery window from the modules' upper week bounds", async () => {
-    const detail = await repo.getPlanDetail("foundation");
+    const detail = await repo.getPlanDetail("starter");
     expect(detail?.weeksMax).toBeGreaterThan(0);
   });
 

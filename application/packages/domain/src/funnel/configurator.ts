@@ -32,9 +32,24 @@ export function statusFor(choice: Choice, inventory: AssetPresence): ResolvedSta
   return "Improve";
 }
 
+/**
+ * The price-free shape of a module. This is all the CLIENT ever needs to
+ * configure a package: which modules exist, what they're called, their stage,
+ * and the assets they depend on. Deliberately omits `from`/pricing so no price
+ * data reaches the prospect's browser (the internal pricing engine works from
+ * the full ServiceModule, server-side only).
+ */
+export interface ConfigModule {
+  id: string;
+  name: string;
+  stage: string;
+  assets: readonly string[];
+  upgrade?: boolean;
+}
+
 /** How present are a module's required assets in the client's inventory? */
 export function assetPresence(
-  module: ServiceModule,
+  module: { assets: readonly string[] },
   inventory: Record<string, AssetPresence>,
 ): AssetPresence {
   const vals = module.assets.map((a) => inventory[a] ?? "none");
@@ -45,7 +60,7 @@ export function assetPresence(
 
 /** Default choice from what the client already has. */
 export function defaultChoice(
-  module: ServiceModule,
+  module: { assets: readonly string[] },
   inventory: Record<string, AssetPresence>,
 ): Choice {
   const p = assetPresence(module, inventory);
@@ -156,6 +171,84 @@ export function resolveSelection(
   };
 }
 
+/* -------------------------------------------------------------------------- */
+/* PRICE-FREE resolution — the CLIENT path                                    */
+/* -------------------------------------------------------------------------- */
+
+export interface ConfigRow {
+  module: ConfigModule;
+  choice: Choice;
+  status: ResolvedStatus;
+}
+export interface ConfigResult {
+  rows: ConfigRow[];
+  /** Rows that involve billable work (status !== Keep). */
+  active: ConfigRow[];
+  /** Rows kept as-is. */
+  kept: ConfigRow[];
+}
+
+const CONFIG_STAGE_ORDER: Record<string, number> = DISCIPLINE_ORDER as Record<string, number>;
+
+/**
+ * Resolve a configured selection into rows + Keep/Improve/Replace/Create status,
+ * WITHOUT any cost. This is what the prospect's browser runs — it carries no
+ * pricing logic or data. The internal estimate is computed separately, server
+ * side, by `computeInternalEstimate`.
+ */
+export function resolveConfiguration(
+  modules: readonly ConfigModule[],
+  input: SelectionInput,
+): ConfigResult {
+  const inventory = input.inventory ?? {};
+  const choices = input.choices ?? {};
+  const byId = new Map(modules.map((m) => [m.id, m]));
+
+  const rows: ConfigRow[] = [];
+  for (const id of new Set(input.moduleIds)) {
+    const module = byId.get(id);
+    if (!module || module.upgrade) continue;
+    const choice = choices[id] ?? defaultChoice(module, inventory);
+    const status = statusFor(choice, assetPresence(module, inventory));
+    rows.push({ module, choice, status });
+  }
+  rows.sort((a, b) => (CONFIG_STAGE_ORDER[a.module.stage] ?? 0) - (CONFIG_STAGE_ORDER[b.module.stage] ?? 0));
+
+  return {
+    rows,
+    active: rows.filter((r) => r.status !== "Keep"),
+    kept: rows.filter((r) => r.status === "Keep"),
+  };
+}
+
+/* -------------------------------------------------------------------------- */
+/* INTERNAL pricing engine — the SERVER path (never sent to a prospect)       */
+/* -------------------------------------------------------------------------- */
+
+export interface InternalEstimate {
+  /** Effort model: 1 point ≈ 1 estimated week of active work. */
+  effortPoints: number;
+  low: number;
+  high: number;
+  savedLow: number;
+  savedHigh: number;
+}
+
+/**
+ * Compute the internal effort + estimate for a selection. Runs ONLY on the
+ * server against the fully-priced catalog; the result is stored in the
+ * internal-only `pricing_estimates` table and shown to admins, never prospects.
+ */
+export function computeInternalEstimate(
+  modules: readonly ServiceModule[],
+  contentFor: (id: string) => ModuleContent | null,
+  input: SelectionInput,
+): InternalEstimate {
+  const sel = resolveSelection(modules, contentFor, input);
+  const effortPoints = sel.active.reduce((sum, r) => sum + (r.module.weeks?.[1] ?? r.module.weeks?.[0] ?? 0), 0);
+  return { effortPoints, low: sel.low, high: sel.high, savedLow: sel.savedLow, savedHigh: sel.savedHigh };
+}
+
 /**
  * Recommend a plan id from assessment scores + goal (rule-based, Decision G — no
  * LLM). Auditable and cannot fabricate.
@@ -163,8 +256,8 @@ export function resolveSelection(
 export function recommendPlan(scores: Record<string, number>, goalId: string): string {
   const values = Object.values(scores);
   const avg = values.length ? values.reduce((a, b) => a + b, 0) / values.length : 0;
-  if (goalId === "launch" || avg < 40) return "foundation";
-  if (goalId === "scale" || avg >= 72) return "partner";
-  if (goalId === "automate" || avg < 60) return "launch";
-  return "transform";
+  // Three tiers (Starter / Growth / Enterprise). Rule-based, Decision G — no LLM.
+  if (goalId === "scale" || avg >= 70) return "enterprise";
+  if (goalId === "launch" || avg < 45) return "starter";
+  return "growth";
 }

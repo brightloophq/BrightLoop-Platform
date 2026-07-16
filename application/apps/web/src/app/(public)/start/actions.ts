@@ -1,6 +1,7 @@
 "use server";
 
-import { transition } from "@brightloop/domain";
+import { transition, computeInternalEstimate, type Choice, type AssetPresence } from "@brightloop/domain";
+import { PLACEHOLDER_MODULES, PLACEHOLDER_CONTENT } from "@brightloop/data";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { emitEvent } from "@/lib/analytics";
@@ -52,8 +53,14 @@ interface FunnelPayload {
   plan?: string | null;
   modules?: string[];
   ownedAssets?: string[];
-  estimateLow?: number;
-  estimateHigh?: number;
+  // Raw selection inputs — the SERVER prices from these; the client sends no price.
+  moduleIds?: string[];
+  choices?: Record<string, Choice>;
+  inventory?: Record<string, AssetPresence>;
+  // discovery context for the strategist
+  timeline?: string | null;
+  budgetBand?: string | null;
+  notes?: string | null;
 }
 
 export async function createProspectAccount(
@@ -134,15 +141,34 @@ export async function createProspectAccount(
       status: "completed",
       submitted_at: new Date().toISOString(),
     });
+    const cfgId = id("cfg");
     await admin.from("configurations").insert({
-      id: id("cfg"),
+      id: cfgId,
       client_id: clientId,
       assessment_id: assessmentId,
       modules: funnel.modules ?? [],
       owned_assets: funnel.ownedAssets ?? [],
-      estimate_low: Math.round(funnel.estimateLow ?? 0),
-      estimate_high: Math.round(funnel.estimateHigh ?? 0),
+      goal: funnel.goal ?? null,
+      timeline: funnel.timeline ?? null,
+      budget_band: funnel.budgetBand ?? null,
+      notes: funnel.notes ?? null,
       status: "completed",
+    });
+
+    // INTERNAL pricing engine — compute effort + estimate from the raw selections
+    // against the PRICED server catalog, and store it in the internal-only
+    // pricing_estimates table. This never touches a prospect-readable row.
+    const est = computeInternalEstimate(
+      PLACEHOLDER_MODULES,
+      (mid) => PLACEHOLDER_CONTENT[mid] ?? null,
+      { moduleIds: funnel.moduleIds ?? funnel.modules ?? [], choices: funnel.choices, inventory: funnel.inventory },
+    );
+    await admin.from("pricing_estimates").insert({
+      configuration_id: cfgId,
+      client_id: clientId,
+      effort_points: est.effortPoints,
+      estimate_low: Math.round(est.low),
+      estimate_high: Math.round(est.high),
     });
 
     // 5. guarded prospect→member — the account-creation moment, audited

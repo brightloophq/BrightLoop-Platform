@@ -2,10 +2,13 @@
 
 import { revalidatePath } from "next/cache";
 import { assertCapability, quoteTotals } from "@brightloop/domain";
+import { PLACEHOLDER_MODULES } from "@brightloop/data";
 import { getActor } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { emitEvent } from "@/lib/analytics";
 import { performTransition } from "./admin/transition-service";
+
+const MODULE_BY_ID = new Map(PLACEHOLDER_MODULES.map((m) => [m.id, m]));
 
 /**
  * Quote engine actions (Sprint 5C).
@@ -73,6 +76,48 @@ export async function createQuote(formData: FormData): Promise<QuoteResult> {
       created_by: meId,
     });
     if (error) return { ok: false, error: error.message };
+    revalidatePath(`/admin/conversations/${conversationId}`);
+    return { ok: true, id: quoteId };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
+}
+
+/**
+ * Create a quote SEEDED from the prospect's configuration — one draft line item
+ * per active module, priced from the internal catalog as a starting point the
+ * strategist then edits. This lives entirely on the admin side (draft-quote gate),
+ * so seeding from internal pricing never reaches the prospect.
+ */
+export async function createQuoteFromConfiguration(formData: FormData): Promise<QuoteResult> {
+  try {
+    const { supabase, meId } = await internal();
+    const conversationId = String(formData.get("conversationId") ?? "").trim();
+    const clientId = String(formData.get("clientId") ?? "").trim();
+    if (!conversationId || !clientId) return { ok: false, error: "Missing conversation or client" };
+
+    const { data: conv } = await supabase.from("conversations").select("configuration_id").eq("id", conversationId).maybeSingle();
+    const { data: config } = conv?.configuration_id
+      ? await supabase.from("configurations").select("modules").eq("id", conv.configuration_id).maybeSingle()
+      : { data: null };
+    const moduleIds = ((config?.modules as string[] | null) ?? []).filter((mid) => MODULE_BY_ID.has(mid));
+
+    const quoteId = id("qte");
+    const { error } = await supabase.from("quotes").insert({
+      id: quoteId, conversation_id: conversationId, client_id: clientId, title: "Proposal quote", status: "draft", created_by: meId,
+    });
+    if (error) return { ok: false, error: error.message };
+
+    if (moduleIds.length > 0) {
+      const rows = moduleIds.map((mid, i) => {
+        const m = MODULE_BY_ID.get(mid)!;
+        const unit = Math.round(m.from * 100); // catalog `from` dollars → cents (internal starting point)
+        return { id: id("qit"), quote_id: quoteId, label: m.name, description: "", module_id: mid, quantity: 1, unit_amount: unit, amount: unit, sort: i };
+      });
+      await supabase.from("quote_items").insert(rows);
+      await recompute(supabase, quoteId);
+    }
+
     revalidatePath(`/admin/conversations/${conversationId}`);
     return { ok: true, id: quoteId };
   } catch (e) {

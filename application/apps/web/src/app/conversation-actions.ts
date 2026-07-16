@@ -109,6 +109,53 @@ export async function sendMessage(formData: FormData): Promise<ChatResult> {
   }
 }
 
+/**
+ * Attach a file to a conversation. Uploads to the private `attachments` bucket
+ * under the conversation's client folder, then records a message + attachment
+ * row — all through the SESSION client, so storage RLS (own-org folder) and
+ * table RLS (participant) both apply. A prospect can only ever write into their
+ * own org's folder; an internal user can write to any (storage policies from
+ * migration 0014).
+ */
+const MAX_UPLOAD = 10 * 1024 * 1024; // 10 MB
+
+export async function attachFile(formData: FormData): Promise<ChatResult> {
+  try {
+    const { supabase, userRow } = await currentUserRow();
+    const conversationId = String(formData.get("conversationId") ?? "").trim();
+    const file = formData.get("file");
+    if (!conversationId || !(file instanceof File) || file.size === 0) return { ok: false, error: "No file" };
+    if (file.size > MAX_UPLOAD) return { ok: false, error: "File is too large (max 10 MB)" };
+
+    // The folder is the CONVERSATION's client — both sides write under it.
+    const { data: conv } = await supabase.from("conversations").select("client_id").eq("id", conversationId).maybeSingle();
+    if (!conv) return { ok: false, error: "Conversation not found" };
+
+    const safe = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80);
+    const path = `${conv.client_id}/${conversationId}/${id("f")}-${safe}`;
+    const { error: upErr } = await supabase.storage.from("attachments").upload(path, file, { contentType: file.type || "application/octet-stream", upsert: false });
+    if (upErr) return { ok: false, error: upErr.message };
+
+    const messageId = id("msg");
+    const { error: mErr } = await supabase.from("chat_messages").insert({
+      id: messageId, conversation_id: conversationId, author_id: userRow.id, body: `📎 ${file.name}`, kind: "link",
+    });
+    if (mErr) return { ok: false, error: mErr.message };
+
+    const { error: aErr } = await supabase.from("message_attachments").insert({
+      id: id("att"), message_id: messageId, storage_path: path, name: file.name,
+      mime: file.type || "application/octet-stream", size: file.size,
+    });
+    if (aErr) return { ok: false, error: aErr.message };
+
+    revalidatePath("/portal/chat");
+    revalidatePath(`/admin/conversations/${conversationId}`);
+    return { ok: true, id: messageId };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Upload failed" };
+  }
+}
+
 /** Mark every message in a conversation as read by the current user. */
 export async function markConversationRead(conversationId: string): Promise<ChatResult> {
   try {

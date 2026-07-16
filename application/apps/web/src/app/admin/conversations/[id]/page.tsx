@@ -55,7 +55,7 @@ export default async function ConsultingWorkspace({ params }: PageProps) {
       ? supabase.from("assessments").select("health_score, scores").eq("id", conversation.assessment_id).maybeSingle()
       : Promise.resolve({ data: null }),
     conversation.configuration_id
-      ? supabase.from("configurations").select("modules, owned_assets, estimate_low, estimate_high").eq("id", conversation.configuration_id).maybeSingle()
+      ? supabase.from("configurations").select("modules, owned_assets, goal, timeline, budget_band, notes").eq("id", conversation.configuration_id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase
       .from("chat_messages")
@@ -89,12 +89,30 @@ export default async function ConsultingWorkspace({ params }: PageProps) {
     authorName: (n.users as unknown as { name: string | null } | null)?.name ?? "Team",
   }));
 
+  // Internal pricing estimate — internal-only table; admins only. RLS returns
+  // nothing to a client, so this is never a leak path.
+  const { data: pricing } = conversation.configuration_id
+    ? await supabase.from("pricing_estimates").select("effort_points, estimate_low, estimate_high").eq("configuration_id", conversation.configuration_id).maybeSingle()
+    : { data: null };
+
   // Read receipts for my own messages.
   let readByOther: Record<string, boolean> = {};
   const myIds = messages.filter((m) => m.author_id === me?.id).map((m) => m.id);
   if (me && myIds.length > 0) {
     const { data: reads } = await supabase.from("message_reads").select("message_id").in("message_id", myIds).neq("user_id", me.id);
     readByOther = Object.fromEntries((reads ?? []).map((r) => [r.message_id, true]));
+  }
+
+  // Attachments (per message + a flat list for the context panel).
+  const attachments: Record<string, { id: string; name: string }[]> = {};
+  const allFiles: { id: string; name: string }[] = [];
+  const allMsgIds = messages.map((m) => m.id);
+  if (allMsgIds.length > 0) {
+    const { data: atts } = await supabase.from("message_attachments").select("id, name, message_id").in("message_id", allMsgIds);
+    for (const a of atts ?? []) {
+      (attachments[a.message_id] ??= []).push({ id: a.id, name: a.name });
+      allFiles.push({ id: a.id, name: a.name });
+    }
   }
 
   const client = conversation.clients as unknown as { company: string; lifecycle: string; plan: string | null } | null;
@@ -129,6 +147,7 @@ export default async function ConsultingWorkspace({ params }: PageProps) {
                     initialMessages={messages}
                     people={people}
                     readByOther={readByOther}
+                    attachments={attachments}
                   />
                 ) : (
                   <Alert tone="danger" title="No user record">Your admin account has no users row; cannot post.</Alert>
@@ -158,6 +177,29 @@ export default async function ConsultingWorkspace({ params }: PageProps) {
             </Card>
 
             <Card>
+              <div className={styles.ctxSection}>Discovery context</div>
+              <div className={styles.ctxRow}><span>Goal</span><span>{config?.goal ?? "—"}</span></div>
+              <div className={styles.ctxRow}><span>Timeline</span><span>{config?.timeline ?? "—"}</span></div>
+              <div className={styles.ctxRow}><span>Budget comfort</span><span>{config?.budget_band ?? "—"}</span></div>
+              {config?.notes ? (
+                <div style={{ marginTop: "var(--space-2)" }}>
+                  <div className={styles.ctxSection}>Notes</div>
+                  <p style={{ fontSize: "var(--fs-sm)" }}>{config.notes}</p>
+                </div>
+              ) : null}
+              {allFiles.length > 0 ? (
+                <div style={{ marginTop: "var(--space-2)" }}>
+                  <div className={styles.ctxSection}>Uploaded files</div>
+                  {allFiles.map((f) => (
+                    <div key={f.id} className={styles.ctxRow}>
+                      <a href={`/api/attachments/${f.id}`} style={{ fontSize: "var(--fs-sm)" }}>{f.name}</a>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </Card>
+
+            <Card>
               <div className={styles.ctxSection}>Assessment</div>
               <Stat
                 value={assessment?.health_score != null ? Number(assessment.health_score).toFixed(0) : "—"}
@@ -182,15 +224,21 @@ export default async function ConsultingWorkspace({ params }: PageProps) {
                 <span>{planName ?? "Not selected"}</span>
               </div>
               <div className={styles.ctxRow}>
-                <span>Indicative range</span>
+                <span>Internal estimate</span>
                 <span>
-                  {config && (config.estimate_low || config.estimate_high)
-                    ? `$${Number(config.estimate_low).toLocaleString()} – $${Number(config.estimate_high).toLocaleString()}`
+                  {pricing && (pricing.estimate_low || pricing.estimate_high)
+                    ? `$${Number(pricing.estimate_low).toLocaleString()} – $${Number(pricing.estimate_high).toLocaleString()}`
                     : "—"}
                 </span>
               </div>
+              {pricing?.effort_points ? (
+                <div className={styles.ctxRow}>
+                  <span>Effort</span>
+                  <span>~{pricing.effort_points} wks</span>
+                </div>
+              ) : null}
               <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
-                Indicative only. The binding quote is built in the quote workspace (5C).
+                Internal only — never shown to the prospect. The binding quote is built below.
               </p>
             </Card>
 

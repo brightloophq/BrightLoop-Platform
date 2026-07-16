@@ -41,6 +41,7 @@ export default async function PortalChatPage() {
   let messages: ChatMessage[] = [];
   let people: ThreadPerson[] = [];
   let readByOther: Record<string, boolean> = {};
+  const attachments: Record<string, { id: string; name: string }[]> = {};
   let quotes: ClientQuote[] = [];
 
   if (conversation && me) {
@@ -71,6 +72,12 @@ export default async function PortalChatPage() {
         .in("message_id", myIds)
         .neq("user_id", me.id);
       readByOther = Object.fromEntries((reads ?? []).map((r) => [r.message_id, true]));
+    }
+
+    const allIds = messages.map((m) => m.id);
+    if (allIds.length > 0) {
+      const { data: atts } = await supabase.from("message_attachments").select("id, name, message_id").in("message_id", allIds);
+      for (const a of atts ?? []) (attachments[a.message_id] ??= []).push({ id: a.id, name: a.name });
     }
 
     // RLS returns only quotes past the draft-quote gate (sent or later).
@@ -118,6 +125,7 @@ export default async function PortalChatPage() {
                 initialMessages={messages}
                 people={people}
                 readByOther={readByOther}
+                attachments={attachments}
               />
             </div>
           </Card>

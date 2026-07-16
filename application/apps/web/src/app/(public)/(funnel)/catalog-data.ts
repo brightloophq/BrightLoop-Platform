@@ -1,6 +1,5 @@
 import {
   PLACEHOLDER_ASSESSMENT,
-  PLACEHOLDER_CONTENT,
   PLACEHOLDER_GOALS,
   PLACEHOLDER_MODULES,
   PLACEHOLDER_ASSETS,
@@ -10,13 +9,15 @@ import { DISCIPLINES } from "@brightloop/schema";
 import type { FunnelCatalog } from "./FunnelWizard";
 
 /**
- * Assemble the funnel catalog on the SERVER and hand plain data to the client
- * wizard. Importing @brightloop/data here (server side) keeps its Supabase
- * dependencies out of the client bundle — the wizard only imports pure domain
- * functions.
+ * Assemble the funnel catalog on the SERVER and hand PRICE-FREE data to the
+ * client wizard.
  *
- * The catalog is placeholder (open decisions 1–3). The prospect's estimate is
- * indicative; their binding quote is built by a strategist in the discovery
+ * PRICING NEVER CROSSES TO THE CLIENT. The full catalog carries `from` prices
+ * and cost ranges (PLACEHOLDER_MODULES / PLACEHOLDER_CONTENT); those stay on the
+ * server for the internal pricing engine. Here we project modules down to their
+ * price-free shape (id/name/stage/assets/upgrade) and drop `content` entirely —
+ * the wizard displays neither, so a prospect's browser receives no price data
+ * and no cost logic. The binding price is built by a strategist in the discovery
  * chat (Sprint 5C).
  */
 export function funnelCatalog(): FunnelCatalog {
@@ -30,8 +31,13 @@ export function funnelCatalog(): FunnelCatalog {
       blurb: p.blurb,
       modules: [...p.modules],
     })),
-    modules: [...PLACEHOLDER_MODULES],
-    content: { ...PLACEHOLDER_CONTENT },
+    modules: PLACEHOLDER_MODULES.map((m) => ({
+      id: m.id,
+      name: m.name,
+      stage: m.stage,
+      assets: [...m.assets],
+      upgrade: m.upgrade,
+    })),
     assets: [...PLACEHOLDER_ASSETS],
     disciplines: DISCIPLINES,
   };

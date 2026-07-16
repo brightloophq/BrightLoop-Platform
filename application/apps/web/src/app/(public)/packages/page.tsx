@@ -1,14 +1,12 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { ESTIMATE_DISCLAIMER, ESTIMATE_LABEL, formatRange } from "@brightloop/domain";
 import {
-  Alert,
   Button,
   CTASection,
   Card,
   Container,
   Eyebrow,
-  PricingCard,
+  Icon,
   Section,
   Tag,
 } from "@brightloop/ui";
@@ -19,26 +17,20 @@ import styles from "./packages.module.css";
 export const metadata: Metadata = {
   title: "Packages",
   description:
-    "Productised BrightLoop packages — Foundation, Launch, Transform and Growth Partner — with estimated ranges and what each includes.",
+    "BrightLoop packages — Starter, Growth and Enterprise. See the deliverables, outcomes, industries served and timelines for each. Pricing is prepared with a strategist.",
 };
 
 /**
- * Packages & pricing (handoff §05).
+ * Packages (handoff §05 / Sprint 5R spec §1).
  *
- * PRICING INTEGRITY — the approved answer to "how do estimates avoid being read
- * as guaranteed quotes?":
- *   * every figure is a low–high RANGE from the catalog, never a single number;
- *   * PricingCard requires the non-binding qualifier as a prop, so no card can
- *     render a price without it;
- *   * a prominent notice states plainly that the binding figure is the proposal.
- *
- * Real names/tiers/prices are open decisions 1 & 2. Replacing them is a data
- * change in the catalog — this page does not change.
+ * NO PRICING. BrightLoop does not publish a rate card. Each package shows what
+ * you get (deliverables), what changes (outcomes), who it suits (industries) and
+ * how long it takes (timeline). Tailored pricing is prepared by a strategist in
+ * the discovery conversation after the assessment + configurator — never here.
  */
 export default async function PackagesPage() {
   const catalog = getCatalogRepository();
   const plans = await catalog.listPlans();
-
   const details = await Promise.all(plans.map((plan) => catalog.getPlanDetail(plan.id)));
   const resolved = details.filter((d): d is NonNullable<typeof d> => d !== null);
 
@@ -50,68 +42,59 @@ export default async function PackagesPage() {
             <Eyebrow>Packages</Eyebrow>
             <h1 className={home.title}>Start with a package, or build your own</h1>
             <p className={home.lede}>
-              Each package bundles the modules that usually go together. The configurator removes
-              anything you already have, so you only pay for what you actually need.
+              Each package bundles the work that usually goes together. The configurator removes
+              anything you already have, so your plan reflects only what you actually need — and your
+              strategist prepares tailored pricing with you. No public rate card, no obligation.
             </p>
-          </div>
-
-          {/* The estimate/quote distinction, stated once and prominently. */}
-          <div className={styles.notice}>
-            <Alert tone="info" title="These are estimates, not quotes" icon="lightbulb">
-              Every figure below is an estimated range based on typical scope. Your binding price
-              appears on your proposal after a strategy call. Nothing here is a final quotation, and
-              nothing commits you to anything.
-            </Alert>
           </div>
 
           <div className={styles.grid}>
-            {resolved.map(({ plan, modules, range, weeksMax }) => (
-              <PricingCard
-                key={plan.id}
-                name={plan.name}
-                blurb={plan.blurb}
-                range={formatRange(range)}
-                estimateLabel={ESTIMATE_LABEL}
-                estimateQualifier={ESTIMATE_DISCLAIMER}
-                tag={plan.tag || undefined}
-                recommended={plan.tag === "Popular"}
-                weeks={`Typically ${Math.max(1, Math.round(weeksMax * 0.55))}–${weeksMax} weeks`}
-                includes={modules.map((m) => m.module.name)}
-                action={
-                  <Button
-                    variant={plan.tag === "Popular" ? "primary" : "secondary"}
-                    size="md"
-                    block
-                    asChild
-                  >
-                    <Link href={`/configurator?plan=${plan.id}`}>Configure {plan.name}</Link>
-                  </Button>
-                }
-              />
-            ))}
-          </div>
-        </Container>
-      </Section>
-
-      {/* ---- What's in each package ---- */}
-      <Section inset>
-        <Container width="wide">
-          <div className={home.head}>
-            <Eyebrow>Compare</Eyebrow>
-            <h2 className={home.title}>What each package includes</h2>
-            <p className={home.lede}>
-              Modules are grouped by discipline — Brand, Build, Automate, Grow.
-            </p>
-          </div>
-
-          <div className={styles.compare}>
             {resolved.map(({ plan, modules }) => (
               <Card key={plan.id} className={styles.compareCard}>
-                <h3 className={styles.compareName}>{plan.name}</h3>
-                <div className={styles.moduleTags}>
-                  {modules.map((m) => (
-                    <Tag key={m.module.id}>{m.module.name}</Tag>
-                  ))}
+                <div className={styles.rowTop} style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", justifyContent: "space-between" }}>
+                  <h3 className={styles.compareName}>{plan.name}</h3>
+                  {plan.tag ? <Tag accent={plan.tag === "Popular"}>{plan.tag}</Tag> : null}
+                </div>
+                <p className={home.lede} style={{ fontSize: "var(--fs-sm)", marginTop: "var(--space-2)" }}>{plan.blurb}</p>
+
+                {plan.timelineWeeks ? (
+                  <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
+                    <Icon name="clock" size={14} /> Typically {plan.timelineWeeks[0]}–{plan.timelineWeeks[1]} weeks
+                  </p>
+                ) : null}
+
+                {plan.outcomes && plan.outcomes.length > 0 ? (
+                  <div style={{ marginTop: "var(--space-3)" }}>
+                    <span className={styles.compareName} style={{ fontSize: "var(--fs-xs)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-muted)" }}>Outcomes</span>
+                    <ul style={{ listStyle: "none", padding: 0, margin: "var(--space-2) 0 0" }}>
+                      {plan.outcomes.map((o) => (
+                        <li key={o} style={{ display: "flex", gap: "var(--space-2)", fontSize: "var(--fs-sm)", padding: "3px 0" }}>
+                          <Icon name="check" size={15} /> <span>{o}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
+
+                <div style={{ marginTop: "var(--space-3)" }}>
+                  <span className={styles.compareName} style={{ fontSize: "var(--fs-xs)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-muted)" }}>What&apos;s included</span>
+                  <div className={styles.moduleTags} style={{ marginTop: "var(--space-2)" }}>
+                    {modules.map((m) => (
+                      <Tag key={m.module.id}>{m.module.name}</Tag>
+                    ))}
+                  </div>
+                </div>
+
+                {plan.industries && plan.industries.length > 0 ? (
+                  <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: "var(--space-3)" }}>
+                    Common fit: {plan.industries.join(" · ")}
+                  </p>
+                ) : null}
+
+                <div style={{ marginTop: "var(--space-4)" }}>
+                  <Button variant={plan.tag === "Popular" ? "primary" : "secondary"} size="md" block asChild>
+                    <Link href={`/configurator?plan=${plan.id}`}>Configure {plan.name}</Link>
+                  </Button>
                 </div>
               </Card>
             ))}
@@ -124,7 +107,7 @@ export default async function PackagesPage() {
           <CTASection
             eyebrow="Nothing quite right?"
             title="Build your own package"
-            body="Pick the modules you need, tell us what you already have, and see a live estimated range. Still not a quote — but a lot closer to your reality."
+            body="Pick the work you need, tell us what you already have, and take it into a conversation with a strategist who prepares your tailored pricing — no public rate card."
             actions={
               <>
                 <Button variant="primary" size="lg" asChild>

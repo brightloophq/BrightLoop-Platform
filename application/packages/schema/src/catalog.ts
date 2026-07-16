@@ -84,6 +84,12 @@ export const planSchema = z.object({
   tag: z.string(),
   blurb: z.string(),
   modules: z.array(z.string()),
+  /** Outcomes a prospect can expect — shown on the packages page (no pricing). */
+  outcomes: z.array(z.string()).optional(),
+  /** Industries this package commonly serves. */
+  industries: z.array(z.string()).optional(),
+  /** Indicative delivery window in weeks [min, max] — a timeline, not a price. */
+  timelineWeeks: z.tuple([z.number(), z.number()]).optional(),
 });
 
 export const goalSchema = z.object({
