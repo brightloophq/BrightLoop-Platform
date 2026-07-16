@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    // The generated file is not ours to satisfy strict unused checks.
+    "noUnusedLocals": false,
+    "noUnusedParameters": false
+  },
+  "include": ["index.ts", "generated"],
+  "exclude": ["node_modules"]
+}

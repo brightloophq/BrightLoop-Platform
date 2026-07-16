@@ -2,16 +2,25 @@
   "name": "@brightloop/db",
   "version": "0.0.0",
   "private": true,
-  "description": "Supabase schema: migrations, RLS policies, transition guard trigger.",
+  "type": "module",
+  "description": "Supabase schema: migrations, RLS policies, transition guard trigger, generated types.",
+  "main": "./index.ts",
+  "types": "./index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
   "scripts": {
-    "build": "echo \"@brightloop/db: SQL migrations — nothing to compile\"",
-    "typecheck": "echo \"@brightloop/db: no TypeScript sources\"",
-    "lint": "echo \"@brightloop/db: no TypeScript sources\"",
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "echo \"@brightloop/db: generated types are not linted\"",
     "test": "echo \"@brightloop/db: migrations are verified on apply (see README)\"",
     "db:reset": "supabase db reset --workdir ../..",
     "db:push": "supabase db push --workdir ../..",
     "db:diff": "supabase db diff --workdir ../..",
     "gen:types": "supabase gen types typescript --linked --workdir ../.. > ./generated/database.types.ts",
     "gen:types:local": "supabase gen types typescript --local --workdir ../.. > ./generated/database.types.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2"
   }
 }
