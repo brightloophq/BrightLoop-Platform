@@ -6,6 +6,7 @@ import { recommendPlan, resolveConfiguration, scoreDimensions, healthScore } fro
 import { Alert, Button, Card, Input } from "@brightloop/ui";
 import { loadFunnel, clearFunnel } from "../(funnel)/funnel-state";
 import { createProspectAccount, type SignupState } from "./actions";
+import { TurnstileWidget } from "./TurnstileWidget";
 import styles from "../(funnel)/funnel.module.css";
 import type { AssessmentQuestion, ConfigModule } from "@brightloop/domain";
 
@@ -87,6 +88,8 @@ export function StartForm({ questions, modules, plans }: Props) {
           autoComplete="new-password"
           hint="At least 8 characters, with a letter and a number."
         />
+
+        <TurnstileWidget />
 
         <Button type="submit" variant="primary" size="lg" loading={pending}>
           {pending ? "Setting up…" : "Create account & start the conversation"}

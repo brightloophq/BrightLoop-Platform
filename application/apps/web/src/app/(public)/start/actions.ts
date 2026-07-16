@@ -5,6 +5,7 @@ import { PLACEHOLDER_MODULES, PLACEHOLDER_CONTENT } from "@brightloop/data";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
 import { emitEvent } from "@/lib/analytics";
+import { verifyTurnstile } from "@/lib/turnstile";
 
 /**
  * Prospect self-signup at the end of the funnel (approved Decision A).
@@ -77,6 +78,10 @@ export async function createProspectAccount(
   if (password.length < 8 || !/[a-z]/i.test(password) || !/[0-9]/.test(password)) {
     return { error: "Password must be at least 8 characters with a letter and a number" };
   }
+
+  // Anti-bot gate (Decision M). No-op unless TURNSTILE_SECRET_KEY is configured.
+  const turnstile = await verifyTurnstile(String(formData.get("turnstileToken") ?? "") || null);
+  if (!turnstile.ok) return { error: turnstile.reason ?? "Anti-bot check failed" };
 
   let funnel: FunnelPayload = {};
   try {
