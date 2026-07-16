@@ -2,8 +2,12 @@ import type { Metadata } from "next";
 import { toneFor } from "@brightloop/schema";
 import { Alert, Badge, Card, EmptyState } from "@brightloop/ui";
 import { createClient } from "@/lib/supabase/server";
+import { isPaymentsConfigured } from "@/lib/payments";
+import { PayButton } from "./PayButton";
 import styles from "../../admin/cms.module.css";
 import shell from "../../admin/admin.module.css";
+
+const PAYABLE = new Set(["sent", "pending", "overdue", "failed"]);
 
 export const metadata: Metadata = { title: "Invoices" };
 export const dynamic = "force-dynamic";
@@ -51,12 +55,14 @@ export default async function PortalInvoicesPage() {
           </div>
         ) : null}
 
-        <div className={styles.notice}>
-          <Alert tone="info" title="Online payment is coming">
-            You&apos;ll be able to pay securely here once card payments go live. For now, your team
-            will send payment details directly.
-          </Alert>
-        </div>
+        {!isPaymentsConfigured() ? (
+          <div className={styles.notice}>
+            <Alert tone="info" title="Card payments run in test mode">
+              You can settle invoices here now; live card processing switches on at go-live. No real
+              charge is made in test mode.
+            </Alert>
+          </div>
+        ) : null}
 
         {error ? (
           <Card>
@@ -78,6 +84,7 @@ export default async function PortalInvoicesPage() {
                     </Badge>
                   </div>
                 </div>
+                {PAYABLE.has(i.status) ? <PayButton invoiceId={i.id} /> : null}
               </Card>
             ))}
           </div>

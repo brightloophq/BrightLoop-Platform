@@ -1620,7 +1620,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      bl_activate_client: { Args: { p_client_id: string }; Returns: boolean }
+      bl_can_activate: { Args: { p_client_id: string }; Returns: boolean }
+      bl_client_contract_sign: {
+        Args: { p_contract_id: string; p_signature: string }
+        Returns: Database["public"]["Enums"]["contract_status"]
+      }
       bl_client_id: { Args: never; Returns: string }
+      bl_client_proposal_action: {
+        Args: { p_action: string; p_note?: string; p_proposal_id: string }
+        Returns: Database["public"]["Enums"]["proposal_status"]
+      }
       bl_client_quote_action: {
         Args: { p_action: string; p_quote_id: string }
         Returns: Database["public"]["Enums"]["quote_status"]

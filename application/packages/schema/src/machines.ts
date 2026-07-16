@@ -48,7 +48,9 @@ export const MACHINES = {
     initial: "draft",
     transitions: {
       draft: ["sent"],
-      sent: ["viewed", "expired"],
+      // A client may act straight from `sent` (they don't have to trip `viewed`
+      // first) — mirrors the quote machine and avoids a view/accept race.
+      sent: ["viewed", "accepted", "change_requested", "expired"],
       viewed: ["accepted", "change_requested", "expired"],
       change_requested: ["revised"],
       revised: ["sent"],

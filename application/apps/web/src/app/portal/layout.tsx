@@ -50,6 +50,8 @@ export default async function PortalLayout({ children }: { children: ReactNode }
       ready: true,
       badge: awaiting || undefined,
     },
+    { label: "Proposals", href: "/portal/proposals", icon: "search", ready: true },
+    { label: "Contracts", href: "/portal/contracts", icon: "check-circle", ready: true },
     { label: "Invoices", href: "/portal/invoices", icon: "trending-up", ready: true },
     {
       label: "Notifications",

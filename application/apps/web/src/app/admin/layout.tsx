@@ -33,8 +33,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       label: "Sales",
       items: [
         { label: "Leads", href: "/admin/leads", icon: "route", ready: true },
-        { label: "Proposals", href: "/admin/proposals", icon: "search", ready: false },
-        { label: "Contracts", href: "/admin/contracts", icon: "check-circle", ready: false },
+        { label: "Proposals", href: "/admin/proposals", icon: "search", ready: true },
+        { label: "Contracts", href: "/admin/contracts", icon: "check-circle", ready: true },
       ],
     },
     {
@@ -52,7 +52,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (may(actor, "finance.read")) {
     groups.push({
       label: "Finance",
-      items: [{ label: "Invoices", href: "/admin/invoices", icon: "trending-up", ready: false }],
+      items: [{ label: "Invoices", href: "/admin/invoices", icon: "trending-up", ready: true }],
     });
   }
 
