@@ -43,8 +43,12 @@
   # etc. — remain protected and were correctly absent from the bundle).
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SUPABASE_URL,NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,NEXT_PUBLIC_TURNSTILE_SITE_KEY,NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY"
 
-# NOTE — no [[plugins]] block on purpose. The Next.js Runtime is pinned to v5
-# (OpenNext) via the @netlify/plugin-nextjs devDependency in
-# application/package.json, which Netlify auto-detects and runs. Declaring the
-# plugin here would instead force the build image's legacy v4 runtime, whose
-# Edge Functions bundler can't resolve @opentelemetry/api on Next.js 15.
+# The Next.js Runtime MUST be declared here to be invoked: this is a pnpm/turbo
+# monorepo built from `application/`, and Netlify's framework auto-detection does
+# not find `next` at the base (it lives in apps/web), so without this block the
+# runtime never runs and the site 404s (a bare .next is published). We also keep
+# @netlify/plugin-nextjs@^5 as a devDependency so the newer (OpenNext) runtime is
+# available; and @opentelemetry/api is a real dependency so the Edge bundler can
+# resolve it on Next.js 15 regardless of which runtime version loads.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"

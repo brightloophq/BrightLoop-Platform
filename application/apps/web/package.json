@@ -16,6 +16,7 @@
     "@brightloop/domain": "workspace:*",
     "@brightloop/schema": "workspace:*",
     "@brightloop/ui": "workspace:*",
+    "@opentelemetry/api": "^1.9.1",
     "@supabase/ssr": "^0.5.2",
     "@supabase/supabase-js": "^2.47.10",
     "next": "^15.1.3",
