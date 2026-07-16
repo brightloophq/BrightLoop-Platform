@@ -17,6 +17,13 @@ jobs:
   verify:
     name: typecheck · lint · test · build
     runs-on: ubuntu-latest
+    # CI builds against the PLACEHOLDER data source — no real database and no
+    # secrets. The dummy public vars only satisfy the "is Supabase configured"
+    # gate during static generation; placeholder mode means nothing connects.
+    env:
+      BRIGHTLOOP_DATA_SOURCE: placeholder
+      NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder_ci
     defaults:
       run:
         working-directory: application
