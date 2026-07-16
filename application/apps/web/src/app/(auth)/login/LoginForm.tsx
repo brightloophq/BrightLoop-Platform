@@ -1,11 +1,18 @@
 "use client";
 
 import { useActionState, useState } from "react";
+import Link from "next/link";
 import { Alert, Button, Input } from "@brightloop/ui";
 import { signInWithMagicLink, signInWithPassword, type AuthState } from "../actions";
 import styles from "./login.module.css";
 
 const EMPTY: AuthState = {};
+
+export interface LoginFormProps {
+  /** A one-off message from a redirect (e.g. after a password reset or a bad link). */
+  urlError?: string;
+  urlNotice?: string;
+}
 
 /**
  * Login form (handoff §05 auth screens).
@@ -16,13 +23,16 @@ const EMPTY: AuthState = {};
  * Per handoff §09.1 submit is disabled only while submitting, never merely
  * because the form looks invalid — let submit surface the error.
  */
-export function LoginForm() {
+export function LoginForm({ urlError, urlNotice }: LoginFormProps = {}) {
   const [mode, setMode] = useState<"password" | "magic">("password");
   const [pwState, pwAction, pwPending] = useActionState(signInWithPassword, EMPTY);
   const [mlState, mlAction, mlPending] = useActionState(signInWithMagicLink, EMPTY);
 
   const state = mode === "password" ? pwState : mlState;
   const pending = mode === "password" ? pwPending : mlPending;
+  // Action-state messages take precedence over the one-off redirect message.
+  const shownError = state.error ?? urlError;
+  const shownNotice = state.notice ?? urlNotice;
 
   return (
     <div className={styles.form}>
@@ -51,12 +61,12 @@ export function LoginForm() {
         </button>
       </div>
 
-      {state.error ? (
+      {shownError ? (
         <Alert tone="danger" title="Couldn't sign you in">
-          {state.error}
+          {shownError}
         </Alert>
       ) : null}
-      {state.notice ? <Alert tone="success">{state.notice}</Alert> : null}
+      {shownNotice ? <Alert tone="success">{shownNotice}</Alert> : null}
 
       {mode === "password" ? (
         <form action={pwAction} className={styles.fields} noValidate>
@@ -71,6 +81,9 @@ export function LoginForm() {
           <Button type="submit" variant="primary" size="lg" block loading={pending}>
             {pending ? "Signing in…" : "Sign in"}
           </Button>
+          <p className={styles.foot} style={{ marginTop: "var(--space-2)", textAlign: "center" }}>
+            <Link href="/forgot-password">Forgot password?</Link>
+          </p>
         </form>
       ) : (
         <form action={mlAction} className={styles.fields} noValidate>

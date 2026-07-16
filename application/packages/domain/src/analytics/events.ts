@@ -46,6 +46,8 @@ export const ANALYTICS_EVENTS = [
   // ops
   "automation.run",
   "automation.fail",
+  // auth
+  "auth.password_recovered",
 ] as const;
 
 export type AnalyticsEventName = (typeof ANALYTICS_EVENTS)[number];

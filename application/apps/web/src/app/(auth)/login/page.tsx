@@ -11,15 +11,35 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+/** Friendly copy for the one-off codes the callback / recovery routes redirect with. */
+const ERROR_COPY: Record<string, string> = {
+  missing_code: "That link was incomplete. Please try signing in again.",
+  invalid_link: "That sign-in link was invalid or has expired. Request a new one.",
+  norole: "You're signed in, but this account has no role yet. Please contact BrightLoop.",
+  recovery_invalid: "That password-reset link was invalid. Request a new one from Forgot password.",
+  recovery_expired: "Your password-reset link expired or was already used. Request a new one.",
+};
+const NOTICE_COPY: Record<string, string> = {
+  password_updated: "Your password has been updated. Sign in with your new password.",
+};
+
 /**
  * Sign-in (handoff §05 — split brand-panel + form shell).
  *
  * Already-signed-in users are bounced to their own surface rather than shown a
  * login form they don't need.
  */
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string; notice?: string }>;
+}) {
   const actor = await getActor();
   if (actor) redirect(isClientRole(actor.role) ? "/portal" : "/admin");
+
+  const sp = await searchParams;
+  const urlError = sp.error ? ERROR_COPY[sp.error] : undefined;
+  const urlNotice = sp.notice ? NOTICE_COPY[sp.notice] : undefined;
 
   return (
     <div className={styles.shell}>
@@ -40,7 +60,7 @@ export default async function LoginPage() {
           <h2 className={styles.title}>Sign in</h2>
           <p className={styles.sub}>Welcome back. Use your password or have a link emailed to you.</p>
 
-          <LoginForm />
+          <LoginForm urlError={urlError} urlNotice={urlNotice} />
 
           <p className={styles.foot}>
             BrightLoop accounts are created by invitation — clients are invited when their project

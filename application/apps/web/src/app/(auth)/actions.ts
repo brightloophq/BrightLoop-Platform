@@ -5,6 +5,8 @@ import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { isClientRole, isRole } from "@brightloop/schema";
 import { createClient } from "@/lib/supabase/server";
+import { resolveSiteUrl } from "@/lib/site-url";
+import { emitEvent } from "@/lib/analytics";
 
 /**
  * Auth server actions (approved Decision C: email/password + magic link at V1;
@@ -71,25 +73,22 @@ export async function signInWithPassword(
 }
 
 /**
- * The origin this request actually arrived on.
+ * The base URL for auth redirect links (magic link + password recovery).
  *
- * Derived from headers rather than an env var: NEXT_PUBLIC_SITE_URL was unset,
- * which made emailRedirectTo a RELATIVE "/auth/callback". Supabase rejects that
- * and silently falls back to the project's site_url — so the magic link landed
- * on "/" with an unhandled ?code=, and clicking it appeared to do nothing.
- *
- * Reading the origin means the link always returns to whichever host you signed
- * in from (localhost in dev, the real host in production) with no env to forget.
- * Supabase still validates the result against its redirect allow-list, so this
- * cannot be used to redirect somewhere unapproved.
+ * Reads the request's origin from headers and hands it to resolveSiteUrl, which
+ * honours it ONLY if allow-listed (localhost in dev, the production URL in prod)
+ * and otherwise falls back to the validated NEXT_PUBLIC_SITE_URL, then a safe
+ * production default. A spoofed Origin/Host header can never point an email at an
+ * unapproved host, and a production email can never redirect to localhost.
  */
-async function requestOrigin(): Promise<string> {
+async function redirectBase(): Promise<string> {
   const h = await headers();
-  const origin = h.get("origin");
-  if (origin) return origin;
-  const host = h.get("host") ?? "localhost:3000";
-  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  return `${proto}://${host}`;
+  const origin =
+    h.get("origin") ??
+    (h.get("host")
+      ? `${h.get("x-forwarded-proto") ?? (h.get("host")!.startsWith("localhost") ? "http" : "https")}://${h.get("host")}`
+      : null);
+  return resolveSiteUrl(origin);
 }
 
 export async function signInWithMagicLink(
@@ -104,7 +103,7 @@ export async function signInWithMagicLink(
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${await requestOrigin()}/auth/callback` },
+    options: { emailRedirectTo: `${await redirectBase()}/auth/callback` },
   });
 
   if (error) {
@@ -127,6 +126,97 @@ export async function signInWithMagicLink(
 
   // Do NOT reveal whether the address has an account — same enumeration concern.
   return { notice: `If an account exists for ${email}, a sign-in link is on its way.` };
+}
+
+/**
+ * Step 1–2 of recovery: email a password-reset link.
+ *
+ * The link returns to `${redirectBase()}/auth/reset` (production in prod, never
+ * localhost). We never reveal whether the address has an account — same
+ * enumeration concern as the magic link.
+ */
+export async function requestPasswordReset(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  if (!email) return { error: "Enter your email" };
+
+  const supabase = await createClient();
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${await redirectBase()}/auth/reset`,
+  });
+
+  if (error) {
+    if (error.status === 429 || /rate limit/i.test(error.message)) {
+      return {
+        error:
+          "Email rate limit reached — Supabase's built-in mailer only sends 2 emails per hour. Please wait about an hour and try again.",
+      };
+    }
+    // Don't leak provider errors that could confirm an account exists.
+    return { notice: `If an account exists for ${email}, a reset link is on its way.` };
+  }
+
+  return { notice: `If an account exists for ${email}, a reset link is on its way.` };
+}
+
+const PASSWORD_RULE = /^(?=.*[a-z])(?=.*[0-9]).{8,}$/i;
+
+/**
+ * Step 5–7 of recovery: set a new password using the recovery session, then sign
+ * out and route to login. Requires a valid recovery session (established by the
+ * /auth/reset route's code exchange) — updateUser fails without one, which is how
+ * expired/reused links are handled.
+ *
+ * This ONLY changes the password. It never touches role/app_metadata, so the
+ * account's authorization is unchanged — the custom access token hook re-derives
+ * the role from the users table at the next sign-in.
+ */
+export async function updatePassword(
+  _prev: AuthState,
+  formData: FormData,
+): Promise<AuthState> {
+  const password = String(formData.get("password") ?? "");
+  const confirm = String(formData.get("confirm") ?? "");
+
+  if (!password || !confirm) return { error: "Enter and confirm your new password" };
+  if (password !== confirm) return { error: "The two passwords don't match" };
+  if (!PASSWORD_RULE.test(password)) {
+    return { error: "Password must be at least 8 characters with a letter and a number" };
+  }
+
+  const supabase = await createClient();
+
+  // A recovery session must exist (from the /auth/reset code exchange). If the
+  // link was expired or already used, there is none → clear, honest error.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  if (!claimsData?.claims) {
+    return {
+      error: "Your reset link has expired or was already used. Request a new one from Forgot password.",
+    };
+  }
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    return { error: `Couldn't update your password: ${error.message}` };
+  }
+
+  // Audit-log the recovery (non-PII: actor id + source), best-effort.
+  try {
+    const sub = (claimsData.claims as Record<string, unknown>)["sub"];
+    await emitEvent({ name: "auth.password_recovered", actorId: typeof sub === "string" ? sub : null, source: "server" });
+  } catch {
+    /* auth must not fail because analytics did */
+  }
+
+  // Sign out so the recovery session can't linger; the user re-authenticates with
+  // their new password.
+  await supabase.auth.signOut();
+  revalidatePath("/", "layout");
+  redirect("/login?notice=password_updated");
 }
 
 export async function signOut(): Promise<void> {
