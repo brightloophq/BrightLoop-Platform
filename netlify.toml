@@ -1,0 +1,43 @@
+# =============================================================================
+# Netlify configuration — BrightLoop Platform (pnpm workspaces + Turborepo).
+#
+# WHY THIS FILE EXISTS / WHY THE PREVIOUS DEPLOY 404'd
+#   The Next.js app lives at application/apps/web and the pnpm workspace root is
+#   application/. The Git repo ROOT has no package.json. With no netlify.toml,
+#   Netlify built from the repo root, never detected a Next.js site, so the
+#   Next.js Runtime (@netlify/plugin-nextjs) never activated — no SSR functions
+#   were generated and there was no root document to serve, yielding Netlify's
+#   generic 404. This config points the build at the workspace root, builds via
+#   Turborepo (so the workspace packages @brightloop/* are compiled BEFORE the
+#   web app — they're consumed as built dist, not source), and publishes the
+#   app's real .next server build through the official Next.js Runtime.
+#
+#   This is a full SSR deploy — App Router, SSR, middleware, API routes, auth,
+#   Supabase, /admin and /portal are all preserved. It is NOT a static export.
+#
+# REQUIRED ENVIRONMENT VARIABLES (set in Netlify UI → Site settings → Environment
+# variables; values are NOT stored here). Build-time (needed for static
+# generation + client inlining): NEXT_PUBLIC_SUPABASE_URL,
+# NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY. Runtime (server functions):
+# SUPABASE_SECRET_KEY, TURNSTILE_SECRET_KEY, NEXT_PUBLIC_TURNSTILE_SITE_KEY, and
+# (when wired) STRIPE_*, ESIGN_*, EMAIL_PROVIDER_API_KEY, N8N_WEBHOOK_SECRET.
+# Optional: NEXT_PUBLIC_PUBLIC_HOST / _PORTAL_HOST / _ADMIN_HOST for subdomain
+# surface routing (path routing works on the default *.netlify.app host).
+# =============================================================================
+
+[build]
+  # Run install + build in the pnpm workspace root, not the repo root.
+  base = "application"
+  # Turborepo builds the workspace packages first, then the web app.
+  command = "pnpm build"
+  # The app's server build output, relative to `base`.
+  publish = "apps/web/.next"
+
+[build.environment]
+  # The app targets Node >= 20; pin to match application/.nvmrc.
+  NODE_VERSION = "22"
+
+# The official Next.js Runtime — adapts the .next server build into Netlify
+# Functions/Edge (SSR + middleware + API routes). This is what was missing.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
