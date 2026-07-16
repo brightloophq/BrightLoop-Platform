@@ -10,6 +10,7 @@ import { joinConversationAsAdmin } from "../../../conversation-actions";
 import { ChatThread, type ThreadPerson } from "../../../ChatThread";
 import type { ChatMessage } from "../../../useRealtimeMessages";
 import { InternalNotes, type InternalNote } from "../InternalNotes";
+import { QuoteBuilder, type QuoteView } from "../QuoteBuilder";
 import styles from "../../../chat.module.css";
 import shell from "../../admin.module.css";
 
@@ -64,6 +65,17 @@ export default async function ConsultingWorkspace({ params }: PageProps) {
     supabase.from("conversation_participants").select("user_id, users(id, name, client_id)").eq("conversation_id", id),
     supabase.from("internal_notes").select("id, body, created_at, author_id, users(name)").eq("conversation_id", id).order("created_at", { ascending: true }),
   ]);
+
+  const { data: rawQuotes } = await supabase
+    .from("quotes")
+    .select("id, title, status, subtotal, discount, total, client_note, proposal_id, quote_items(id, label, description, quantity, unit_amount, amount, sort)")
+    .eq("conversation_id", id)
+    .order("created_at", { ascending: false });
+  const quotes: QuoteView[] = (rawQuotes ?? []).map((q) => ({
+    id: q.id, title: q.title, status: q.status, subtotal: q.subtotal, discount: q.discount,
+    total: q.total, client_note: q.client_note, proposal_id: q.proposal_id,
+    items: ((q.quote_items as QuoteView["items"] | null) ?? []).slice().sort((a, b) => (a as unknown as { sort: number }).sort - (b as unknown as { sort: number }).sort),
+  }));
 
   const messages = (msgs ?? []) as ChatMessage[];
   const people: ThreadPerson[] = (parts ?? []).map((p) => {
@@ -125,6 +137,10 @@ export default async function ConsultingWorkspace({ params }: PageProps) {
             </Card>
 
             <InternalNotes conversationId={id} notes={notes} />
+
+            <Card>
+              <QuoteBuilder conversationId={id} clientId={conversation.client_id} quotes={quotes} />
+            </Card>
           </div>
 
           {/* ---- context panel ---- */}

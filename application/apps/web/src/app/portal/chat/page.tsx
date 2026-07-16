@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ChatThread, type ThreadPerson } from "../../ChatThread";
 import type { ChatMessage } from "../../useRealtimeMessages";
 import { StartChat } from "./StartChat";
+import { ClientQuotes, type ClientQuote } from "./ClientQuotes";
 import shell from "../../admin/admin.module.css";
 import styles from "../../chat.module.css";
 
@@ -40,6 +41,7 @@ export default async function PortalChatPage() {
   let messages: ChatMessage[] = [];
   let people: ThreadPerson[] = [];
   let readByOther: Record<string, boolean> = {};
+  let quotes: ClientQuote[] = [];
 
   if (conversation && me) {
     const [{ data: msgs }, { data: parts }] = await Promise.all([
@@ -70,6 +72,17 @@ export default async function PortalChatPage() {
         .neq("user_id", me.id);
       readByOther = Object.fromEntries((reads ?? []).map((r) => [r.message_id, true]));
     }
+
+    // RLS returns only quotes past the draft-quote gate (sent or later).
+    const { data: rawQuotes } = await supabase
+      .from("quotes")
+      .select("id, title, status, total, client_note, quote_items(id, label, quantity, amount, sort)")
+      .eq("conversation_id", conversation.id)
+      .order("created_at", { ascending: false });
+    quotes = (rawQuotes ?? []).map((q) => ({
+      id: q.id, title: q.title, status: q.status, total: q.total, client_note: q.client_note,
+      items: ((q.quote_items as ClientQuote["items"] | null) ?? []).slice().sort((a, b) => (a as unknown as { sort: number }).sort - (b as unknown as { sort: number }).sort),
+    }));
   }
 
   return (
@@ -97,6 +110,7 @@ export default async function PortalChatPage() {
                 Your BrightLoop team has your message and will reply here. You&apos;ll see their answer live.
               </Alert>
             ) : null}
+            {quotes.length > 0 ? <ClientQuotes quotes={quotes} /> : null}
             <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column" }} className={styles.thread}>
               <ChatThread
                 conversationId={conversation.id}

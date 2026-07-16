@@ -57,6 +57,38 @@ export const MACHINES = {
     },
   },
 
+  // Sprint 5C — the binding quote a strategist builds inside a discovery
+  // conversation. `draft` and `internal_review` are BrightLoop-only; the client
+  // never sees the quote until it is explicitly `sent` (enforced by RLS, not
+  // just this machine). `accepted` feeds the proposal machine via `converted`.
+  quote: {
+    states: [
+      "draft",
+      "internal_review",
+      "sent",
+      "viewed",
+      "revision_requested",
+      "revised",
+      "accepted",
+      "rejected",
+      "expired",
+      "converted",
+    ],
+    initial: "draft",
+    transitions: {
+      draft: ["internal_review", "sent"],
+      internal_review: ["sent", "draft"], // kick back to draft for edits
+      sent: ["viewed", "accepted", "rejected", "expired"],
+      viewed: ["accepted", "rejected", "revision_requested", "expired"],
+      revision_requested: ["revised"],
+      revised: ["internal_review", "sent"], // re-review or re-send the revised offer
+      accepted: ["converted"], // hand off to a proposal
+      rejected: ["revised"], // re-engage with a new offer
+      expired: ["revised"],
+      converted: [],
+    },
+  },
+
   contract: {
     states: ["pending", "sent", "signed_client", "countersigned", "active", "voided"],
     initial: "pending",

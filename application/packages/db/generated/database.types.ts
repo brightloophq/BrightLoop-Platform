@@ -1269,6 +1269,177 @@ export type Database = {
           },
         ]
       }
+      quote_items: {
+        Row: {
+          amount: number
+          description: string
+          id: string
+          label: string
+          module_id: string | null
+          quantity: number
+          quote_id: string
+          sort: number
+          unit_amount: number
+        }
+        Insert: {
+          amount?: number
+          description?: string
+          id: string
+          label: string
+          module_id?: string | null
+          quantity?: number
+          quote_id: string
+          sort?: number
+          unit_amount?: number
+        }
+        Update: {
+          amount?: number
+          description?: string
+          id?: string
+          label?: string
+          module_id?: string | null
+          quantity?: number
+          quote_id?: string
+          sort?: number
+          unit_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_items_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quote_revisions: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          id: string
+          internal_note: string
+          quote_id: string
+          snapshot: Json
+          version: number
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          id: string
+          internal_note?: string
+          quote_id: string
+          snapshot?: Json
+          version?: number
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          id?: string
+          internal_note?: string
+          quote_id?: string
+          snapshot?: Json
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quote_revisions_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quote_revisions_quote_id_fkey"
+            columns: ["quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotes: {
+        Row: {
+          client_id: string
+          client_note: string
+          conversation_id: string
+          created_at: string
+          created_by: string | null
+          currency: string
+          decided_at: string | null
+          discount: number
+          id: string
+          proposal_id: string | null
+          sent_at: string | null
+          status: Database["public"]["Enums"]["quote_status"]
+          subtotal: number
+          title: string
+          total: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          client_id: string
+          client_note?: string
+          conversation_id: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          decided_at?: string | null
+          discount?: number
+          id: string
+          proposal_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          title?: string
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          client_id?: string
+          client_note?: string
+          conversation_id?: string
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          decided_at?: string | null
+          discount?: number
+          id?: string
+          proposal_id?: string | null
+          sent_at?: string | null
+          status?: Database["public"]["Enums"]["quote_status"]
+          subtotal?: number
+          title?: string
+          total?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       state_transitions: {
         Row: {
           from_state: string
@@ -1450,6 +1621,11 @@ export type Database = {
     }
     Functions: {
       bl_client_id: { Args: never; Returns: string }
+      bl_client_quote_action: {
+        Args: { p_action: string; p_quote_id: string }
+        Returns: Database["public"]["Enums"]["quote_status"]
+      }
+      bl_conversation_client: { Args: { conv_id: string }; Returns: string }
       bl_in_conversation: { Args: { conv_id: string }; Returns: boolean }
       bl_is_finance: { Args: never; Returns: boolean }
       bl_is_internal: { Args: never; Returns: boolean }
@@ -1538,6 +1714,17 @@ export type Database = {
         | "revised"
         | "expired"
       publish_status: "featured" | "public" | "draft" | "private"
+      quote_status:
+        | "draft"
+        | "internal_review"
+        | "sent"
+        | "viewed"
+        | "revision_requested"
+        | "revised"
+        | "accepted"
+        | "rejected"
+        | "expired"
+        | "converted"
       user_account_status: "invited" | "active" | "suspended"
     }
     CompositeTypes: {
@@ -1761,6 +1948,18 @@ export const Constants = {
         "expired",
       ],
       publish_status: ["featured", "public", "draft", "private"],
+      quote_status: [
+        "draft",
+        "internal_review",
+        "sent",
+        "viewed",
+        "revision_requested",
+        "revised",
+        "accepted",
+        "rejected",
+        "expired",
+        "converted",
+      ],
       user_account_status: ["invited", "active", "suspended"],
     },
   },

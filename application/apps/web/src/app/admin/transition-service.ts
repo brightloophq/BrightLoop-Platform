@@ -53,7 +53,7 @@ const STATUS_COLUMN: Partial<Record<string, string>> = {
 
 export interface TransitionInput {
   /** Table to mutate. */
-  table: "clients" | "leads" | "projects" | "milestones" | "deliverables" | "invoices";
+  table: "clients" | "leads" | "projects" | "milestones" | "deliverables" | "invoices" | "quotes";
   /** Which machine governs it — must match the DB trigger's machine argument. */
   machine: MachineName;
   entityId: string;

@@ -23,6 +23,12 @@ export const ANALYTICS_EVENTS = [
   "lead.stage.change",
   "proposal.accept",
   "proposal.change_request",
+  "quote.sent",
+  "quote.viewed",
+  "quote.accepted",
+  "quote.rejected",
+  "quote.revision_requested",
+  "quote.converted",
   "contract.sign",
   "contract.countersign",
   "payment.succeed",
@@ -68,6 +74,14 @@ export function eventForTransition(
     case "proposal":
       if (to === "accepted") return "proposal.accept";
       if (to === "change_requested") return "proposal.change_request";
+      return null;
+    case "quote":
+      if (to === "sent") return "quote.sent";
+      if (to === "viewed") return "quote.viewed";
+      if (to === "accepted") return "quote.accepted";
+      if (to === "rejected") return "quote.rejected";
+      if (to === "revision_requested") return "quote.revision_requested";
+      if (to === "converted") return "quote.converted";
       return null;
     case "contract":
       if (to === "signed_client") return "contract.sign";
