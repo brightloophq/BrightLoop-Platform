@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { isClientRole, isRole } from "@brightloop/schema";
 import { createClient } from "@/lib/supabase/server";
 
@@ -36,7 +37,7 @@ export async function signInWithPassword(
   if (!email || !password) return { error: "Enter your email and password" };
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
     // Generic on purpose (handoff §09.2): never reveal WHICH field was wrong,
@@ -44,7 +45,17 @@ export async function signInWithPassword(
     return { error: "Email or password is incorrect" };
   }
 
-  const role = data.user?.app_metadata?.["role"] as string | undefined;
+  // Read the role from the JWT CLAIMS, not from `data.user`. The user record's
+  // app_metadata is only {provider, providers} — the custom access token hook
+  // injects role/client_id into the TOKEN. Reading the record made this branch
+  // fire for a perfectly good owner session while RLS was granting them access.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const appMetadata = (claimsData?.claims as Record<string, unknown> | undefined)?.["app_metadata"];
+  const role =
+    typeof appMetadata === "object" && appMetadata !== null
+      ? ((appMetadata as Record<string, unknown>)["role"] as string | undefined)
+      : undefined;
+
   if (!role) {
     // Signed in, but no role claim. Either the account has no `users` row, or
     // the custom_access_token_hook is not registered in the Supabase dashboard.
@@ -59,6 +70,28 @@ export async function signInWithPassword(
   redirect(homeForRole(role));
 }
 
+/**
+ * The origin this request actually arrived on.
+ *
+ * Derived from headers rather than an env var: NEXT_PUBLIC_SITE_URL was unset,
+ * which made emailRedirectTo a RELATIVE "/auth/callback". Supabase rejects that
+ * and silently falls back to the project's site_url — so the magic link landed
+ * on "/" with an unhandled ?code=, and clicking it appeared to do nothing.
+ *
+ * Reading the origin means the link always returns to whichever host you signed
+ * in from (localhost in dev, the real host in production) with no env to forget.
+ * Supabase still validates the result against its redirect allow-list, so this
+ * cannot be used to redirect somewhere unapproved.
+ */
+async function requestOrigin(): Promise<string> {
+  const h = await headers();
+  const origin = h.get("origin");
+  if (origin) return origin;
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return `${proto}://${host}`;
+}
+
 export async function signInWithMagicLink(
   _prev: AuthState,
   formData: FormData,
@@ -71,10 +104,26 @@ export async function signInWithMagicLink(
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email,
-    options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback` },
+    options: { emailRedirectTo: `${await requestOrigin()}/auth/callback` },
   });
 
-  if (error) return { error: "Could not send the link. Try again." };
+  if (error) {
+    // Distinguish rate limiting. Supabase's BUILT-IN mailer allows only 2 emails
+    // per hour, and "Try again" is actively wrong advice for a 429 — retrying
+    // fails and the user has no idea why. Tell them what actually happened and
+    // what to do instead.
+    //
+    // This is a dev-mailer constraint, not a bug: Supabase does not intend the
+    // built-in SMTP for production. Configuring a real provider (Resend/Postmark)
+    // is the Sprint 8 email-integration work and removes this ceiling.
+    if (error.status === 429 || /rate limit/i.test(error.message)) {
+      return {
+        error:
+          "Email rate limit reached — Supabase's built-in mailer only sends 2 emails per hour. Wait about an hour, or sign in with a password instead.",
+      };
+    }
+    return { error: `Could not send the link: ${error.message}` };
+  }
 
   // Do NOT reveal whether the address has an account — same enumeration concern.
   return { notice: `If an account exists for ${email}, a sign-in link is on its way.` };

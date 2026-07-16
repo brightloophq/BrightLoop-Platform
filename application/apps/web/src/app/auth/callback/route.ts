@@ -21,13 +21,19 @@ export async function GET(request: NextRequest) {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error) {
     return NextResponse.redirect(`${origin}/login?error=invalid_link`);
   }
 
-  const role = data.user?.app_metadata?.["role"] as string | undefined;
+  // Role lives in the JWT claims, not on the user record — see lib/auth.ts.
+  const { data: claimsData } = await supabase.auth.getClaims();
+  const appMetadata = (claimsData?.claims as Record<string, unknown> | undefined)?.["app_metadata"];
+  const role =
+    typeof appMetadata === "object" && appMetadata !== null
+      ? ((appMetadata as Record<string, unknown>)["role"] as string | undefined)
+      : undefined;
 
   // Signed in with no role claim → RLS denies everything. Send them back with an
   // explanation rather than into a surface that will look broken.

@@ -24,7 +24,7 @@ import {
  * the cheap early exit, never the only gate.
  */
 export async function middleware(request: NextRequest) {
-  const { response, user } = await updateSession(request);
+  const { response, claims } = await updateSession(request);
   const { pathname } = request.nextUrl;
 
   const hostSurface = surfaceFromHost(request.headers.get("host"));
@@ -38,9 +38,11 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
-  const role = roleFromClaims(user?.app_metadata);
+  // Role comes from the VERIFIED JWT claims — the hook puts it in the token, not
+  // on the user record. Gating on the record would admit every signed-in user.
+  const role = roleFromClaims(claims?.["app_metadata"]);
 
-  if (!user || !role || !roleAllowedOn(surface, role)) {
+  if (!claims || !role || !roleAllowedOn(surface, role)) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", SURFACE_PREFIX[surface]);
     return NextResponse.redirect(loginUrl);

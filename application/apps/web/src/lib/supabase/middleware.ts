@@ -1,7 +1,6 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { env, isSupabaseConfigured } from "../env";
-import type { User } from "@supabase/supabase-js";
 
 /** Shape of the batch @supabase/ssr hands to `setAll`. Annotated explicitly
  *  because the cookie-methods union blocks contextual inference. */
@@ -9,20 +8,31 @@ type CookiesToSet = { name: string; value: string; options: CookieOptions }[];
 
 export interface SessionResult {
   response: NextResponse;
-  user: User | null;
+  /**
+   * VERIFIED JWT claims, or null. This is deliberately claims — not a `user`
+   * object — because the role lives in the token, not on the user record.
+   */
+  claims: Record<string, unknown> | null;
 }
 
 /**
- * Refreshes the Supabase session on every request and returns the authenticated
- * user (or null). Uses getUser() — NOT getSession() — because getUser()
- * revalidates the token with the auth server rather than trusting a cookie.
+ * Refreshes the Supabase session on every request and returns its verified JWT
+ * claims.
+ *
+ * Uses getClaims(), NOT getUser(): the custom access token hook injects
+ * role/client_id into the TOKEN, while the user record's app_metadata only ever
+ * holds {provider, providers}. Middleware gating on the record would let every
+ * signed-in user through the role check regardless of their actual role.
+ *
+ * getClaims() verifies the signature (this project signs ES256) against the
+ * project JWKS before returning anything — it is not a bare cookie decode.
  */
 export async function updateSession(request: NextRequest): Promise<SessionResult> {
   let response = NextResponse.next({ request });
 
-  // Not configured (Sprint 0) → fail closed: nobody is authenticated.
+  // Not configured → fail closed: nobody is authenticated.
   if (!isSupabaseConfigured()) {
-    return { response, user: null };
+    return { response, claims: null };
   }
 
   const supabase = createServerClient(env.supabaseUrl, env.supabasePublishableKey, {
@@ -42,9 +52,8 @@ export async function updateSession(request: NextRequest): Promise<SessionResult
     },
   });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
+  if (error || !data?.claims) return { response, claims: null };
 
-  return { response, user };
+  return { response, claims: data.claims as unknown as Record<string, unknown> };
 }
