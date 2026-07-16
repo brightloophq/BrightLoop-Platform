@@ -1,0 +1,55 @@
+/* BrightLoop — Effects tokens: elevation, blur, opacity, z-index, borders
+   PORTED VERBATIM from docs/handoff/reference/tokens/effects.css.
+   Z-index scale is authoritative — never use ad-hoc z-index values. */
+
+:root {
+  /* ---- Elevation (semantic map onto shadow scale) ---- */
+  --elevation-0: none;
+  --elevation-1: var(--shadow-sm); /* raised chip / input */
+  --elevation-2: var(--shadow-md); /* card resting */
+  --elevation-3: var(--shadow-lg); /* card hover / popover */
+  --elevation-4: var(--shadow-xl); /* modal / drawer */
+
+  /* ---- Blur (backdrop + decorative) ---- */
+  --blur-xs: 4px;
+  --blur-sm: 8px;
+  --blur-md: 14px; /* sticky header glass */
+  --blur-lg: 24px; /* modal scrim */
+  --blur-xl: 40px; /* hero glow diffusion */
+
+  /* ---- Opacity ---- */
+  --opacity-disabled: 0.5;
+  --opacity-muted: 0.7;
+  --opacity-hint: 0.4;
+  --opacity-scrim: 0.72; /* overlay backdrop */
+
+  /* ---- Z-index scale ---- */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 40; /* header */
+  --z-dropdown: 45; /* mega-menu, select */
+  --z-overlay: 50; /* drawer */
+  --z-modal: 60;
+  --z-toast: 70;
+  --z-tooltip: 80;
+
+  /* ---- Borders ---- */
+  --border-width: 1px;
+  --border-width-thick: 2px;
+  --border-hairline: 1px solid var(--border-subtle);
+  --border-default: 1px solid var(--border-strong);
+  --border-accent: 1px solid var(--bl-cyan);
+  --border-focus: 2px solid var(--focus-ring);
+
+  /* ---- Focus ring (composable) ---- */
+  --ring-focus: 0 0 0 3px rgba(34, 211, 238, 0.35);
+}
+
+/* Light theme elevation swaps to softer shadows */
+.bl-theme-light,
+[data-theme="light"] {
+  --elevation-1: var(--shadow-light-sm);
+  --elevation-2: var(--shadow-light-md);
+  --elevation-3: var(--shadow-light-lg);
+  --elevation-4: var(--shadow-light-lg);
+}

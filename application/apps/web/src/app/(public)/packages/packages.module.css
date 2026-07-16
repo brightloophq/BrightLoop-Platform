@@ -1,0 +1,47 @@
+.notice {
+  max-width: var(--container-md);
+  margin: 0 auto var(--space-7);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.compare {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.compareCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.compareName {
+  font-size: var(--fs-h4);
+  color: var(--text-primary);
+}
+
+.moduleTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@media (max-width: 1279px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .grid,
+  .compare {
+    grid-template-columns: 1fr;
+  }
+}

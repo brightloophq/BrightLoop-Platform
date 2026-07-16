@@ -1,0 +1,251 @@
+/* ---- Hero ---- */
+.hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.heroGlow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(60% 60% at 15% 10%, rgba(37, 99, 235, 0.18), transparent 60%),
+    radial-gradient(50% 50% at 85% 30%, rgba(34, 211, 238, 0.1), transparent 60%);
+}
+
+.heroGrid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: var(--space-7);
+  align-items: center;
+}
+
+.heroTitle {
+  font-size: var(--fs-display);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  margin: 0 0 var(--space-5);
+  max-width: 15ch;
+}
+
+.heroAccent {
+  background: var(--grad-loop);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.heroSub {
+  margin: 0 0 var(--space-6);
+  font-size: var(--fs-lg);
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
+  max-width: 52ch;
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.heroNote {
+  margin: var(--space-5) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+/* ---- Loop visual ---- */
+.loop {
+  aspect-ratio: 1;
+  max-width: 440px;
+  margin-inline: auto;
+  width: 100%;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.loopRing {
+  position: absolute;
+  inset: 8%;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-subtle);
+}
+
+.loopNode {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-card);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-2);
+  min-width: 104px;
+}
+
+.loopNodeIcon {
+  color: var(--text-accent);
+}
+
+.loopNodeLabel {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.nodeTop {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.nodeRight {
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.nodeBottom {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.nodeLeft {
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.loopCore {
+  width: 96px;
+  height: 96px;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background: var(--grad-loop);
+  color: var(--bl-white);
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  box-shadow: var(--glow-blue);
+}
+
+/* ---- Trust bar ---- */
+.trust {
+  border-block: var(--border-hairline);
+  background: var(--surface-inset);
+  padding-block: var(--space-5);
+}
+
+.trustInner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-6);
+  flex-wrap: wrap;
+}
+
+.trustLabel {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--text-muted);
+}
+
+.trustLogo {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-lg);
+  color: var(--slate-600);
+  letter-spacing: var(--ls-wide);
+}
+
+/* ---- Generic section head ---- */
+.head {
+  max-width: 62ch;
+  margin-bottom: var(--space-7);
+}
+
+.headCentered {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.title {
+  font-size: var(--fs-h2);
+  margin: 0 0 var(--space-4);
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-body);
+}
+
+/* ---- Grids ---- */
+.serviceGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.testimonialGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.ratingRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 1023px) {
+  .heroGrid {
+    grid-template-columns: 1fr;
+  }
+  .heroTitle {
+    font-size: var(--fs-h1);
+    max-width: 18ch;
+  }
+  .loop {
+    max-width: 380px;
+  }
+  .serviceGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .testimonialGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .heroTitle {
+    font-size: var(--fs-h2);
+  }
+  .serviceGrid,
+  .testimonialGrid {
+    grid-template-columns: 1fr;
+  }
+  .loop {
+    max-width: 320px;
+  }
+  .loopNode {
+    min-width: 88px;
+    padding: var(--space-2) var(--space-3);
+  }
+  .loopCore {
+    width: 76px;
+    height: 76px;
+  }
+}

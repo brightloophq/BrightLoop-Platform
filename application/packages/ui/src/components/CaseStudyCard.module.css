@@ -1,0 +1,98 @@
+.card {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: var(--space-6);
+  align-items: center;
+  text-decoration: none;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.name {
+  font-size: var(--fs-h3);
+  color: var(--text-primary);
+}
+
+.summary {
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+  margin-top: var(--space-2);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+}
+
+.factLabel {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  color: var(--text-muted);
+}
+
+.factValue {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin-top: var(--space-3);
+  color: var(--text-link);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+}
+
+/* Media placeholder — real hero imagery is outstanding (heroSlot). */
+.media {
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-md);
+  border: var(--border-hairline);
+  background:
+    radial-gradient(120% 120% at 20% 15%, rgba(37, 99, 235, 0.22), transparent 60%),
+    radial-gradient(120% 120% at 85% 85%, rgba(34, 211, 238, 0.16), transparent 55%),
+    var(--surface-inset);
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+}
+
+.mediaNote {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-snug);
+  max-width: 24ch;
+}
+
+@media (max-width: 1023px) {
+  .card {
+    grid-template-columns: 1fr;
+  }
+  .media {
+    order: -1;
+    aspect-ratio: 16 / 9;
+  }
+}

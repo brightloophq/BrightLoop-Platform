@@ -1,0 +1,19 @@
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  border: var(--border-hairline);
+  background: var(--surface-inset);
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  white-space: nowrap;
+}
+
+.accent {
+  border-color: rgba(34, 211, 238, 0.3);
+  color: var(--text-accent);
+  background: rgba(34, 211, 238, 0.08);
+}

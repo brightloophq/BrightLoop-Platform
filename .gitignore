@@ -1,0 +1,43 @@
+# =============================================================================
+# BrightLoop Platform — repository root ignore rules.
+# NOTE: application/.gitignore covers the workspace; this one guards the root so
+# `git init` at the top level can never sweep in dependencies or secrets.
+# =============================================================================
+
+# ---- Secrets — NEVER commit. Supabase keys, Stripe keys, DB passwords. ----
+# Deliberately broad. A real .env.local was once created as ".env.local.txt",
+# which matched none of the narrow patterns and got staged with a live Supabase
+# secret key in it. These globs catch every near-miss spelling.
+.env
+.env.*
+*.env
+*.env.*
+!.env.example
+!*.env.example
+
+# ---- Dependencies ----
+node_modules/
+.pnpm-store/
+
+# ---- Build outputs ----
+dist/
+.next/
+out/
+*.tsbuildinfo
+
+# ---- Turbo ----
+.turbo/
+
+# ---- Supabase local state ----
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+# ---- Editor / OS ----
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# ---- Test / coverage ----
+coverage/

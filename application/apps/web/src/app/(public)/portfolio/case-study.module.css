@@ -1,0 +1,220 @@
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  margin-bottom: var(--space-5);
+}
+.back:hover {
+  color: var(--text-primary);
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+
+.title {
+  font-size: var(--fs-h1);
+  margin-bottom: var(--space-4);
+  max-width: 20ch;
+}
+
+.summary {
+  margin: 0 0 var(--space-5);
+  font-size: var(--fs-lg);
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
+  max-width: 60ch;
+}
+
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.noPreview {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* ---- hero ---- */
+.hero {
+  aspect-ratio: 21 / 9;
+  border-radius: var(--radius-lg);
+  border: var(--border-hairline);
+  background:
+    radial-gradient(70% 120% at 20% 15%, rgba(37, 99, 235, 0.22), transparent 60%),
+    radial-gradient(70% 120% at 85% 85%, rgba(34, 211, 238, 0.16), transparent 55%),
+    var(--surface-inset);
+  display: grid;
+  place-items: center;
+  margin-block: var(--space-6);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+  padding: var(--space-5);
+}
+
+/* ---- project facts ---- */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin-bottom: var(--space-7);
+}
+
+/* ---- content + sidebar ---- */
+.body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-7);
+  align-items: start;
+}
+
+.prose h2 {
+  font-size: var(--fs-h3);
+  margin: var(--space-7) 0 var(--space-3);
+}
+.prose h2:first-child {
+  margin-top: 0;
+}
+
+.prose p {
+  margin: 0 0 var(--space-4);
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
+}
+
+/* ---- results ---- */
+.results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-4);
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+/* ---- sidebar ---- */
+.side {
+  position: sticky;
+  top: calc(var(--header-h) + var(--space-4));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sideTitle {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--text-muted);
+  font-weight: var(--fw-semibold);
+  margin: 0 0 var(--space-3);
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.seoRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-3);
+  border-bottom: var(--border-hairline);
+}
+.seoRow:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.seoLabel {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  color: var(--text-muted);
+}
+
+.seoValue {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  word-break: break-word;
+  line-height: var(--lh-snug);
+}
+
+/* ---- testimonial ---- */
+.quoteBlock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: var(--space-6);
+  align-items: center;
+}
+
+.quote {
+  margin: 0 0 var(--space-4);
+  font-size: var(--fs-h4);
+  line-height: var(--lh-snug);
+  color: var(--text-primary);
+}
+
+.quoteWho {
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  font-style: normal;
+}
+
+/* ---- related ---- */
+.related {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 1023px) {
+  .body,
+  .quoteBlock {
+    grid-template-columns: 1fr;
+  }
+  .side {
+    position: static;
+  }
+  .facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .related {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .title {
+    font-size: var(--fs-h2);
+  }
+}
+
+@media (max-width: 767px) {
+  .facts,
+  .gallery,
+  .related {
+    grid-template-columns: 1fr;
+  }
+  .hero {
+    aspect-ratio: 16 / 10;
+  }
+}

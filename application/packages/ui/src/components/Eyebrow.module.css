@@ -1,0 +1,9 @@
+.eyebrow {
+  display: block;
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--text-accent);
+  margin: 0 0 var(--space-3);
+}

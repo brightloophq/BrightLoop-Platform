@@ -1,0 +1,102 @@
+/* BrightLoop — Color tokens
+   Base palette + tonal scales + semantic aliases.
+   Brand is dark-first: Midnight Navy is the primary canvas. */
+
+:root {
+  /* ---- Brand core ---- */
+  --bl-navy:        #0B1220; /* Midnight Navy — primary canvas */
+  --bl-blue:        #2563EB; /* Bright Blue — primary action */
+  --bl-cyan:        #22D3EE; /* Electric Cyan — accent / highlight */
+  --bl-white:       #FFFFFF;
+  --bl-slate:       #64748B; /* Slate Gray — secondary text */
+  --bl-soft:        #F8FAFC; /* Soft White — light surface */
+
+  /* ---- Navy scale (surfaces on dark) ---- */
+  --navy-950: #060A13;
+  --navy-900: #0B1220;
+  --navy-850: #0E1729;
+  --navy-800: #111C33;
+  --navy-700: #16233F;
+  --navy-600: #1E2E4F;
+  --navy-500: #263a63;
+
+  /* ---- Blue scale (primary) ---- */
+  --blue-50:  #EFF5FF;
+  --blue-100: #DBE7FE;
+  --blue-200: #BFD3FE;
+  --blue-300: #93B4FD;
+  --blue-400: #5F8CF9;
+  --blue-500: #2563EB;
+  --blue-600: #1D4FD0;
+  --blue-700: #1A41A8;
+  --blue-800: #1B3985;
+
+  /* ---- Cyan scale (accent) ---- */
+  --cyan-50:  #ECFDFF;
+  --cyan-100: #CFF9FE;
+  --cyan-200: #A5F0FC;
+  --cyan-300: #67E3F9;
+  --cyan-400: #22D3EE;
+  --cyan-500: #06B2D4;
+  --cyan-600: #0A8FAE;
+
+  /* ---- Slate / neutral scale ---- */
+  --slate-50:  #F8FAFC;
+  --slate-100: #F1F5F9;
+  --slate-200: #E2E8F0;
+  --slate-300: #CBD5E1;
+  --slate-400: #94A3B8;
+  --slate-500: #64748B;
+  --slate-600: #475569;
+  --slate-700: #334155;
+  --slate-800: #1E293B;
+  --slate-900: #0F172A;
+
+  /* ---- Semantic status ---- */
+  --success: #16B364;
+  --warning: #F5A524;
+  --danger:  #EF4444;
+  --info:    var(--bl-cyan);
+
+  /* ---- Brand gradient (logo loop) ---- */
+  --grad-loop: linear-gradient(135deg, var(--bl-blue) 0%, var(--bl-cyan) 100%);
+  --grad-loop-soft: linear-gradient(135deg, #2563EB 0%, #3AA8F0 55%, #22D3EE 100%); /* @kind color */
+
+  /* ---- Semantic aliases: DARK theme (default) ---- */
+  --bg-base:       var(--navy-900);
+  --bg-raised:     var(--navy-850);
+  --surface-card:  var(--navy-800);
+  --surface-inset: var(--navy-950);
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
+
+  --text-primary:   var(--bl-white);
+  --text-secondary: var(--slate-300);
+  --text-muted:     var(--slate-500);
+  --text-accent:    var(--bl-cyan);
+  --text-link:      var(--blue-400);
+  --text-on-accent: var(--bl-white);
+
+  --action-primary:       var(--bl-blue);
+  --action-primary-hover: var(--blue-600);
+  --action-primary-press: var(--blue-700);
+  --focus-ring:           var(--bl-cyan);
+}
+
+/* ---- Semantic aliases: LIGHT theme ---- */
+.bl-theme-light,
+[data-theme="light"] {
+  --bg-base:       var(--slate-50);
+  --bg-raised:     var(--bl-white);
+  --surface-card:  var(--bl-white);
+  --surface-inset: var(--slate-100);
+  --border-subtle: var(--slate-200);
+  --border-strong: var(--slate-300);
+
+  --text-primary:   var(--navy-900);
+  --text-secondary: var(--slate-700);
+  --text-muted:     var(--slate-500);
+  --text-accent:    var(--blue-600);
+  --text-link:      var(--blue-600);
+  --text-on-accent: var(--bl-white);
+}

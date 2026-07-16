@@ -1,0 +1,91 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-normal);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+/* Minimum 44px touch target on coarse pointers (handoff §11 accessibility). */
+@media (pointer: coarse) {
+  .button {
+    min-height: 44px;
+  }
+}
+
+/* ---- sizes ---- */
+.sm {
+  height: 34px;
+  padding-inline: var(--space-3);
+  font-size: var(--fs-sm);
+}
+.md {
+  height: 42px;
+  padding-inline: var(--space-4);
+  font-size: var(--fs-body);
+}
+.lg {
+  height: 50px;
+  padding-inline: var(--space-5);
+  font-size: var(--fs-lg);
+}
+
+/* ---- variants ---- */
+.primary {
+  background: var(--action-primary);
+  color: var(--bl-white);
+}
+.primary:hover:not(:disabled) {
+  background: var(--action-primary-hover);
+}
+.primary:active:not(:disabled) {
+  background: var(--action-primary-press);
+}
+
+.secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+.secondary:hover:not(:disabled) {
+  border-color: var(--bl-cyan);
+  color: var(--text-accent);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.ghost:hover:not(:disabled) {
+  color: var(--text-primary);
+  background: var(--bg-raised);
+}
+
+/* Gradient is the loop mark / rare CTA emphasis only — never decoration. */
+.gradient {
+  background: var(--grad-loop);
+  color: var(--bl-white);
+}
+.gradient:hover:not(:disabled) {
+  box-shadow: var(--glow-blue);
+}
+
+.block {
+  width: 100%;
+}
+
+.button:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}

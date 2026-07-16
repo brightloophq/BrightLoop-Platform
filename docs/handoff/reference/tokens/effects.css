@@ -1,0 +1,53 @@
+/* BrightLoop — Effects tokens: elevation, blur, opacity, z-index, borders */
+
+:root {
+  /* ---- Elevation (semantic map onto shadow scale) ---- */
+  --elevation-0: none;                 /* @kind shadow */
+  --elevation-1: var(--shadow-sm);     /* @kind shadow */ /* raised chip / input */
+  --elevation-2: var(--shadow-md);     /* @kind shadow */ /* card resting */
+  --elevation-3: var(--shadow-lg);     /* @kind shadow */ /* card hover / popover */
+  --elevation-4: var(--shadow-xl);     /* @kind shadow */ /* modal / drawer */
+
+  /* ---- Blur (backdrop + decorative) ---- */
+  --blur-xs: 4px;   /* @kind other */
+  --blur-sm: 8px;   /* @kind other */
+  --blur-md: 14px;  /* @kind other */ /* sticky header glass */
+  --blur-lg: 24px;  /* @kind other */ /* modal scrim */
+  --blur-xl: 40px;  /* @kind other */ /* hero glow diffusion */
+
+  /* ---- Opacity ---- */
+  --opacity-disabled: 0.5;  /* @kind other */
+  --opacity-muted:    0.7;  /* @kind other */
+  --opacity-hint:     0.4;  /* @kind other */
+  --opacity-scrim:    0.72; /* @kind other */ /* overlay backdrop */
+
+  /* ---- Z-index scale ---- */
+  --z-base:      0;    /* @kind other */
+  --z-raised:    10;   /* @kind other */
+  --z-sticky:    40;   /* @kind other */ /* header */
+  --z-dropdown:  45;   /* @kind other */ /* mega-menu, select */
+  --z-overlay:   50;   /* @kind other */ /* drawer */
+  --z-modal:     60;   /* @kind other */
+  --z-toast:     70;   /* @kind other */
+  --z-tooltip:   80;   /* @kind other */
+
+  /* ---- Borders ---- */
+  --border-width:      1px;   /* @kind other */
+  --border-width-thick:2px;   /* @kind other */
+  --border-hairline:   1px solid var(--border-subtle);  /* @kind other */
+  --border-default:    1px solid var(--border-strong);  /* @kind other */
+  --border-accent:     1px solid var(--bl-cyan);        /* @kind other */
+  --border-focus:      2px solid var(--focus-ring);     /* @kind other */
+
+  /* ---- Focus ring (composable) ---- */
+  --ring-focus: 0 0 0 3px rgba(34,211,238,0.35); /* @kind shadow */
+}
+
+/* Light theme elevation swaps to softer shadows */
+.bl-theme-light,
+[data-theme="light"] {
+  --elevation-1: var(--shadow-light-sm);
+  --elevation-2: var(--shadow-light-md);
+  --elevation-3: var(--shadow-light-lg);
+  --elevation-4: var(--shadow-light-lg);
+}

@@ -1,0 +1,24 @@
+.bar {
+  position: relative;
+  z-index: var(--z-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--gutter);
+  background: rgba(245, 165, 36, 0.12);
+  border-bottom: 1px solid rgba(245, 165, 36, 0.3);
+  color: var(--warning);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  text-align: center;
+  line-height: var(--lh-snug);
+}
+
+.text {
+  color: var(--warning);
+}
+
+.detail {
+  color: var(--text-secondary);
+}

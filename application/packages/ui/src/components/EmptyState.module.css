@@ -1,0 +1,40 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--space-3);
+  padding: var(--space-9) var(--space-5);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--surface-inset);
+}
+
+.icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background: var(--surface-card);
+  border: var(--border-hairline);
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.title {
+  font-size: var(--fs-h4);
+  color: var(--text-primary);
+}
+
+.body {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  max-width: 46ch;
+  line-height: var(--lh-body);
+}
+
+.action {
+  margin-top: var(--space-3);
+}

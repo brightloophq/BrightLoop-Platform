@@ -1,0 +1,82 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  text-decoration: none;
+}
+
+/* Media placeholder — real hero imagery outstanding (heroSlot). */
+.media {
+  aspect-ratio: 16 / 10;
+  border-radius: var(--radius-md);
+  border: var(--border-hairline);
+  background:
+    radial-gradient(110% 110% at 25% 20%, rgba(37, 99, 235, 0.2), transparent 60%),
+    radial-gradient(110% 110% at 80% 90%, rgba(34, 211, 238, 0.14), transparent 55%),
+    var(--surface-inset);
+  display: grid;
+  place-items: center;
+  margin-bottom: var(--space-4);
+  position: relative;
+  overflow: hidden;
+}
+
+.mediaLabel {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+  padding: var(--space-3);
+  text-align: center;
+}
+
+.awards {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  display: flex;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.name {
+  font-size: var(--fs-h4);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.summary {
+  margin: 0 0 var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  flex: 1;
+}
+
+.foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: var(--border-hairline);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}

@@ -1,0 +1,65 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+}
+
+.quote {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-snug);
+  flex: 1;
+}
+
+.author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: var(--border-hairline);
+}
+
+/* Placeholder avatar — the real one comes from the media library (avatarSlot). */
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-pill);
+  display: grid;
+  place-items: center;
+  background: var(--grad-loop);
+  color: var(--bl-white);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-sm);
+  flex: none;
+}
+
+.who {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.name {
+  color: var(--text-primary);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+}
+
+.role {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+
+.link {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--text-link);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  text-decoration: none;
+  flex: none;
+}

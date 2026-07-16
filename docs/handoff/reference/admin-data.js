@@ -1,0 +1,90 @@
+/* BrightLoop Admin — operational command-center demo data. */
+window.BL_ADMIN = {
+  kpis: {
+    revenueMTD: 148200, revenueTrend: "+18%", mrr: 42800, mrrTrend: "+6%",
+    activeClients: 34, clientsTrend: "+3", leads: 62, projects: 19,
+    meetings: 7, outstanding: 23400, utilization: 78,
+  },
+  revenueByMonth: [92, 104, 98, 121, 133, 148], // last 6 months ($k)
+  pipeline: [
+    { stage: "New lead", count: 24, value: 186000 },
+    { stage: "Discovery", count: 15, value: 142000 },
+    { stage: "Proposal", count: 11, value: 208000 },
+    { stage: "Contract", count: 7, value: 164000 },
+    { stage: "Won", count: 5, value: 98000 },
+  ],
+  leads: [
+    { name: "Harbor & Co", contact: "Sasha Bell", stage: "Proposal", value: 24000, owner: "Alex", industry: "Professional Services", updated: "2h ago" },
+    { name: "Vertex Build", contact: "Marcus Lde", stage: "Discovery", value: 38000, owner: "Priya", industry: "Construction", updated: "5h ago" },
+    { name: "Lumen Health", contact: "Dr. Osei", stage: "New lead", value: 52000, owner: "Alex", industry: "Healthcare", updated: "1d ago" },
+    { name: "Coretra", contact: "J…Nguyen", stage: "Contract", value: 41000, owner: "Sam", industry: "SaaS", updated: "1d ago" },
+    { name: "Northwind", contact: "E. Park", stage: "Discovery", value: 29000, owner: "Priya", industry: "Retail", updated: "2d ago" },
+  ],
+  clients: [
+    { name: "Meridian Studio", plan: "Transform", mrr: 0, am: "Alex Chen", health: 86, stage: "Delivery", since: "Jul 2026" },
+    { name: "Atlas Legal", plan: "Growth Partner", mrr: 3200, am: "Priya R", health: 92, stage: "Retained", since: "Mar 2026" },
+    { name: "Brightside Cafe", plan: "Foundation", mrr: 0, am: "Sam O", health: 74, stage: "Delivery", since: "Jun 2026" },
+    { name: "Vertex Homes", plan: "Growth Partner", mrr: 2800, am: "Alex Chen", health: 68, stage: "Retained", since: "Jan 2026" },
+    { name: "Peak Dental", plan: "Launch", mrr: 0, am: "Priya R", health: 81, stage: "Onboarding", since: "Jul 2026" },
+  ],
+  projects: [
+    { name: "Meridian — Transform", phase: "Build", progress: 42, due: "Aug 20", pm: "Alex", status: "on-track" },
+    { name: "Peak Dental — Launch", phase: "Discovery", progress: 12, due: "Sep 5", pm: "Priya", status: "on-track" },
+    { name: "Brightside — Foundation", phase: "Automate", progress: 70, due: "Aug 2", pm: "Sam", status: "at-risk" },
+    { name: "Atlas — Q3 optimisation", phase: "Grow", progress: 55, due: "Aug 30", pm: "Priya", status: "on-track" },
+  ],
+  kanban: {
+    "To do": ["Peak Dental — brand brief", "Vertex — CRM mapping", "Atlas — Aug campaign"],
+    "In progress": ["Meridian — homepage build", "Brightside — automation setup", "Meridian — services page"],
+    "Review": ["Meridian — services design", "Atlas — landing page"],
+    "Done": ["Meridian — brand guidelines", "Peak — kickoff"],
+  },
+  team: [
+    { name: "Alex Chen", role: "Senior PM", load: 82, projects: 4, avatar: "AC" },
+    { name: "Priya R", role: "Strategist", load: 68, projects: 3, avatar: "PR" },
+    { name: "Sam O", role: "Automation lead", load: 91, projects: 3, avatar: "SO" },
+    { name: "Devon K", role: "Designer", load: 54, projects: 5, avatar: "DK" },
+  ],
+  invoices: [
+    { id: "INV-1063", client: "Meridian", amount: 3090, status: "due", date: "Aug 2" },
+    { id: "INV-1058", client: "Atlas", amount: 3200, status: "paid", date: "Jul 1" },
+    { id: "INV-1061", client: "Vertex", amount: 2800, status: "paid", date: "Jul 1" },
+    { id: "INV-1049", client: "Brightside", amount: 1800, status: "overdue", date: "Jun 20" },
+  ],
+  automations: [
+    { name: "Lead → CRM sync", tool: "n8n", status: "healthy", runs: 1240, fails: 0 },
+    { name: "Proposal follow-up", tool: "n8n", status: "healthy", runs: 380, fails: 2 },
+    { name: "AI lead scoring", tool: "AI Agent", status: "healthy", runs: 620, fails: 0 },
+    { name: "Invoice reminders", tool: "n8n", status: "failing", runs: 210, fails: 14 },
+    { name: "Onboarding emails", tool: "n8n", status: "healthy", runs: 95, fails: 0 },
+  ],
+  marketing: [
+    { title: "LinkedIn — case study", channel: "Social", date: "Jul 16", status: "scheduled" },
+    { title: "Blog — automation ROI", channel: "SEO", date: "Jul 18", status: "draft" },
+    { title: "Newsletter — July", channel: "Email", date: "Jul 20", status: "scheduled" },
+    { title: "Google Ads — services", channel: "Campaign", date: "Live", status: "live" },
+  ],
+  deliverables: [
+    { name: "Meridian brand guidelines", type: "PDF", client: "Meridian", ver: "v2", status: "approved" },
+    { name: "Atlas landing page", type: "Deploy", client: "Atlas", ver: "v1", status: "review" },
+    { name: "Brightside logo suite", type: "Assets", client: "Brightside", ver: "v3", status: "approved" },
+    { name: "Peak website design", type: "Figma", client: "Peak Dental", ver: "v1", status: "in-progress" },
+  ],
+  notifications: [
+    { icon: "user-plus", text: "New lead — Lumen Health ($52k)", time: "10m", tone: "cyan" },
+    { icon: "alert-triangle", text: "Automation failing — Invoice reminders", time: "1h", tone: "danger" },
+    { icon: "message-square", text: "Meridian replied in Messages", time: "2h", tone: "neutral" },
+    { icon: "clock", text: "Brightside project at risk — due Aug 2", time: "3h", tone: "warning" },
+    { icon: "credit-card", text: "INV-1049 overdue — Brightside", time: "1d", tone: "danger" },
+  ],
+  insights: [
+    { icon: "crown", label: "Highest-value client", value: "Atlas Legal", sub: "$38.4k LTV · Growth Partner" },
+    { icon: "trending-up", label: "Most profitable service", value: "AI & Automation", sub: "62% margin" },
+    { icon: "users", label: "Team utilization", value: "78%", sub: "Sam O near capacity (91%)" },
+    { icon: "repeat", label: "Client retention", value: "94%", sub: "12-mo · +4pts YoY" },
+    { icon: "sparkles", label: "Upsell opportunities", value: "8 clients", sub: "ready for Growth Partner" },
+    { icon: "line-chart", label: "Revenue forecast", value: "$172k", sub: "next month · 88% confidence" },
+    { icon: "zap", label: "Automation savings", value: "310 hrs/mo", sub: "≈ $46k saved" },
+    { icon: "activity", label: "Growth trend", value: "+18% MoM", sub: "6-month high" },
+  ],
+};

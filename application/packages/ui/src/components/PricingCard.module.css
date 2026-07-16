@@ -1,0 +1,94 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  height: 100%;
+  position: relative;
+}
+
+.recommended {
+  border-color: rgba(34, 211, 238, 0.4);
+  box-shadow: var(--glow-cyan);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.name {
+  font-size: var(--fs-h4);
+  color: var(--text-primary);
+}
+
+.blurb {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+}
+
+.priceBlock {
+  padding: var(--space-4);
+  background: var(--surface-inset);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+}
+
+.estimateLabel {
+  display: block;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  color: var(--text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.range {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--fs-h4);
+  font-weight: var(--fw-bold);
+  color: var(--text-primary);
+  letter-spacing: var(--ls-tight);
+}
+
+/* The non-binding qualifier travels with every price. Never hide this. */
+.qualifier {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: var(--lh-snug);
+}
+
+.weeks {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-2);
+  align-items: start;
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.check {
+  color: var(--success);
+  margin-top: 2px;
+}

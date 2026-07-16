@@ -1,0 +1,62 @@
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-secondary);
+}
+
+.optional {
+  color: var(--text-muted);
+  font-weight: var(--fw-regular);
+}
+
+.control {
+  width: 100%;
+  min-height: 44px;
+  padding: var(--space-3);
+  background: var(--surface-inset);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--fs-body);
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.control::placeholder {
+  color: var(--text-muted);
+}
+.control:hover {
+  border-color: var(--slate-600);
+}
+.control:disabled {
+  opacity: var(--opacity-disabled);
+  cursor: not-allowed;
+}
+
+.textarea {
+  min-height: 132px;
+  resize: vertical;
+  line-height: var(--lh-body);
+}
+
+/* Errored fields get a danger border AND a message — never colour alone. */
+.invalid {
+  border-color: var(--danger);
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--danger);
+  font-size: var(--fs-sm);
+}
+
+.hint {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
