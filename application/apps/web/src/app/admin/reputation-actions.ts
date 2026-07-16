@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { FACETS, PUBLISH_STATES, RATING_CATEGORIES, type PublishStatus } from "@brightloop/schema";
 import { assertCapability } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
+import { emitEvent } from "@/lib/analytics";
 import { isValidSlug, slugify } from "@/lib/slug";
 import { createClient } from "@/lib/supabase/server";
 
@@ -156,6 +157,9 @@ export async function moderateTestimonial(formData: FormData): Promise<ActionRes
     const { error } = await supabase.from("testimonials").update(patch).eq("id", testimonialId);
     if (error) return { ok: false, error: error.message };
 
+    if (patch["publish"]) {
+      await emitEvent({ name: "review.moderate", props: { status: String(patch["publish"]) } });
+    }
     revalidateReputation();
     return { ok: true };
   } catch (e) {
@@ -357,6 +361,9 @@ export async function moderateProject(formData: FormData): Promise<ActionResult>
     const { error } = await supabase.from("portfolio_projects").update(patch).eq("id", projectId);
     if (error) return { ok: false, error: error.message };
 
+    if (patch["publish"]) {
+      await emitEvent({ name: "portfolio.publish", props: { status: String(patch["publish"]) } });
+    }
     revalidateReputation(slug || undefined);
     return { ok: true };
   } catch (e) {

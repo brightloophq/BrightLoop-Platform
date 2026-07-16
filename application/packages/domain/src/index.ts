@@ -27,6 +27,10 @@ export * from "./reputation/facets.js";
 // Catalog — estimate ranges (never quotes), ordering, money formatting.
 export * from "./catalog/pricing.js";
 
+// Analytics — event taxonomy + pure aggregation.
+export * from "./analytics/events.js";
+export * from "./analytics/funnel.js";
+
 // Repository ports.
 export * from "./repositories/reputation.js";
 export * from "./repositories/catalog.js";

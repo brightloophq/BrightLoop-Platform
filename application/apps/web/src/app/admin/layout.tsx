@@ -73,10 +73,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     ops.items.push({ label: "Team", href: "/admin/team", icon: "users", ready: false });
   }
   if (may(actor, "analytics.read")) {
-    ops.items.push({ label: "Analytics", href: "/admin/analytics", icon: "line-chart", ready: false });
+    ops.items.push({ label: "Analytics", href: "/admin/analytics", icon: "line-chart", ready: true });
   }
   if (may(actor, "automation.read")) {
-    ops.items.push({ label: "Automation", href: "/admin/automation", icon: "workflow", ready: false });
+    ops.items.push({ label: "Automation", href: "/admin/automation", icon: "workflow", ready: true });
   }
   if (ops.items.length > 0) groups.push(ops);
 

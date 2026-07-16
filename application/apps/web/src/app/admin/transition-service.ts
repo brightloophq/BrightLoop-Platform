@@ -1,8 +1,15 @@
 import "server-only";
 
-import { transition, TransitionError, assertCapability, type Actor } from "@brightloop/domain";
+import {
+  transition,
+  TransitionError,
+  assertCapability,
+  eventForTransition,
+  type Actor,
+} from "@brightloop/domain";
 import type { MachineName } from "@brightloop/schema";
 import { getActor } from "@/lib/auth";
+import { emitEvent } from "@/lib/analytics";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -135,6 +142,20 @@ export async function performTransition(input: TransitionInput): Promise<Transit
         };
       }
       return { ok: false, error: updErr.message, status: 500 };
+    }
+
+    // Emit a server-side analytics event for moves worth counting. This is after
+    // the update succeeds, and emitEvent never throws — analytics must never
+    // block or roll back the business action.
+    const eventName = eventForTransition(input.machine, input.to);
+    if (eventName) {
+      await emitEvent({
+        name: eventName,
+        actorId: actor.userId,
+        clientId: actor.clientId,
+        role: actor.role,
+        props: { from, to: input.to, machine: input.machine },
+      });
     }
 
     return { ok: true };

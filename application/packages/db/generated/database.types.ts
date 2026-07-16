@@ -39,6 +39,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      analytics_events: {
+        Row: {
+          actor_id: string | null
+          at: string
+          client_id: string | null
+          id: number
+          name: string
+          props: Json
+          role: string | null
+          source: string
+        }
+        Insert: {
+          actor_id?: string | null
+          at?: string
+          client_id?: string | null
+          id?: never
+          name: string
+          props?: Json
+          role?: string | null
+          source?: string
+        }
+        Update: {
+          actor_id?: string | null
+          at?: string
+          client_id?: string | null
+          id?: never
+          name?: string
+          props?: Json
+          role?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       assessments: {
         Row: {
           answers: Json
