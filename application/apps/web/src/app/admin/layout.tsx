@@ -32,7 +32,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     {
       label: "Sales",
       items: [
-        { label: "Leads", href: "/admin/leads", icon: "route", ready: false },
+        { label: "Leads", href: "/admin/leads", icon: "route", ready: true },
         { label: "Proposals", href: "/admin/proposals", icon: "search", ready: false },
         { label: "Contracts", href: "/admin/contracts", icon: "check-circle", ready: false },
       ],
@@ -40,8 +40,8 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     {
       label: "Delivery",
       items: [
-        { label: "Clients", href: "/admin/clients", icon: "users", ready: false },
-        { label: "Projects", href: "/admin/projects", icon: "workflow", ready: false },
+        { label: "Clients", href: "/admin/clients", icon: "users", ready: true },
+        { label: "Projects", href: "/admin/projects", icon: "workflow", ready: true },
         { label: "Deliverables", href: "/admin/deliverables", icon: "check", ready: false },
       ],
     },
