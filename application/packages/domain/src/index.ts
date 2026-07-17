@@ -41,3 +41,6 @@ export * from "./quotes/quote.js";
 // Repository ports.
 export * from "./repositories/reputation.js";
 export * from "./repositories/catalog.js";
+
+// Transformation cycle — service layer, repository port, and event taxonomy.
+export * from "./transformation/index.js";
