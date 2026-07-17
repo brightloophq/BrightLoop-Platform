@@ -31,6 +31,36 @@ export class AuthorizationError extends Error {
   }
 }
 
+/** Thrown when a referenced entity does not exist. */
+export class NotFoundError extends Error {
+  readonly entity: string;
+  readonly id: string;
+  readonly httpStatus = 404;
+
+  constructor(entity: string, id: string) {
+    super(`${entity} '${id}' not found`);
+    this.name = "NotFoundError";
+    this.entity = entity;
+    this.id = id;
+  }
+}
+
+/**
+ * Thrown when a Move is asked to execute without a granted human Approval.
+ * This is the service-layer half of the human-authority gate (the DB trigger is
+ * the other half) — a consequential Move never executes without a real approval.
+ */
+export class ApprovalRequiredError extends Error {
+  readonly moveId: string;
+  readonly httpStatus = 409;
+
+  constructor(moveId: string) {
+    super(`Move '${moveId}' cannot execute without a granted approval`);
+    this.name = "ApprovalRequiredError";
+    this.moveId = moveId;
+  }
+}
+
 /** Thrown when a client-scoped actor targets another client org's record. */
 export class ClientScopeError extends Error {
   readonly actorClientId: string | null;

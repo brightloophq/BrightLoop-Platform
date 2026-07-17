@@ -33,6 +33,9 @@ export const PERMISSIONS = {
     "team.read",
     "analytics.*",
     "settings.*",
+    // Strategist authority over the transformation cycle, including granting
+    // approvals (`transformation.approve` is included by this namespace wildcard).
+    "transformation.*",
   ],
   team_member: [
     "projects.read",
@@ -41,6 +44,22 @@ export const PERMISSIONS = {
     "messages.*",
     "meetings.*",
     "clients.read",
+    // Operations Manager: drives transformation work, but does NOT hold
+    // `transformation.approve` — granting an approval is a Strategist (owner/admin)
+    // authority (mirrors sales, where team_member lacks `clients.update`).
+    "transformation.read",
+    "transformation.signals.write",
+    "transformation.insights.write",
+    "transformation.recommendations.write",
+    "transformation.approvals.request",
+    "transformation.moves.write",
+    "transformation.executions.write",
+    "transformation.measurements.write",
+    "transformation.learnings.write",
+    "transformation.risks.write",
+    "transformation.knowledge.write",
+    "transformation.health.write",
+    "transformation.index.write",
   ],
   client_admin: [
     "own.project.read",
@@ -50,8 +69,16 @@ export const PERMISSIONS = {
     "own.team.invite",
     "own.reports.read",
     "own.settings",
+    // Read-only access to their OWN transformation progress (Business Health /
+    // Transformation Index). Additionally row-scoped to the org by RLS.
+    "own.transformation.read",
   ],
-  client_member: ["own.project.read", "own.deliverables.comment", "own.reports.read"],
+  client_member: [
+    "own.project.read",
+    "own.deliverables.comment",
+    "own.reports.read",
+    "own.transformation.read",
+  ],
 } as const satisfies Record<Role, readonly string[]>;
 
 export const ROLE_NAMES = Object.keys(ROLES) as Role[];

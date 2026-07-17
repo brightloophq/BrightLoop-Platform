@@ -32,6 +32,8 @@ export { PlaceholderCatalogRepository } from "./placeholder/catalog.repository.j
 export { SupabaseReputationRepository } from "./supabase/reputation.repository.js";
 export type { AuxionSupabaseClient } from "./supabase/reputation.repository.js";
 export { toPortfolioProject, toTestimonial } from "./supabase/mappers.js";
+// Transformation cycle — Supabase-backed adapter for the domain repository port.
+export { SupabaseTransformationRepository } from "./transformation/repository.js";
 export {
   PLACEHOLDER_PROJECTS,
   PLACEHOLDER_TESTIMONIALS,
