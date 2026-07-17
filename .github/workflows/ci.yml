@@ -116,13 +116,27 @@ jobs:
           set +a
           pnpm --filter @brightloop/data test:integration
 
-      # Regenerate types from the live schema; fail if they drift from the
-      # committed file (stale generated types must never merge).
-      - name: Check generated types are up to date
+      # Regenerate types from the live migrated schema.
+      - name: Regenerate generated types
+        run: pnpm --filter @brightloop/db gen:types:local
+
+      # Publish the freshly generated file so a genuine drift can be resolved by
+      # committing the SUPABASE-GENERATED output (never hand-authored). Uploaded
+      # before the drift gate so it is captured even when the gate fails.
+      - name: Upload generated types
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-db-types
+          path: application/packages/db/generated/database.types.ts
+          if-no-files-found: error
+
+      # Fail if the regenerated types drift from the committed file (stale
+      # generated types must never merge).
+      - name: Fail on generated-type drift
         run: |
-          pnpm --filter @brightloop/db gen:types:local
           git diff --exit-code -- packages/db/generated/database.types.ts \
-            || (echo "::error::Generated database types are stale. Run 'pnpm --filter @brightloop/db gen:types:local' and commit the result." && exit 1)
+            || (echo "::error::Generated database types are stale. Download the 'generated-db-types' artifact (or run 'pnpm --filter @brightloop/db gen:types:local' locally) and commit packages/db/generated/database.types.ts." && exit 1)
 
       - name: Stop Supabase
         if: always()
