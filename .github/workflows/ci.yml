@@ -57,6 +57,77 @@ jobs:
       - name: Build
         run: pnpm build
 
+  db-verify:
+    name: migrate · pgTAP · RLS · adapter · type-drift
+    runs-on: ubuntu-latest
+    # Live database gate: spins up a real ephemeral Supabase (Postgres) via the
+    # Supabase CLI + Docker, applies every migration from a clean DB, then runs
+    # the pgTAP suite, the cross-tenant RLS tests, and the Sprint 2 transformation
+    # adapter integration tests against it. No production keys — every credential
+    # comes from the local stack's own `supabase status`.
+    defaults:
+      run:
+        working-directory: application
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: application/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Start Supabase (Docker)
+        run: supabase start
+
+      # Clean apply of every migration + seed. Fails the job on any migration error.
+      - name: Reset database (clean migrate + seed)
+        run: supabase db reset
+
+      # Transition guards + RLS / cross-tenant coverage. Fails on any failed assertion.
+      - name: Run pgTAP tests
+        run: supabase test db
+
+      # Exercise the real Supabase transformation adapter (Sprint 2) end-to-end,
+      # including the human-approval gate, idempotent execution, and cross-tenant
+      # isolation. Credentials are pulled from the running local stack only.
+      - name: Run adapter integration tests
+        run: |
+          set -a
+          eval "$(supabase status -o env)"
+          export SUPABASE_TEST_URL="$API_URL"
+          export SUPABASE_TEST_SERVICE_KEY="$SERVICE_ROLE_KEY"
+          export SUPABASE_TEST_ANON_KEY="$ANON_KEY"
+          export SUPABASE_TEST_JWT_SECRET="$JWT_SECRET"
+          set +a
+          pnpm --filter @brightloop/data test:integration
+
+      # Regenerate types from the live schema; fail if they drift from the
+      # committed file (stale generated types must never merge).
+      - name: Check generated types are up to date
+        run: |
+          pnpm --filter @brightloop/db gen:types:local
+          git diff --exit-code -- packages/db/generated/database.types.ts \
+            || (echo "::error::Generated database types are stale. Run 'pnpm --filter @brightloop/db gen:types:local' and commit the result." && exit 1)
+
+      - name: Stop Supabase
+        if: always()
+        run: supabase stop
+
   secret-scan:
     name: gitleaks secret scan
     runs-on: ubuntu-latest
