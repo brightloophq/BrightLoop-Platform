@@ -24,7 +24,7 @@ const DOCUMENTS = {
     title: "Privacy Policy",
     eyebrow: "Legal",
     intro:
-      "How BrightLoop collects, uses, stores and shares personal information, and the rights you have over it.",
+      "How Auxion collects, uses, stores and shares personal information, and the rights you have over it.",
     sections: [
       "Who we are and how to contact us",
       "What information we collect",
@@ -40,7 +40,7 @@ const DOCUMENTS = {
   terms: {
     title: "Terms of Service",
     eyebrow: "Legal",
-    intro: "The terms that govern your use of the BrightLoop website, platform and services.",
+    intro: "The terms that govern your use of the Auxion website, platform and services.",
     sections: [
       "Acceptance of these terms",
       "Accounts, eligibility and your responsibilities",

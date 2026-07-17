@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
   }
 
   if (payload.event === "countersigned") {
-    const r1 = await move(supabase, payload.contractId, contract.status, "countersigned", { countersignature: "BrightLoop" });
+    const r1 = await move(supabase, payload.contractId, contract.status, "countersigned", { countersignature: "Auxion" });
     if (!r1.ok) return NextResponse.json({ error: r1.error }, { status: 409 });
     const r2 = await move(supabase, payload.contractId, "countersigned", "active");
     if (!r2.ok) return NextResponse.json({ error: r2.error }, { status: 409 });

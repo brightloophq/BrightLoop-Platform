@@ -60,7 +60,7 @@ export const MACHINES = {
   },
 
   // Sprint 5C — the binding quote a strategist builds inside a discovery
-  // conversation. `draft` and `internal_review` are BrightLoop-only; the client
+  // conversation. `draft` and `internal_review` are Auxion-only; the client
   // never sees the quote until it is explicitly `sent` (enforced by RLS, not
   // just this machine). `accepted` feeds the proposal machine via `converted`.
   quote: {

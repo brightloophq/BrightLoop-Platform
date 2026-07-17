@@ -35,7 +35,7 @@ export function quoteTotals(items: readonly QuoteItemInput[], discount = 0): Quo
 /**
  * The DRAFT-QUOTE GATE, expressed in the domain so the app and the DB agree.
  * A client may see a quote only once it has been sent; `draft` and
- * `internal_review` are BrightLoop-only. This mirrors the `quotes_read` RLS
+ * `internal_review` are Auxion-only. This mirrors the `quotes_read` RLS
  * policy — the database is the enforcement, this is the shared definition.
  */
 export const CLIENT_HIDDEN_QUOTE_STATES = ["draft", "internal_review"] as const;

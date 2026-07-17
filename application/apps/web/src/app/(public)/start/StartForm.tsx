@@ -97,7 +97,7 @@ export function StartForm({ questions, modules, plans }: Props) {
 
         <p className={styles.estQualifier}>
           Creating an account saves your assessment and configuration, and opens a discovery
-          conversation with a BrightLoop strategist. No payment, no obligation.
+          conversation with a Auxion strategist. No payment, no obligation.
         </p>
       </form>
     </Card>

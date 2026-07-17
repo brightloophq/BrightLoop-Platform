@@ -12,7 +12,7 @@ export interface FooterProps {
   columns: readonly FooterColumn[];
   legal: readonly { label: string; href: string }[];
   tagline: string;
-  /** Rendered as "© {year} BrightLoop". Passed in so the component stays pure. */
+  /** Rendered as "© {year} Auxion". Passed in so the component stays pure. */
   year: number;
 }
 
@@ -43,7 +43,7 @@ export function Footer({ columns, legal, tagline, year }: FooterProps) {
         </div>
 
         <div className={styles.bottom}>
-          <p className={styles.copy}>© {year} BrightLoop. Brands. Systems. Growth.</p>
+          <p className={styles.copy}>© {year} Auxion. Brands. Systems. Growth.</p>
           <div className={styles.legal}>
             {legal.map((link) => (
               <Link key={link.href} href={link.href} className={styles.link}>

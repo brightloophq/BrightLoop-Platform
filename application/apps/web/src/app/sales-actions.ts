@@ -116,7 +116,7 @@ export async function countersignContract(contractId: string): Promise<SalesResu
     // signed_client → countersigned → active (two legal moves).
     const step1 = await performTransition({
       table: "contracts", machine: "contract", entityId: contractId, to: "countersigned",
-      capability: CAP_SALES, patch: { countersignature: "BrightLoop" },
+      capability: CAP_SALES, patch: { countersignature: "Auxion" },
     });
     if (!step1.ok) return { ok: false, error: step1.error };
     const step2 = await performTransition({ table: "contracts", machine: "contract", entityId: contractId, to: "active", capability: CAP_SALES });

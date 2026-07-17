@@ -1,5 +1,5 @@
 /* =============================================================================
- * @brightloop/ui — the BrightLoop design system.
+ * @brightloop/ui — the Auxion design system.
  *
  * Tokens are the canonical source (ported verbatim from the handoff reference)
  * and are imported once by the app: `import "@brightloop/ui/tokens.css";`

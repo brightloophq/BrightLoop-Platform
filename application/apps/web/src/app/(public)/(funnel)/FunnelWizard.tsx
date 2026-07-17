@@ -324,7 +324,7 @@ function RoadmapStep({ selection, state, update, plan, onBack }: { selection: Re
       <div className={styles.head}>
         <Eyebrow>Step 4 · Your growth roadmap</Eyebrow>
         <h1 className={styles.title}>Here&apos;s the path</h1>
-        <p className={styles.lede}>Phased across the loop. The next step is a conversation with a real BrightLoop strategist — who builds your actual quote with you.</p>
+        <p className={styles.lede}>Phased across the loop. The next step is a conversation with a real Auxion strategist — who builds your actual quote with you.</p>
       </div>
 
       <Card>

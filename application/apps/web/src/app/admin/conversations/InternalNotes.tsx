@@ -14,7 +14,7 @@ export interface InternalNote {
 }
 
 /**
- * Internal notes — BrightLoop-only. This whole component renders on the admin
+ * Internal notes — Auxion-only. This whole component renders on the admin
  * surface only; the underlying table has NO client RLS policy, so even if this
  * markup somehow reached a client it would return zero rows. The dashed warning
  * styling is a human safeguard: it must never look like the client-facing thread.

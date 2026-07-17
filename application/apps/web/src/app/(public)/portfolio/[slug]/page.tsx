@@ -48,7 +48,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: project.seo.title || project.name,
       description: project.seo.description || project.summary,
       url,
-      siteName: "BrightLoop",
+      siteName: "Auxion",
       // og:image intentionally omitted — the real asset for `seo.ogImage`
       // ("${project.seo.ogImage}") does not exist yet. A broken OG image is
       // worse than none; wired in the media sprint (open decision 21 / §13).

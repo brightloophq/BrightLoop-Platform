@@ -9,7 +9,7 @@ import styles from "../home.module.css";
 export const metadata: Metadata = {
   title: "Services",
   description:
-    "Brand, Build, Automate, Grow — the four disciplines of the BrightLoop loop, and the modules inside each.",
+    "Brand, Build, Automate, Grow — the four disciplines of the Auxion loop, and the modules inside each.",
 };
 
 /**

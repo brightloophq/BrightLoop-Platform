@@ -37,7 +37,7 @@ export interface CreativeWorkSchema {
   "@type": "CreativeWork";
   name: string;
   about: string;
-  creator: { "@type": "Organization"; name: "BrightLoop" };
+  creator: { "@type": "Organization"; name: "Auxion" };
   dateCreated: string;
   keywords: string;
   url: string;
@@ -69,7 +69,7 @@ export function schemaFor(
     "@type": "CreativeWork",
     name: `${project.name} — Case Study`,
     about: project.industry,
-    creator: { "@type": "Organization", name: "BrightLoop" },
+    creator: { "@type": "Organization", name: "Auxion" },
     dateCreated: project.completedDate,
     keywords: project.tags.join(", "),
     url: canonicalUrl("portfolio", project.slug, origin),
@@ -91,7 +91,7 @@ export function schemaFor(
 export interface AggregateRatingSchema {
   "@context": "https://schema.org";
   "@type": "Organization";
-  name: "BrightLoop";
+  name: "Auxion";
   url: string;
   aggregateRating: {
     "@type": "AggregateRating";
@@ -118,7 +118,7 @@ export function aggregateSchema(
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "BrightLoop",
+    name: "Auxion",
     url: origin,
     aggregateRating: {
       "@type": "AggregateRating",

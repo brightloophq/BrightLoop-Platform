@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 /**
  * Client discovery chat (handoff §12, Sprint 5B).
  *
- * The client talks directly to the BrightLoop team here. Every query is RLS-
+ * The client talks directly to the Auxion team here. Every query is RLS-
  * scoped: this page can only ever load a conversation the caller participates in,
  * and internal notes / draft quotes are simply not reachable from this surface —
  * there is no client policy on those tables (proven in the 5B spike).
@@ -103,7 +103,7 @@ export default async function PortalChatPage() {
           <Card>
             <EmptyState
               icon="mail"
-              title="Talk to your BrightLoop strategist"
+              title="Talk to your Auxion strategist"
               body="Start a conversation and a real member of our team will pick it up — no bots. They'll already have your assessment and recommended plan in front of them."
             />
             <div style={{ display: "flex", justifyContent: "center", marginTop: "var(--space-4)" }}>
@@ -114,7 +114,7 @@ export default async function PortalChatPage() {
           <Card style={{ display: "flex", flexDirection: "column", height: "calc(100vh - 220px)", minHeight: 420 }}>
             {conversation.state === "awaiting_admin" ? (
               <Alert tone="neutral" title="Message sent">
-                Your BrightLoop team has your message and will reply here. You&apos;ll see their answer live.
+                Your Auxion team has your message and will reply here. You&apos;ll see their answer live.
               </Alert>
             ) : null}
             {quotes.length > 0 ? <ClientQuotes quotes={quotes} /> : null}

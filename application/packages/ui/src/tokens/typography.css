@@ -1,38 +1,40 @@
-/* BrightLoop — Typography tokens
-   Space Grotesk for headings/display. Inter for body/UI.
-   PORTED VERBATIM from docs/handoff/reference/tokens/typography.css. */
+/* Auxion — Typography tokens
+   Sora for headings/display. IBM Plex Sans for body/UI. IBM Plex Mono for
+   labels/data. The families are loaded by next/font (self-hosted, CSP-safe) and
+   exposed as --font-sora / --font-plex-sans / --font-plex-mono on <html>; the
+   quoted family names are a graceful fallback if a build ever ships without them. */
 
 :root {
-  --font-display: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
-  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: var(--font-sora), "Sora", "Segoe UI", system-ui, sans-serif;
+  --font-body:    var(--font-plex-sans), "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:    var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Type scale (1.25 major-third-ish, tuned) */
-  --fs-display: 4.5rem; /* 72 */
-  --fs-h1: 3.25rem; /* 52 */
-  --fs-h2: 2.5rem; /* 40 */
-  --fs-h3: 1.875rem; /* 30 */
-  --fs-h4: 1.375rem; /* 22 */
-  --fs-lg: 1.125rem; /* 18 */
-  --fs-body: 1rem; /* 16 */
-  --fs-sm: 0.875rem; /* 14 */
-  --fs-xs: 0.75rem; /* 12 */
+  --fs-display: 4.5rem;   /* 72 */
+  --fs-h1:      3.25rem;  /* 52 */
+  --fs-h2:      2.5rem;   /* 40 */
+  --fs-h3:      1.875rem; /* 30 */
+  --fs-h4:      1.375rem; /* 22 */
+  --fs-lg:      1.125rem; /* 18 */
+  --fs-body:    1rem;     /* 16 */
+  --fs-sm:      0.875rem; /* 14 */
+  --fs-xs:      0.75rem;  /* 12 */
 
   /* Weights */
   --fw-regular: 400;
-  --fw-medium: 500;
-  --fw-semibold: 600;
-  --fw-bold: 700;
+  --fw-medium:  500;
+  --fw-semibold:600;
+  --fw-bold:    700;
 
   /* Line heights */
-  --lh-tight: 1.05;
+  --lh-tight:   1.05;
   --lh-heading: 1.15;
-  --lh-snug: 1.35;
-  --lh-body: 1.6;
+  --lh-snug:    1.35;
+  --lh-body:    1.6;
 
   /* Letter spacing */
-  --ls-tight: -0.02em;
-  --ls-normal: 0;
-  --ls-wide: 0.04em;
+  --ls-tight:   -0.02em;
+  --ls-normal:  0;
+  --ls-wide:    0.04em;
   --ls-eyebrow: 0.18em;
 }

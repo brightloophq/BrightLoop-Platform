@@ -1,33 +1,32 @@
-/* BrightLoop — Responsive framework tokens
+/* Auxion — Responsive framework tokens
    Breakpoints, grid, containers, section spacing.
-   Breakpoints are min-width (mobile-first). Use in @media (min-width: …).
-   PORTED VERBATIM from docs/handoff/reference/tokens/responsive.css. */
+   Breakpoints are min-width (mobile-first). Use in @media (min-width: …). */
 
 :root {
   /* ---- Breakpoints (reference values; use the px in @media) ---- */
-  --bp-sm: 480px; /* large phone */
-  --bp-md: 768px; /* tablet */
-  --bp-lg: 1024px; /* laptop */
-  --bp-xl: 1280px; /* desktop */
-  --bp-2xl: 1536px; /* large desktop */
+  --bp-sm:  480px;   /* @kind other */ /* large phone */
+  --bp-md:  768px;   /* @kind other */ /* tablet */
+  --bp-lg:  1024px;  /* @kind other */ /* laptop */
+  --bp-xl:  1280px;  /* @kind other */ /* desktop */
+  --bp-2xl: 1536px;  /* @kind other */ /* large desktop */
 
   /* ---- Grid ---- */
-  --grid-cols: 12;
-  --grid-gutter: 24px; /* desktop column gap */
-  --grid-gutter-md: 20px;
-  --grid-gutter-sm: 16px;
+  --grid-cols:    12;                 /* @kind other */
+  --grid-gutter:  24px;               /* @kind other */ /* desktop column gap */
+  --grid-gutter-md: 20px;             /* @kind other */
+  --grid-gutter-sm: 16px;             /* @kind other */
 
   /* ---- Containers / max widths ---- */
-  --container-sm: 640px; /* prose / narrow forms */
-  --container-md: 768px;
-  --container-lg: 1024px;
+  --container-sm:   640px;   /* @kind other */ /* prose / narrow forms */
+  --container-md:   768px;   /* @kind other */
+  --container-lg:   1024px;  /* @kind other */
   /* --container (1200) and --container-wide (1360) live in layout.css */
-  --container-prose: 68ch; /* article measure */
+  --container-prose: 68ch;   /* @kind other */ /* article measure */
 
   /* ---- Section spacing (vertical rhythm, fluid) ---- */
-  --section-y: clamp(64px, 8vw, 128px); /* standard section */
-  --section-y-tight: clamp(40px, 5vw, 72px);
-  --section-y-hero: clamp(80px, 10vw, 160px);
+  --section-y:       clamp(64px, 8vw, 128px);  /* @kind other */ /* standard section */
+  --section-y-tight: clamp(40px, 5vw, 72px);   /* @kind other */
+  --section-y-hero:  clamp(80px, 10vw, 160px); /* @kind other */
 }
 
 /* ---- Grid helper (opt-in utility) ---- */
@@ -42,18 +41,11 @@
   margin-inline: auto;
   padding-inline: var(--gutter);
 }
-.bl-container--wide {
-  max-width: var(--container-wide);
-}
+.bl-container--wide { max-width: var(--container-wide); }
 
 @media (max-width: 1023px) {
-  .bl-grid {
-    gap: var(--grid-gutter-md);
-  }
+  .bl-grid { gap: var(--grid-gutter-md); }
 }
 @media (max-width: 767px) {
-  .bl-grid {
-    grid-template-columns: repeat(6, minmax(0, 1fr));
-    gap: var(--grid-gutter-sm);
-  }
+  .bl-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--grid-gutter-sm); }
 }

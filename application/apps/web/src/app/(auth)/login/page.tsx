@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const ERROR_COPY: Record<string, string> = {
   missing_code: "That link was incomplete. Please try signing in again.",
   invalid_link: "That sign-in link was invalid or has expired. Request a new one.",
-  norole: "You're signed in, but this account has no role yet. Please contact BrightLoop.",
+  norole: "You're signed in, but this account has no role yet. Please contact Auxion.",
   recovery_invalid: "That password-reset link was invalid. Request a new one from Forgot password.",
   recovery_expired: "Your password-reset link expired or was already used. Request a new one.",
 };
@@ -52,7 +52,7 @@ export default async function LoginPage({
             Track your project, approve work, and see where your business stands — all in one place.
           </p>
         </div>
-        <p className={styles.brandFoot}>© 2026 BrightLoop</p>
+        <p className={styles.brandFoot}>© 2026 Auxion</p>
       </aside>
 
       <main className={styles.formPanel}>
@@ -63,7 +63,7 @@ export default async function LoginPage({
           <LoginForm urlError={urlError} urlNotice={urlNotice} />
 
           <p className={styles.foot}>
-            BrightLoop accounts are created by invitation — clients are invited when their project
+            Auxion accounts are created by invitation — clients are invited when their project
             starts, and team accounts are created by the owner. There is no public sign-up.
           </p>
         </div>

@@ -5,7 +5,7 @@
  * ========================================================================== */
 
 export const ROLES = {
-  // Internal (BrightLoop)
+  // Internal (Auxion)
   owner: { scope: "internal", label: "Owner" },
   admin: { scope: "internal", label: "Admin" },
   team_member: { scope: "internal", label: "Team Member" },

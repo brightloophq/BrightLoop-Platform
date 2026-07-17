@@ -15,7 +15,7 @@ describe("surfaceFromHost()", () => {
   });
 
   it("ignores port and case", () => {
-    expect(surfaceFromHost("ADMIN.BrightLoop.co:3000")).toBe("admin");
+    expect(surfaceFromHost("ADMIN.brightloop.co:3000")).toBe("admin");
   });
 
   it("treats unknown hosts and localhost as public (never as admin)", () => {

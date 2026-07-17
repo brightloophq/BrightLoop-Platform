@@ -280,11 +280,11 @@ export const PLACEHOLDER_ASSESSMENT = [
   },
 ];
 
-/** The client's per-service choice → what BrightLoop will do (handoff onboarding). */
+/** The client's per-service choice → what Auxion will do (handoff onboarding). */
 export const PLACEHOLDER_CHOICES = [
   { id: "have" as const, label: "Already have it", status: "Keep", icon: "check-circle", note: "We'll review your existing asset and confirm it meets professional standards." },
-  { id: "upgrade" as const, label: "Upgrade existing", status: "Improve", icon: "arrow-up-right", note: "You have this — BrightLoop will improve or redesign it to a professional standard." },
-  { id: "need" as const, label: "Build it for me", status: "Create", icon: "sparkles", note: "You don't have this yet — BrightLoop will create it from scratch." },
+  { id: "upgrade" as const, label: "Upgrade existing", status: "Improve", icon: "arrow-up-right", note: "You have this — Auxion will improve or redesign it to a professional standard." },
+  { id: "need" as const, label: "Build it for me", status: "Create", icon: "sparkles", note: "You don't have this yet — Auxion will create it from scratch." },
 ];
 
 /** Status → tone/description for the Keep/Improve/Replace/Create summary. */

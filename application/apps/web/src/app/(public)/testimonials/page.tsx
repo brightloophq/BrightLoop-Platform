@@ -18,7 +18,7 @@ import styles from "./testimonials.module.css";
 
 export const metadata: Metadata = {
   title: "Testimonials",
-  description: "What BrightLoop clients say — verified reviews with per-category ratings.",
+  description: "What Auxion clients say — verified reviews with per-category ratings.",
   alternates: { canonical: canonicalUrl("testimonials") },
 };
 

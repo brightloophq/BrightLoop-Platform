@@ -56,9 +56,9 @@ export function ContractSign({ contracts }: { contracts: PortalContract[] }) {
               </div>
             </div>
           ) : c.status === "signed_client" ? (
-            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>Signed as <strong>{c.client_signature}</strong> — awaiting BrightLoop countersignature.</p>
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>Signed as <strong>{c.client_signature}</strong> — awaiting Auxion countersignature.</p>
           ) : c.status === "active" ? (
-            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-success, #1a7f4b)", marginTop: "var(--space-2)" }}>Contract is active. Signed by {c.client_signature} and countersigned by BrightLoop.</p>
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-success, #1a7f4b)", marginTop: "var(--space-2)" }}>Contract is active. Signed by {c.client_signature} and countersigned by Auxion.</p>
           ) : null}
         </Card>
       ))}

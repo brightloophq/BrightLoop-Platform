@@ -135,7 +135,7 @@ export function Navbar({ links, ctaLabel, ctaHref, pathname }: NavbarProps) {
     <>
       <header className={[styles.header, scrolled ? styles.scrolled : null].filter(Boolean).join(" ")}>
         <Container width="wide" className={styles.inner}>
-          <Link href="/" className={styles.brand} aria-label="BrightLoop — home">
+          <Link href="/" className={styles.brand} aria-label="Auxion — home">
             <Logo variant="lockup" height={26} />
           </Link>
 

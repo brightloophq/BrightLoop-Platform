@@ -58,12 +58,12 @@ import {
 } from "@brightloop/domain";
 import { toPortfolioProject, toTestimonial } from "./mappers.js";
 
-export type BrightLoopSupabaseClient = SupabaseClient<Database>;
+export type AuxionSupabaseClient = SupabaseClient<Database>;
 
 export class SupabaseReputationRepository implements ReputationRepository {
   readonly source: DataSource = "supabase";
 
-  constructor(private readonly client: BrightLoopSupabaseClient) {}
+  constructor(private readonly client: AuxionSupabaseClient) {}
 
   /**
    * All rows RLS is willing to hand us. Because the publish policy only exposes

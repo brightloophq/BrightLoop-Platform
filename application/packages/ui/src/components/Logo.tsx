@@ -9,65 +9,66 @@ export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, "height"> {
 }
 
 /**
- * Logo — the BrightLoop loop mark.
+ * Logo — the Auxion blueprint mark (hexagonal "A") + AUXION wordmark.
  *
- * PLACEHOLDER GEOMETRY. The only supplied asset (brand-assets/MY IDENTITY.png)
- * is a raster with a navy background baked in, so it cannot be used on arbitrary
- * surfaces. Open decision 21 requests the vector package (mark + wordmark +
- * lockup, transparent, light/dark, favicon, OG). This SVG is a faithful stand-in
- * built from the brand gradient token so the shell is complete and on-palette —
- * replace it when the real vectors arrive.
+ * The mark's facet + navy fills are fixed brand colors and read on both the dark
+ * navy canvas and the light "paper" theme (the white hairlines and drawn hexagon
+ * keep it legible on either). The wordmark uses currentColor so it inherits the
+ * surrounding text colour (white on dark headers, navy on paper).
  */
-export function Logo({ variant = "lockup", height = 28, ...rest }: LogoProps) {
-  const showMark = variant === "mark" || variant === "lockup";
-  const showWord = variant === "wordmark" || variant === "lockup";
-  const width = variant === "mark" ? height : variant === "wordmark" ? height * 5.2 : height * 6.4;
-  const gradientId = `bl-loop-${variant}`;
-
+function Mark({ gradientId }: { gradientId: string }) {
   return (
-    <svg
-      viewBox={`0 0 ${variant === "mark" ? 32 : variant === "wordmark" ? 166 : 205} 32`}
-      height={height}
-      width={width}
-      role="img"
-      aria-label="BrightLoop"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      {...rest}
-    >
+    <>
       <defs>
-        <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#2563EB" />
-          <stop offset="100%" stopColor="#22D3EE" />
+        <linearGradient id={gradientId} x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0" stopColor="#2a4a86" />
+          <stop offset="1" stopColor="#17274d" />
         </linearGradient>
       </defs>
+      <polygon points="300,104 469.7,202 300,300 130.3,202" fill="#c6cfd8" />
+      <polygon points="130.3,202 300,300 300,496 130.3,398" fill="#b1bdc9" />
+      <polygon points="469.7,202 469.7,398 300,496 300,300" fill="#9dabb9" />
+      <polygon points="300,158 272.582,354 327.418,354" fill="#93a1af" stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
+      <polygon points="262,140 300,140 252,470 176,470" fill={`url(#${gradientId})`} stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
+      <polygon points="338,140 300,140 348,470 424,470" fill={`url(#${gradientId})`} stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
+      <polygon points="268.582,356 331.418,356 336.655,392 263.345,392" fill={`url(#${gradientId})`} stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
+      <polygon points="300,404 338,436 300,468 262,436" fill="#95a3b1" stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
+      <polygon points="300,44 521.7,172 521.7,428 300,556 78.3,428 78.3,172" fill="none" stroke="#9aa8b6" strokeWidth={15} strokeLinejoin="round" />
+    </>
+  );
+}
 
-      {showMark ? (
-        <g>
-          {/* The loop: an open ring, gapped to read as a continuous cycle. */}
-          <path
-            d="M16 4a12 12 0 1 1-8.49 3.51"
-            stroke={`url(#${gradientId})`}
-            strokeWidth="3.5"
-            strokeLinecap="round"
-          />
-          <circle cx="16" cy="16" r="3.5" fill={`url(#${gradientId})`} />
-        </g>
-      ) : null}
+export function Logo({ variant = "lockup", height = 28, ...rest }: LogoProps) {
+  const gradientId = `auxion-mark-${variant}`;
 
-      {showWord ? (
-        <text
-          x={variant === "lockup" ? 42 : 0}
-          y="22"
-          fill="currentColor"
-          fontFamily="var(--font-display), system-ui, sans-serif"
-          fontSize="21"
-          fontWeight="700"
-          letterSpacing="-0.02em"
-        >
-          BrightLoop
+  if (variant === "mark") {
+    return (
+      <svg viewBox="0 0 600 600" height={height} width={height} role="img" aria-label="Auxion" xmlns="http://www.w3.org/2000/svg" {...rest}>
+        <Mark gradientId={gradientId} />
+      </svg>
+    );
+  }
+
+  if (variant === "wordmark") {
+    // AUXION in Sora — currentColor so it adapts to the surface.
+    return (
+      <svg viewBox="0 0 1000 400" height={height} width={height * 2.5} role="img" aria-label="Auxion" xmlns="http://www.w3.org/2000/svg" {...rest}>
+        <text x="0" y="288" fontFamily="var(--font-display), Sora, system-ui, sans-serif" fontWeight={800} fontSize="240" letterSpacing="8" fill="currentColor">
+          AUXION
         </text>
-      ) : null}
+      </svg>
+    );
+  }
+
+  // lockup: mark + wordmark
+  return (
+    <svg viewBox="0 0 1480 400" height={height} width={height * 3.7} role="img" aria-label="Auxion" xmlns="http://www.w3.org/2000/svg" {...rest}>
+      <g transform="translate(10,0) scale(0.6333)">
+        <Mark gradientId={gradientId} />
+      </g>
+      <text x="450" y="268" fontFamily="var(--font-display), Sora, system-ui, sans-serif" fontWeight={800} fontSize="210" letterSpacing="6" fill="currentColor">
+        AUXION
+      </text>
     </svg>
   );
 }

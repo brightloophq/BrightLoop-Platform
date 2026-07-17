@@ -26,7 +26,7 @@ import styles from "./home.module.css";
 export const revalidate = 300;
 
 export const metadata: Metadata = {
-  title: "BrightLoop — Brands. Systems. Growth.",
+  title: "Auxion — Brands. Systems. Growth.",
   description:
     "One connected loop — Brand, Build, Automate, Grow — for small businesses that want to look established and run like it.",
 };
@@ -79,7 +79,7 @@ export default async function HomePage() {
             </h1>
             <p className={styles.heroSub}>
               Most agencies hand you a logo, a site, or a campaign — then leave the gaps to you.
-              BrightLoop connects all four so your brand, website, operations and marketing compound
+              Auxion connects all four so your brand, website, operations and marketing compound
               instead of competing.
             </p>
             <div className={styles.heroActions}>

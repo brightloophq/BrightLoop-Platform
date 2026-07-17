@@ -15,7 +15,7 @@ export interface MessageAttachment {
 export interface ThreadPerson {
   id: string;
   name: string;
-  /** true for BrightLoop-side participants — drives the "BrightLoop" author label */
+  /** true for Auxion-side participants — drives the "Auxion" author label */
   internal: boolean;
 }
 
@@ -104,7 +104,7 @@ export function ChatThread({ conversationId, meId, initialMessages, people, read
           messages.map((m) => {
             const mine = m.author_id === meId;
             const person = nameById.get(m.author_id);
-            const label = person ? (person.internal ? "BrightLoop" : person.name) : "Someone";
+            const label = person ? (person.internal ? "Auxion" : person.name) : "Someone";
             return (
               <div key={m.id} className={[styles.msg, mine ? styles.msgMine : styles.msgTheirs].join(" ")}>
                 <div className={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs].join(" ")}>

@@ -1,106 +1,102 @@
-/* BrightLoop — Color tokens
-   Base palette + tonal scales + semantic aliases.
-   Brand is dark-first: Midnight Navy is the primary canvas.
-   PORTED VERBATIM from docs/handoff/reference/tokens/colors.css — do not drift. */
+/* Auxion — Color tokens
+   Navy & Signal. One navy canvas family, one signal-blue accent (no teal).
+   Variable names are stable for backwards compatibility; values are Auxion. */
 
 :root {
   /* ---- Brand core ---- */
-  --bl-navy: #0b1220; /* Midnight Navy — primary canvas */
-  --bl-blue: #2563eb; /* Bright Blue — primary action */
-  --bl-cyan: #22d3ee; /* Electric Cyan — accent / highlight */
-  --bl-white: #ffffff;
-  --bl-slate: #64748b; /* Slate Gray — secondary text */
-  --bl-soft: #f8fafc; /* Soft White — light surface */
+  --bl-navy:        #152238; /* Navy Ink — darkest brand / hero base */
+  --bl-blue:        #1B54E4; /* Signal — the single accent + action */
+  --bl-cyan:        #5B83EF; /* Signal-on-dark (was teal; now light signal) */
+  --bl-white:       #FFFFFF;
+  --bl-slate:       #69707C; /* Slate — secondary text */
+  --bl-soft:        #FBFCFD; /* Paper — light surface */
 
   /* ---- Navy scale (surfaces on dark) ---- */
-  --navy-950: #060a13;
-  --navy-900: #0b1220;
-  --navy-850: #0e1729;
-  --navy-800: #111c33;
-  --navy-700: #16233f;
-  --navy-600: #1e2e4f;
-  --navy-500: #263a63;
+  --navy-950: #0E1626;
+  --navy-900: #152238;
+  --navy-850: #1A2B45;
+  --navy-800: #1C3055;
+  --navy-700: #223C5C;
+  --navy-600: #274A7C;
+  --navy-500: #345C93;
 
-  /* ---- Blue scale (primary) ---- */
-  --blue-50: #eff5ff;
-  --blue-100: #dbe7fe;
-  --blue-200: #bfd3fe;
-  --blue-300: #93b4fd;
-  --blue-400: #5f8cf9;
-  --blue-500: #2563eb;
-  --blue-600: #1d4fd0;
-  --blue-700: #1a41a8;
-  --blue-800: #1b3985;
+  /* ---- Blue / Signal scale (primary) ---- */
+  --blue-50:  #EAF0FE;
+  --blue-100: #D3E0FD;
+  --blue-200: #B0C6FB;
+  --blue-300: #85A5F4;
+  --blue-400: #5B83EF;
+  --blue-500: #1B54E4;
+  --blue-600: #153FC4;
+  --blue-700: #123AA0;
+  --blue-800: #143282;
 
-  /* ---- Cyan scale (accent) ---- */
-  --cyan-50: #ecfdff;
-  --cyan-100: #cff9fe;
-  --cyan-200: #a5f0fc;
-  --cyan-300: #67e3f9;
-  --cyan-400: #22d3ee;
-  --cyan-500: #06b2d4;
-  --cyan-600: #0a8fae;
+  /* ---- Cyan scale (legacy name; now signal-tinted, no teal) ---- */
+  --cyan-50:  #EDF2FE;
+  --cyan-100: #DAE4FD;
+  --cyan-200: #BACDFB;
+  --cyan-300: #8FADF3;
+  --cyan-400: #5B83EF;
+  --cyan-500: #3E6AEA;
+  --cyan-600: #1B54E4;
 
   /* ---- Slate / neutral scale ---- */
-  --slate-50: #f8fafc;
-  --slate-100: #f1f5f9;
-  --slate-200: #e2e8f0;
-  --slate-300: #cbd5e1;
-  --slate-400: #94a3b8;
-  --slate-500: #64748b;
-  --slate-600: #475569;
-  --slate-700: #334155;
-  --slate-800: #1e293b;
-  --slate-900: #0f172a;
+  --slate-50:  #FBFCFD;
+  --slate-100: #F2F4F7;
+  --slate-200: #E1E5EC;
+  --slate-300: #C4CCD7;
+  --slate-400: #98A6B6;
+  --slate-500: #69707C;
+  --slate-600: #4C5563;
+  --slate-700: #3B4557;
+  --slate-800: #26303F;
+  --slate-900: #141B26;
 
   /* ---- Semantic status ---- */
-  --success: #16b364;
-  --warning: #f5a524;
-  --danger: #ef4444;
-  --info: var(--bl-cyan);
+  --success: #1C7A45;
+  --warning: #B4791B;
+  --danger:  #D23B3A;
+  --info:    var(--bl-blue);
 
-  /* ---- Star rating gold (reputation stars only) ---- */
-  --star-gold: #f5b301;
-
-  /* ---- Brand gradient (logo loop) ---- */
-  --grad-loop: linear-gradient(135deg, var(--bl-blue) 0%, var(--bl-cyan) 100%);
-  --grad-loop-soft: linear-gradient(135deg, #2563eb 0%, #3aa8f0 55%, #22d3ee 100%);
+  /* ---- Brand gradient (navy → signal) ---- */
+  --grad-loop: linear-gradient(135deg, var(--navy-600) 0%, var(--bl-blue) 100%);
+  --grad-loop-soft: linear-gradient(135deg, #274A7C 0%, #2C5BCF 55%, #1B54E4 100%); /* @kind color */
 
   /* ---- Semantic aliases: DARK theme (default) ---- */
-  --bg-base: var(--navy-900);
-  --bg-raised: var(--navy-850);
-  --surface-card: var(--navy-800);
+  --bg-base:       var(--navy-900);
+  --bg-raised:     var(--navy-850);
+  --surface-card:  var(--navy-800);
   --surface-inset: var(--navy-950);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.16);
+  --border-subtle: rgba(255,255,255,0.08);
+  --border-strong: rgba(255,255,255,0.16);
 
-  --text-primary: var(--bl-white);
+  --text-primary:   var(--bl-white);
   --text-secondary: var(--slate-300);
-  --text-muted: var(--slate-500);
-  --text-accent: var(--bl-cyan);
-  --text-link: var(--blue-400);
+  --text-muted:     var(--slate-400);
+  --text-accent:    var(--bl-cyan);
+  --text-link:      var(--blue-400);
   --text-on-accent: var(--bl-white);
 
-  --action-primary: var(--bl-blue);
+  --action-primary:       var(--bl-blue);
   --action-primary-hover: var(--blue-600);
   --action-primary-press: var(--blue-700);
-  --focus-ring: var(--bl-cyan);
+  --focus-ring:           var(--bl-blue);
 }
 
-/* ---- Semantic aliases: LIGHT theme ---- */
+/* ---- Semantic aliases: LIGHT theme (Living Blueprint / paper) ---- */
 .bl-theme-light,
 [data-theme="light"] {
-  --bg-base: var(--slate-50);
-  --bg-raised: var(--bl-white);
-  --surface-card: var(--bl-white);
+  --bg-base:       var(--bl-soft);
+  --bg-raised:     var(--bl-white);
+  --surface-card:  var(--bl-white);
   --surface-inset: var(--slate-100);
   --border-subtle: var(--slate-200);
   --border-strong: var(--slate-300);
 
-  --text-primary: var(--navy-900);
+  --text-primary:   var(--navy-900);
   --text-secondary: var(--slate-700);
-  --text-muted: var(--slate-500);
-  --text-accent: var(--blue-600);
-  --text-link: var(--blue-600);
+  --text-muted:     var(--slate-500);
+  --text-accent:    var(--blue-600);
+  --text-link:      var(--blue-600);
   --text-on-accent: var(--bl-white);
 }

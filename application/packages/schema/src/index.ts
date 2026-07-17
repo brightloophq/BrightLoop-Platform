@@ -1,5 +1,5 @@
 /* =============================================================================
- * @brightloop/schema — the single source of truth for the BrightLoop platform.
+ * @brightloop/schema — the single source of truth for the Auxion platform.
  * Roles, permissions, entities, state machines, transition guards, tone map.
  * ========================================================================== */
 

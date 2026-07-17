@@ -20,7 +20,7 @@ export default async function ForgotPasswordPage() {
     <div className={styles.shell}>
       <aside className={styles.brandPanel}>
         <Logo variant="lockup" height={28} />
-        <p className={styles.brandFoot}>© 2026 BrightLoop</p>
+        <p className={styles.brandFoot}>© 2026 Auxion</p>
       </aside>
       <main className={styles.formPanel}>
         <div className={styles.formInner}>

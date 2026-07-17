@@ -41,7 +41,7 @@ export const moduleImpactSchema = z.object({
 });
 
 export const moduleResponsibilitySchema = z.object({
-  /** What BrightLoop does. */
+  /** What Auxion does. */
   bl: z.array(z.string()),
   /** What the client does. */
   you: z.array(z.string()),

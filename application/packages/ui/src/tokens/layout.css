@@ -1,51 +1,50 @@
-/* BrightLoop — Spacing, radius, shadow, motion, layout tokens
-   PORTED VERBATIM from docs/handoff/reference/tokens/layout.css. */
+/* Auxion — Spacing, radius, shadow, motion, layout tokens */
 
 :root {
   /* ---- Spacing (4px base) ---- */
-  --space-0: 0;
-  --space-1: 0.25rem; /* 4  */
-  --space-2: 0.5rem; /* 8  */
-  --space-3: 0.75rem; /* 12 */
-  --space-4: 1rem; /* 16 */
-  --space-5: 1.5rem; /* 24 */
-  --space-6: 2rem; /* 32 */
-  --space-7: 3rem; /* 48 */
-  --space-8: 4rem; /* 64 */
-  --space-9: 6rem; /* 96 */
-  --space-10: 8rem; /* 128 */
+  --space-0:  0;
+  --space-1:  0.25rem;  /* 4  */
+  --space-2:  0.5rem;   /* 8  */
+  --space-3:  0.75rem;  /* 12 */
+  --space-4:  1rem;     /* 16 */
+  --space-5:  1.5rem;   /* 24 */
+  --space-6:  2rem;     /* 32 */
+  --space-7:  3rem;     /* 48 */
+  --space-8:  4rem;     /* 64 */
+  --space-9:  6rem;     /* 96 */
+  --space-10: 8rem;     /* 128 */
 
-  /* ---- Radius ---- */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-2xl: 32px;
+  /* ---- Radius (blueprint: sharp, drawn) ---- */
+  --radius-sm:   3px;
+  --radius-md:   4px;
+  --radius-lg:   6px;
+  --radius-xl:   8px;
+  --radius-2xl:  10px;
   --radius-pill: 999px;
 
   /* ---- Shadows (tuned for dark navy surfaces) ---- */
-  --shadow-sm: 0 1px 2px rgba(2, 6, 18, 0.4);
-  --shadow-md: 0 6px 20px rgba(2, 6, 18, 0.45);
-  --shadow-lg: 0 18px 48px rgba(2, 6, 18, 0.55);
-  --shadow-xl: 0 32px 80px rgba(2, 6, 18, 0.6);
-  /* Glow — the loop accent, used sparingly on primary CTAs */
-  --glow-blue: 0 0 0 1px rgba(37, 99, 235, 0.4), 0 8px 30px rgba(37, 99, 235, 0.35);
-  --glow-cyan: 0 0 0 1px rgba(34, 211, 238, 0.35), 0 8px 30px rgba(34, 211, 238, 0.28);
+  --shadow-sm:  0 1px 2px rgba(2,6,18,0.4);
+  --shadow-md:  0 6px 20px rgba(2,6,18,0.45);
+  --shadow-lg:  0 18px 48px rgba(2,6,18,0.55);
+  --shadow-xl:  0 32px 80px rgba(2,6,18,0.6);
+  /* Glow — the signal accent, used sparingly on primary CTAs */
+  --glow-blue:  0 0 0 1px rgba(37,99,235,0.4), 0 8px 30px rgba(37,99,235,0.35);
+  --glow-cyan:  0 0 0 1px rgba(27,84,228,0.35), 0 8px 30px rgba(27,84,228,0.28);
   /* Light-theme shadows */
-  --shadow-light-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
-  --shadow-light-md: 0 8px 24px rgba(15, 23, 42, 0.08);
-  --shadow-light-lg: 0 20px 50px rgba(15, 23, 42, 0.1);
+  --shadow-light-sm: 0 1px 2px rgba(15,23,42,0.06);
+  --shadow-light-md: 0 8px 24px rgba(15,23,42,0.08);
+  --shadow-light-lg: 0 20px 50px rgba(15,23,42,0.10);
 
   /* ---- Motion ---- */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
-  --dur-fast: 140ms;
-  --dur-base: 240ms;
-  --dur-slow: 420ms;
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1); /* @kind other */
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1); /* @kind other */
+  --dur-fast:   140ms; /* @kind other */
+  --dur-base:   240ms; /* @kind other */
+  --dur-slow:   420ms; /* @kind other */
 
   /* ---- Layout ---- */
-  --container: 1200px;
-  --container-wide: 1360px;
-  --gutter: clamp(1.25rem, 4vw, 4rem);
-  --header-h: 72px;
+  --container:      1200px; /* @kind other */
+  --container-wide: 1360px; /* @kind other */
+  --gutter:         clamp(1.25rem, 4vw, 4rem); /* @kind other */
+  --header-h:       72px; /* @kind other */
 }

@@ -105,7 +105,7 @@ describe("schemaFor() — never emits schema for unpublished content", () => {
       "@type": "CreativeWork",
       name: "The New Greenhouse — Case Study",
       about: "Agriculture",
-      creator: { "@type": "Organization", name: "BrightLoop" },
+      creator: { "@type": "Organization", name: "Auxion" },
       dateCreated: "2026-05-18",
       keywords: "local, identity",
       url: "https://brightloop.co/portfolio/new-greenhouse",
@@ -159,7 +159,7 @@ describe("aggregateSchema() — never asserts a rating we don't have", () => {
   it("builds Organization + AggregateRating from real published reviews", () => {
     expect(aggregateSchema({ count: 5, overall: 4.8 })).toMatchObject({
       "@type": "Organization",
-      name: "BrightLoop",
+      name: "Auxion",
       aggregateRating: {
         "@type": "AggregateRating",
         ratingValue: 4.8,

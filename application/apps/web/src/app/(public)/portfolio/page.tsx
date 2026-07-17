@@ -16,7 +16,7 @@ import styles from "./portfolio.module.css";
 export const metadata: Metadata = {
   title: "Work",
   description:
-    "Selected BrightLoop projects — brand, website, automation and growth work for small businesses.",
+    "Selected Auxion projects — brand, website, automation and growth work for small businesses.",
   alternates: { canonical: "/portfolio" },
 };
 

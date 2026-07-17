@@ -6,7 +6,7 @@ import styles from "./contact.module.css";
 
 export const metadata: Metadata = {
   title: "Contact",
-  description: "Book a strategy call with BrightLoop, or send an enquiry.",
+  description: "Book a strategy call with Auxion, or send an enquiry.",
 };
 
 /**

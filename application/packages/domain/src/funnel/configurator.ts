@@ -15,14 +15,14 @@ import {
 } from "@brightloop/schema";
 import { rangeFor } from "../catalog/pricing.js";
 
-/** What the client says about a service, and what BrightLoop will do about it. */
+/** What the client says about a service, and what Auxion will do about it. */
 export type Choice = "have" | "upgrade" | "need";
 export type ResolvedStatus = "Keep" | "Improve" | "Replace" | "Create";
 
 /** Inventory value for a capability the client may own. */
 export type AssetPresence = "have" | "weak" | "none";
 
-/** Resolve a choice + inventory into what BrightLoop will actually do. */
+/** Resolve a choice + inventory into what Auxion will actually do. */
 export function statusFor(choice: Choice, inventory: AssetPresence): ResolvedStatus {
   if (choice === "have") return "Keep";
   if (choice === "need") return "Create";

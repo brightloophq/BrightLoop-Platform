@@ -180,7 +180,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
                 content: (
                   <>
                     We don&apos;t publish rate cards. After you complete the assessment and
-                    configurator, a BrightLoop strategist prepares tailored pricing with you in a
+                    configurator, a Auxion strategist prepares tailored pricing with you in a
                     discovery conversation — scoped to exactly what you need, with no obligation.
                   </>
                 ),

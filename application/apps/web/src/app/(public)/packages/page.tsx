@@ -17,13 +17,13 @@ import styles from "./packages.module.css";
 export const metadata: Metadata = {
   title: "Packages",
   description:
-    "BrightLoop packages — Starter, Growth and Enterprise. See the deliverables, outcomes, industries served and timelines for each. Pricing is prepared with a strategist.",
+    "Auxion packages — Starter, Growth and Enterprise. See the deliverables, outcomes, industries served and timelines for each. Pricing is prepared with a strategist.",
 };
 
 /**
  * Packages (handoff §05 / Sprint 5R spec §1).
  *
- * NO PRICING. BrightLoop does not publish a rate card. Each package shows what
+ * NO PRICING. Auxion does not publish a rate card. Each package shows what
  * you get (deliverables), what changes (outcomes), who it suits (industries) and
  * how long it takes (timeline). Tailored pricing is prepared by a strategist in
  * the discovery conversation after the assessment + configurator — never here.

@@ -65,9 +65,9 @@ export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
     metrics: { disclosed: false },
     testimonialId: "t_greenhouse",
     seo: {
-      title: "The New Greenhouse — Brand & Website Case Study | BrightLoop",
+      title: "The New Greenhouse — Brand & Website Case Study | Auxion",
       description:
-        "How BrightLoop built a farm-to-table brand identity and conversion-first Webflow site for The New Greenhouse, a Jamaican urban-farming venture.",
+        "How Auxion built a farm-to-table brand identity and conversion-first Webflow site for The New Greenhouse, a Jamaican urban-farming venture.",
       ogImage: "rep-hero-greenhouse",
     },
   },
@@ -110,9 +110,9 @@ export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
     metrics: { disclosed: false },
     testimonialId: "t_polishedpro",
     seo: {
-      title: "PolishedPro Cleaners — Booking Automation Case Study | BrightLoop",
+      title: "PolishedPro Cleaners — Booking Automation Case Study | Auxion",
       description:
-        "BrightLoop rebranded PolishedPro Cleaners and built an automated booking-to-dispatch system on WordPress, Airtable and Zapier.",
+        "Auxion rebranded PolishedPro Cleaners and built an automated booking-to-dispatch system on WordPress, Airtable and Zapier.",
       ogImage: "rep-hero-polishedpro",
     },
   },
@@ -155,9 +155,9 @@ export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
     metrics: { disclosed: false },
     testimonialId: "t_meridian",
     seo: {
-      title: "Meridian Studio — Full Growth System Case Study | BrightLoop",
+      title: "Meridian Studio — Full Growth System Case Study | Auxion",
       description:
-        "BrightLoop delivered brand, website and CRM automation for Meridian Studio, converting a referral-only consultancy into a predictable pipeline.",
+        "Auxion delivered brand, website and CRM automation for Meridian Studio, converting a referral-only consultancy into a predictable pipeline.",
       ogImage: "rep-hero-meridian",
     },
   },
@@ -199,9 +199,9 @@ export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
     metrics: { disclosed: false },
     testimonialId: "t_harbor",
     seo: {
-      title: "Harbor & Co — Shopify & Lifecycle Email Case Study | BrightLoop",
+      title: "Harbor & Co — Shopify & Lifecycle Email Case Study | Auxion",
       description:
-        "BrightLoop rebuilt Harbor & Co's Shopify storefront and lifecycle email program for a boutique hospitality brand.",
+        "Auxion rebuilt Harbor & Co's Shopify storefront and lifecycle email program for a boutique hospitality brand.",
       ogImage: "rep-hero-harbor",
     },
   },
@@ -240,9 +240,9 @@ export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
     metrics: { disclosed: false },
     testimonialId: "t_verdant",
     seo: {
-      title: "Verdant Wellness — Brand & Content Case Study | BrightLoop",
+      title: "Verdant Wellness — Brand & Content Case Study | Auxion",
       description:
-        "BrightLoop unified a multi-practitioner wellness collective under one brand and content system.",
+        "Auxion unified a multi-practitioner wellness collective under one brand and content system.",
       ogImage: "rep-hero-verdant",
     },
   },
@@ -283,7 +283,7 @@ export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
     metrics: { disclosed: false },
     testimonialId: null,
     seo: {
-      title: "Northwind Supply — B2B Commerce Case Study | BrightLoop",
+      title: "Northwind Supply — B2B Commerce Case Study | Auxion",
       description: "A B2B commerce rebuild and operations automation for an industrial supply distributor.",
       ogImage: "rep-hero-northwind",
     },
@@ -342,7 +342,7 @@ export const PLACEHOLDER_TESTIMONIALS: readonly Testimonial[] = [
     overall: 5,
     categories: { communication: 5, quality: 5, timeliness: 4, value: 5, professionalism: 5 },
     quote:
-      "BrightLoop didn't just redesign our website — they rebuilt how the whole business runs. We finally look and operate like the company we want to be.",
+      "Auxion didn't just redesign our website — they rebuilt how the whole business runs. We finally look and operate like the company we want to be.",
     media: [],
   },
   {

@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: project.seo.title || project.name,
       description: project.seo.description || project.summary,
       url: canonicalUrl("portfolio", project.slug),
-      siteName: "BrightLoop",
+      siteName: "Auxion",
     },
   };
 }

@@ -1,4 +1,4 @@
-/* BrightLoop design system — single entry point for all tokens + base styles.
+/* Auxion design system — single entry point for all tokens + base styles.
    Import once in the app's root layout: `import "@brightloop/ui/tokens.css";`
    Order matters: colors → typography → layout → effects (depends on the
    shadow/color scales) → responsive → base elements. */

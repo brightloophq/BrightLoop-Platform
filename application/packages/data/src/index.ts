@@ -24,13 +24,13 @@ import { PlaceholderReputationRepository } from "./placeholder/reputation.reposi
 import { PlaceholderCatalogRepository } from "./placeholder/catalog.repository.js";
 import {
   SupabaseReputationRepository,
-  type BrightLoopSupabaseClient,
+  type AuxionSupabaseClient,
 } from "./supabase/reputation.repository.js";
 
 export { PlaceholderReputationRepository } from "./placeholder/reputation.repository.js";
 export { PlaceholderCatalogRepository } from "./placeholder/catalog.repository.js";
 export { SupabaseReputationRepository } from "./supabase/reputation.repository.js";
-export type { BrightLoopSupabaseClient } from "./supabase/reputation.repository.js";
+export type { AuxionSupabaseClient } from "./supabase/reputation.repository.js";
 export { toPortfolioProject, toTestimonial } from "./supabase/mappers.js";
 export {
   PLACEHOLDER_PROJECTS,
@@ -57,7 +57,7 @@ export interface ReputationConfig {
    * carries the caller's session, and therefore determines what RLS lets them
    * see.
    */
-  client?: BrightLoopSupabaseClient;
+  client?: AuxionSupabaseClient;
 }
 
 /**
