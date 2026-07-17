@@ -1,14 +1,13 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
 import { may } from "@brightloop/domain";
-import { Logo } from "@brightloop/ui";
 import { requireSurface } from "@/lib/auth";
-import { signOut } from "../(auth)/actions";
-import { AdminNav, type AdminNavGroup } from "./AdminNav";
+import { transformationNavGroup } from "@/lib/transformation-nav";
+import { AppSidebar } from "./AppSidebar";
+import type { AdminNavGroup } from "./AdminNav";
 import styles from "./admin.module.css";
 
 /**
- * Admin command center layout — server-side surface guard + capability-gated nav.
+ * Auxion command-center layout — server-side surface guard + capability-gated nav.
  *
  * THREE INDEPENDENT CHECKS, none of which trusts the others:
  *   1. middleware — cheap early exit on the role claim
@@ -16,37 +15,42 @@ import styles from "./admin.module.css";
  *      client that ignores middleware still cannot render this
  *   3. RLS — refuses the underlying rows regardless
  *
- * Nav groups are filtered by CAPABILITY, not by role name: `team_member` never
- * sees Finance or Marketing because it lacks `finance.*` / `marketing.*`. Per
- * handoff §09.3 role-gated items are HIDDEN, not disabled — and hiding them here
- * is convenience, not security. RLS is what actually stops them.
+ * Nav groups are filtered by CAPABILITY, not by role name. The Transformation
+ * group is the product's primary navigation; the agency back-office groups follow.
+ * Per handoff §09.3 role-gated items are HIDDEN, not disabled — and hiding them
+ * here is convenience, not security. RLS is what actually stops them.
  */
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const actor = await requireSurface("admin");
 
-  const groups: AdminNavGroup[] = [
-    {
-      label: "Overview",
-      items: [{ label: "Dashboard", href: "/admin", icon: "layout-grid", ready: true }],
-    },
-    {
-      label: "Sales",
-      items: [
-        { label: "Leads", href: "/admin/leads", icon: "route", ready: true },
-        { label: "Proposals", href: "/admin/proposals", icon: "search", ready: true },
-        { label: "Contracts", href: "/admin/contracts", icon: "check-circle", ready: true },
-      ],
-    },
-    {
-      label: "Delivery",
-      items: [
-        { label: "Conversations", href: "/admin/conversations", icon: "mail", ready: true },
-        { label: "Clients", href: "/admin/clients", icon: "users", ready: true },
-        { label: "Projects", href: "/admin/projects", icon: "workflow", ready: true },
-        { label: "Deliverables", href: "/admin/deliverables", icon: "check", ready: false },
-      ],
-    },
-  ];
+  const groups: AdminNavGroup[] = [];
+
+  // Primary navigation: the transformation command center.
+  const transformation = transformationNavGroup(actor);
+  if (transformation) groups.push(transformation);
+
+  // Agency back-office (existing modules).
+  groups.push({
+    label: "Overview",
+    items: [{ label: "Home", href: "/admin", icon: "layout-grid", ready: true }],
+  });
+  groups.push({
+    label: "Sales",
+    items: [
+      { label: "Leads", href: "/admin/leads", icon: "route", ready: true },
+      { label: "Proposals", href: "/admin/proposals", icon: "search", ready: true },
+      { label: "Contracts", href: "/admin/contracts", icon: "check-circle", ready: true },
+    ],
+  });
+  groups.push({
+    label: "Delivery",
+    items: [
+      { label: "Conversations", href: "/admin/conversations", icon: "mail", ready: true },
+      { label: "Clients", href: "/admin/clients", icon: "users", ready: true },
+      { label: "Projects", href: "/admin/projects", icon: "workflow", ready: true },
+      { label: "Deliverables", href: "/admin/deliverables", icon: "check", ready: false },
+    ],
+  });
 
   // finance.* — owner/admin only. team_member must not see it at all.
   if (may(actor, "finance.read")) {
@@ -83,28 +87,10 @@ export default async function AdminLayout({ children }: { children: ReactNode })
 
   return (
     <div className={styles.shell}>
-      <aside className={styles.sidebar}>
-        <Link href="/admin" className={styles.brand}>
-          <Logo variant="mark" height={22} />
-          <span className={styles.env}>Admin</span>
-        </Link>
-
-        <AdminNav groups={groups} />
-
-        <div className={styles.sidebarFoot}>
-          <span className={styles.who}>
-            <span className={styles.whoName}>{actor.role}</span>
-            signed in
-          </span>
-          <form action={signOut}>
-            <button type="submit" className={styles.signout}>
-              Sign out
-            </button>
-          </form>
-        </div>
-      </aside>
-
-      <main id="main-content" tabIndex={-1} className={styles.main}>{children}</main>
+      <AppSidebar groups={groups} roleLabel={actor.role} />
+      <main id="main-content" tabIndex={-1} className={styles.main}>
+        {children}
+      </main>
     </div>
   );
 }
