@@ -107,11 +107,7 @@ export default async function HomePage() {
                 <span className={styles.loopNodeLabel}>{node.discipline}</span>
               </div>
             ))}
-            <div className={styles.loopCore}>
-              Bright
-              <br />
-              Loop
-            </div>
+            <div className={styles.loopCore}>Auxion</div>
           </div>
         </Container>
       </Section>
