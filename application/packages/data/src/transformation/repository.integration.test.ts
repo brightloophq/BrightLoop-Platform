@@ -61,9 +61,18 @@ describe.skipIf(!LIVE)("SupabaseTransformationRepository (live DB)", () => {
   beforeAll(async () => {
     service = createClient<Database>(URL as string, SERVICE_KEY as string, { auth: { persistSession: false } });
     repo = new SupabaseTransformationRepository(service);
-    // Seed two orgs + an internal actor (service role bypasses RLS).
-    await service.from("clients").upsert([{ id: A, company: "IT Org A" }, { id: B, company: "IT Org B" }]);
-    await service.from("users").upsert([{ id: usr, name: "IT Owner", email: `${usr}@example.test`, role: "owner", status: "active" }]);
+    // Seed two orgs + an internal actor (service role bypasses RLS). Seeding must
+    // fail LOUDLY — a swallowed error here surfaces later as opaque FK violations.
+    const seedClients = await service
+      .from("clients")
+      .upsert([{ id: A, company: "IT Org A" }, { id: B, company: "IT Org B" }], { onConflict: "id" });
+    if (seedClients.error) throw new Error(`seed clients failed: ${seedClients.error.message}`);
+    const seedUser = await service
+      .from("users")
+      .upsert([{ id: usr, name: "IT Owner", email: `${usr}@example.test`, role: "owner", status: "active" }], {
+        onConflict: "id",
+      });
+    if (seedUser.error) throw new Error(`seed users failed: ${seedUser.error.message}`);
   });
 
   afterAll(async () => {
