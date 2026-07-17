@@ -200,6 +200,118 @@ export const MACHINES = {
       paused: ["active"],
     },
   },
+
+  /* ===========================================================================
+   * Transformation-cycle machines (Sprint 1 — Auxion Product Bible Ch 09).
+   * Signal → Insight → Recommendation → Approval → Move → Execution → Measurement.
+   * Measurement, Learning, Business Health, and Transformation Index are
+   * append-only records with no lifecycle and therefore no machine here.
+   * ======================================================================== */
+
+  // A detected condition worth attention. `detected` is the raw signal; it is
+  // triaged to `validated`, ranked to `prioritized`, or set aside as `archived`.
+  signal: {
+    states: ["detected", "validated", "prioritized", "archived"],
+    initial: "detected",
+    transitions: {
+      detected: ["validated", "archived"],
+      validated: ["prioritized", "archived"],
+      prioritized: ["archived"],
+      archived: [],
+    },
+  },
+
+  // Interpreted meaning of a signal. `endorsed` insights drive a recommendation;
+  // `dismissed` insights are set aside. Both are terminal.
+  insight: {
+    states: ["generated", "endorsed", "dismissed"],
+    initial: "generated",
+    transitions: {
+      generated: ["endorsed", "dismissed"],
+      endorsed: [],
+      dismissed: [],
+    },
+  },
+
+  // A proposed Move. Produced (by a human or the Auxiliary) as `proposed`; a
+  // Strategist may `adjust` it before `accept`ing, or `reject` it.
+  recommendation: {
+    states: ["proposed", "adjusted", "accepted", "rejected"],
+    initial: "proposed",
+    transitions: {
+      proposed: ["adjusted", "accepted", "rejected"],
+      adjusted: ["accepted", "rejected"],
+      accepted: [],
+      rejected: [],
+    },
+  },
+
+  // The explicit human-authorization record. A request is `pending` until a
+  // person `grant`s or `denie`s it. Terminal on decision — never re-decided.
+  approval: {
+    states: ["pending", "granted", "denied"],
+    initial: "pending",
+    transitions: {
+      pending: ["granted", "denied"],
+      granted: [],
+      denied: [],
+    },
+  },
+
+  // The unit of transformation. A Move cannot enter `executing` without a granted
+  // Approval (enforced by the service layer and a DB gate, not this machine alone).
+  move: {
+    states: ["draft", "recommended", "approved", "executing", "completed", "measured"],
+    initial: "draft",
+    transitions: {
+      draft: ["recommended", "approved"],
+      recommended: ["approved"],
+      approved: ["executing"],
+      executing: ["completed"],
+      completed: ["measured"],
+      measured: [],
+    },
+  },
+
+  // A durable record of an approved Move being carried out. The durable runtime
+  // that drives these lands in a later sprint; the lifecycle is defined now.
+  executionRecord: {
+    states: ["queued", "running", "succeeded", "failed"],
+    initial: "queued",
+    transitions: {
+      queued: ["running"],
+      running: ["succeeded", "failed"],
+      failed: ["running"], // retry
+      succeeded: [],
+    },
+  },
+
+  // A condition that may negatively affect the business (Ch 09 · Operational Risk).
+  // Treatment (mitigate / accept / dismiss) is a consequential decision that
+  // passes through an Approval; this machine models the risk's own lifecycle.
+  operationalRisk: {
+    states: ["identified", "assessed", "mitigating", "mitigated", "accepted", "dismissed"],
+    initial: "identified",
+    transitions: {
+      identified: ["assessed", "dismissed"],
+      assessed: ["mitigating", "accepted", "dismissed"],
+      mitigating: ["mitigated", "accepted"],
+      mitigated: [],
+      accepted: [],
+      dismissed: [],
+    },
+  },
+
+  // Reusable, curated transformation knowledge (Ch 13 · Knowledge Capture).
+  knowledgeAsset: {
+    states: ["draft", "published", "deprecated"],
+    initial: "draft",
+    transitions: {
+      draft: ["published"],
+      published: ["deprecated"],
+      deprecated: [],
+    },
+  },
 } as const;
 
 export type MachineName = keyof typeof MACHINES;

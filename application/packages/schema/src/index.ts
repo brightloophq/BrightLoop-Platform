@@ -7,6 +7,7 @@ export * from "./roles.js";
 export * from "./machines.js";
 export * from "./tone.js";
 export * from "./entities.js";
+export * from "./transformation.js";
 export * from "./reputation.js";
 // `catalog` re-exports the Discipline type that originates in `reputation`;
 // export the rest explicitly to avoid an ambiguous duplicate re-export.
