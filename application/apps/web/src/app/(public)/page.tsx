@@ -69,7 +69,7 @@ export default async function HomePage() {
   return (
     <>
       {/* ---- Hero ---- */}
-      <Section rhythm="hero" className={styles.hero}>
+      <Section rhythm="hero" tone="dark" className={styles.hero}>
         <div className={styles.heroGlow} aria-hidden="true" />
         <Container width="wide" className={styles.heroGrid}>
           <div>

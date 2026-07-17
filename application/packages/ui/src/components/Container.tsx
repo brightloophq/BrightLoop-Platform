@@ -20,10 +20,16 @@ export function Container({ width = "default", children, className, ...rest }: C
 
 export type SectionRhythm = "section" | "tight" | "hero";
 
+/** Surface tone. Living Blueprint is paper-first; `dark` paints a navy field
+ *  (heroes, CTA bands) and scopes the dark token set to its subtree. */
+export type SectionTone = "default" | "paper" | "dark";
+
 export interface SectionProps extends HTMLAttributes<HTMLElement> {
   rhythm?: SectionRhythm;
   /** Raised background, for alternating section bands. */
   inset?: boolean;
+  /** Paint a self-contained surface. `dark` = navy hero field. */
+  tone?: SectionTone;
   as?: ElementType;
   children: ReactNode;
 }
@@ -32,16 +38,20 @@ export interface SectionProps extends HTMLAttributes<HTMLElement> {
 export function Section({
   rhythm = "section",
   inset = false,
+  tone = "default",
   as: Tag = "section",
   children,
   className,
   ...rest
 }: SectionProps) {
-  const classes = [styles[rhythm], inset ? styles.inset : null, className]
+  const toneClass =
+    tone === "dark" ? styles.toneDark : tone === "paper" ? styles.tonePaper : null;
+  const dataTheme = tone === "dark" ? "dark" : tone === "paper" ? "light" : undefined;
+  const classes = [styles[rhythm], inset ? styles.inset : null, toneClass, className]
     .filter(Boolean)
     .join(" ");
   return (
-    <Tag className={classes} {...rest}>
+    <Tag className={classes} data-theme={dataTheme} {...rest}>
       {children}
     </Tag>
   );

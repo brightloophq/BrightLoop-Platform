@@ -5,7 +5,7 @@
   height: var(--header-h);
   display: flex;
   align-items: center;
-  background: transparent;
+  background: var(--bg-base);
   border-bottom: 1px solid transparent;
   transition:
     background-color var(--dur-base) var(--ease-out),
@@ -13,9 +13,10 @@
     backdrop-filter var(--dur-base) var(--ease-out);
 }
 
-/* Scrolled >8px: sticky glass (handoff §01.4). */
+/* Scrolled >8px: light paper glass with a signal-hairline underline
+   (Living Blueprint navbar is light-first, handoff §05 / §01.4). */
 .scrolled {
-  background: rgba(11, 18, 32, 0.72);
+  background: rgba(251, 252, 253, 0.82);
   backdrop-filter: blur(var(--blur-md));
   -webkit-backdrop-filter: blur(var(--blur-md));
   border-bottom-color: var(--border-subtle);

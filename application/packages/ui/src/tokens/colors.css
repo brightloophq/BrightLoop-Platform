@@ -62,7 +62,37 @@
   --grad-loop: linear-gradient(135deg, var(--navy-600) 0%, var(--bl-blue) 100%);
   --grad-loop-soft: linear-gradient(135deg, #274A7C 0%, #2C5BCF 55%, #1B54E4 100%); /* @kind color */
 
-  /* ---- Semantic aliases: DARK theme (default) ---- */
+  --action-primary:       var(--bl-blue);
+  --action-primary-hover: var(--blue-600);
+  --action-primary-press: var(--blue-700);
+}
+
+/* ---- Semantic aliases: LIGHT (Living Blueprint / paper) is the DEFAULT ----
+   Living Blueprint is light-paper-first; navy is reserved for hero fields,
+   the footer, and CTA bands (opt in with data-theme="dark"). */
+:root,
+[data-theme="light"],
+.bl-theme-light {
+  --bg-base:       var(--bl-soft);
+  --bg-raised:     var(--bl-white);
+  --surface-card:  var(--bl-white);
+  --surface-inset: var(--slate-100);
+  --border-subtle: var(--slate-200);
+  --border-strong: var(--slate-300);
+
+  --text-primary:   var(--navy-900);
+  --text-secondary: var(--slate-700);
+  --text-muted:     var(--slate-500);
+  --text-accent:    var(--blue-600);
+  --text-link:      var(--blue-600);
+  --text-on-accent: var(--bl-white);
+
+  --focus-ring:     var(--bl-blue);
+}
+
+/* ---- Semantic aliases: DARK (navy) — heroes, footer, CTA fields ---- */
+[data-theme="dark"],
+.bl-theme-dark {
   --bg-base:       var(--navy-900);
   --bg-raised:     var(--navy-850);
   --surface-card:  var(--navy-800);
@@ -77,26 +107,5 @@
   --text-link:      var(--blue-400);
   --text-on-accent: var(--bl-white);
 
-  --action-primary:       var(--bl-blue);
-  --action-primary-hover: var(--blue-600);
-  --action-primary-press: var(--blue-700);
-  --focus-ring:           var(--bl-blue);
-}
-
-/* ---- Semantic aliases: LIGHT theme (Living Blueprint / paper) ---- */
-.bl-theme-light,
-[data-theme="light"] {
-  --bg-base:       var(--bl-soft);
-  --bg-raised:     var(--bl-white);
-  --surface-card:  var(--bl-white);
-  --surface-inset: var(--slate-100);
-  --border-subtle: var(--slate-200);
-  --border-strong: var(--slate-300);
-
-  --text-primary:   var(--navy-900);
-  --text-secondary: var(--slate-700);
-  --text-muted:     var(--slate-500);
-  --text-accent:    var(--blue-600);
-  --text-link:      var(--blue-600);
-  --text-on-accent: var(--bl-white);
+  --focus-ring:     var(--bl-cyan);
 }

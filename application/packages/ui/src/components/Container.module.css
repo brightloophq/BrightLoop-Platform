@@ -34,3 +34,15 @@
 .inset {
   background: var(--bg-raised);
 }
+
+/* ---- Surface tone: a section that paints its own field ----
+   data-theme (set on the element) already remaps the token set; these
+   classes make the band paint that surface + span the full viewport width. */
+.toneDark,
+.tonePaper {
+  background: var(--bg-base);
+  color: var(--text-primary);
+}
+.toneDark {
+  border-block: 1px solid var(--border-subtle);
+}

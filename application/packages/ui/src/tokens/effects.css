@@ -1,12 +1,12 @@
 /* Auxion — Effects tokens: elevation, blur, opacity, z-index, borders */
 
 :root {
-  /* ---- Elevation (semantic map onto shadow scale) ---- */
-  --elevation-0: none;                 /* @kind shadow */
-  --elevation-1: var(--shadow-sm);     /* @kind shadow */ /* raised chip / input */
-  --elevation-2: var(--shadow-md);     /* @kind shadow */ /* card resting */
-  --elevation-3: var(--shadow-lg);     /* @kind shadow */ /* card hover / popover */
-  --elevation-4: var(--shadow-xl);     /* @kind shadow */ /* modal / drawer */
+  /* ---- Elevation — light-paper shadows are the default (light-first) ---- */
+  --elevation-0: none;                       /* @kind shadow */
+  --elevation-1: var(--shadow-light-sm);     /* @kind shadow */ /* raised chip / input */
+  --elevation-2: var(--shadow-light-md);     /* @kind shadow */ /* card resting */
+  --elevation-3: var(--shadow-light-lg);     /* @kind shadow */ /* card hover / popover */
+  --elevation-4: var(--shadow-light-lg);     /* @kind shadow */ /* modal / drawer */
 
   /* ---- Blur (backdrop + decorative) ---- */
   --blur-xs: 4px;   /* @kind other */
@@ -43,11 +43,11 @@
   --ring-focus: 0 0 0 3px rgba(27,84,228,0.35); /* @kind shadow */
 }
 
-/* Light theme elevation swaps to softer shadows */
-.bl-theme-light,
-[data-theme="light"] {
-  --elevation-1: var(--shadow-light-sm);
-  --elevation-2: var(--shadow-light-md);
-  --elevation-3: var(--shadow-light-lg);
-  --elevation-4: var(--shadow-light-lg);
+/* Dark surfaces (heroes, footer, CTA bands) use the deeper navy shadow scale. */
+[data-theme="dark"],
+.bl-theme-dark {
+  --elevation-1: var(--shadow-sm);
+  --elevation-2: var(--shadow-md);
+  --elevation-3: var(--shadow-lg);
+  --elevation-4: var(--shadow-xl);
 }

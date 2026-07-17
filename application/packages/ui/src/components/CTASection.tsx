@@ -13,7 +13,7 @@ export interface CTASectionProps {
 /** CTASection — the closing conversion block on a marketing page. */
 export function CTASection({ eyebrow, title, body, actions, note }: CTASectionProps) {
   return (
-    <div className={styles.wrap}>
+    <div className={styles.wrap} data-theme="dark">
       {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
       <h2 className={styles.title}>{title}</h2>
       {body ? <p className={styles.body}>{body}</p> : null}

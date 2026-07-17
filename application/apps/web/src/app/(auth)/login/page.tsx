@@ -43,7 +43,7 @@ export default async function LoginPage({
 
   return (
     <div className={styles.shell}>
-      <aside className={styles.brandPanel}>
+      <aside className={styles.brandPanel} data-theme="dark">
         <Logo variant="lockup" height={28} />
         <div className={styles.brandCopy}>
           <Eyebrow>Brand · Build · Automate · Grow</Eyebrow>

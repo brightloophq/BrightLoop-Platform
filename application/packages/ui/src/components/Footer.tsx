@@ -18,7 +18,7 @@ export interface FooterProps {
 
 export function Footer({ columns, legal, tagline, year }: FooterProps) {
   return (
-    <footer className={styles.footer}>
+    <footer className={styles.footer} data-theme="dark">
       <Container width="wide">
         <div className={styles.top}>
           <div className={styles.brandCol}>
