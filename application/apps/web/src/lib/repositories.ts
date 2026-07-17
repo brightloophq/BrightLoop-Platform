@@ -1,6 +1,10 @@
 import "server-only";
 
-import { createCatalogRepository, createReputationRepository } from "@brightloop/data";
+import {
+  createCatalogRepository,
+  createReputationRepository,
+  SupabaseTransformationDashboardRepository,
+} from "@brightloop/data";
 import type { CatalogRepository, DataSource, ReputationRepository } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -76,6 +80,18 @@ export async function getAuthedReputationRepository(): Promise<ReputationReposit
 
 export function getCatalogRepository(): CatalogRepository {
   return createCatalogRepository();
+}
+
+/**
+ * Transformation dashboard reader for the AUTHENTICATED command center.
+ *
+ * Request-scoped cookie client so RLS scopes the read to what the caller may see
+ * (internal → the whole portfolio; a client role → only its own org). Fully typed
+ * against the generated Database types. Never cached — it carries the session.
+ */
+export async function getTransformationDashboardRepository(): Promise<SupabaseTransformationDashboardRepository> {
+  const client = await createClient();
+  return new SupabaseTransformationDashboardRepository(client);
 }
 
 /**
