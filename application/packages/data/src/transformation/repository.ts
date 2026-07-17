@@ -9,14 +9,17 @@
  *   / approvals. This adapter adds no filters of its own — the service (layer 2)
  *   and RLS (layer 3) are the gates. NEVER cache this instance across requests.
  *
- * ██ TYPING NOTE (temporary) ██
- *   The generated Database type (packages/db) predates the Sprint 1 transformation
- *   migrations, so it does not yet know these tables. Until the types are
- *   regenerated (`pnpm --filter @brightloop/db gen:types` after the migrations are
- *   applied), we address the new tables through an untyped SupabaseClient view via
- *   a single documented cast at construction; the mappers are the type-safe
- *   boundary. When the types are regenerated, drop the cast and the tables become
- *   fully typed with no other change.
+ * ██ TYPING NOTE ██
+ *   The generated Database type (packages/db) now includes these tables (Sprint 3
+ *   live harness). We still address them through an untyped SupabaseClient view via
+ *   a single documented cast at construction, because the DOMAIN layer models every
+ *   status as `string` (schema `statusEnum`) while the generated column types are
+ *   strict enum literals. A fully typed client would therefore reject `.update({
+ *   status })` at each transition and force a scatter of per-call enum casts —
+ *   trading one documented cast for many. The mappers remain the type-safe boundary
+ *   (their row shapes are exercised against the real schema by the live integration
+ *   tests). Removing this cast cleanly is a follow-up that belongs with narrowing
+ *   the domain status types to literal unions, not here.
  * ========================================================================== */
 
 import type { SupabaseClient } from "@supabase/supabase-js";

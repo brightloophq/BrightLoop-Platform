@@ -63,6 +63,36 @@ pnpm --filter @brightloop/db gen:types
 - **`transition_log` and `consents` are append-only** (enforced by trigger/policy).
 - **Never store PAN.** `payments` holds only `last4` + `method`; Stripe holds the token.
 
+## Live database verification
+
+One command runs the whole live gate — the same steps CI's `db-verify` job runs,
+against a real ephemeral local Supabase (never production):
+
+```bash
+pnpm --filter @brightloop/db db:verify
+```
+
+It (1) starts Supabase, (2) resets the DB — applying every migration from clean +
+seed, (3) runs the pgTAP suite (`supabase test db`), (4) runs the transformation
+adapter integration tests (`@brightloop/data test:integration`) — approval gate,
+idempotent execution, cross-tenant isolation — and (5) fails if the generated
+types have drifted from the committed file.
+
+**Prerequisites:** Docker running + the [Supabase CLI](https://supabase.com/docs/guides/cli).
+No production credentials are used — every key comes from the local stack's own
+`supabase status`. The stack is left running afterward; stop it with
+`pnpm --filter @brightloop/db exec supabase stop`.
+
+Common failure causes:
+
+| Symptom | Cause / fix |
+|---|---|
+| `supabase: command not found` | Install the Supabase CLI. |
+| `Cannot connect to the Docker daemon` | Start Docker Desktop / the Docker service. |
+| Port already in use (54321–54323) | Another stack is running: `supabase stop`, or free the port. |
+| Integration tests **skipped** | The `SUPABASE_TEST_*` env is unset — run via `db:verify` (or export from `supabase status -o env`), don't call `test:integration` bare. |
+| Type-drift step fails | Migrations changed the schema: run `pnpm --filter @brightloop/db gen:types:local` and commit `generated/database.types.ts`. |
+
 ## Verification (before any production data)
 
 These are the checks the Sprint 6/9 gates must pass:

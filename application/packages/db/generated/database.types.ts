@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   graphql_public: {
     Tables: {
       [_ in never]: never
@@ -71,6 +66,70 @@ export type Database = {
           source?: string
         }
         Relationships: []
+      }
+      approvals: {
+        Row: {
+          approver_user_id: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          decided_at: string | null
+          decision: Database["public"]["Enums"]["approval_decision"]
+          id: string
+          reason: string | null
+          requested_at: string
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["approval_subject_type"]
+        }
+        Insert: {
+          approver_user_id?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decision?: Database["public"]["Enums"]["approval_decision"]
+          id: string
+          reason?: string | null
+          requested_at?: string
+          subject_id: string
+          subject_type: Database["public"]["Enums"]["approval_subject_type"]
+        }
+        Update: {
+          approver_user_id?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          decided_at?: string | null
+          decision?: Database["public"]["Enums"]["approval_decision"]
+          id?: string
+          reason?: string | null
+          requested_at?: string
+          subject_id?: string
+          subject_type?: Database["public"]["Enums"]["approval_subject_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "approvals_approver_user_id_fkey"
+            columns: ["approver_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approvals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "approvals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       assessments: {
         Row: {
@@ -150,6 +209,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "automations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_health: {
+        Row: {
+          basis: string | null
+          captured_at: string
+          client_id: string
+          created_at: string
+          dimensions: Json
+          id: string
+          score: number
+        }
+        Insert: {
+          basis?: string | null
+          captured_at: string
+          client_id: string
+          created_at?: string
+          dimensions?: Json
+          id: string
+          score: number
+        }
+        Update: {
+          basis?: string | null
+          captured_at?: string
+          client_id?: string
+          created_at?: string
+          dimensions?: Json
+          id?: string
+          score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_health_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
@@ -577,6 +674,70 @@ export type Database = {
           },
         ]
       }
+      execution_records: {
+        Row: {
+          attempts: number
+          client_id: string
+          created_at: string
+          created_by: string | null
+          finished_at: string | null
+          id: string
+          idempotency_key: string | null
+          last_error: string | null
+          move_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["execution_record_status"]
+        }
+        Insert: {
+          attempts?: number
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          finished_at?: string | null
+          id: string
+          idempotency_key?: string | null
+          last_error?: string | null
+          move_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["execution_record_status"]
+        }
+        Update: {
+          attempts?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          finished_at?: string | null
+          id?: string
+          idempotency_key?: string | null
+          last_error?: string | null
+          move_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["execution_record_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_records_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_records_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "moves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_uploads: {
         Row: {
           deliverable_id: string | null
@@ -627,6 +788,67 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insights: {
+        Row: {
+          client_id: string
+          confidence: number | null
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          evidence: Json
+          id: string
+          signal_id: string
+          status: Database["public"]["Enums"]["insight_status"]
+          summary: string
+        }
+        Insert: {
+          client_id: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          evidence?: Json
+          id: string
+          signal_id: string
+          status?: Database["public"]["Enums"]["insight_status"]
+          summary: string
+        }
+        Update: {
+          client_id?: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          evidence?: Json
+          id?: string
+          signal_id?: string
+          status?: Database["public"]["Enums"]["insight_status"]
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
             referencedColumns: ["id"]
           },
         ]
@@ -721,6 +943,57 @@ export type Database = {
           },
         ]
       }
+      knowledge_assets: {
+        Row: {
+          body: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          kind: Database["public"]["Enums"]["knowledge_asset_kind"]
+          source_ref: string | null
+          status: Database["public"]["Enums"]["knowledge_asset_status"]
+          title: string
+        }
+        Insert: {
+          body: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id: string
+          kind: Database["public"]["Enums"]["knowledge_asset_kind"]
+          source_ref?: string | null
+          status?: Database["public"]["Enums"]["knowledge_asset_status"]
+          title: string
+        }
+        Update: {
+          body?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["knowledge_asset_kind"]
+          source_ref?: string | null
+          status?: Database["public"]["Enums"]["knowledge_asset_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_assets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_assets_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           company: string | null
@@ -764,6 +1037,135 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learnings: {
+        Row: {
+          captured_at: string
+          client_id: string
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          id: string
+          measurement_id: string | null
+          move_id: string | null
+          summary: string
+        }
+        Insert: {
+          captured_at: string
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id: string
+          measurement_id?: string | null
+          move_id?: string | null
+          summary: string
+        }
+        Update: {
+          captured_at?: string
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          id?: string
+          measurement_id?: string | null
+          move_id?: string | null
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learnings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learnings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learnings_measurement_id_fkey"
+            columns: ["measurement_id"]
+            isOneToOne: false
+            referencedRelation: "measurements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "learnings_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "moves"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      measurements: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          delta: number | null
+          id: string
+          measured_at: string
+          metric_key: string
+          move_id: string
+          observed: number
+          target: number | null
+          unit: string | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          delta?: number | null
+          id: string
+          measured_at: string
+          metric_key: string
+          move_id: string
+          observed: number
+          target?: number | null
+          unit?: string | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          delta?: number | null
+          id?: string
+          measured_at?: string
+          metric_key?: string
+          move_id?: string
+          observed?: number
+          target?: number | null
+          unit?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "measurements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "measurements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "measurements_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "moves"
             referencedColumns: ["id"]
           },
         ]
@@ -963,6 +1365,74 @@ export type Database = {
           },
         ]
       }
+      moves: {
+        Row: {
+          approval_id: string | null
+          client_id: string
+          created_at: string
+          created_by: string | null
+          expected_outcome: string | null
+          id: string
+          intent: string
+          recommendation_id: string | null
+          status: Database["public"]["Enums"]["move_status"]
+          title: string
+        }
+        Insert: {
+          approval_id?: string | null
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          expected_outcome?: string | null
+          id: string
+          intent: string
+          recommendation_id?: string | null
+          status?: Database["public"]["Enums"]["move_status"]
+          title: string
+        }
+        Update: {
+          approval_id?: string | null
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          expected_outcome?: string | null
+          id?: string
+          intent?: string
+          recommendation_id?: string | null
+          status?: Database["public"]["Enums"]["move_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "moves_approval_id_fkey"
+            columns: ["approval_id"]
+            isOneToOne: false
+            referencedRelation: "approvals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moves_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moves_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "moves_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "recommendations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1000,6 +1470,90 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operational_risks: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          evidence: Json
+          id: string
+          likelihood: Database["public"]["Enums"]["risk_likelihood"]
+          move_id: string | null
+          owner_user_id: string | null
+          severity: Database["public"]["Enums"]["risk_severity"]
+          signal_id: string | null
+          status: Database["public"]["Enums"]["operational_risk_status"]
+          title: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          evidence?: Json
+          id: string
+          likelihood: Database["public"]["Enums"]["risk_likelihood"]
+          move_id?: string | null
+          owner_user_id?: string | null
+          severity: Database["public"]["Enums"]["risk_severity"]
+          signal_id?: string | null
+          status?: Database["public"]["Enums"]["operational_risk_status"]
+          title: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          evidence?: Json
+          id?: string
+          likelihood?: Database["public"]["Enums"]["risk_likelihood"]
+          move_id?: string | null
+          owner_user_id?: string | null
+          severity?: Database["public"]["Enums"]["risk_severity"]
+          signal_id?: string | null
+          status?: Database["public"]["Enums"]["operational_risk_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "operational_risks_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_risks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_risks_move_id_fkey"
+            columns: ["move_id"]
+            isOneToOne: false
+            referencedRelation: "moves"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_risks_owner_user_id_fkey"
+            columns: ["owner_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "operational_risks_signal_id_fkey"
+            columns: ["signal_id"]
+            isOneToOne: false
+            referencedRelation: "signals"
             referencedColumns: ["id"]
           },
         ]
@@ -1488,6 +2042,142 @@ export type Database = {
           },
         ]
       }
+      recommendations: {
+        Row: {
+          ai_confidence: number | null
+          ai_generated_at: string | null
+          ai_generation_id: string | null
+          ai_model: string | null
+          ai_params: Json | null
+          ai_prompt_version: string | null
+          ai_provider: string | null
+          client_id: string
+          confidence: number | null
+          created_at: string
+          created_by: string | null
+          evidence: Json
+          expected_outcome: string | null
+          id: string
+          insight_id: string
+          rationale: string
+          status: Database["public"]["Enums"]["recommendation_status"]
+          summary: string
+        }
+        Insert: {
+          ai_confidence?: number | null
+          ai_generated_at?: string | null
+          ai_generation_id?: string | null
+          ai_model?: string | null
+          ai_params?: Json | null
+          ai_prompt_version?: string | null
+          ai_provider?: string | null
+          client_id: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          evidence?: Json
+          expected_outcome?: string | null
+          id: string
+          insight_id: string
+          rationale: string
+          status?: Database["public"]["Enums"]["recommendation_status"]
+          summary: string
+        }
+        Update: {
+          ai_confidence?: number | null
+          ai_generated_at?: string | null
+          ai_generation_id?: string | null
+          ai_model?: string | null
+          ai_params?: Json | null
+          ai_prompt_version?: string | null
+          ai_provider?: string | null
+          client_id?: string
+          confidence?: number | null
+          created_at?: string
+          created_by?: string | null
+          evidence?: Json
+          expected_outcome?: string | null
+          id?: string
+          insight_id?: string
+          rationale?: string
+          status?: Database["public"]["Enums"]["recommendation_status"]
+          summary?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recommendations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recommendations_insight_id_fkey"
+            columns: ["insight_id"]
+            isOneToOne: false
+            referencedRelation: "insights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      signals: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          detail: string | null
+          evidence: Json
+          id: string
+          source_ref: string | null
+          status: Database["public"]["Enums"]["signal_status"]
+          title: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          evidence?: Json
+          id: string
+          source_ref?: string | null
+          status?: Database["public"]["Enums"]["signal_status"]
+          title: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          detail?: string | null
+          evidence?: Json
+          id?: string
+          source_ref?: string | null
+          status?: Database["public"]["Enums"]["signal_status"]
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "signals_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "signals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       state_transitions: {
         Row: {
           from_state: string
@@ -1571,6 +2261,44 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "portfolio_projects"
             referencedColumns: ["slug"]
+          },
+        ]
+      }
+      transformation_index: {
+        Row: {
+          at: string
+          basis: string | null
+          client_id: string
+          created_at: string
+          delta: number | null
+          id: string
+          value: number
+        }
+        Insert: {
+          at: string
+          basis?: string | null
+          client_id: string
+          created_at?: string
+          delta?: number | null
+          id: string
+          value: number
+        }
+        Update: {
+          at?: string
+          basis?: string | null
+          client_id?: string
+          created_at?: string
+          delta?: number | null
+          id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_index_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -1687,6 +2415,14 @@ export type Database = {
       bl_in_conversation: { Args: { conv_id: string }; Returns: boolean }
       bl_is_finance: { Args: never; Returns: boolean }
       bl_is_internal: { Args: never; Returns: boolean }
+      bl_rls_audit: {
+        Args: never
+        Returns: {
+          policy_count: number
+          rls_enabled: boolean
+          table_name: string
+        }[]
+      }
       bl_role: { Args: never; Returns: string }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
     }
@@ -1697,6 +2433,8 @@ export type Database = {
         | "team_member"
         | "client_admin"
         | "client_member"
+      approval_decision: "pending" | "granted" | "denied"
+      approval_subject_type: "move" | "operational_risk" | "recommendation"
       automation_status: "active" | "running" | "success" | "failed" | "paused"
       client_lifecycle:
         | "prospect"
@@ -1725,7 +2463,9 @@ export type Database = {
         | "revision_requested"
         | "rejected"
         | "final"
+      execution_record_status: "queued" | "running" | "succeeded" | "failed"
       file_upload_status: "queued" | "uploading" | "success" | "failed"
+      insight_status: "generated" | "endorsed" | "dismissed"
       invoice_status:
         | "draft"
         | "sent"
@@ -1735,6 +2475,13 @@ export type Database = {
         | "failed"
         | "refunded"
       invoice_type: "deposit" | "milestone" | "final" | "retainer"
+      knowledge_asset_kind:
+        | "playbook"
+        | "lesson"
+        | "best_practice"
+        | "policy"
+        | "reference"
+      knowledge_asset_status: "draft" | "published" | "deprecated"
       lead_stage: "new" | "qualified" | "proposal_sent" | "won" | "lost"
       meeting_status: "scheduled" | "completed" | "cancelled"
       milestone_status:
@@ -1744,11 +2491,25 @@ export type Database = {
         | "revision_requested"
         | "approved"
         | "completed"
+      move_status:
+        | "draft"
+        | "recommended"
+        | "approved"
+        | "executing"
+        | "completed"
+        | "measured"
       onboarding_status:
         | "not_started"
         | "in_progress"
         | "abandoned"
         | "completed"
+      operational_risk_status:
+        | "identified"
+        | "assessed"
+        | "mitigating"
+        | "mitigated"
+        | "accepted"
+        | "dismissed"
       payment_status:
         | "initiated"
         | "processing"
@@ -1783,6 +2544,15 @@ export type Database = {
         | "rejected"
         | "expired"
         | "converted"
+      recommendation_status: "proposed" | "adjusted" | "accepted" | "rejected"
+      risk_likelihood:
+        | "rare"
+        | "unlikely"
+        | "possible"
+        | "likely"
+        | "almost_certain"
+      risk_severity: "low" | "medium" | "high" | "critical"
+      signal_status: "detected" | "validated" | "prioritized" | "archived"
       user_account_status: "invited" | "active" | "suspended"
     }
     CompositeTypes: {
@@ -1921,6 +2691,8 @@ export const Constants = {
         "client_admin",
         "client_member",
       ],
+      approval_decision: ["pending", "granted", "denied"],
+      approval_subject_type: ["move", "operational_risk", "recommendation"],
       automation_status: ["active", "running", "success", "failed", "paused"],
       client_lifecycle: [
         "prospect",
@@ -1953,7 +2725,9 @@ export const Constants = {
         "rejected",
         "final",
       ],
+      execution_record_status: ["queued", "running", "succeeded", "failed"],
       file_upload_status: ["queued", "uploading", "success", "failed"],
+      insight_status: ["generated", "endorsed", "dismissed"],
       invoice_status: [
         "draft",
         "sent",
@@ -1964,6 +2738,14 @@ export const Constants = {
         "refunded",
       ],
       invoice_type: ["deposit", "milestone", "final", "retainer"],
+      knowledge_asset_kind: [
+        "playbook",
+        "lesson",
+        "best_practice",
+        "policy",
+        "reference",
+      ],
+      knowledge_asset_status: ["draft", "published", "deprecated"],
       lead_stage: ["new", "qualified", "proposal_sent", "won", "lost"],
       meeting_status: ["scheduled", "completed", "cancelled"],
       milestone_status: [
@@ -1974,11 +2756,27 @@ export const Constants = {
         "approved",
         "completed",
       ],
+      move_status: [
+        "draft",
+        "recommended",
+        "approved",
+        "executing",
+        "completed",
+        "measured",
+      ],
       onboarding_status: [
         "not_started",
         "in_progress",
         "abandoned",
         "completed",
+      ],
+      operational_risk_status: [
+        "identified",
+        "assessed",
+        "mitigating",
+        "mitigated",
+        "accepted",
+        "dismissed",
       ],
       payment_status: [
         "initiated",
@@ -2018,7 +2816,18 @@ export const Constants = {
         "expired",
         "converted",
       ],
+      recommendation_status: ["proposed", "adjusted", "accepted", "rejected"],
+      risk_likelihood: [
+        "rare",
+        "unlikely",
+        "possible",
+        "likely",
+        "almost_certain",
+      ],
+      risk_severity: ["low", "medium", "high", "critical"],
+      signal_status: ["detected", "validated", "prioritized", "archived"],
       user_account_status: ["invited", "active", "suspended"],
     },
   },
 } as const
+
