@@ -22,6 +22,21 @@ export {
 } from "./tokens";
 export { DASHBOARD_SEQUENCE, sequenceOrder, type SequenceStep } from "./sequence";
 
+// Motion preset system — the single source of truth for how everything animates.
+export { PRESET, type PresetName, type PresetSpec } from "./presets.config";
+export {
+  dashboardEntrance,
+  metricReveal,
+  pipelineReveal,
+  pageTransition as pageTransitionPreset,
+  drawer as drawerPreset,
+  modalEnter,
+  modalExit,
+  toastEnter,
+  toastExit,
+  type PresetOptions,
+} from "./presets";
+
 // Client components (each declares "use client").
 export { MotionProvider, useMotion } from "./MotionProvider";
 export { useReducedMotion } from "./useReducedMotion";

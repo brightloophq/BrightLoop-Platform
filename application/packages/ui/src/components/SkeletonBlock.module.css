@@ -1,0 +1,22 @@
+.block {
+  display: block;
+  background: var(--surface-inset);
+  animation: pulse 1.4s var(--ease-inout) infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .block {
+    animation: none;
+    opacity: 0.7;
+  }
+}

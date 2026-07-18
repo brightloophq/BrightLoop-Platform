@@ -1,0 +1,80 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  height: 100%;
+  padding: var(--space-4) var(--space-5);
+  background: var(--surface-card);
+  border: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--elevation-1);
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  font-weight: var(--fw-medium);
+}
+
+.icon {
+  color: var(--text-muted);
+}
+
+.value {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  color: var(--text-primary);
+  letter-spacing: var(--ls-tight);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1);
+}
+
+.suffix {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  font-weight: var(--fw-medium);
+}
+
+.empty {
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+}
+
+.caption {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+/* Hero figures: bigger value, more presence, a brand hairline. */
+.hero {
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-6);
+  box-shadow: var(--elevation-2);
+  border-color: var(--border-subtle);
+}
+.hero .value {
+  font-size: var(--fs-h1);
+}
+.hero .label {
+  color: var(--text-primary);
+  font-weight: var(--fw-semibold);
+}
+
+/* Interactive affordance (the wrapping link owns focus + navigation). */
+.interactive {
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--elevation-3);
+  border-color: var(--border-strong);
+}

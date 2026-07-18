@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { DURATION, EASE, STAGGER, OFFSET_Y, shouldAnimate } from "./tokens";
 import { DASHBOARD_SEQUENCE, sequenceOrder } from "./sequence";
+import { PRESET } from "./presets.config";
 
 describe("motion tokens", () => {
   it("exposes short, positive, premium durations (fast < base < slow)", () => {
@@ -42,5 +43,41 @@ describe("dashboard entrance sequence", () => {
     for (const step of DASHBOARD_SEQUENCE.slice(1)) {
       expect(step.overlap).toBeLessThanOrEqual(0);
     }
+  });
+});
+
+describe("motion presets", () => {
+  const NAMES = [
+    "dashboardEntrance",
+    "metricReveal",
+    "pipelineReveal",
+    "drawerOpen",
+    "drawerClose",
+    "pageTransition",
+    "modalEnter",
+    "modalExit",
+    "toastEnter",
+    "toastExit",
+  ] as const;
+
+  it("defines the full preset catalogue", () => {
+    for (const name of NAMES) expect(PRESET[name]).toBeDefined();
+  });
+
+  it("derives every preset timing from the shared tokens (no stray values)", () => {
+    const durations = new Set<number>(Object.values(DURATION));
+    const eases = new Set<string>(Object.values(EASE));
+    for (const name of NAMES) {
+      expect(durations.has(PRESET[name].duration)).toBe(true);
+      expect(eases.has(PRESET[name].ease)).toBe(true);
+    }
+  });
+
+  it("keeps exits quick and staggers within the token vocabulary", () => {
+    expect(PRESET.modalExit.duration).toBe(DURATION.fast);
+    expect(PRESET.toastExit.duration).toBe(DURATION.fast);
+    const staggers = new Set<number>(Object.values(STAGGER));
+    expect(staggers.has(PRESET.metricReveal.stagger!)).toBe(true);
+    expect(PRESET.pageTransition.offset).toBe(OFFSET_Y);
   });
 });

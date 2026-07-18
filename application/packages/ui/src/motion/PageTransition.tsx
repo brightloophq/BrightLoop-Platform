@@ -1,16 +1,14 @@
 "use client";
 
 import { useRef, type ReactNode } from "react";
-import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
-import { DURATION, EASE, OFFSET_Y, shouldAnimate } from "./tokens";
+import { pageTransition } from "./presets";
 import { useMotion } from "./MotionProvider";
 
 /**
  * A subtle page-enter reveal for surfaces that don't run the full dashboard
- * sequence (e.g. section pages). A single short translate/opacity tween on the
- * wrapper — enough to feel intentional, never enough to delay usability. Content
- * is visible by default; reduced-motion skips the tween.
+ * sequence (e.g. section pages) — a thin host around the `pageTransition` preset.
+ * Content is visible by default; reduced motion snaps.
  */
 export function PageTransition({
   children,
@@ -24,13 +22,7 @@ export function PageTransition({
 
   useGSAP(
     () => {
-      if (!shouldAnimate(reducedMotion)) return;
-      gsap.from(scope.current, {
-        opacity: 0,
-        y: OFFSET_Y,
-        duration: DURATION.base,
-        ease: EASE.out,
-      });
+      if (scope.current) pageTransition(scope.current, { reduced: reducedMotion });
     },
     { scope, dependencies: [reducedMotion] },
   );
