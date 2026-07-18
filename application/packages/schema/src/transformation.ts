@@ -132,6 +132,32 @@ export const insightSchema = z.object({
 });
 export type Insight = z.infer<typeof insightSchema>;
 
+/**
+ * Human-facing input for CREATING an insight. The service owns id/status/
+ * createdBy/createdAt; the tenant (`clientId`) is derived server-side from the
+ * linked signal, never trusted from the client — an insight always inherits the
+ * tenant of the signal it interprets. This is the shared contract the create form
+ * and the server action both validate against (one source of truth for the rules).
+ */
+export const insightCreateInputSchema = z.object({
+  clientId: idSchema.min(1, "Missing organization"),
+  signalId: idSchema.min(1, "Select a signal"),
+  summary: z
+    .string()
+    .trim()
+    .min(1, "Summary is required")
+    .max(200, "Keep the summary under 200 characters"),
+  detail: z
+    .string()
+    .trim()
+    .max(4000, "Keep the description under 4000 characters")
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null)),
+  confidence: confidenceSchema.nullable().optional(),
+  evidence: z.array(evidenceItemSchema).max(20, "Too many evidence items").optional(),
+});
+export type InsightCreateInput = z.infer<typeof insightCreateInputSchema>;
+
 /* ---- 3. Recommendation ---------------------------------------------------- */
 
 export const recommendationSchema = z.object({

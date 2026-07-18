@@ -1,0 +1,77 @@
+/* =============================================================================
+ * ConfidenceMeter — restrained calibrated-confidence bar. Band tints are the one
+ * place a hint of semantic color enters the transformation modules; kept calm
+ * (a single filled rail on a toned track), never a traffic-light.
+ * ========================================================================== */
+
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.track {
+  position: relative;
+  flex: 1 1 auto;
+  background: var(--surface-inset);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.md .track {
+  height: 8px;
+  min-width: 120px;
+}
+
+.sm .track {
+  height: 6px;
+  min-width: 72px;
+}
+
+.fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: var(--text-muted);
+}
+
+/* Band tints — subdued, informative, not alarming. */
+.track[data-band="high"] .fill {
+  background: var(--success);
+}
+.track[data-band="medium"] .fill {
+  background: var(--info);
+}
+.track[data-band="low"] .fill {
+  background: var(--warning);
+}
+
+.value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.pct {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.sm .pct {
+  font-size: var(--fs-xs);
+}
+
+.band {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.unrated {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-style: italic;
+}

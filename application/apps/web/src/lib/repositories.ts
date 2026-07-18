@@ -5,6 +5,7 @@ import {
   createReputationRepository,
   SupabaseTransformationDashboardRepository,
   SupabaseSignalsRepository,
+  SupabaseInsightsRepository,
   SupabaseTransformationRepository,
 } from "@brightloop/data";
 import {
@@ -114,6 +115,15 @@ export async function getTransformationDashboardRepository(): Promise<SupabaseTr
 export async function getSignalsRepository(): Promise<SupabaseSignalsRepository> {
   const client = await createClient();
   return new SupabaseSignalsRepository(client);
+}
+
+/**
+ * Insights READ adapter for the authenticated command center (fully typed).
+ * Request-scoped so RLS scopes what the caller can see. Never cached.
+ */
+export async function getInsightsRepository(): Promise<SupabaseInsightsRepository> {
+  const client = await createClient();
+  return new SupabaseInsightsRepository(client);
 }
 
 /**

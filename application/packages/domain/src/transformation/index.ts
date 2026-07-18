@@ -10,3 +10,5 @@ export * from "./service.js";
 export * from "./dashboard.js";
 // Signals workspace — query parsing, list/detail view builders, lifecycle actions.
 export * from "./signals.js";
+// Insights workspace — interpretation surface (Signal → Insight), confidence, actions.
+export * from "./insights.js";

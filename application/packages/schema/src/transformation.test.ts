@@ -4,6 +4,7 @@ import {
   signalSchema,
   signalCreateInputSchema,
   insightSchema,
+  insightCreateInputSchema,
   recommendationSchema,
   approvalSchema,
   moveSchema,
@@ -365,6 +366,40 @@ describe("transformation contracts — validation", () => {
         evidence: [{ kind: "metric", ref: "cycle_time", label: "Cycle time" }],
       });
       expect(r.success).toBe(true);
+    });
+  });
+
+  describe("insightCreateInputSchema", () => {
+    it("accepts a minimal valid input and normalizes blanks to null", () => {
+      const parsed = insightCreateInputSchema.safeParse({
+        clientId: "cli_A",
+        signalId: "sig_1",
+        summary: "  Delivery cost is structural  ",
+      });
+      expect(parsed.success).toBe(true);
+      if (parsed.success) {
+        expect(parsed.data.summary).toBe("Delivery cost is structural"); // trimmed
+        expect(parsed.data.detail).toBeNull();
+      }
+    });
+    it("requires a signal, an organization and a summary", () => {
+      expect(insightCreateInputSchema.safeParse({ clientId: "cli_A", signalId: "", summary: "x" }).success).toBe(false);
+      expect(insightCreateInputSchema.safeParse({ clientId: "", signalId: "sig_1", summary: "x" }).success).toBe(false);
+      expect(insightCreateInputSchema.safeParse({ clientId: "cli_A", signalId: "sig_1", summary: "  " }).success).toBe(false);
+    });
+    it("bounds confidence to 0..1", () => {
+      expect(insightCreateInputSchema.safeParse({ clientId: "cli_A", signalId: "sig_1", summary: "ok", confidence: 0.7 }).success).toBe(true);
+      expect(insightCreateInputSchema.safeParse({ clientId: "cli_A", signalId: "sig_1", summary: "ok", confidence: 1.5 }).success).toBe(false);
+      expect(insightCreateInputSchema.safeParse({ clientId: "cli_A", signalId: "sig_1", summary: "ok", confidence: null }).success).toBe(true);
+    });
+    it("rejects an invalid evidence item", () => {
+      const r = insightCreateInputSchema.safeParse({
+        clientId: "cli_A",
+        signalId: "sig_1",
+        summary: "ok",
+        evidence: [{ kind: "not-a-kind", ref: "x" }],
+      });
+      expect(r.success).toBe(false);
     });
   });
 });
