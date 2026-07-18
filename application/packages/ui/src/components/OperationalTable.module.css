@@ -1,0 +1,104 @@
+.scroll {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+}
+
+.caption {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.table thead th {
+  text-align: start;
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--text-muted);
+  font-weight: var(--fw-semibold);
+  padding: var(--space-2) var(--space-3);
+  border-bottom: var(--border-hairline);
+  white-space: nowrap;
+}
+
+.table tbody td {
+  padding: var(--space-3);
+  border-bottom: var(--border-hairline);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.row {
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.row:hover {
+  background: var(--surface-inset);
+}
+.row:focus-within {
+  background: var(--surface-inset);
+}
+
+.end {
+  text-align: end;
+}
+
+/* Stacked mobile layout — each row becomes a labelled card. */
+@media (max-width: 767px) {
+  .table,
+  .table thead,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+  }
+  .table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+  .row {
+    border: var(--border-hairline);
+    border-radius: var(--radius-lg);
+    background: var(--surface-card);
+    margin-bottom: var(--space-3);
+    padding: var(--space-2) var(--space-3);
+  }
+  .table tbody td {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    padding: var(--space-2) 0;
+    border-bottom: var(--border-hairline);
+    text-align: end;
+  }
+  .table tbody td:last-child {
+    border-bottom: none;
+  }
+  .table tbody td::before {
+    content: attr(data-label);
+    font-size: var(--fs-xs);
+    text-transform: uppercase;
+    letter-spacing: var(--ls-eyebrow);
+    color: var(--text-muted);
+    font-weight: var(--fw-semibold);
+    text-align: start;
+  }
+  .hideMobile {
+    display: none !important;
+  }
+}

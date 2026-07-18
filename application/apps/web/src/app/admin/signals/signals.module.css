@@ -1,0 +1,335 @@
+/* =============================================================================
+ * Signals module — the intake + triage surface. Shares the dashboard's
+ * operational canvas language: toned backdrop, layered panels, restrained colour.
+ * ========================================================================== */
+
+.page {
+  flex: 1;
+  background: var(--surface-inset);
+}
+
+.canvas {
+  max-width: 1320px;
+  margin-inline: auto;
+  padding: clamp(var(--space-5), 3vw, var(--space-7));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ---- summary metrics ------------------------------------------------------ */
+.summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+}
+
+.count {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  font-weight: var(--fw-medium);
+}
+
+/* ---- controls ------------------------------------------------------------- */
+.controlRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.trailingRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.searchWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search {
+  height: 38px;
+  padding: 0 var(--space-3) 0 var(--space-8);
+  min-width: 220px;
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+}
+.search:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+.selectLabel {
+  display: inline-flex;
+}
+
+.select {
+  height: 38px;
+  padding: 0 var(--space-3);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+.select:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface-inset);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  text-decoration: none;
+}
+.chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+}
+.chip:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+.clearAll {
+  font-size: var(--fs-xs);
+  color: var(--text-accent);
+  text-decoration: none;
+  font-weight: var(--fw-medium);
+}
+.clearAll:hover {
+  text-decoration: underline;
+}
+
+/* ---- table cells ---------------------------------------------------------- */
+.rowLink {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 1px;
+  text-decoration: none;
+  color: inherit;
+}
+.rowLink:hover .rowTitle {
+  color: var(--text-link);
+}
+.rowLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-sm);
+}
+
+.rowTitle {
+  color: var(--text-primary);
+  font-weight: var(--fw-medium);
+}
+
+.rowSub {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.muted {
+  color: var(--text-secondary);
+}
+
+/* ---- back link ------------------------------------------------------------ */
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  width: fit-content;
+}
+.backLink:hover {
+  color: var(--text-primary);
+}
+.backLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-sm);
+}
+
+/* ---- create form ---------------------------------------------------------- */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  background: var(--surface-card);
+  border: var(--border-hairline);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--elevation-1);
+  padding: clamp(var(--space-5), 3vw, var(--space-7));
+}
+
+.formTop {
+  outline: none;
+}
+
+.formActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
+.label {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+
+.req {
+  color: var(--danger);
+}
+
+.hint {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.fieldError {
+  font-size: var(--fs-xs);
+  color: var(--danger);
+  font-weight: var(--fw-medium);
+}
+
+/* ---- detail --------------------------------------------------------------- */
+.detailHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.detailTitleWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.detailKicker {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--text-muted);
+  font-weight: var(--fw-semibold);
+}
+
+.detailTitle {
+  font-family: var(--font-display);
+  font-size: var(--fs-h2);
+  line-height: var(--lh-tight);
+  letter-spacing: var(--ls-tight);
+  color: var(--text-primary);
+}
+
+.terminalNote {
+  margin-left: var(--space-2);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+
+.evidenceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.evidenceItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.evidenceKind {
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-wide);
+  color: var(--text-accent);
+  background: var(--surface-inset);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-weight: var(--fw-semibold);
+}
+
+@media (max-width: 767px) {
+  .summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .search {
+    min-width: 0;
+    width: 100%;
+  }
+  .searchWrap {
+    width: 100%;
+  }
+  .formActions {
+    flex-direction: column-reverse;
+  }
+  .formActions > * {
+    width: 100%;
+  }
+  .actions {
+    width: 100%;
+  }
+  .detailTitle {
+    font-size: var(--fs-h3);
+  }
+}

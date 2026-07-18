@@ -8,3 +8,5 @@ export * from "./events.js";
 export * from "./service.js";
 // Dashboard read model — pure metrics/pipeline/attention/activity derivation.
 export * from "./dashboard.js";
+// Signals workspace — query parsing, list/detail view builders, lifecycle actions.
+export * from "./signals.js";

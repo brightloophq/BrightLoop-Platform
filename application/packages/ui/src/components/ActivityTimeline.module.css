@@ -1,0 +1,83 @@
+.timeline {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: var(--space-3);
+  padding-bottom: var(--space-4);
+}
+.item:last-child {
+  padding-bottom: 0;
+}
+
+.rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+/* the continuous line runs behind the markers */
+.rail::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  bottom: calc(-1 * var(--space-4));
+  width: 2px;
+  background: var(--border-strong);
+}
+.item:last-child .rail::before {
+  display: none;
+}
+
+.marker {
+  position: relative;
+  z-index: 1;
+  margin-top: 4px;
+  width: 11px;
+  height: 11px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  border: 2px solid var(--border-strong);
+}
+.marker[data-emphasis="true"] {
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+}
+
+.body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.title {
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  font-weight: var(--fw-medium);
+}
+
+.time {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.meta {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}

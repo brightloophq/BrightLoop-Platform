@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { can, isTerminal, nextStates, MACHINES } from "./machines.js";
 import {
   signalSchema,
+  signalCreateInputSchema,
   insightSchema,
   recommendationSchema,
   approvalSchema,
@@ -333,5 +334,37 @@ describe("transformation contracts — validation", () => {
 
   it("exposes all twelve entities in the registry", () => {
     expect(Object.keys(TRANSFORMATION_ENTITY_SCHEMAS).length).toBe(12);
+  });
+
+  describe("signalCreateInputSchema", () => {
+    it("accepts a minimal valid input and normalizes blanks to null", () => {
+      const parsed = signalCreateInputSchema.safeParse({ clientId: "cli_A", title: "  Delivery slipped  " });
+      expect(parsed.success).toBe(true);
+      if (parsed.success) {
+        expect(parsed.data.title).toBe("Delivery slipped"); // trimmed
+        expect(parsed.data.detail).toBeNull();
+        expect(parsed.data.sourceRef).toBeNull();
+      }
+    });
+    it("requires an organization and a title", () => {
+      expect(signalCreateInputSchema.safeParse({ clientId: "", title: "x" }).success).toBe(false);
+      expect(signalCreateInputSchema.safeParse({ clientId: "cli_A", title: "   " }).success).toBe(false);
+    });
+    it("rejects an invalid evidence item", () => {
+      const r = signalCreateInputSchema.safeParse({
+        clientId: "cli_A",
+        title: "ok",
+        evidence: [{ kind: "not-a-kind", ref: "x" }],
+      });
+      expect(r.success).toBe(false);
+    });
+    it("accepts a valid evidence item", () => {
+      const r = signalCreateInputSchema.safeParse({
+        clientId: "cli_A",
+        title: "ok",
+        evidence: [{ kind: "metric", ref: "cycle_time", label: "Cycle time" }],
+      });
+      expect(r.success).toBe(true);
+    });
   });
 });

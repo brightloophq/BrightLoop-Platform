@@ -36,6 +36,8 @@ export { toPortfolioProject, toTestimonial } from "./supabase/mappers.js";
 export { SupabaseTransformationRepository } from "./transformation/repository.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
+// Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.
+export { SupabaseSignalsRepository } from "./transformation/signals.read.js";
 export {
   PLACEHOLDER_PROJECTS,
   PLACEHOLDER_TESTIMONIALS,

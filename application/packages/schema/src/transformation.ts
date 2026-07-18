@@ -92,6 +92,30 @@ export const signalSchema = z.object({
 });
 export type Signal = z.infer<typeof signalSchema>;
 
+/**
+ * Human-facing input for CREATING a signal. The service owns id/status/createdBy/
+ * createdAt, so those are absent here. This is the shared contract the create form
+ * and the server action both validate against — one source of truth for the rules.
+ */
+export const signalCreateInputSchema = z.object({
+  clientId: idSchema.min(1, "Select an organization"),
+  title: z.string().trim().min(1, "Title is required").max(200, "Keep the title under 200 characters"),
+  detail: z
+    .string()
+    .trim()
+    .max(4000, "Keep the description under 4000 characters")
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null)),
+  sourceRef: z
+    .string()
+    .trim()
+    .max(300, "Keep the source under 300 characters")
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null)),
+  evidence: z.array(evidenceItemSchema).max(20, "Too many evidence items").optional(),
+});
+export type SignalCreateInput = z.infer<typeof signalCreateInputSchema>;
+
 /* ---- 2. Insight ----------------------------------------------------------- */
 
 export const insightSchema = z.object({
