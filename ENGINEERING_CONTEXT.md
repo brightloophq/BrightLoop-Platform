@@ -3,7 +3,8 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Sprint 5 (Signals)**.
+> convention that changed). Last updated: after **Sprint 5 (Signals)** was merged
+> to `main` (PR #4, merge commit `bd20276`).
 
 ---
 
@@ -110,7 +111,7 @@ there is **one** admin shell (`apps/web/src/app/admin/layout.tsx` +
 | **3** | **Live DB validation harness** — CI `db-verify` job (Supabase CLI + Docker): migrate → pgTAP → RLS → adapter integration tests → generated-type drift check; local `pnpm --filter @brightloop/db db:verify`. Fixed a systemic grant gap (migrations 0028/0029 grant API roles) and regenerated types. |
 | **4** | **Dashboard foundation + GSAP motion system** — motion layer in `@brightloop/ui/motion`, typed dashboard read model + adapter, refined `/admin` shell (premium sidebar + mobile drawer), dashboard page, transformation section placeholders. |
 | **4.1** | **Dashboard refinement + shared primitives** — centralized motion **preset system**, "operational canvas" (3 zones: Executive Overview → Transformation Loop → Operational Feed), and reusable primitives: `SectionHeader`, `OperationalPanel`, `MetricCard`, `PipelineNode`, `AttentionRow`, `SkeletonBlock`. |
-| **5** | **Signals module** — first end-to-end vertical slice (list/create/detail, lifecycle, audit, dashboard reflection). See §10. *Implemented on `sprint/05-signals`; open as PR #4 — **not yet merged to `main`.*** |
+| **5** | **Signals module** — first end-to-end vertical slice (list/create/detail, lifecycle, audit, dashboard reflection). See §10. *Merged to `main` via **PR #4** (non-fast-forward merge commit `bd20276`); all required CI green on `main`, Vercel production deployment succeeded.* |
 
 (Prior product work — reputation CMS, leads/clients, delivery, sales, funnel,
 conversations, hardening, Auxion rebrand — predates these transformation sprints
@@ -267,15 +268,19 @@ Shape to copy for the next transformation module:
   Preview deploys: **Vercel** + **Netlify** on each PR.
 - **Merge**: non-fast-forward **merge commit** (`gh pr merge <n> --merge`), matching
   Sprints 3–4.1. After merge: sync `main`, delete local + remote branch, prune.
-- Merged to `main`: Sprint 3 (#1), Sprint 4 (#2), Sprint 4.1 (#3). **Sprint 5 is
-  implemented on `sprint/05-signals` and open as PR #4 (CI green) — not yet merged.**
+- Merged to `main`: Sprint 3 (#1), Sprint 4 (#2), Sprint 4.1 (#3), **Sprint 5 (#4)**.
+  Sprint 5 merged via non-fast-forward merge commit **`bd20276`** (merged
+  2026-07-18); the `sprint/05-signals` branch was deleted (local + remote) and
+  pruned. Post-merge `main` CI (`verify` · `db-verify` · `secret-scan`) all green;
+  Vercel production deployment for `bd20276` succeeded.
 
 ---
 
 ## 12. Next planned sprint — Sprint 6: Insights
 
 **Sprint 6 — Insights module** — the next stage of the transformation cycle
-(Signal → Insight).
+(Signal → Insight). **Status: not started** (Sprint 5 is now merged; no Sprint 6
+branch or work exists yet).
 Build it as a vertical slice mirroring Signals (§10): reuse `TransformationService`
 (`createInsight` / `transitionInsight`; machine `insight`:
 generated → endorsed / dismissed), add a typed insights read adapter, replace the
