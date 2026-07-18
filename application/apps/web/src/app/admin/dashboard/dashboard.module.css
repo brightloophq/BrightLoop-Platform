@@ -1,206 +1,116 @@
 /* =============================================================================
- * Auxion dashboard — layout for the command-center home. Premium, spacious,
- * operational. Tokens only; transform/opacity are the only animated properties
- * (handled by the motion layer, not here).
+ * Auxion dashboard — the operational canvas.
+ *
+ * Three zones read top to bottom: Executive Overview → Transformation Loop →
+ * Operational Feed. The page sits on a toned canvas (--surface-inset) so white
+ * panels and cards read as raised instruments rather than floating on flat white.
+ * Layout + rhythm only; motion is the preset system, colour is tokens.
  * ========================================================================== */
 
-.wrap {
-  padding: clamp(var(--space-5), 3vw, var(--space-7));
-  max-width: 1280px;
+.page {
+  flex: 1;
+  background: var(--surface-inset);
+}
+
+.canvas {
+  max-width: 1320px;
   margin-inline: auto;
+  padding: clamp(var(--space-5), 3vw, var(--space-7));
   display: flex;
   flex-direction: column;
-  gap: var(--space-7);
+  gap: var(--space-6);
 }
 
-/* ---- header --------------------------------------------------------------- */
-.header {
+/* ---- zone 1: executive overview ------------------------------------------ */
+.overview {
   display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+}
+
+.countGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-3);
+}
+
+.cardLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-lg);
+}
+.cardLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+/* ---- zone 2: transformation loop (anchor) -------------------------------- */
+.loop {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  overflow-x: auto;
+  /* soft edge fade signals horizontal scroll on narrow viewports */
+  mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24px, #000 calc(100% - 24px), transparent 100%);
+}
+
+.loopNode {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+}
+
+.nodeLink {
+  flex: 1;
+  display: flex;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-md);
+}
+.nodeLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+/* ---- zone 3: operational feed -------------------------------------------- */
+.feed {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
   gap: var(--space-5);
-  flex-wrap: wrap;
+  align-items: start;
 }
 
-.headingBlock {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+.feedCol {
   min-width: 0;
 }
 
-.eyebrow {
-  font-size: var(--fs-xs);
-  text-transform: uppercase;
-  letter-spacing: var(--ls-eyebrow);
-  color: var(--text-muted);
-  font-weight: var(--fw-semibold);
-}
-
-.title {
-  font-size: var(--fs-h2);
-  line-height: var(--lh-tight);
-  letter-spacing: var(--ls-tight);
-  color: var(--text-primary);
-}
-
-.lede {
-  color: var(--text-secondary);
-  font-size: var(--fs-lg);
-  max-width: 60ch;
-}
-
-.headerActions {
-  display: flex;
-  gap: var(--space-3);
-  align-items: center;
-}
-
-/* ---- section scaffolding -------------------------------------------------- */
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.sectionHead {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-3);
-}
-
-.sectionTitle {
-  font-size: var(--fs-h4);
-  color: var(--text-primary);
-}
-
-.sectionHint {
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-}
-
-/* ---- metric grid ---------------------------------------------------------- */
-.metrics {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: var(--space-4);
-}
-
-.metricCard {
-  display: block;
-  height: 100%;
-  padding: var(--space-5);
-  background: var(--surface-card);
-  border: var(--border-hairline);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--elevation-1);
-  text-decoration: none;
-  color: inherit;
-  transition:
-    transform var(--dur-fast) var(--ease-out),
-    box-shadow var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
-}
-a.metricCard:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--elevation-3);
-  border-color: var(--border-strong);
-}
-a.metricCard:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-focus);
-}
-
-.metricLabel {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--fs-sm);
-  color: var(--text-secondary);
-  font-weight: var(--fw-medium);
-}
-
-.metricValue {
-  margin-top: var(--space-3);
-  font-family: var(--font-display);
-  font-size: var(--fs-h2);
-  font-weight: var(--fw-bold);
-  line-height: 1;
-  color: var(--text-primary);
-  letter-spacing: var(--ls-tight);
-}
-
-.metricSuffix {
-  font-size: var(--fs-lg);
-  color: var(--text-muted);
-  font-weight: var(--fw-medium);
-}
-
-.metricEmpty {
-  margin-top: var(--space-3);
-  font-size: var(--fs-sm);
-  color: var(--text-muted);
-}
-
-/* ---- pipeline ------------------------------------------------------------- */
-.pipeline {
-  display: flex;
-  align-items: stretch;
-  gap: 0;
-  overflow-x: auto;
-  padding-bottom: var(--space-2);
-}
-
-.pipelineNode {
-  flex: 1 1 0;
-  min-width: 104px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-4);
-  background: var(--surface-card);
-  border: var(--border-hairline);
-  border-radius: var(--radius-lg);
-  text-decoration: none;
-  color: inherit;
-}
-a.pipelineNode:hover {
-  border-color: var(--border-strong);
-}
-a.pipelineNode:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-focus);
-}
-
-.pipelineCount {
-  font-family: var(--font-display);
-  font-size: var(--fs-h4);
-  font-weight: var(--fw-bold);
-  color: var(--text-primary);
-}
-
-.pipelineStage {
-  font-size: var(--fs-xs);
-  color: var(--text-secondary);
-  font-weight: var(--fw-medium);
-}
-
-.pipelineArrow {
-  flex: 0 0 auto;
-  align-self: center;
-  color: var(--text-muted);
-  padding-inline: var(--space-1);
-}
-
-/* ---- attention + activity ------------------------------------------------- */
 .list {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.row {
+.rowLink {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--radius-md);
+}
+.rowLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+/* activity rows */
+.actRow {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -208,34 +118,12 @@ a.pipelineNode:focus-visible {
   background: var(--surface-card);
   border: var(--border-hairline);
   border-radius: var(--radius-md);
-  text-decoration: none;
-  color: inherit;
 }
-a.row:hover {
+a.rowLink:hover .actRow {
   border-color: var(--border-strong);
 }
-a.row:focus-visible {
-  outline: none;
-  box-shadow: var(--ring-focus);
-}
 
-.rowDot {
-  width: 8px;
-  height: 8px;
-  border-radius: var(--radius-pill);
-  flex: 0 0 auto;
-}
-.dotDanger {
-  background: var(--danger);
-}
-.dotWarning {
-  background: var(--warning);
-}
-.dotInfo {
-  background: var(--info);
-}
-
-.rowMain {
+.actMain {
   min-width: 0;
   flex: 1;
   display: flex;
@@ -243,13 +131,13 @@ a.row:focus-visible {
   gap: 2px;
 }
 
-.rowTitle {
+.actTitle {
   font-size: var(--fs-sm);
   color: var(--text-primary);
   font-weight: var(--fw-medium);
 }
 
-.rowMeta {
+.actMeta {
   font-size: var(--fs-xs);
   color: var(--text-muted);
   overflow: hidden;
@@ -257,32 +145,27 @@ a.row:focus-visible {
   white-space: nowrap;
 }
 
-.rowCount {
-  font-family: var(--font-display);
-  font-weight: var(--fw-bold);
-  color: var(--text-primary);
-  margin-left: auto;
-}
-
-.rowTime {
+.actTime {
   font-size: var(--fs-xs);
   color: var(--text-muted);
   flex: 0 0 auto;
   white-space: nowrap;
+  min-width: 56px;
+  text-align: right;
 }
 
-/* ---- quick access --------------------------------------------------------- */
+/* ---- quick access strip -------------------------------------------------- */
 .quick {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(6, 1fr);
   gap: var(--space-3);
 }
 
 .quickCard {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-4);
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
   background: var(--surface-card);
   border: var(--border-hairline);
   border-radius: var(--radius-lg);
@@ -307,27 +190,39 @@ a.row:focus-visible {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
+  width: 30px;
+  height: 30px;
   border-radius: var(--radius-md);
   background: var(--surface-inset);
   color: var(--text-accent);
   flex: 0 0 auto;
 }
 
-/* ---- error / empty banners ------------------------------------------------ */
-.banner {
-  border: var(--border-hairline);
-  border-radius: var(--radius-lg);
-  padding: var(--space-6);
-  background: var(--surface-card);
+/* ---- states -------------------------------------------------------------- */
+.stateWrap {
+  max-width: 1320px;
+  margin-inline: auto;
+  padding: clamp(var(--space-5), 3vw, var(--space-7));
 }
 
-@media (max-width: 640px) {
-  .header {
-    align-items: flex-start;
+/* ---- responsive ---------------------------------------------------------- */
+@media (max-width: 1023px) {
+  .feed {
+    grid-template-columns: minmax(0, 1fr);
   }
-  .headerActions {
-    width: 100%;
+  .quick {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 767px) {
+  .heroGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .countGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .quick {
+    grid-template-columns: repeat(2, 1fr);
   }
 }

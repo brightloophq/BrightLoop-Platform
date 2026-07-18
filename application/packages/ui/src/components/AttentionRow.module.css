@@ -1,0 +1,54 @@
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-card);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-md);
+  flex: 0 0 auto;
+}
+
+.label {
+  min-width: 0;
+  flex: 1;
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  font-weight: var(--fw-medium);
+}
+
+.count {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  color: var(--text-primary);
+}
+
+/* Tone: tint the chip; keep the row calm. Icon + colour carry severity. */
+.danger .chip {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+.warning .chip {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 14%, transparent);
+}
+.info .chip {
+  color: var(--info);
+  background: color-mix(in srgb, var(--info) 12%, transparent);
+}
+
+.interactive {
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.interactive:hover {
+  border-color: var(--border-strong);
+}

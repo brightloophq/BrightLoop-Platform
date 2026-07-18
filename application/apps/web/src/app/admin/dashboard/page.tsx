@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import {
@@ -8,7 +9,19 @@ import {
   type DashboardScope,
   type DashboardView,
 } from "@brightloop/domain";
-import { Alert, Badge, Button, EmptyState, Icon } from "@brightloop/ui";
+import {
+  Alert,
+  Badge,
+  Button,
+  EmptyState,
+  Icon,
+  SectionHeader,
+  OperationalPanel,
+  MetricCard,
+  PipelineNode,
+  AttentionRow,
+  SkeletonBlock,
+} from "@brightloop/ui";
 import { MotionProvider, DashboardEntrance, AnimatedMetric, PipelineAnimation } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { getTransformationDashboardRepository } from "@/lib/repositories";
@@ -18,194 +31,23 @@ import styles from "./dashboard.module.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Dashboard · Auxion" };
 
-export default async function DashboardPage() {
-  const actor = await requireSurface("admin");
+const METRIC_ICON: Record<string, string> = {
+  health: "gauge",
+  index: "target",
+  "open-signals": "activity",
+  insights: "lightbulb",
+  recommendations: "sparkles",
+  "awaiting-approval": "check-circle",
+  "moves-in-progress": "git-branch",
+  "moves-completed": "check-circle",
+};
 
-  // Authorization (defence-in-depth; RLS is the real boundary).
-  try {
-    assertDashboardRead(actor);
-  } catch (err) {
-    if (err instanceof AuthorizationError) return <Unauthorized />;
-    throw err;
-  }
-
-  const scope = resolveDashboardScope(actor);
-  const orgName = await resolveOrgName(scope);
-
-  // Read the snapshot; a failure renders a recoverable error, never a broken page.
-  let view: DashboardView;
-  try {
-    const repo = await getTransformationDashboardRepository();
-    const snapshot = await repo.read(scope);
-    view = buildDashboardView(snapshot, scope);
-  } catch {
-    return <DashboardError />;
-  }
-
-  return (
-    <MotionProvider>
-      <DashboardEntrance className={styles.wrap}>
-        <Header orgName={orgName} scope={scope} />
-        <Metrics view={view} />
-        <Pipeline view={view} />
-        <Attention view={view} />
-        <Activity view={view} />
-        <QuickAccess />
-        {view.isEmpty ? <EmptyBanner /> : null}
-      </DashboardEntrance>
-    </MotionProvider>
-  );
-}
-
-/* ---- header --------------------------------------------------------------- */
-
-function Header({ orgName, scope }: { orgName: string; scope: DashboardScope }) {
-  const greeting = timeGreeting(new Date().getHours());
-  const lede =
-    scope.kind === "portfolio"
-      ? "Your transformation portfolio at a glance — signals through learnings across every organization."
-      : `How ${orgName} is transforming — the full cycle from signal to learning.`;
-  return (
-    <header className={styles.header} data-animate="header">
-      <div className={styles.headingBlock}>
-        <span className={styles.eyebrow}>{orgName}</span>
-        <h1 className={styles.title}>{greeting}</h1>
-        <p className={styles.lede}>{lede}</p>
-      </div>
-      <div className={styles.headerActions}>
-        <Button asChild variant="ghost">
-          <Link href="/admin/measurements">Business Health</Link>
-        </Button>
-        <Button asChild variant="primary">
-          <Link href="/admin/signals">Create Signal</Link>
-        </Button>
-      </div>
-    </header>
-  );
-}
-
-/* ---- executive metrics ---------------------------------------------------- */
-
-function Metrics({ view }: { view: DashboardView }) {
-  return (
-    <section className={styles.section}>
-      <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>Executive metrics</h2>
-      </div>
-      <div className={styles.metrics}>
-        {view.metrics.map((metric) => {
-          const body = (
-            <>
-              <span className={styles.metricLabel}>{metric.label}</span>
-              {metric.value === null ? (
-                <span className={styles.metricEmpty}>No data yet</span>
-              ) : (
-                <span className={styles.metricValue}>
-                  {metric.value.toLocaleString()}
-                  {metric.suffix ? <span className={styles.metricSuffix}>{metric.suffix}</span> : null}
-                </span>
-              )}
-            </>
-          );
-          return (
-            <AnimatedMetric key={metric.key}>
-              {metric.href ? (
-                <Link href={metric.href} className={styles.metricCard}>
-                  {body}
-                </Link>
-              ) : (
-                <div className={styles.metricCard}>{body}</div>
-              )}
-            </AnimatedMetric>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-/* ---- transformation pipeline ---------------------------------------------- */
-
-function Pipeline({ view }: { view: DashboardView }) {
-  return (
-    <section className={styles.section}>
-      <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>Transformation pipeline</h2>
-        <span className={styles.sectionHint}>Signal → Insight → Recommendation → Approval → Move → Execution → Measurement → Learning</span>
-      </div>
-      <PipelineAnimation className={styles.pipeline}>
-        {view.pipeline.map((stage, i) => (
-          <PipelineAnimation.Node key={stage.key}>
-            <div style={{ display: "flex", alignItems: "center" }}>
-              {stage.href ? (
-                <Link href={stage.href} className={styles.pipelineNode}>
-                  <span className={styles.pipelineCount}>{stage.count.toLocaleString()}</span>
-                  <span className={styles.pipelineStage}>{stage.label}</span>
-                </Link>
-              ) : (
-                <div className={styles.pipelineNode}>
-                  <span className={styles.pipelineCount}>{stage.count.toLocaleString()}</span>
-                  <span className={styles.pipelineStage}>{stage.label}</span>
-                </div>
-              )}
-              {i < view.pipeline.length - 1 ? (
-                <span className={styles.pipelineArrow} aria-hidden="true">
-                  <Icon name="chevron-right" size={16} />
-                </span>
-              ) : null}
-            </div>
-          </PipelineAnimation.Node>
-        ))}
-      </PipelineAnimation>
-    </section>
-  );
-}
-
-/* ---- attention required --------------------------------------------------- */
-
-function Attention({ view }: { view: DashboardView }) {
-  return (
-    <section className={styles.section} data-animate="attention">
-      <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>Attention required</h2>
-      </div>
-      {view.attentionClear ? (
-        <div className={styles.banner}>
-          <EmptyState icon="check-circle" title="All clear" body="Nothing needs your attention right now — approvals, risks and executions are all healthy." />
-        </div>
-      ) : (
-        <div className={styles.list}>
-          {view.attention.map((item) => {
-            const dot = [
-              styles.rowDot,
-              item.tone === "danger" ? styles.dotDanger : item.tone === "warning" ? styles.dotWarning : styles.dotInfo,
-            ].join(" ");
-            const inner = (
-              <>
-                <span className={dot} aria-hidden="true" />
-                <div className={styles.rowMain}>
-                  <span className={styles.rowTitle}>{item.label}</span>
-                </div>
-                <span className={styles.rowCount}>{item.count.toLocaleString()}</span>
-              </>
-            );
-            return item.href ? (
-              <Link key={item.key} href={item.href} className={styles.row}>
-                {inner}
-              </Link>
-            ) : (
-              <div key={item.key} className={styles.row}>
-                {inner}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
-  );
-}
-
-/* ---- recent activity ------------------------------------------------------ */
+const ATTENTION_ICON: Record<string, string> = {
+  "pending-approvals": "check-circle",
+  "critical-risks": "bell",
+  "blocked-executions": "activity",
+  "stale-recommendations": "clock",
+};
 
 const SECTION_FOR_ENTITY: Record<string, string> = {
   signal: "/admin/signals",
@@ -219,53 +61,265 @@ const SECTION_FOR_ENTITY: Record<string, string> = {
   knowledge: "/admin/knowledge",
 };
 
-function Activity({ view }: { view: DashboardView }) {
-  const now = Date.now();
+export default async function DashboardPage() {
+  const actor = await requireSurface("admin");
+
+  try {
+    assertDashboardRead(actor);
+  } catch (err) {
+    if (err instanceof AuthorizationError) return <Unauthorized />;
+    throw err;
+  }
+
+  const scope = resolveDashboardScope(actor);
+
   return (
-    <section className={styles.section} data-animate="activity">
-      <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>Recent activity</h2>
-      </div>
-      {view.activity.length === 0 ? (
-        <div className={styles.banner}>
-          <EmptyState icon="clock" title="No activity yet" body="State transitions across the transformation cycle will appear here as work moves." />
-        </div>
-      ) : (
-        <div className={styles.list}>
-          {view.activity.map((item) => {
-            const href = SECTION_FOR_ENTITY[item.entity];
-            const desc = `${item.from ? `${item.from} → ` : ""}${item.to}`;
-            const meta = `${capitalize(item.entity)} · ${item.actor ?? "system"}`;
-            const inner = (
-              <>
-                <div className={styles.rowMain}>
-                  <span className={styles.rowTitle}>{desc}</span>
-                  <span className={styles.rowMeta}>{meta}</span>
-                </div>
-                <Badge status={item.to} />
-                <span className={styles.rowTime}>{timeAgo(item.at, now)}</span>
-              </>
-            );
-            return href ? (
-              <Link key={item.id} href={href} className={styles.row}>
-                {inner}
-              </Link>
-            ) : (
-              <div key={item.id} className={styles.row}>
-                {inner}
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </section>
+    <div className={styles.page}>
+      <MotionProvider>
+        <Suspense fallback={<DashboardSkeleton />}>
+          <DashboardData scope={scope} />
+        </Suspense>
+      </MotionProvider>
+    </div>
   );
 }
 
-/* ---- quick access --------------------------------------------------------- */
+/* ---- data (streamed behind Suspense) -------------------------------------- */
+
+async function DashboardData({ scope }: { scope: DashboardScope }) {
+  const orgName = await resolveOrgName(scope);
+
+  let view: DashboardView;
+  try {
+    const repo = await getTransformationDashboardRepository();
+    view = buildDashboardView(await repo.read(scope), scope);
+  } catch {
+    return <DashboardError />;
+  }
+
+  const hero = view.metrics.filter((m) => m.key === "health" || m.key === "index");
+  const counts = view.metrics.filter((m) => m.key !== "health" && m.key !== "index");
+
+  return (
+    <DashboardEntrance className={styles.canvas}>
+      {/* ── Zone 1 · Executive overview ─────────────────────────────── */}
+      <div data-animate="header">
+        <SectionHeader
+          as="h1"
+          size="page"
+          kicker={orgName}
+          title={timeGreeting(new Date().getHours())}
+          hint={
+            scope.kind === "portfolio"
+              ? "Your transformation portfolio at a glance — signals through learnings across every organization."
+              : `How ${orgName} is transforming — the full loop from signal to learning.`
+          }
+          action={
+            <>
+              <Button asChild variant="ghost">
+                <Link href="/admin/measurements">Business Health</Link>
+              </Button>
+              <Button asChild variant="primary">
+                <Link href="/admin/signals">Create Signal</Link>
+              </Button>
+            </>
+          }
+        />
+      </div>
+
+      <div className={styles.overview}>
+        <div className={styles.heroGrid}>
+          {hero.map((m) => (
+            <AnimatedMetric key={m.key}>
+              <MetricCard
+                emphasis="hero"
+                icon={METRIC_ICON[m.key]}
+                label={m.label}
+                value={m.value}
+                suffix={m.suffix}
+                caption={scope.kind === "portfolio" ? "Portfolio average" : undefined}
+              />
+            </AnimatedMetric>
+          ))}
+        </div>
+
+        <div className={styles.countGrid}>
+          {counts.map((m) => {
+            const card = (
+              <MetricCard
+                interactive={Boolean(m.href)}
+                icon={METRIC_ICON[m.key]}
+                label={m.label}
+                value={m.value}
+                suffix={m.suffix}
+              />
+            );
+            return (
+              <AnimatedMetric key={m.key}>
+                {m.href ? (
+                  <Link
+                    href={m.href}
+                    className={styles.cardLink}
+                    aria-label={`${m.label}: ${m.value === null ? "no data yet" : m.value.toLocaleString()}`}
+                  >
+                    {card}
+                  </Link>
+                ) : (
+                  card
+                )}
+              </AnimatedMetric>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* ── Zone 2 · Transformation loop (the anchor) ───────────────── */}
+      <OperationalPanel tone="anchor">
+        <SectionHeader
+          kicker="The transformation loop"
+          title="Pipeline"
+          hint="Signal → Insight → Recommendation → Approval → Move → Execution → Measurement → Learning"
+        />
+        <PipelineAnimation className={styles.loop}>
+          {view.pipeline.map((stage, i) => {
+            const position =
+              view.pipeline.length === 1
+                ? "only"
+                : i === 0
+                  ? "first"
+                  : i === view.pipeline.length - 1
+                    ? "last"
+                    : "middle";
+            const node = (
+              <PipelineNode
+                label={stage.label}
+                count={stage.count}
+                position={position}
+                interactive={Boolean(stage.href)}
+              />
+            );
+            return (
+              <PipelineAnimation.Node key={stage.key} className={styles.loopNode}>
+                {stage.href ? (
+                  <Link
+                    href={stage.href}
+                    className={styles.nodeLink}
+                    aria-label={`${stage.label}: ${stage.count.toLocaleString()}`}
+                  >
+                    {node}
+                  </Link>
+                ) : (
+                  node
+                )}
+              </PipelineAnimation.Node>
+            );
+          })}
+        </PipelineAnimation>
+      </OperationalPanel>
+
+      {/* ── Zone 3 · Operational feed ───────────────────────────────── */}
+      <div className={styles.feed}>
+        <div className={styles.feedCol} data-animate="attention">
+          <OperationalPanel>
+            <SectionHeader title="Attention required" />
+            {view.attentionClear ? (
+              <EmptyState
+                icon="check-circle"
+                title="All clear"
+                body="Nothing needs your attention right now — approvals, risks and executions are all healthy."
+              />
+            ) : (
+              <div className={styles.list}>
+                {view.attention.map((item) => {
+                  const row = (
+                    <AttentionRow
+                      label={item.label}
+                      count={item.count}
+                      tone={item.tone}
+                      icon={ATTENTION_ICON[item.key]}
+                      interactive={Boolean(item.href)}
+                    />
+                  );
+                  return item.href ? (
+                    <Link key={item.key} href={item.href} className={styles.rowLink}>
+                      {row}
+                    </Link>
+                  ) : (
+                    <div key={item.key}>{row}</div>
+                  );
+                })}
+              </div>
+            )}
+          </OperationalPanel>
+        </div>
+
+        <div className={styles.feedCol} data-animate="activity">
+          <OperationalPanel>
+            <SectionHeader title="Recent activity" />
+            <Activity view={view} />
+          </OperationalPanel>
+        </div>
+      </div>
+
+      {/* Quick access strip */}
+      <section data-animate="activity">
+        <SectionHeader title="Jump to" />
+        <div className={styles.quick}>
+          {QUICK.map((q) => (
+            <Link key={q.href} href={q.href} className={styles.quickCard}>
+              <span className={styles.quickIcon}>
+                <Icon name={q.icon} size={16} />
+              </span>
+              {q.label}
+            </Link>
+          ))}
+        </div>
+      </section>
+    </DashboardEntrance>
+  );
+}
+
+function Activity({ view }: { view: DashboardView }) {
+  const now = Date.now();
+  if (view.activity.length === 0) {
+    return (
+      <EmptyState
+        icon="clock"
+        title="No activity yet"
+        body="State transitions across the transformation loop will appear here as work moves."
+      />
+    );
+  }
+  return (
+    <div className={styles.list}>
+      {view.activity.map((item) => {
+        const href = SECTION_FOR_ENTITY[item.entity];
+        const desc = `${item.from ? `${item.from} → ` : ""}${item.to}`;
+        const meta = `${capitalize(item.entity)} · ${item.actor ?? "system"}`;
+        const inner = (
+          <div className={styles.actRow}>
+            <div className={styles.actMain}>
+              <span className={styles.actTitle}>{desc}</span>
+              <span className={styles.actMeta}>{meta}</span>
+            </div>
+            <Badge status={item.to} />
+            <span className={styles.actTime}>{timeAgo(item.at, now)}</span>
+          </div>
+        );
+        return href ? (
+          <Link key={item.id} href={href} className={styles.rowLink}>
+            {inner}
+          </Link>
+        ) : (
+          <div key={item.id}>{inner}</div>
+        );
+      })}
+    </div>
+  );
+}
 
 const QUICK = [
-  { label: "Review Signals", href: "/admin/signals", icon: "activity" },
+  { label: "Signals", href: "/admin/signals", icon: "activity" },
   { label: "Recommendations", href: "/admin/recommendations", icon: "sparkles" },
   { label: "Approvals", href: "/admin/approvals", icon: "check-circle" },
   { label: "Moves", href: "/admin/moves", icon: "git-branch" },
@@ -273,37 +327,42 @@ const QUICK = [
   { label: "Knowledge", href: "/admin/knowledge", icon: "book-open" },
 ] as const;
 
-function QuickAccess() {
+/* ---- loading / states ----------------------------------------------------- */
+
+function DashboardSkeleton() {
   return (
-    <section className={styles.section} data-animate="activity">
-      <div className={styles.sectionHead}>
-        <h2 className={styles.sectionTitle}>Quick access</h2>
+    <div className={styles.canvas} aria-busy="true" aria-label="Loading dashboard">
+      <div className={styles.overview}>
+        <div className={styles.heroGrid}>
+          <SkeletonBlock height="128px" radius="var(--radius-lg)" />
+          <SkeletonBlock height="128px" radius="var(--radius-lg)" />
+        </div>
+        <div className={styles.countGrid}>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <SkeletonBlock key={i} height="94px" radius="var(--radius-lg)" />
+          ))}
+        </div>
       </div>
-      <div className={styles.quick}>
-        {QUICK.map((q) => (
-          <Link key={q.href} href={q.href} className={styles.quickCard}>
-            <span className={styles.quickIcon}>
-              <Icon name={q.icon} size={18} />
-            </span>
-            {q.label}
-          </Link>
-        ))}
+      <SkeletonBlock height="180px" radius="var(--radius-xl)" />
+      <div className={styles.feed}>
+        <SkeletonBlock height="260px" radius="var(--radius-xl)" />
+        <SkeletonBlock height="260px" radius="var(--radius-xl)" />
       </div>
-    </section>
+    </div>
   );
 }
 
-/* ---- states --------------------------------------------------------------- */
-
 function Unauthorized() {
   return (
-    <div className={styles.wrap}>
-      <div className={styles.banner}>
-        <EmptyState
-          icon="lock"
-          title="You don't have access to the dashboard"
-          body="Your role can't view the transformation command center. If this seems wrong, contact an administrator."
-        />
+    <div className={styles.page}>
+      <div className={styles.stateWrap}>
+        <OperationalPanel>
+          <EmptyState
+            icon="lock"
+            title="You don't have access to the dashboard"
+            body="Your role can't view the transformation command center. If this seems wrong, contact an administrator."
+          />
+        </OperationalPanel>
       </div>
     </div>
   );
@@ -311,23 +370,10 @@ function Unauthorized() {
 
 function DashboardError() {
   return (
-    <div className={styles.wrap}>
+    <div className={styles.stateWrap}>
       <Alert tone="danger" title="We couldn't load your dashboard">
-        Something went wrong reading transformation data.{" "}
-        <Link href="/admin/dashboard">Try again</Link>.
+        Something went wrong reading transformation data. <Link href="/admin/dashboard">Try again</Link>.
       </Alert>
-    </div>
-  );
-}
-
-function EmptyBanner() {
-  return (
-    <div className={styles.banner} data-animate="activity">
-      <EmptyState
-        icon="rocket"
-        title="Your transformation starts here"
-        body="No signals have been captured yet. Once work begins, this dashboard fills with live metrics, pipeline progress and activity."
-      />
     </div>
   );
 }

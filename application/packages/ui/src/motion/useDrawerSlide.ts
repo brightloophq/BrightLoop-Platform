@@ -1,21 +1,18 @@
 "use client";
 
 import type { RefObject } from "react";
-import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
-import { DURATION, EASE } from "./tokens";
+import { drawer } from "./presets";
 import { useMotion } from "./MotionProvider";
 
 const DESKTOP = "(min-width: 1024px)";
 
 /**
- * Slide an off-canvas drawer panel (and fade its scrim) with GSAP — the reusable
- * mobile-drawer animation. Transform + opacity only; snaps instantly under
- * reduced motion; a no-op on desktop (the panel is a static rail there). useGSAP
- * reverts on unmount, so it never leaks across navigations.
- *
- * Keeping GSAP behind this hook lets app shells animate a drawer without
- * importing gsap directly.
+ * Slide an off-canvas drawer panel (and fade its scrim) via the shared `drawer`
+ * motion preset. A no-op on desktop (the panel is a static rail there); snaps
+ * instantly under reduced motion. useGSAP reverts on unmount, so it never leaks
+ * across navigations. Keeping GSAP behind the preset lets app shells animate a
+ * drawer without importing gsap.
  */
 export function useDrawerSlide(
   open: boolean,
@@ -27,17 +24,8 @@ export function useDrawerSlide(
   useGSAP(
     () => {
       if (typeof window === "undefined" || window.matchMedia(DESKTOP).matches) return;
-      const panelEl = panel.current;
-      if (!panelEl) return;
-      const panelTo = { xPercent: open ? 0 : -100 };
-      const scrimTo = { autoAlpha: open ? 1 : 0 };
-      if (reducedMotion) {
-        gsap.set(panelEl, panelTo);
-        if (scrim.current) gsap.set(scrim.current, scrimTo);
-        return;
-      }
-      gsap.to(panelEl, { ...panelTo, duration: DURATION.base, ease: EASE.out });
-      if (scrim.current) gsap.to(scrim.current, { ...scrimTo, duration: DURATION.fast, ease: EASE.out });
+      if (!panel.current) return;
+      drawer(open, panel.current, scrim.current, { reduced: reducedMotion });
     },
     { dependencies: [open, reducedMotion] },
   );

@@ -1,0 +1,78 @@
+.node {
+  flex: 1 1 0;
+  min-width: 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+/* ---- the continuous rail with a stage marker ----------------------------- */
+.track {
+  position: relative;
+  width: 100%;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rail {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--border-strong);
+  transform: translateY(-50%);
+}
+.node[data-position="first"] .rail {
+  left: 50%;
+}
+.node[data-position="last"] .rail {
+  right: 50%;
+}
+.node[data-position="only"] .rail {
+  display: none;
+}
+
+.marker {
+  position: relative;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  border: 2px solid var(--border-strong);
+}
+.marker[data-filled="true"] {
+  background: var(--action-primary);
+  border-color: var(--action-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--action-primary) 18%, transparent);
+}
+
+.count {
+  font-family: var(--font-display);
+  font-size: var(--fs-h3);
+  font-weight: var(--fw-bold);
+  line-height: 1;
+  color: var(--text-primary);
+  letter-spacing: var(--ls-tight);
+}
+
+.label {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  font-weight: var(--fw-medium);
+  letter-spacing: var(--ls-wide);
+}
+
+.interactive {
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.interactive:hover {
+  background: var(--surface-inset);
+}

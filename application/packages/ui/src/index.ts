@@ -89,3 +89,17 @@ export type { PaginationProps } from "./components/Pagination";
 /* ---- Marketing ---- */
 export { CTASection } from "./components/CTASection";
 export type { CTASectionProps } from "./components/CTASection";
+
+/* ---- Operational (dashboard) primitives — reused by every command-center module ---- */
+export { SectionHeader } from "./components/SectionHeader";
+export type { SectionHeaderProps } from "./components/SectionHeader";
+export { OperationalPanel } from "./components/OperationalPanel";
+export type { OperationalPanelProps } from "./components/OperationalPanel";
+export { MetricCard } from "./components/MetricCard";
+export type { MetricCardProps } from "./components/MetricCard";
+export { PipelineNode } from "./components/PipelineNode";
+export type { PipelineNodeProps } from "./components/PipelineNode";
+export { AttentionRow } from "./components/AttentionRow";
+export type { AttentionRowProps, AttentionTone } from "./components/AttentionRow";
+export { SkeletonBlock } from "./components/SkeletonBlock";
+export type { SkeletonBlockProps } from "./components/SkeletonBlock";
