@@ -103,3 +103,19 @@ export { AttentionRow } from "./components/AttentionRow";
 export type { AttentionRowProps, AttentionTone } from "./components/AttentionRow";
 export { SkeletonBlock } from "./components/SkeletonBlock";
 export type { SkeletonBlockProps } from "./components/SkeletonBlock";
+
+/* ---- Workspace primitives (Sprint 5 — list/detail/form modules) ---- */
+export { OperationalTable } from "./components/OperationalTable";
+export type { OperationalTableProps, OperationalColumn } from "./components/OperationalTable";
+export { FilterBar } from "./components/FilterBar";
+export type { FilterBarProps } from "./components/FilterBar";
+export { DetailField, DetailGrid } from "./components/DetailField";
+export type { DetailFieldProps, DetailGridProps } from "./components/DetailField";
+export { ActivityTimeline } from "./components/ActivityTimeline";
+export type { ActivityTimelineProps, TimelineItem } from "./components/ActivityTimeline";
+export { EmptyWorkspace } from "./components/EmptyWorkspace";
+export type { EmptyWorkspaceProps } from "./components/EmptyWorkspace";
+export { FormSection } from "./components/FormSection";
+export type { FormSectionProps } from "./components/FormSection";
+export { ToastProvider, useToast } from "./components/Toast";
+export type { ToastTone } from "./components/Toast";

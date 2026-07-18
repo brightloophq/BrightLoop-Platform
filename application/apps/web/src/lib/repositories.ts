@@ -4,10 +4,23 @@ import {
   createCatalogRepository,
   createReputationRepository,
   SupabaseTransformationDashboardRepository,
+  SupabaseSignalsRepository,
+  SupabaseTransformationRepository,
 } from "@brightloop/data";
-import type { CatalogRepository, DataSource, ReputationRepository } from "@brightloop/domain";
+import {
+  createTransformationService,
+  type CatalogRepository,
+  type DataSource,
+  type ReputationRepository,
+  type TransformationService,
+} from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
+
+/** Prefixed-id generator injected into the transformation service (mirrors the app convention). */
+function newId(prefix: string): string {
+  return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+}
 
 /**
  * Repository access for Server Components.
@@ -92,6 +105,26 @@ export function getCatalogRepository(): CatalogRepository {
 export async function getTransformationDashboardRepository(): Promise<SupabaseTransformationDashboardRepository> {
   const client = await createClient();
   return new SupabaseTransformationDashboardRepository(client);
+}
+
+/**
+ * Signals READ adapter for the authenticated command center (fully typed).
+ * Request-scoped so RLS scopes what the caller can see. Never cached.
+ */
+export async function getSignalsRepository(): Promise<SupabaseSignalsRepository> {
+  const client = await createClient();
+  return new SupabaseSignalsRepository(client);
+}
+
+/**
+ * The transformation domain service for WRITES (create / transition). Bound to the
+ * request-scoped repository so every mutation runs the capability + lifecycle guard
+ * + transition audit + event path under the caller's RLS. Never cached.
+ */
+export async function getTransformationService(): Promise<TransformationService> {
+  const client = await createClient();
+  const repo = new SupabaseTransformationRepository(client);
+  return createTransformationService({ repo, ids: newId });
 }
 
 /**

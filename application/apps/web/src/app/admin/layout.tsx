@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { may } from "@brightloop/domain";
+import { ToastProvider } from "@brightloop/ui";
 import { requireSurface } from "@/lib/auth";
 import { transformationNavGroup } from "@/lib/transformation-nav";
 import { AppSidebar } from "./AppSidebar";
@@ -89,7 +90,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <div className={styles.shell}>
       <AppSidebar groups={groups} roleLabel={actor.role} />
       <main id="main-content" tabIndex={-1} className={styles.main}>
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </main>
     </div>
   );
