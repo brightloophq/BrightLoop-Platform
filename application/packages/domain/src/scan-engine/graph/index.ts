@@ -71,3 +71,12 @@ export interface BusinessProfile {
 export interface BusinessGraph {
   normalize(input: { scanId: string; clientId: string | null; evidence: EvidenceSignal[] }): Promise<BusinessProfile>;
 }
+
+/* ---- Sprint 4 · Intelligence Graph (assembly, operations, snapshots,
+ * conflict-aware updates, Index inputs, recommendation queries, events) ---- */
+export * from "./operations.js";
+export * from "./assembly.js";
+export * from "./snapshot.js";
+export * from "./integration.js";
+export * from "./updates.js";
+export * from "./events.js";
