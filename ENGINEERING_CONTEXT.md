@@ -339,6 +339,33 @@ generated-type/repository/domain-service/capability patterns. Routes:
   portfolio scope), and Business Scan + Activation nav items (capability-gated).
   No browser-direct DB writes.
 
+### Business Scan engine — roadmap foundation (contracts only)
+
+The future Business Intelligence Scan is an **asynchronous, provider-pluggable**
+engine. Only the CONTRACTS exist today — no crawler, LLM call, benchmark API,
+proposal generation, or billing is implemented. See
+`docs/design/scan-engine-architecture.md` and the phased roadmap
+`docs/design/scan-engine-roadmap.md`.
+
+- **Contracts** (`@brightloop/schema/scan-engine`): `ScanRequest`, `ScanJob`
+  (+`ScanJobStatus`/`ScanStage`), `ScanSource`, `ScanResult`, `ScanEvidenceItem`,
+  `CompetitorCandidate`, `CompetitorBenchmark`, `DomainDiagnosis`,
+  `ScanConfidence`, `ReportEntitlement`, `ProposalGenerationRequest`,
+  `ModelInvocation`, `EntitlementTier`.
+- **Ports** (`@brightloop/domain/scan-engine`): `AiOrchestrator` (one
+  vendor-neutral AI seam, structured output — OpenAI/Anthropic/Google/DeepSeek all
+  implement it; **no model-specific logic in domain**), `CrawlerProvider`,
+  `SearchProvider`, `BenchmarkProvider`, `DiagnosisSynthesizer`, `ScanJobQueue`,
+  plus the `EntitlementPolicy` (billing-agnostic: subscription / deposit / manual
+  approval / engagement) and the `SCAN_PIPELINE` stage order.
+- **Access levels:** public preview → registered lead → internal operator (owns
+  the proposal engine) → committed client → admin/owner.
+- **Security invariants baked into the shapes:** crawled content is UNTRUSTED
+  with provenance; observed facts (`ScanEvidenceItem`) are separated from AI
+  inference (`DomainDiagnosis`); model calls log provider/model/version
+  (`ModelInvocation`), never chain-of-thought; SSRF guarding is an adapter
+  contract; internal proposal tools stay capability-gated behind existing RLS.
+
 Phase 0 detail:
 - **Tokens** — canonical dual-theme set in `packages/ui/src/tokens/colors.css`
   (amber `--signal`, `--bg/--surface/--ink` ramp, `--positive/caution/critical/
