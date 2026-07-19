@@ -1,12 +1,29 @@
 /* =============================================================================
- * L3 · Evidence Engine (PDF 27 §03/§05) — SKELETON.
+ * L3 · Evidence Engine (PDF 27 §03/§05/§08) — DETERMINISTIC layer.
  *
  * Extracts, classifies (Observed / Estimated / Inferred / Unavailable), and
  * timestamps every signal with a source + reliability weight. The four-state
  * label travels with the signal through every downstream layer and appears
  * verbatim in the client report — an inference is never presented as observation.
- * Classification defaults are PURE; extraction/fetching is an adapter concern.
+ *
+ * Sprint 3 adds the full deterministic evidence-processing model on top of the
+ * Sprint-1 classification skeleton: normalization, provenance, freshness,
+ * reliability, coverage, confidence, conflict/dedup, validation, and the
+ * EvidenceBundle. All pure. (The raw `evidenceSignal` classification below is
+ * unchanged; the canonical `EngineEvidenceItem` is the processed form.)
  * ========================================================================== */
+
+/* ---- Sprint-3 deterministic evidence engine ---- */
+export * from "./hash.js";
+export * from "./reliability.js";
+export * from "./freshness.js";
+export * from "./provenance.js";
+export * from "./confidence.js";
+export * from "./coverage.js";
+export * from "./conflict.js";
+export * from "./normalize.js";
+export * from "./validate.js";
+export * from "./bundle.js";
 
 import {
   EVIDENCE_SOURCE_DEFAULT_STATE,

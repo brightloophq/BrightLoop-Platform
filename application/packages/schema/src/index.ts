@@ -12,6 +12,7 @@ export * from "./domains.js";
 export * from "./scan-engine.js";
 export * from "./engine.js";
 export * from "./provider-registry.js";
+export * from "./evidence.js";
 export * from "./reputation.js";
 // `catalog` re-exports the Discipline type that originates in `reputation`;
 // export the rest explicitly to avoid an ambiguous duplicate re-export.
