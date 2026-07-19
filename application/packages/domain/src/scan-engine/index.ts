@@ -21,3 +21,6 @@ export * from "./monitoring/index.js"; // L8
 /* ---- orchestration + AI provider router ---- */
 export * from "./orchestration/index.js";
 export * from "./provider-router.js";
+
+/* ---- provider registry + cost-aware routing (Sprint 2) ---- */
+export * from "./routing/index.js";
