@@ -3,6 +3,8 @@ import styles from "./SectionHeader.module.css";
 
 export interface SectionHeaderProps {
   title: ReactNode;
+  /** Section ordinal rendered as an amber §NN at the start of the eyebrow. */
+  index?: string;
   /** Uppercase eyebrow above the title. */
   kicker?: ReactNode;
   /** One-line supporting description. */
@@ -23,6 +25,7 @@ export interface SectionHeaderProps {
  */
 export function SectionHeader({
   title,
+  index,
   kicker,
   hint,
   action,
@@ -33,7 +36,13 @@ export function SectionHeader({
   return (
     <div className={[styles.header, className].filter(Boolean).join(" ")}>
       <div className={styles.text}>
-        {kicker ? <span className={styles.kicker}>{kicker}</span> : null}
+        {index || kicker ? (
+          <span className={styles.kicker}>
+            {index ? <span className={styles.index}>§{index}</span> : null}
+            {index && kicker ? <span className={styles.sep}> · </span> : null}
+            {kicker}
+          </span>
+        ) : null}
         <Tag className={[styles.title, size === "page" ? styles.page : styles.section].join(" ")}>
           {title}
         </Tag>

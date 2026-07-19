@@ -93,6 +93,10 @@ export type { CTASectionProps } from "./components/CTASection";
 /* ---- Operational (dashboard) primitives — reused by every command-center module ---- */
 export { SectionHeader } from "./components/SectionHeader";
 export type { SectionHeaderProps } from "./components/SectionHeader";
+export { SectionRule } from "./components/SectionRule";
+export type { SectionRuleProps } from "./components/SectionRule";
+export { IndexGauge } from "./components/IndexGauge";
+export type { IndexGaugeProps } from "./components/IndexGauge";
 export { OperationalPanel } from "./components/OperationalPanel";
 export type { OperationalPanelProps } from "./components/OperationalPanel";
 export { MetricCard } from "./components/MetricCard";

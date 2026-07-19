@@ -338,6 +338,44 @@ generated-type/repository/domain-service/capability patterns. Routes:
   `activateDomain` action), the live **System Map on the Console** (organization +
   portfolio scope), and Business Scan + Activation nav items (capability-gated).
   No browser-direct DB writes.
+- **Phase 1D — canonical visual-fidelity pass:** §NN section headers
+  (`SectionRule`), state heroes (*Diagnosed.* / *Operating.*), unified instrument
+  cards (System Map + `IndexGauge`), 2-column assembly, mono ledger cells across
+  Console / Business Scan / Activation. Presentation only — the primitives (Badge
+  neutral-pill, `SystemMap`, tokens) were already canonical from Phase 0.
+
+### Business Scan engine — roadmap foundation (contracts only)
+
+The future Business Intelligence Scan is an **asynchronous, provider-pluggable**
+engine. Only the CONTRACTS exist today — no crawler, LLM call, benchmark API,
+proposal generation, or billing is implemented. Canonical spec: **PDF 26**
+(`docs/design/source/26-Business-Intelligence-Scan.pdf`) — **3 surfaces**
+(public scan / internal intelligence / client full scan), **15 screens**, **5
+roles**, **9 scan stages**. See `docs/design/scan-engine-architecture.md` and the
+phased roadmap `docs/design/scan-engine-roadmap.md`.
+
+- **Contracts** (`@brightloop/schema/scan-engine`): `ScanRequest`, `ScanJob`
+  (+`ScanJobStatus`/`ScanStage` — the **9 canonical stages** + `lastCompletedStage`
+  resume point), `ProspectState`, `ScanSource`, `ScanResult`, `ScanEvidenceItem`,
+  `EvidenceBasis` (observed/estimated/inferred/unavailable), `CompetitorCandidate`,
+  `CompetitorBenchmark`, `DomainDiagnosis` (carries `basis`), `ScanConfidence`,
+  `ReportEntitlement`, `ProposalGenerationRequest`, `ModelInvocation`,
+  `EntitlementTier`.
+- **Ports** (`@brightloop/domain/scan-engine`): `AiOrchestrator` (one
+  vendor-neutral AI seam, structured output — OpenAI/Anthropic/Google/DeepSeek all
+  implement it; **no model-specific logic in domain**), `CrawlerProvider`,
+  `SearchProvider`, `BenchmarkProvider`, `DiagnosisSynthesizer`, `ScanJobQueue`,
+  plus the `EntitlementPolicy` (billing-agnostic: subscription / deposit / manual
+  approval / engagement) and the **9-stage** `SCAN_PIPELINE` (checkpointed +
+  resumable): discover → crawl → identify competitors → collect evidence →
+  benchmark → diagnose → generate Insights → build recommendations → prepare report.
+- **Access levels (5 roles):** VISITOR (public preview) → LEAD (registered) →
+  OPERATOR (internal, owns the proposal engine) → CLIENT (committed) → ADMIN.
+- **Security invariants baked into the shapes:** crawled content is UNTRUSTED
+  with provenance; observed facts (`ScanEvidenceItem`) are separated from AI
+  inference (`DomainDiagnosis`); model calls log provider/model/version
+  (`ModelInvocation`), never chain-of-thought; SSRF guarding is an adapter
+  contract; internal proposal tools stay capability-gated behind existing RLS.
 
 Phase 0 detail:
 - **Tokens** — canonical dual-theme set in `packages/ui/src/tokens/colors.css`

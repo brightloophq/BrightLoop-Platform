@@ -9,6 +9,7 @@ export * from "./tone.js";
 export * from "./entities.js";
 export * from "./transformation.js";
 export * from "./domains.js";
+export * from "./scan-engine.js";
 export * from "./reputation.js";
 // `catalog` re-exports the Discipline type that originates in `reputation`;
 // export the rest explicitly to avoid an ambiguous duplicate re-export.

@@ -1,0 +1,48 @@
+/* Canonical §NN section header (DS §06). A single baseline-aligned row:
+   amber mono §NN · Space Grotesk 600 label · hairline leader · mono meta.
+   36px of air above separates it from the previous region. */
+.rule {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  margin-top: var(--space-6); /* ~36px canonical air above content */
+  min-width: 0;
+}
+
+.index {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.04em;
+  color: var(--signal);
+  flex: none;
+}
+
+.label {
+  font-family: var(--font-display);
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-tight);
+  line-height: var(--lh-heading);
+  color: var(--text-primary);
+  flex: none;
+}
+
+/* the hairline "fill" that leads the eye to the right-aligned meta */
+.leader {
+  flex: 1 1 auto;
+  height: 1px;
+  min-width: var(--space-4);
+  background: var(--line);
+  transform: translateY(-3px);
+}
+
+.meta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  flex: none;
+  white-space: nowrap;
+}

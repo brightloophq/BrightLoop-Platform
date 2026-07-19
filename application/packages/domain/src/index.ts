@@ -46,3 +46,5 @@ export * from "./repositories/catalog.js";
 export * from "./transformation/index.js";
 // Core surfaces (Phase 1B) — Business Scan / Activation / Console.
 export * from "./core-surfaces/index.js";
+// Scan engine foundation — provider ports, entitlements, pipeline (engine deferred).
+export * from "./scan-engine/index.js";
