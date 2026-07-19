@@ -1,19 +1,29 @@
 import { describe, it, expect } from "vitest";
-import { scanRequestSchema, scanJobSchema, scanEvidenceItemSchema, domainDiagnosisSchema } from "@brightloop/schema";
+import {
+  scanRequestSchema,
+  scanJobSchema,
+  scanEvidenceItemSchema,
+  domainDiagnosisSchema,
+  evidenceBasisSchema,
+  prospectStateSchema,
+} from "@brightloop/schema";
 import { SCAN_PIPELINE, nextStage, isTerminalStage } from "./pipeline.js";
 import { defaultEntitlementPolicy } from "./entitlements.js";
 
-describe("scan pipeline (order)", () => {
-  it("runs request → … → complete in the canonical order", () => {
-    expect(SCAN_PIPELINE[0]).toBe("requested");
-    expect(SCAN_PIPELINE.at(-1)).toBe("complete");
-    expect(SCAN_PIPELINE).toContain("ai_orchestration");
+describe("scan pipeline (canonical 9 stages, PDF 26 §02)", () => {
+  it("is exactly nine meaningful stages in canonical order", () => {
+    expect(SCAN_PIPELINE).toHaveLength(9);
+    expect(SCAN_PIPELINE[0]).toBe("discovering");
+    expect(SCAN_PIPELINE.at(-1)).toBe("preparing_report");
+    expect(SCAN_PIPELINE).toContain("identifying_competitors");
+    expect(SCAN_PIPELINE).toContain("collecting_evidence");
+    expect(SCAN_PIPELINE).toContain("building_recommendations");
   });
-  it("advances one stage at a time and stops at the end", () => {
-    expect(nextStage("requested")).toBe("crawling");
-    expect(nextStage("reporting")).toBe("complete");
-    expect(nextStage("complete")).toBeNull();
-    expect(isTerminalStage("complete")).toBe(true);
+  it("advances one stage at a time and stops at the ninth", () => {
+    expect(nextStage("discovering")).toBe("crawling");
+    expect(nextStage("benchmarking")).toBe("diagnosing");
+    expect(nextStage("preparing_report")).toBeNull();
+    expect(isTerminalStage("preparing_report")).toBe(true);
     expect(isTerminalStage("diagnosing")).toBe(false);
   });
 });
@@ -53,16 +63,22 @@ describe("engine data contracts (shape integrity)", () => {
     expect(r.sources).toEqual([]);
     expect(r.requestedBy).toBeNull();
   });
-  it("a job defaults to queued/requested with retry budget", () => {
+  it("a job defaults to queued at stage 1 (discovering) with a resume point + retry budget", () => {
     const j = scanJobSchema.parse({ id: "job_1", scanRequestId: "scnq_1", clientId: null, queuedAt: "2026-07-19T00:00:00Z" });
     expect(j.status).toBe("queued");
-    expect(j.stage).toBe("requested");
+    expect(j.stage).toBe("discovering");
+    expect(j.lastCompletedStage).toBeNull();
     expect(j.maxAttempts).toBe(3);
   });
-  it("evidence is always untrusted; diagnosis is always inference (facts vs inference separated)", () => {
+  it("evidence is always untrusted; diagnosis is inference + carries a basis label (facts vs inference)", () => {
     const ev = scanEvidenceItemSchema.parse({ id: "ev_1", scanId: "s1", kind: "page", providerId: "crawler.default", observedAt: "2026-07-19T00:00:00Z" });
     expect(ev.trust).toBe("untrusted");
-    const dx = domainDiagnosisSchema.parse({ domainKey: "web", summary: "…", confidence: { score: 0.6, method: "model" } });
+    const dx = domainDiagnosisSchema.parse({ domainKey: "web", summary: "…", basis: "observed", confidence: { score: 0.6, method: "model" } });
     expect(dx.isInference).toBe(true);
+    expect(dx.basis).toBe("observed");
+  });
+  it("evidence basis + prospect-queue states match the canonical vocabulary (PDF 26 §04/§06)", () => {
+    expect(evidenceBasisSchema.options).toEqual(["observed", "estimated", "inferred", "unavailable"]);
+    expect(prospectStateSchema.options).toEqual(["queued", "scanning", "diagnosed", "awaiting_proposal", "proposal_sent"]);
   });
 });

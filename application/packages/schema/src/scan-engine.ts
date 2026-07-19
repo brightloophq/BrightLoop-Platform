@@ -29,20 +29,26 @@ export const entitlementTierSchema = z.enum([
 ]);
 export type EntitlementTier = z.infer<typeof entitlementTierSchema>;
 
-/* ---- async job lifecycle -------------------------------------------------- */
+/* ---- async job lifecycle --------------------------------------------------
+ * The NINE canonical, meaningful scan stages (PDF 26 §02). Progress reflects
+ * real work, never a timer; each stage is a checkpoint so a dropped job RESUMES
+ * from the last completed stage. Queue/terminal states live in ScanJobStatus. */
 export const scanStageSchema = z.enum([
-  "requested",
-  "crawling",
-  "normalizing",
-  "competitor_discovery",
-  "benchmarking",
-  "ai_orchestration",
-  "diagnosing",
-  "synthesizing",
-  "reporting",
-  "complete",
+  "discovering", // 1 — resolve domain, identity, category
+  "crawling", // 2 — read home / product / pricing / contact
+  "identifying_competitors", // 3 — match category peers by overlap
+  "collecting_evidence", // 4 — capture observable signals + timestamps
+  "benchmarking", // 5 — score against category medians
+  "diagnosing", // 6 — assess the seven operating domains
+  "generating_insights", // 7 — compile evidence-backed findings
+  "building_recommendations", // 8 — sequence Moves by impact + effort
+  "preparing_report", // 9 — assemble the report/preview
 ]);
 export type ScanStage = z.infer<typeof scanStageSchema>;
+
+/* Internal prospect-queue lifecycle (PDF 26 §04, Surface 02). */
+export const prospectStateSchema = z.enum(["queued", "scanning", "diagnosed", "awaiting_proposal", "proposal_sent"]);
+export type ProspectState = z.infer<typeof prospectStateSchema>;
 
 export const scanJobStatusSchema = z.enum([
   "queued",
@@ -71,6 +77,18 @@ export const modelInvocationSchema = z.object({
   invokedAt: z.string(),
 });
 export type ModelInvocation = z.infer<typeof modelInvocationSchema>;
+
+/* ---- evidence basis (epistemic label, PDF 26 §06) -------------------------
+ * How much a finding can be trusted at the SOURCE level. Distinct from
+ * ScanEvidenceItem.trust (input-security). "unavailable" is shown as such —
+ * a source that can't be read is never silently estimated. */
+export const evidenceBasisSchema = z.enum([
+  "observed", // OBS — direct evidence (crawl, Lighthouse, tag scan)
+  "estimated", // EST — modelled
+  "inferred", // INF — pattern-based
+  "unavailable", // N/A — source could not be read
+]);
+export type EvidenceBasis = z.infer<typeof evidenceBasisSchema>;
 
 /* ---- confidence (attached to every inference) ----------------------------- */
 export const scanConfidenceSchema = z.object({
@@ -106,7 +124,8 @@ export const scanJobSchema = z.object({
   scanRequestId: z.string(),
   clientId: z.string().nullable(),
   status: scanJobStatusSchema.default("queued"),
-  stage: scanStageSchema.default("requested"),
+  stage: scanStageSchema.default("discovering"), // stage 1 until work begins
+  lastCompletedStage: scanStageSchema.nullable().default(null), // resume point (checkpointed)
   attempts: z.number().int().nonnegative().default(0),
   maxAttempts: z.number().int().positive().default(3),
   lastInvocation: modelInvocationSchema.nullable().default(null),
@@ -161,6 +180,7 @@ export const domainDiagnosisSchema = z.object({
   domainKey: domainKeySchema,
   baselineScore: z.number().int().min(0).max(100).nullable().default(null),
   summary: z.string().max(2000),
+  basis: evidenceBasisSchema, // OBS/EST/INF/N/A — how the finding is grounded (PDF 26 §06)
   evidenceIds: z.array(z.string()).default([]), // links inference → observed facts
   benchmarkIds: z.array(z.string()).default([]),
   confidence: scanConfidenceSchema,

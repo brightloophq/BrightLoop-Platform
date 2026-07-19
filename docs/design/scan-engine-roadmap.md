@@ -9,8 +9,21 @@
 > public and client-facing engines exist. Public (B) and client entitlement (C)
 > follow; the heavy infrastructure (D–H) is layered underneath as capacity allows.
 >
-> ⚠️ Scope reference `26-Business-Intelligence-Scan.pdf` is not yet in the repo;
-> reconcile phase details against it when available.
+> **Reconciled to canonical PDF 26** (`docs/design/source/26-Business-Intelligence-Scan.pdf`):
+> 3 surfaces, 15 screens, 5 roles, 9 stages. The PDF tags each screen with a
+> delivery class — this roadmap inherits them:
+>
+> | PDF 26 delivery class | Roadmap phase(s) |
+> |---|---|
+> | **MVP** (ships first) | A (internal), B (public intake/limits), C (client lock/unlock) |
+> | **REQUIRES AI ENGINE** (scan engine, full diagnosis, proposal builder) | A (single-provider), F (multi-model) |
+> | **REQUIRES EXTERNAL DATA PROVIDER** (competitor comparison) | D (crawler), E (competitors) |
+> | **LATER — phase two** (continuous monitoring) | H |
+>
+> Canonical model elements now in the contracts: the **9 stages** (`SCAN_PIPELINE`,
+> checkpointed/resumable), **evidence basis** labels (`EvidenceBasis`:
+> observed/estimated/inferred/unavailable), **prospect-queue states**
+> (`ProspectState`), and the **five-role** entitlement mapping.
 
 Complexity: **Low / Medium / High** (relative eng effort + risk).
 
@@ -107,8 +120,9 @@ Complexity: **Low / Medium / High** (relative eng effort + risk).
 
 ## Phase E — Competitor Intelligence Providers  ·  Complexity: **High**
 
-- **Business objective:** Benchmark the prospect against real competitors (the
-  "top-N competitor" engine).
+- **Business objective:** Benchmark the prospect against **up to 10 competitors,
+  defensible metrics only** (PDF 26 §07) — each cell carries an evidence basis;
+  unavailable data reads as such, never implied.
 - **Product surfaces:** competitor section in the report; operator confirm/reject of
   `CompetitorCandidate`s.
 - **Backend capabilities:** `SearchProvider` (discovery) + `BenchmarkProvider`

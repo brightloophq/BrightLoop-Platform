@@ -1,33 +1,34 @@
 /* =============================================================================
- * Scan engine — PIPELINE stage order (pure). The canonical async flow:
- *   scan request → crawl → normalize → competitor discovery → benchmark →
- *   AI orchestration → diagnose → synthesize (Insights/recommendations) →
- *   report/proposal. A worker advances a job one stage at a time; this module
- *   owns the ORDER, nothing else. No I/O.
+ * Scan engine — PIPELINE stage order (pure). The NINE canonical stages (PDF 26
+ * §02), in order: discover → crawl → identify competitors → collect evidence →
+ * benchmark → diagnose → generate Insights → build recommendations → prepare
+ * report. Each stage is a checkpoint; a worker advances one stage at a time and
+ * a dropped job resumes from `lastCompletedStage`. This module owns the ORDER
+ * only. No I/O. Queue/terminal state lives in ScanJobStatus, not here.
  * ========================================================================== */
 
 import type { ScanStage } from "@brightloop/schema";
 
 export const SCAN_PIPELINE: readonly ScanStage[] = [
-  "requested",
+  "discovering",
   "crawling",
-  "normalizing",
-  "competitor_discovery",
+  "identifying_competitors",
+  "collecting_evidence",
   "benchmarking",
-  "ai_orchestration",
   "diagnosing",
-  "synthesizing",
-  "reporting",
-  "complete",
+  "generating_insights",
+  "building_recommendations",
+  "preparing_report",
 ] as const;
 
-/** The stage that follows `stage`, or null at the end of the pipeline. */
+/** The stage that follows `stage`, or null after the final stage. */
 export function nextStage(stage: ScanStage): ScanStage | null {
   const i = SCAN_PIPELINE.indexOf(stage);
   if (i < 0 || i >= SCAN_PIPELINE.length - 1) return null;
   return SCAN_PIPELINE[i + 1]!;
 }
 
+/** True once `preparing_report` (the ninth stage) is reached. */
 export function isTerminalStage(stage: ScanStage): boolean {
-  return stage === "complete";
+  return stage === "preparing_report";
 }

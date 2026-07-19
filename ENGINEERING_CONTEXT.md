@@ -348,23 +348,29 @@ generated-type/repository/domain-service/capability patterns. Routes:
 
 The future Business Intelligence Scan is an **asynchronous, provider-pluggable**
 engine. Only the CONTRACTS exist today — no crawler, LLM call, benchmark API,
-proposal generation, or billing is implemented. See
-`docs/design/scan-engine-architecture.md` and the phased roadmap
-`docs/design/scan-engine-roadmap.md`.
+proposal generation, or billing is implemented. Canonical spec: **PDF 26**
+(`docs/design/source/26-Business-Intelligence-Scan.pdf`) — **3 surfaces**
+(public scan / internal intelligence / client full scan), **15 screens**, **5
+roles**, **9 scan stages**. See `docs/design/scan-engine-architecture.md` and the
+phased roadmap `docs/design/scan-engine-roadmap.md`.
 
 - **Contracts** (`@brightloop/schema/scan-engine`): `ScanRequest`, `ScanJob`
-  (+`ScanJobStatus`/`ScanStage`), `ScanSource`, `ScanResult`, `ScanEvidenceItem`,
-  `CompetitorCandidate`, `CompetitorBenchmark`, `DomainDiagnosis`,
-  `ScanConfidence`, `ReportEntitlement`, `ProposalGenerationRequest`,
-  `ModelInvocation`, `EntitlementTier`.
+  (+`ScanJobStatus`/`ScanStage` — the **9 canonical stages** + `lastCompletedStage`
+  resume point), `ProspectState`, `ScanSource`, `ScanResult`, `ScanEvidenceItem`,
+  `EvidenceBasis` (observed/estimated/inferred/unavailable), `CompetitorCandidate`,
+  `CompetitorBenchmark`, `DomainDiagnosis` (carries `basis`), `ScanConfidence`,
+  `ReportEntitlement`, `ProposalGenerationRequest`, `ModelInvocation`,
+  `EntitlementTier`.
 - **Ports** (`@brightloop/domain/scan-engine`): `AiOrchestrator` (one
   vendor-neutral AI seam, structured output — OpenAI/Anthropic/Google/DeepSeek all
   implement it; **no model-specific logic in domain**), `CrawlerProvider`,
   `SearchProvider`, `BenchmarkProvider`, `DiagnosisSynthesizer`, `ScanJobQueue`,
   plus the `EntitlementPolicy` (billing-agnostic: subscription / deposit / manual
-  approval / engagement) and the `SCAN_PIPELINE` stage order.
-- **Access levels:** public preview → registered lead → internal operator (owns
-  the proposal engine) → committed client → admin/owner.
+  approval / engagement) and the **9-stage** `SCAN_PIPELINE` (checkpointed +
+  resumable): discover → crawl → identify competitors → collect evidence →
+  benchmark → diagnose → generate Insights → build recommendations → prepare report.
+- **Access levels (5 roles):** VISITOR (public preview) → LEAD (registered) →
+  OPERATOR (internal, owns the proposal engine) → CLIENT (committed) → ADMIN.
 - **Security invariants baked into the shapes:** crawled content is UNTRUSTED
   with provenance; observed facts (`ScanEvidenceItem`) are separated from AI
   inference (`DomainDiagnosis`); model calls log provider/model/version
