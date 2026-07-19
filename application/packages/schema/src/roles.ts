@@ -60,6 +60,10 @@ export const PERMISSIONS = {
     "transformation.knowledge.write",
     "transformation.health.write",
     "transformation.index.write",
+    // Phase 1 core surfaces (Business Scan / Activation). Read is covered by
+    // `transformation.read`; owner/admin hold these via the `transformation.*` wildcard.
+    "transformation.scan.write",
+    "transformation.activation.write",
   ],
   client_admin: [
     "own.project.read",

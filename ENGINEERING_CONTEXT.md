@@ -306,8 +306,20 @@ rather than rewrite; replace only what a PDF explicitly redefines. Internal
 identifiers (`@brightloop/*`, `--bl-*`, `brightloop.co`) are intentionally
 retained — only the **visible** identity is Auxion.
 
-**Phase 0 — canonical design-system migration (in progress on branch
-`migration/phase-0-auxion-design-system`):**
+**Phase 0 — canonical design-system migration — MERGED to `main` via PR #8
+(merge commit `7460efa`).**
+
+**Phase 1 — core surfaces (Business Scan, Activation, Console) — IN PROGRESS**
+on branch `implementation/phase-1-core-surfaces`. Human/system-entered data;
+Auxiliary AI engine deferred. Additive schema only, on the existing
+migration/RLS/pgTAP/generated-type/repository/domain-service/capability patterns.
+Routes: `/admin/business-scan`, `/admin/activation`, `/admin/dashboard` (visible
+term "Console"). **Note:** new tables require regenerating
+`packages/db/generated/database.types.ts` via the Supabase/Docker `db-verify`
+loop (CI) — not runnable in the local sandbox, so typed data adapters + the
+data-backed screens land through CI.
+
+Phase 0 detail:
 - **Tokens** — canonical dual-theme set in `packages/ui/src/tokens/colors.css`
   (amber `--signal`, `--bg/--surface/--ink` ramp, `--positive/caution/critical/
   info`, `--line`, `--action-bg/fg`, `--on-signal`); role-based radii; amber focus
