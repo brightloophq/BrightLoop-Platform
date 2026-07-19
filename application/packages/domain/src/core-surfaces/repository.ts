@@ -9,6 +9,15 @@
 import type { BusinessScan, Domain, ScanFinding } from "@brightloop/schema";
 
 export interface CoreSurfaceRepository {
+  // ---- Attribution ---------------------------------------------------------
+  /**
+   * Resolve the internal `public.users.id` for an auth user id (the JWT `sub`
+   * that `actor.userId` carries). `created_by` is a FK to `users(id)`, NOT the
+   * auth uuid — see conversation/quote actions for the same lookup. Returns null
+   * when no internal row exists (attribution is then stored as null).
+   */
+  resolveUserId(authUserId: string): Promise<string | null>;
+
   // ---- Business scans ------------------------------------------------------
   createScan(record: BusinessScan): Promise<BusinessScan>;
   getScan(id: string): Promise<BusinessScan | null>;

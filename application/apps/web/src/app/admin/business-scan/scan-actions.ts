@@ -5,7 +5,8 @@
  * browser never writes to Supabase directly. */
 
 import { revalidatePath } from "next/cache";
-import { businessScanCreateInputSchema, scanFindingCreateInputSchema, DOMAIN_KEYS } from "@brightloop/schema";
+import { redirect } from "next/navigation";
+import { businessScanCreateInputSchema, scanFindingCreateInputSchema } from "@brightloop/schema";
 import { assertCapability, AuthorizationError } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
 import { getCoreSurfaceService } from "@/lib/repositories";
@@ -42,18 +43,17 @@ export async function startScanAction(formData: FormData): Promise<ActionResult>
     if (!parsed.success) return { ok: false, error: "Please fix the highlighted fields.", fieldErrors: flatten(parsed.error.issues) };
 
     const svc = await getCoreSurfaceService();
-    const scan = await svc.createScan(actor, { clientId: parsed.data.clientId, baselineIndex: 0, targetIndex: parsed.data.targetIndex });
-    // Seed the seven System Map nodes (unlit) so Diagnose + Activation have domains.
-    for (const key of DOMAIN_KEYS) {
-      await svc.upsertDomain(actor, { clientId: parsed.data.clientId, key, status: "not_operating" });
-    }
+    // Idempotent: reuses an existing scan and seeds the seven domains exactly once.
+    const scan = await svc.startDiagnosis(actor, { clientId: parsed.data.clientId, targetIndex: parsed.data.targetIndex });
     revalidatePath("/admin/business-scan");
     revalidatePath("/admin/activation");
     revalidatePath("/admin/dashboard");
     return { ok: true, id: scan.id };
   } catch (e) {
     if (e instanceof AuthorizationError) return { ok: false, error: "You don't have permission to run a scan." };
-    return { ok: false, error: e instanceof Error ? "Couldn't start the scan." : "Couldn't start the scan." };
+    // Surface the real typed failure — never a silent success. The adapter throws
+    // `core-surfaces.<op> failed: <db message>`; show it so the UI is honest.
+    return { ok: false, error: e instanceof Error ? e.message : "Couldn't start the scan." };
   }
 }
 
@@ -84,9 +84,14 @@ export async function addFindingAction(formData: FormData): Promise<ActionResult
   }
 }
 
-/* Void-returning wrappers for server-rendered <form action> use. */
+/* Server-rendered <form action> wrappers.
+ * Start Diagnosis redirects back with the real error in ?scanError= on failure —
+ * never a silent success — and to the clean workspace URL on success. */
 export async function startScanForm(formData: FormData): Promise<void> {
-  await startScanAction(formData);
+  const result = await startScanAction(formData);
+  const clientId = String(formData.get("clientId") ?? "");
+  const base = `/admin/business-scan?client=${encodeURIComponent(clientId)}`;
+  redirect(result.ok ? base : `${base}&scanError=${encodeURIComponent(result.error ?? "Couldn't start the scan.")}`);
 }
 export async function addFindingForm(formData: FormData): Promise<void> {
   await addFindingAction(formData);

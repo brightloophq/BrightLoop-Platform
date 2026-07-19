@@ -47,6 +47,16 @@ export class SupabaseCoreSurfaceRepository implements CoreSurfaceRepository {
     throw new Error(`core-surfaces.${op} failed: ${message}`);
   }
 
+  async resolveUserId(authUserId: string): Promise<string | null> {
+    const { data, error } = await this.db
+      .from("users")
+      .select("id")
+      .eq("auth_user_id", authUserId)
+      .maybeSingle();
+    if (error) this.fail("resolveUserId", error.message);
+    return data?.id ?? null;
+  }
+
   async createScan(record: BusinessScan): Promise<BusinessScan> {
     const { data, error } = await this.db
       .from("business_scans")

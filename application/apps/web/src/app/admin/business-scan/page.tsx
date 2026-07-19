@@ -54,7 +54,9 @@ export default async function BusinessScanPage({ searchParams }: { searchParams:
     throw err;
   }
 
-  const clientId = first((await searchParams)["client"]) ?? null;
+  const params = await searchParams;
+  const clientId = first(params["client"]) ?? null;
+  const scanError = first(params["scanError"]) ?? null;
   const canWrite = canWriteScans(actor);
 
   return (
@@ -70,7 +72,7 @@ export default async function BusinessScanPage({ searchParams }: { searchParams:
           />
           {clientId ? (
             <Suspense key={clientId} fallback={<ScanSkeleton />}>
-              <ScanWorkspace clientId={clientId} canWrite={canWrite} />
+              <ScanWorkspace clientId={clientId} canWrite={canWrite} scanError={scanError} />
             </Suspense>
           ) : (
             <Suspense fallback={<ScanSkeleton />}>
@@ -109,7 +111,7 @@ async function OrgPicker() {
   );
 }
 
-async function ScanWorkspace({ clientId, canWrite }: { clientId: string; canWrite: boolean }) {
+async function ScanWorkspace({ clientId, canWrite, scanError }: { clientId: string; canWrite: boolean; scanError?: string | null }) {
   const repo = await getCoreSurfaceRepository();
   let scan: Awaited<ReturnType<typeof repo.latestScan>>;
   let domains: Awaited<ReturnType<typeof repo.listDomains>>;
@@ -126,6 +128,11 @@ async function ScanWorkspace({ clientId, canWrite }: { clientId: string; canWrit
   if (!scan) {
     return (
       <OperationalPanel>
+        {scanError ? (
+          <Alert tone="danger" title="Couldn't start the scan">
+            {scanError}
+          </Alert>
+        ) : null}
         <EmptyWorkspace
           icon="gauge"
           title="No scan yet"

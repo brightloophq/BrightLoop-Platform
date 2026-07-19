@@ -9,6 +9,7 @@ import {
   domainSchema,
   businessScanSchema,
   scanFindingSchema,
+  DOMAIN_KEYS,
   type BusinessScan,
   type Domain,
   type DomainKey,
@@ -57,16 +58,36 @@ export class CoreSurfaceService {
   /** Open a Business Scan (Diagnose stage). Service owns id/status/attribution. */
   async createScan(actor: Actor, input: NewScan): Promise<BusinessScan> {
     assertCapability(actor, SCAN_WRITE_CAP);
+    // `actor.userId` is the auth uuid (JWT sub); `created_by` FKs to users(id),
+    // so resolve the internal id. Null when there is no internal row.
+    const createdBy = await this.repo.resolveUserId(actor.userId);
     const record = businessScanSchema.parse({
       id: this.ids("scn"),
       clientId: input.clientId,
       status: "diagnosing",
       baselineIndex: input.baselineIndex,
       targetIndex: input.targetIndex ?? 92,
-      createdBy: actor.userId,
+      createdBy,
       createdAt: this.clock(),
     });
     return this.repo.createScan(record);
+  }
+
+  /**
+   * Bootstrap the Diagnose stage for a client — IDEMPOTENT. Reuses the latest
+   * scan if one exists (repeated Start Diagnosis never duplicates), and seeds
+   * exactly the seven missing System Map domains (unlit). One capability gate.
+   */
+  async startDiagnosis(actor: Actor, input: { clientId: string; targetIndex?: number }): Promise<BusinessScan> {
+    assertCapability(actor, SCAN_WRITE_CAP);
+    const scan = (await this.repo.latestScan(input.clientId)) ?? (await this.createScan(actor, { clientId: input.clientId, baselineIndex: 0, targetIndex: input.targetIndex }));
+    const existing = new Set((await this.repo.listDomains(input.clientId)).map((d) => d.key));
+    for (const key of DOMAIN_KEYS) {
+      if (!existing.has(key)) {
+        await this.upsertDomain(actor, { clientId: input.clientId, key, status: "not_operating" });
+      }
+    }
+    return scan;
   }
 
   /** Record a per-domain diagnosis finding. */
