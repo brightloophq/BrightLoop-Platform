@@ -38,6 +38,9 @@ export { SupabaseTransformationRepository } from "./transformation/repository.js
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.
 export { SupabaseSignalsRepository } from "./transformation/signals.read.js";
+// Insights — fully typed read adapter (Sprint 6). Writes go through the domain service.
+export { SupabaseInsightsRepository } from "./transformation/insights.read.js";
+export type { LinkableSignal, SignalRef } from "./transformation/insights.read.js";
 export {
   PLACEHOLDER_PROJECTS,
   PLACEHOLDER_TESTIMONIALS,

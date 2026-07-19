@@ -69,6 +69,8 @@ export { Alert } from "./components/Alert";
 export type { AlertProps, AlertTone } from "./components/Alert";
 export { Progress } from "./components/Progress";
 export type { ProgressProps } from "./components/Progress";
+export { ConfidenceMeter } from "./components/ConfidenceMeter";
+export type { ConfidenceMeterProps, ConfidenceBand } from "./components/ConfidenceMeter";
 export { EmptyState } from "./components/EmptyState";
 export type { EmptyStateProps } from "./components/EmptyState";
 export { PlaceholderNotice } from "./components/PlaceholderNotice";
