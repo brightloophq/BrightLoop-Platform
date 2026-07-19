@@ -36,11 +36,11 @@
   --border-width-thick:2px;   /* @kind other */
   --border-hairline:   1px solid var(--border-subtle);  /* @kind other */
   --border-default:    1px solid var(--border-strong);  /* @kind other */
-  --border-accent:     1px solid var(--bl-cyan);        /* @kind other */
+  --border-accent:     1px solid var(--signal);         /* @kind other — amber accent */
   --border-focus:      2px solid var(--focus-ring);     /* @kind other */
 
-  /* ---- Focus ring (composable) ---- */
-  --ring-focus: 0 0 0 3px rgba(27,84,228,0.35); /* @kind shadow */
+  /* ---- Focus ring (composable) — amber signal per canon ---- */
+  --ring-focus: 0 0 0 3px color-mix(in srgb, var(--signal) 35%, transparent); /* @kind shadow */
 }
 
 /* Dark surfaces (heroes, footer, CTA bands) use the deeper navy shadow scale. */

@@ -26,9 +26,9 @@
 }
 
 .info {
-  background: rgba(34, 211, 238, 0.08);
-  border-color: rgba(34, 211, 238, 0.28);
-  color: var(--text-accent);
+  background: color-mix(in srgb, var(--info) 8%, transparent);
+  border-color: color-mix(in srgb, var(--info) 28%, transparent);
+  color: var(--info);
 }
 .success {
   background: rgba(22, 179, 100, 0.08);

@@ -1,18 +1,21 @@
-/* Auxion — Typography tokens
-   Sora for headings/display. IBM Plex Sans for body/UI. IBM Plex Mono for
-   labels/data. The families are loaded by next/font (self-hosted, CSP-safe) and
-   exposed as --font-sora / --font-plex-sans / --font-plex-mono on <html>; the
-   quoted family names are a graceful fallback if a build ever ships without them. */
+/* Auxion — Typography tokens (canonical: DS §01 / DNA §04.2).
+   Space Grotesk for display + the AUX core. IBM Plex Sans for prose/UI. IBM Plex
+   Mono for data, labels, and state/telemetry. The families are loaded by next/font
+   (self-hosted, CSP-safe) and exposed as --font-space-grotesk / --font-plex-sans /
+   --font-plex-mono on <html>; the quoted family names are a graceful fallback if a
+   build ever ships without them. */
 
 :root {
-  --font-display: var(--font-sora), "Sora", "Segoe UI", system-ui, sans-serif;
+  --font-display: var(--font-space-grotesk), "Space Grotesk", "Segoe UI", system-ui, sans-serif;
   --font-body:    var(--font-plex-sans), "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono:    var(--font-plex-mono), "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
 
-  /* Type scale (1.25 major-third-ish, tuned) */
-  --fs-display: 4.5rem;   /* 72 */
-  --fs-h1:      3.25rem;  /* 52 */
-  --fs-h2:      2.5rem;   /* 40 */
+  /* Type scale — canonical fluid display tier (DS §01: clamp() ranges).
+     Display XL 64–84, Display L 40–60; Title/Heading and below stay fixed for
+     readability (DNA §04.2). */
+  --fs-display: clamp(4rem, 5.5vw + 1rem, 5.25rem);      /* Display XL 64–84 */
+  --fs-h1:      clamp(2.5rem, 3.5vw + 0.75rem, 3.75rem); /* Display L 40–60 */
+  --fs-h2:      clamp(1.75rem, 1.6vw + 1rem, 2.5rem);    /* 28–40 */
   --fs-h3:      1.875rem; /* 30 */
   --fs-h4:      1.375rem; /* 22 */
   --fs-lg:      1.125rem; /* 18 */

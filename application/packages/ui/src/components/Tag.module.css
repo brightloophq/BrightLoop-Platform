@@ -13,7 +13,7 @@
 }
 
 .accent {
-  border-color: rgba(34, 211, 238, 0.3);
+  border-color: color-mix(in srgb, var(--signal) 30%, transparent);
   color: var(--text-accent);
-  background: rgba(34, 211, 238, 0.08);
+  background: color-mix(in srgb, var(--signal) 8%, transparent);
 }

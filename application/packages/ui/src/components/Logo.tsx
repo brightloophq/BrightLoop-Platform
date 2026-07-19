@@ -50,10 +50,10 @@ export function Logo({ variant = "lockup", height = 28, ...rest }: LogoProps) {
   }
 
   if (variant === "wordmark") {
-    // AUXION in Sora — currentColor so it adapts to the surface.
+    // AUXION in Space Grotesk — currentColor so it adapts to the surface.
     return (
       <svg viewBox="0 0 1000 400" height={height} width={height * 2.5} role="img" aria-label="Auxion" xmlns="http://www.w3.org/2000/svg" {...rest}>
-        <text x="0" y="288" fontFamily="var(--font-display), Sora, system-ui, sans-serif" fontWeight={800} fontSize="240" letterSpacing="8" fill="currentColor">
+        <text x="0" y="288" fontFamily="var(--font-display), 'Space Grotesk', system-ui, sans-serif" fontWeight={800} fontSize="240" letterSpacing="8" fill="currentColor">
           AUXION
         </text>
       </svg>
@@ -66,7 +66,7 @@ export function Logo({ variant = "lockup", height = 28, ...rest }: LogoProps) {
       <g transform="translate(10,0) scale(0.6333)">
         <Mark gradientId={gradientId} />
       </g>
-      <text x="450" y="268" fontFamily="var(--font-display), Sora, system-ui, sans-serif" fontWeight={800} fontSize="210" letterSpacing="6" fill="currentColor">
+      <text x="450" y="268" fontFamily="var(--font-display), 'Space Grotesk', system-ui, sans-serif" fontWeight={800} fontSize="210" letterSpacing="6" fill="currentColor">
         AUXION
       </text>
     </svg>

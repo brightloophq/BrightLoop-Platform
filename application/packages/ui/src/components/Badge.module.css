@@ -1,14 +1,25 @@
+/* Canonical status chip — the NEUTRAL PILL (DS §06 / Handoff §03 "one hard rule").
+   Every chip is a neutral --surface-2 pill with a 1px --line border and a
+   COLORED DOT + COLORED MONO TEXT. Status is never colored-fill behind colored
+   text — a same-hue tint goes muddy in dark mode. The tone (from toneFor(status))
+   sets only the dot + text color; the surface stays neutral in both themes. */
+
 .badge {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) var(--space-3);
+  padding: 3px var(--space-3);
   border-radius: var(--radius-pill);
-  border: 1px solid transparent;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-medium);
+  letter-spacing: 0.02em;
   line-height: 1.4;
   white-space: nowrap;
+  /* tone classes set `color`; dot + text inherit it */
+  color: var(--ink-2);
 }
 
 .dot {
@@ -19,34 +30,23 @@
   flex: none;
 }
 
-/* ---- tones: sourced from toneFor(status) — never invented at the call site ---- */
+/* ---- tones: colored dot + text on the shared neutral pill ----
+   Sourced from toneFor(status) — never invented at the call site. */
 .neutral {
-  background: var(--surface-inset);
-  color: var(--text-secondary);
-  border-color: var(--border-subtle);
+  color: var(--ink-2);
 }
 .blue {
-  background: rgba(37, 99, 235, 0.14);
-  color: var(--blue-300);
-  border-color: rgba(37, 99, 235, 0.32);
+  color: var(--info);
 }
 .cyan {
-  background: rgba(34, 211, 238, 0.12);
-  color: var(--cyan-300);
-  border-color: rgba(34, 211, 238, 0.3);
+  color: var(--info);
 }
 .success {
-  background: rgba(22, 179, 100, 0.14);
-  color: #4ade80;
-  border-color: rgba(22, 179, 100, 0.32);
+  color: var(--positive);
 }
 .warning {
-  background: rgba(245, 165, 36, 0.14);
-  color: #fbbf24;
-  border-color: rgba(245, 165, 36, 0.32);
+  color: var(--caution);
 }
 .danger {
-  background: rgba(239, 68, 68, 0.14);
-  color: #f87171;
-  border-color: rgba(239, 68, 68, 0.32);
+  color: var(--critical);
 }
