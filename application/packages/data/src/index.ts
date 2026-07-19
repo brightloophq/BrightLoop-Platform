@@ -38,6 +38,8 @@ export { SupabaseTransformationRepository } from "./transformation/repository.js
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.
 export { SupabaseSignalsRepository } from "./transformation/signals.read.js";
+// Core surfaces (Phase 1B) — fully typed Business Scan / Domains / Findings adapter.
+export { SupabaseCoreSurfaceRepository } from "./core-surfaces/adapter.js";
 export {
   PLACEHOLDER_PROJECTS,
   PLACEHOLDER_TESTIMONIALS,

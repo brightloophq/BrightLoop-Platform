@@ -309,15 +309,28 @@ retained — only the **visible** identity is Auxion.
 **Phase 0 — canonical design-system migration — MERGED to `main` via PR #8
 (merge commit `7460efa`).**
 
-**Phase 1 — core surfaces (Business Scan, Activation, Console) — IN PROGRESS**
-on branch `implementation/phase-1-core-surfaces`. Human/system-entered data;
-Auxiliary AI engine deferred. Additive schema only, on the existing
-migration/RLS/pgTAP/generated-type/repository/domain-service/capability patterns.
-Routes: `/admin/business-scan`, `/admin/activation`, `/admin/dashboard` (visible
-term "Console"). **Note:** new tables require regenerating
-`packages/db/generated/database.types.ts` via the Supabase/Docker `db-verify`
-loop (CI) — not runnable in the local sandbox, so typed data adapters + the
-data-backed screens land through CI.
+**Phase 1 — core surfaces (Business Scan, Activation, Console)** on branch
+`implementation/phase-1-core-surfaces`. Human/system-entered data; Auxiliary AI
+engine deferred. Additive schema only, on the existing migration/RLS/pgTAP/
+generated-type/repository/domain-service/capability patterns. Routes:
+`/admin/business-scan`, `/admin/activation`, `/admin/dashboard` (visible term
+"Console").
+
+- **Phase 1A — COMPLETE** (draft PR #9): additive `business_scans`/
+  `business_domains`/`scan_findings` migration + internal-only RLS + pgTAP;
+  `domains.ts` contracts (7-domain taxonomy) + capabilities; generated types in
+  sync (committed from the CI `generated-db-types` artifact — CI green, drift 0).
+  **Docker-less type regen mechanism:** push → CI `gen:types:local` uploads the
+  Supabase-generated file as the `generated-db-types` artifact → download +
+  commit (never hand-authored).
+- **Phase 1B — IN PROGRESS**: `CoreSurfaceService` + `CoreSurfaceRepository` port,
+  fully-typed `SupabaseCoreSurfaceRepository` adapter (no cast — z.enum contracts
+  match the pg enums), pure read models (`buildSystemMapView` /
+  `buildBusinessScanView` / `buildActivationView`), the shared **`SystemMap`** UI
+  primitive (7 nodes + AUX core + Index gauge, token-only, theme-parity,
+  reduced-motion), and the **Console** terminology reconcile over
+  `/admin/dashboard` (visible label/title only; route + internal identifiers
+  unchanged). Business Scan / Activation UIs are Phase 1C.
 
 Phase 0 detail:
 - **Tokens** — canonical dual-theme set in `packages/ui/src/tokens/colors.css`

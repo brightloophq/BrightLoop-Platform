@@ -29,7 +29,7 @@ import { createClient } from "@/lib/supabase/server";
 import styles from "./dashboard.module.css";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Dashboard · Auxion" };
+export const metadata: Metadata = { title: "Console · Auxion" };
 
 const METRIC_ICON: Record<string, string> = {
   health: "gauge",

@@ -103,6 +103,8 @@ export { AttentionRow } from "./components/AttentionRow";
 export type { AttentionRowProps, AttentionTone } from "./components/AttentionRow";
 export { SkeletonBlock } from "./components/SkeletonBlock";
 export type { SkeletonBlockProps } from "./components/SkeletonBlock";
+export { SystemMap, systemMapGeometry } from "./components/SystemMap";
+export type { SystemMapProps, SystemMapNodeInput } from "./components/SystemMap";
 
 /* ---- Workspace primitives (Sprint 5 — list/detail/form modules) ---- */
 export { OperationalTable } from "./components/OperationalTable";

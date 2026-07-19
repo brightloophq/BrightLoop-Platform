@@ -12,7 +12,7 @@ import type { AdminNavGroup } from "@/app/admin/AdminNav";
  * (owner/admin only). RLS is still the real boundary — this only shapes the menu.
  */
 export const TRANSFORMATION_NAV = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: "layout-grid" },
+  { label: "Console", href: "/admin/dashboard", icon: "layout-grid" },
   { label: "Signals", href: "/admin/signals", icon: "activity" },
   { label: "Insights", href: "/admin/insights", icon: "lightbulb" },
   { label: "Recommendations", href: "/admin/recommendations", icon: "sparkles" },
