@@ -46,10 +46,10 @@ export default async function LoginPage({
       <aside className={styles.brandPanel} data-theme="dark">
         <Logo variant="lockup" height={28} />
         <div className={styles.brandCopy}>
-          <Eyebrow>Brand · Build · Automate · Grow</Eyebrow>
-          <h1 className={styles.brandTitle}>Your business, in one loop.</h1>
+          <Eyebrow>Business Operating System</Eyebrow>
+          <h1 className={styles.brandTitle}>Your business, operating as one system.</h1>
           <p className={styles.brandBody}>
-            Track your project, approve work, and see where your business stands — all in one place.
+            Auxion assembles every moving part of your business into one intelligent operating system.
           </p>
         </div>
         <p className={styles.brandFoot}>© 2026 Auxion</p>

@@ -288,3 +288,51 @@ canonical model first, exactly as Sprint 5 did.
 
 Subsequent stages follow the same pattern: Recommendations → Approvals (human
 approval gate already enforced) → Moves → Execution → Measurement → Learning.
+
+---
+
+## 13. Canonical design system (Auxion) — binding UI specification
+
+The **11 PDFs in `docs/design/source/`** (00-Design-System, 08-Auxion-DNA "source
+of truth", 09-Rebrand-Migration-Handoff "for engineering", + the eight surfaces)
+are the **binding canonical visual + UX specification**. When code conflicts with a
+PDF, the PDF wins. Do **not** infer UI from prior BrightLoop implementations.
+
+**Adapt-first policy (governs all UI migration):** preserve the engineering
+foundation (repositories, domain services, repository ports, RLS, migrations,
+pgTAP, tests, server actions, permissions/capabilities, events, routing, CI,
+package structure). Adapt *presentation* and shared UI infrastructure; extend
+rather than rewrite; replace only what a PDF explicitly redefines. Internal
+identifiers (`@brightloop/*`, `--bl-*`, `brightloop.co`) are intentionally
+retained — only the **visible** identity is Auxion.
+
+**Phase 0 — canonical design-system migration (in progress on branch
+`migration/phase-0-auxion-design-system`):**
+- **Tokens** — canonical dual-theme set in `packages/ui/src/tokens/colors.css`
+  (amber `--signal`, `--bg/--surface/--ink` ramp, `--positive/caution/critical/
+  info`, `--line`, `--action-bg/fg`, `--on-signal`); role-based radii; amber focus
+  ring. Legacy semantic aliases retained as **@deprecated** compatibility shims
+  (re-pointed to canon; removed in Phase 5). Architecture unchanged.
+- **Typography** — Space Grotesk (display) + IBM Plex Sans (UI) + IBM Plex Mono
+  (data); `clamp()` display tier. Sora removed.
+- **Motion** — three named canon curves (Precise 240 / Orchestrate 440 / Enter
+  640) + `auxRise/auxPulse/auxBlink`, added to the existing preset system; legacy
+  presets retained.
+- **Badge** — canonical neutral-pill (surface-2 fill, `--line` border, colored dot
+  + mono text); component API preserved.
+- **Shell** — blueprint dot-grid canvas + amber active-nav on the existing 248px
+  rail / 60px topbar; routing/permissions/nav untouched.
+- **BrightLoop visual purge** — all legacy teal/blue accents tokenized to
+  `--signal`; login de-branded to canon voice. (Public marketing narrative copy is
+  a separate product decision — no canon source.)
+- Guardrail tests (`packages/ui/src/tokens/canon-tokens.test.ts`,
+  `motion/canon-motion.test.ts`) assert token availability in both themes,
+  neutral-pill Badge, canon motion values, and no teal/Sora leaks in shared UI.
+
+**PR #6 (Insights)** remains **open and pending reconciliation** against
+`10-Insights.pdf` (a richer AI-native case file than the current build). Do not
+merge/close it; the canonical Insights rebuild is a later phase.
+
+The earlier code-grounded design notes on the `docs/design-documentation` branch
+(unmerged) describe the *pre-migration* implementation; treat them as
+implementation history and reconcile to these PDFs, do not delete.

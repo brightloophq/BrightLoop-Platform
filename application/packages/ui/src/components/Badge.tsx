@@ -21,7 +21,7 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
  * Accessibility (§11.2): never convey status by color alone — the label text is
  * always rendered alongside the color, and `dot` is decorative only.
  */
-export function Badge({ tone, status, dot = false, children, className, ...rest }: BadgeProps) {
+export function Badge({ tone, status, dot = true, children, className, ...rest }: BadgeProps) {
   const resolved: Tone = tone ?? (status !== undefined ? toneFor(status) : "neutral");
   const classes = [styles.badge, styles[resolved], className].filter(Boolean).join(" ");
 

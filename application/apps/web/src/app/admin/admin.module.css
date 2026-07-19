@@ -52,8 +52,8 @@
   font-size: var(--fs-xs);
   padding: 2px var(--space-2);
   border-radius: var(--radius-sm);
-  background: var(--blue-50);
-  border: 1px solid var(--border-subtle);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
   color: var(--text-accent);
   font-weight: var(--fw-semibold);
 }
@@ -107,7 +107,7 @@
 .linkActive {
   background: var(--surface-card);
   color: var(--text-primary);
-  box-shadow: inset 2px 0 0 var(--action-primary);
+  box-shadow: inset 2px 0 0 var(--signal); /* amber active indicator */
 }
 
 .linkLabel {
@@ -196,6 +196,12 @@
 .content {
   padding: var(--space-6);
   flex: 1;
+  /* canonical blueprint dot-grid main canvas (DS §06 / Handoff §03).
+     Subtle; surfaces reconcile to transparent in Phase 2 to reveal it. */
+  background-color: var(--bg);
+  background-image: radial-gradient(var(--line) 1px, transparent 1.5px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
 }
 
 /* ---- mobile drawer chrome (hidden on desktop) ---------------------------- */
@@ -284,7 +290,7 @@
     position: fixed;
     inset: 0;
     z-index: var(--z-overlay);
-    background: color-mix(in srgb, var(--navy-950) 55%, transparent);
+    background: rgba(11, 12, 15, 0.55); /* canvas-black scrim (theme-independent) */
     visibility: hidden;
     opacity: 0;
   }
