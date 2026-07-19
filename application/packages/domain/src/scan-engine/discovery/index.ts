@@ -14,3 +14,14 @@ export interface DiscoveryEngine {
   /** Adapter MUST reject private/link-local/loopback hosts (SSRF) before returning. */
   resolve(input: { scanId: string; url: string }): Promise<CrawlSurface>;
 }
+
+/* ---- Sprint 5 · Discovery & Crawl Orchestration (pure contracts) ---- */
+export * from "./url.js";
+export * from "./resolve.js";
+export * from "./security.js";
+export * from "./plan.js";
+export * from "./robots.js";
+export * from "./session.js";
+// statemachine shares `canTransition`/`shouldRetry` names with pipeline/background,
+// so it is namespaced (mirrors the routing circuit/health pattern).
+export * as discoveryStateMachine from "./statemachine.js";
