@@ -22,6 +22,8 @@ export interface CoreSurfaceRepository {
   // ---- Business domains (System Map nodes) ---------------------------------
   upsertDomain(record: Domain): Promise<Domain>;
   listDomains(clientId: string): Promise<Domain[]>;
+  /** All domains the caller may see (RLS-scoped: internal → every org). Console portfolio scope. */
+  listAllDomains(): Promise<Domain[]>;
   setDomainStatus(
     clientId: string,
     key: Domain["key"],

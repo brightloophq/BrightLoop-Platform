@@ -121,6 +121,12 @@ export class SupabaseCoreSurfaceRepository implements CoreSurfaceRepository {
     return (data ?? []).map(toDomain);
   }
 
+  async listAllDomains(): Promise<Domain[]> {
+    const { data, error } = await this.db.from("business_domains").select(DOMAIN_COLS).limit(2000);
+    if (error) this.fail("listAllDomains", error.message);
+    return (data ?? []).map(toDomain);
+  }
+
   async setDomainStatus(
     clientId: string, key: Domain["key"], status: Domain["status"], currentScore?: number | null,
   ): Promise<Domain> {

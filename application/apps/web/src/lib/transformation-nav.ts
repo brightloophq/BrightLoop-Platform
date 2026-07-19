@@ -13,6 +13,8 @@ import type { AdminNavGroup } from "@/app/admin/AdminNav";
  */
 export const TRANSFORMATION_NAV = [
   { label: "Console", href: "/admin/dashboard", icon: "layout-grid" },
+  { label: "Business Scan", href: "/admin/business-scan", icon: "gauge" },
+  { label: "Activation", href: "/admin/activation", icon: "workflow" },
   { label: "Signals", href: "/admin/signals", icon: "activity" },
   { label: "Insights", href: "/admin/insights", icon: "lightbulb" },
   { label: "Recommendations", href: "/admin/recommendations", icon: "sparkles" },

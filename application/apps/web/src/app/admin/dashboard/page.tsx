@@ -6,6 +6,8 @@ import {
   assertDashboardRead,
   resolveDashboardScope,
   buildDashboardView,
+  buildSystemMapView,
+  buildPortfolioSystemMapView,
   type DashboardScope,
   type DashboardView,
 } from "@brightloop/domain";
@@ -21,10 +23,11 @@ import {
   PipelineNode,
   AttentionRow,
   SkeletonBlock,
+  SystemMap,
 } from "@brightloop/ui";
 import { MotionProvider, DashboardEntrance, AnimatedMetric, PipelineAnimation } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
-import { getTransformationDashboardRepository } from "@/lib/repositories";
+import { getTransformationDashboardRepository, getCoreSurfaceRepository } from "@/lib/repositories";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./dashboard.module.css";
 
@@ -126,6 +129,8 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
           }
         />
       </div>
+
+      <ConsoleSystemMap scope={scope} />
 
       <div className={styles.overview}>
         <div className={styles.heroGrid}>
@@ -277,6 +282,40 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
       </section>
     </DashboardEntrance>
   );
+}
+
+/**
+ * The canonical System Map on the Console. Scope-aware: an organization shows its
+ * own seven domains; portfolio scope aggregates across every org. Reuses the
+ * existing dashboard read-model architecture (no dashboard section is rebuilt),
+ * and never breaks the Console if domain data is unavailable.
+ */
+async function ConsoleSystemMap({ scope }: { scope: DashboardScope }) {
+  try {
+    const repo = await getCoreSurfaceRepository();
+    const map =
+      scope.kind === "organization"
+        ? buildSystemMapView(await repo.listDomains(scope.clientId))
+        : buildPortfolioSystemMapView(await repo.listAllDomains());
+    return (
+      <OperationalPanel tone="anchor">
+        <SectionHeader
+          kicker="System state"
+          title="System Map"
+          hint={
+            scope.kind === "portfolio"
+              ? "Domains across your portfolio — the Index climbs as each node goes Live."
+              : "Seven domains assembled into one operating System."
+          }
+        />
+        <div className={styles.systemMap} data-animate="attention">
+          <SystemMap nodes={map.nodes} index={map.index} size={320} />
+        </div>
+      </OperationalPanel>
+    );
+  } catch {
+    return null; // never break the Console over the System Map
+  }
 }
 
 function Activity({ view }: { view: DashboardView }) {

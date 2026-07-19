@@ -323,14 +323,21 @@ generated-type/repository/domain-service/capability patterns. Routes:
   **Docker-less type regen mechanism:** push → CI `gen:types:local` uploads the
   Supabase-generated file as the `generated-db-types` artifact → download +
   commit (never hand-authored).
-- **Phase 1B — IN PROGRESS**: `CoreSurfaceService` + `CoreSurfaceRepository` port,
+- **Phase 1B — COMPLETE** (committed, PR #9 CI-green): `CoreSurfaceService` +
   fully-typed `SupabaseCoreSurfaceRepository` adapter (no cast — z.enum contracts
   match the pg enums), pure read models (`buildSystemMapView` /
   `buildBusinessScanView` / `buildActivationView`), the shared **`SystemMap`** UI
   primitive (7 nodes + AUX core + Index gauge, token-only, theme-parity,
   reduced-motion), and the **Console** terminology reconcile over
   `/admin/dashboard` (visible label/title only; route + internal identifiers
-  unchanged). Business Scan / Activation UIs are Phase 1C.
+  unchanged).
+- **Phase 1C — IMPLEMENTED** (uncommitted; **PR #9 still draft pending preview
+  review**): `/admin/business-scan` (Diagnose workspace — System Map, baseline
+  Index, findings ledger, gap count, states + `startScan`/`addFinding` server
+  actions), `/admin/activation` (assembly sequence, live/planned, completion +
+  `activateDomain` action), the live **System Map on the Console** (organization +
+  portfolio scope), and Business Scan + Activation nav items (capability-gated).
+  No browser-direct DB writes.
 
 Phase 0 detail:
 - **Tokens** — canonical dual-theme set in `packages/ui/src/tokens/colors.css`

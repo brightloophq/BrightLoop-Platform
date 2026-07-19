@@ -6,6 +6,7 @@ import {
   buildSystemMapView,
   buildBusinessScanView,
   buildActivationView,
+  buildPortfolioSystemMapView,
   assertCoreSurfacesRead,
   canWriteScans,
   canActivate,
@@ -76,6 +77,25 @@ describe("buildActivationView", () => {
     const v = buildActivationView([domain("sales", { status: "assembling" })]);
     expect(v.complete).toBe(false);
     expect(v.operatingCount).toBe(0);
+  });
+});
+
+describe("buildPortfolioSystemMapView (Console multi-client scope)", () => {
+  it("aggregates a domain's score across clients (mean) and majority-operating status", () => {
+    const rows: Domain[] = [
+      { ...domain("sales", { clientId: "cli_A", status: "operating", currentScore: 80 }) },
+      { ...domain("sales", { clientId: "cli_B", status: "operating", currentScore: 90 }) },
+      { ...domain("sales", { clientId: "cli_C", status: "not_operating", currentScore: null }) },
+    ];
+    const v = buildPortfolioSystemMapView(rows);
+    const sales = v.nodes.find((n) => n.key === "sales")!;
+    expect(sales.score).toBe(85); // mean of 80,90
+    expect(sales.lit).toBe(true); // 2 of 3 operating = majority
+  });
+  it("is deterministic and keeps all seven nodes", () => {
+    const rows = [domain("web", { clientId: "cli_A", status: "operating", currentScore: 70 })];
+    expect(buildPortfolioSystemMapView(rows)).toEqual(buildPortfolioSystemMapView(rows));
+    expect(buildPortfolioSystemMapView(rows).nodes).toHaveLength(7);
   });
 });
 

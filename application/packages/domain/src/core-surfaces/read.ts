@@ -186,3 +186,36 @@ export function buildActivationView(
   const operatingCount = systemMap.operatingCount;
   return { systemMap, steps, operatingCount, total: DOMAIN_KEYS.length, complete: operatingCount === DOMAIN_KEYS.length };
 }
+
+/* ---- Console portfolio rollup (multi-client scope — PDF 03) ---------------- */
+
+/**
+ * Aggregate domain rows across many clients into a single System Map (Console at
+ * portfolio scope). Per domain key: score = mean of non-null current scores;
+ * status = Operating when a majority are operating, else Assembling if any are,
+ * else not_operating. Deterministic and pure.
+ */
+export function buildPortfolioSystemMapView(
+  domains: readonly Domain[],
+  opts: { target?: number; delta?: number | null } = {},
+): SystemMapView {
+  const byKey = new Map<DomainKey, Domain[]>();
+  for (const d of domains) {
+    const arr = byKey.get(d.key) ?? [];
+    arr.push(d);
+    byKey.set(d.key, arr);
+  }
+  const collapsed: Domain[] = [];
+  for (const key of DOMAIN_KEYS) {
+    const rows = byKey.get(key);
+    if (!rows || rows.length === 0) continue;
+    const operating = rows.filter((r) => r.status === "operating").length;
+    const assembling = rows.filter((r) => r.status === "assembling").length;
+    const status: DomainStatus =
+      operating > 0 && operating * 2 >= rows.length ? "operating" : assembling > 0 ? "assembling" : "not_operating";
+    const scores = rows.map((r) => r.currentScore).filter((s): s is number => s !== null);
+    const currentScore = scores.length > 0 ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length) : null;
+    collapsed.push({ id: `agg_${key}`, clientId: "*", key, status, baselineScore: null, currentScore, createdAt: "" });
+  }
+  return buildSystemMapView(collapsed, { basis: "current", ...opts });
+}

@@ -19,6 +19,7 @@ function fakeRepo() {
     async listFindings(sid) { return findings.filter((f) => f.scanId === sid); },
     async upsertDomain(r) { domains.push(r); return r; },
     async listDomains(cid) { return domains.filter((d) => d.clientId === cid); },
+    async listAllDomains() { return domains; },
     async setDomainStatus(cid, key, status, score) {
       const d = domains.find((x) => x.clientId === cid && x.key === key)!;
       d.status = status; if (score !== undefined) d.currentScore = score; return d;
