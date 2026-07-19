@@ -216,6 +216,44 @@ export type Database = {
           },
         ]
       }
+      business_domains: {
+        Row: {
+          baseline_score: number | null
+          client_id: string
+          created_at: string
+          current_score: number | null
+          id: string
+          key: Database["public"]["Enums"]["domain_key"]
+          status: Database["public"]["Enums"]["domain_status"]
+        }
+        Insert: {
+          baseline_score?: number | null
+          client_id: string
+          created_at?: string
+          current_score?: number | null
+          id: string
+          key: Database["public"]["Enums"]["domain_key"]
+          status?: Database["public"]["Enums"]["domain_status"]
+        }
+        Update: {
+          baseline_score?: number | null
+          client_id?: string
+          created_at?: string
+          current_score?: number | null
+          id?: string
+          key?: Database["public"]["Enums"]["domain_key"]
+          status?: Database["public"]["Enums"]["domain_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_domains_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_health: {
         Row: {
           basis: string | null
@@ -250,6 +288,51 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_scans: {
+        Row: {
+          baseline_index: number
+          client_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          status: Database["public"]["Enums"]["scan_status"]
+          target_index: number
+        }
+        Insert: {
+          baseline_index: number
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          id: string
+          status?: Database["public"]["Enums"]["scan_status"]
+          target_index?: number
+        }
+        Update: {
+          baseline_index?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["scan_status"]
+          target_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_scans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_scans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
             referencedColumns: ["id"]
           },
         ]
@@ -2127,6 +2210,54 @@ export type Database = {
           },
         ]
       }
+      scan_findings: {
+        Row: {
+          baseline: string | null
+          client_id: string
+          created_at: string
+          domain_key: Database["public"]["Enums"]["domain_key"]
+          finding: string
+          id: string
+          priority: Database["public"]["Enums"]["finding_priority"]
+          scan_id: string
+        }
+        Insert: {
+          baseline?: string | null
+          client_id: string
+          created_at?: string
+          domain_key: Database["public"]["Enums"]["domain_key"]
+          finding: string
+          id: string
+          priority?: Database["public"]["Enums"]["finding_priority"]
+          scan_id: string
+        }
+        Update: {
+          baseline?: string | null
+          client_id?: string
+          created_at?: string
+          domain_key?: Database["public"]["Enums"]["domain_key"]
+          finding?: string
+          id?: string
+          priority?: Database["public"]["Enums"]["finding_priority"]
+          scan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_findings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_findings_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "business_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signals: {
         Row: {
           client_id: string
@@ -2463,8 +2594,18 @@ export type Database = {
         | "revision_requested"
         | "rejected"
         | "final"
+      domain_key:
+        | "web"
+        | "sales"
+        | "crm"
+        | "operations"
+        | "delivery"
+        | "analytics"
+        | "ai"
+      domain_status: "not_operating" | "assembling" | "operating"
       execution_record_status: "queued" | "running" | "succeeded" | "failed"
       file_upload_status: "queued" | "uploading" | "success" | "failed"
+      finding_priority: "low" | "medium" | "high"
       insight_status: "generated" | "endorsed" | "dismissed"
       invoice_status:
         | "draft"
@@ -2552,6 +2693,7 @@ export type Database = {
         | "likely"
         | "almost_certain"
       risk_severity: "low" | "medium" | "high" | "critical"
+      scan_status: "diagnosing" | "diagnosed" | "activating" | "operating"
       signal_status: "detected" | "validated" | "prioritized" | "archived"
       user_account_status: "invited" | "active" | "suspended"
     }
@@ -2725,8 +2867,19 @@ export const Constants = {
         "rejected",
         "final",
       ],
+      domain_key: [
+        "web",
+        "sales",
+        "crm",
+        "operations",
+        "delivery",
+        "analytics",
+        "ai",
+      ],
+      domain_status: ["not_operating", "assembling", "operating"],
       execution_record_status: ["queued", "running", "succeeded", "failed"],
       file_upload_status: ["queued", "uploading", "success", "failed"],
+      finding_priority: ["low", "medium", "high"],
       insight_status: ["generated", "endorsed", "dismissed"],
       invoice_status: [
         "draft",
@@ -2825,6 +2978,7 @@ export const Constants = {
         "almost_certain",
       ],
       risk_severity: ["low", "medium", "high", "critical"],
+      scan_status: ["diagnosing", "diagnosed", "activating", "operating"],
       signal_status: ["detected", "validated", "prioritized", "archived"],
       user_account_status: ["invited", "active", "suspended"],
     },
