@@ -306,8 +306,40 @@ rather than rewrite; replace only what a PDF explicitly redefines. Internal
 identifiers (`@brightloop/*`, `--bl-*`, `brightloop.co`) are intentionally
 retained — only the **visible** identity is Auxion.
 
-**Phase 0 — canonical design-system migration (in progress on branch
-`migration/phase-0-auxion-design-system`):**
+**Phase 0 — canonical design-system migration — MERGED to `main` via PR #8
+(merge commit `7460efa`).**
+
+**Phase 1 — core surfaces (Business Scan, Activation, Console)** on branch
+`implementation/phase-1-core-surfaces`. Human/system-entered data; Auxiliary AI
+engine deferred. Additive schema only, on the existing migration/RLS/pgTAP/
+generated-type/repository/domain-service/capability patterns. Routes:
+`/admin/business-scan`, `/admin/activation`, `/admin/dashboard` (visible term
+"Console").
+
+- **Phase 1A — COMPLETE** (draft PR #9): additive `business_scans`/
+  `business_domains`/`scan_findings` migration + internal-only RLS + pgTAP;
+  `domains.ts` contracts (7-domain taxonomy) + capabilities; generated types in
+  sync (committed from the CI `generated-db-types` artifact — CI green, drift 0).
+  **Docker-less type regen mechanism:** push → CI `gen:types:local` uploads the
+  Supabase-generated file as the `generated-db-types` artifact → download +
+  commit (never hand-authored).
+- **Phase 1B — COMPLETE** (committed, PR #9 CI-green): `CoreSurfaceService` +
+  fully-typed `SupabaseCoreSurfaceRepository` adapter (no cast — z.enum contracts
+  match the pg enums), pure read models (`buildSystemMapView` /
+  `buildBusinessScanView` / `buildActivationView`), the shared **`SystemMap`** UI
+  primitive (7 nodes + AUX core + Index gauge, token-only, theme-parity,
+  reduced-motion), and the **Console** terminology reconcile over
+  `/admin/dashboard` (visible label/title only; route + internal identifiers
+  unchanged).
+- **Phase 1C — IMPLEMENTED** (uncommitted; **PR #9 still draft pending preview
+  review**): `/admin/business-scan` (Diagnose workspace — System Map, baseline
+  Index, findings ledger, gap count, states + `startScan`/`addFinding` server
+  actions), `/admin/activation` (assembly sequence, live/planned, completion +
+  `activateDomain` action), the live **System Map on the Console** (organization +
+  portfolio scope), and Business Scan + Activation nav items (capability-gated).
+  No browser-direct DB writes.
+
+Phase 0 detail:
 - **Tokens** — canonical dual-theme set in `packages/ui/src/tokens/colors.css`
   (amber `--signal`, `--bg/--surface/--ink` ramp, `--positive/caution/critical/
   info`, `--line`, `--action-bg/fg`, `--on-signal`); role-based radii; amber focus

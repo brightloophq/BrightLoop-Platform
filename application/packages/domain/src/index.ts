@@ -44,3 +44,5 @@ export * from "./repositories/catalog.js";
 
 // Transformation cycle — service layer, repository port, and event taxonomy.
 export * from "./transformation/index.js";
+// Core surfaces (Phase 1B) — Business Scan / Activation / Console.
+export * from "./core-surfaces/index.js";

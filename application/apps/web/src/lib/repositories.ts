@@ -6,10 +6,13 @@ import {
   SupabaseTransformationDashboardRepository,
   SupabaseSignalsRepository,
   SupabaseTransformationRepository,
+  SupabaseCoreSurfaceRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
+  createCoreSurfaceService,
   type CatalogRepository,
+  type CoreSurfaceService,
   type DataSource,
   type ReputationRepository,
   type TransformationService,
@@ -114,6 +117,23 @@ export async function getTransformationDashboardRepository(): Promise<SupabaseTr
 export async function getSignalsRepository(): Promise<SupabaseSignalsRepository> {
   const client = await createClient();
   return new SupabaseSignalsRepository(client);
+}
+
+/**
+ * Core-surfaces adapter (Phase 1B) — Business Scan / Domains / Findings. Typed,
+ * request-scoped (RLS-scoped to the caller). Never cached. Reads feed the System
+ * Map / Business Scan / Activation read models; writes go via the service below.
+ */
+export async function getCoreSurfaceRepository(): Promise<SupabaseCoreSurfaceRepository> {
+  const client = await createClient();
+  return new SupabaseCoreSurfaceRepository(client);
+}
+
+/** The core-surfaces domain service for WRITES (scan/finding/domain/activation). */
+export async function getCoreSurfaceService(): Promise<CoreSurfaceService> {
+  const client = await createClient();
+  const repo = new SupabaseCoreSurfaceRepository(client);
+  return createCoreSurfaceService({ repo, ids: newId });
 }
 
 /**

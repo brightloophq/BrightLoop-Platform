@@ -13,7 +13,9 @@ describe("transformationNavGroup", () => {
     expect(group?.label).toBe("Transformation");
     const labels = group?.items.map((i) => i.label) ?? [];
     expect(labels).toEqual([
-      "Dashboard",
+      "Console",
+      "Business Scan",
+      "Activation",
       "Signals",
       "Insights",
       "Recommendations",
@@ -24,6 +26,22 @@ describe("transformationNavGroup", () => {
       "Settings",
     ]);
     expect(group?.items.every((i) => i.ready)).toBe(true);
+  });
+
+  it("uses canonical 'Console' terminology while keeping the stable /admin/dashboard route", () => {
+    const group = transformationNavGroup(owner);
+    const console = group?.items.find((i) => i.href === "/admin/dashboard");
+    expect(console?.label).toBe("Console"); // visible term is canonical
+    expect(console?.href).toBe("/admin/dashboard"); // internal route unchanged
+    // no legacy 'Dashboard' label leaks into the visible nav
+    expect((group?.items ?? []).some((i) => i.label === "Dashboard")).toBe(false);
+  });
+
+  it("shows Business Scan + Activation to internal roles, hides them from clients", () => {
+    const labels = (transformationNavGroup(teamMember)?.items ?? []).map((i) => i.label);
+    expect(labels).toContain("Business Scan");
+    expect(labels).toContain("Activation");
+    expect(transformationNavGroup(clientAdmin)).toBeNull(); // whole group hidden from clients
   });
 
   it("shows admin the full nav (settings.* granted)", () => {
