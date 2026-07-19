@@ -23,9 +23,9 @@
   text-decoration: none;
 }
 .stepActive {
-  border-color: rgba(34, 211, 238, 0.4);
+  border-color: color-mix(in srgb, var(--signal) 40%, transparent);
   color: var(--text-accent);
-  background: rgba(34, 211, 238, 0.08);
+  background: color-mix(in srgb, var(--signal) 8%, transparent);
 }
 .stepDone {
   color: var(--text-secondary);
@@ -91,7 +91,7 @@
 .optionSel {
   border-color: var(--bl-cyan);
   color: var(--text-primary);
-  background: rgba(34, 211, 238, 0.08);
+  background: color-mix(in srgb, var(--signal) 8%, transparent);
 }
 
 /* ---- goals ---- */
@@ -150,7 +150,7 @@
 .choiceBtnSel {
   border-color: var(--bl-cyan);
   color: var(--text-accent);
-  background: rgba(34, 211, 238, 0.08);
+  background: color-mix(in srgb, var(--signal) 8%, transparent);
 }
 
 .estimateRail {

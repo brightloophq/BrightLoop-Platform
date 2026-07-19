@@ -1,111 +1,167 @@
-/* Auxion — Color tokens
-   Navy & Signal. One navy canvas family, one signal-blue accent (no teal).
-   Variable names are stable for backwards compatibility; values are Auxion. */
+/* Auxion — Color tokens (canonical, per docs/design/source/00-Design-System.pdf
+   + 08-Auxion-DNA.pdf + 09-Rebrand-Migration-Handoff.pdf).
+
+   Quiet surfaces, one signal. Light mode is architectural paper; dark mode is a
+   precision command center — IDENTICAL hierarchy. Ink carries structure; a single
+   AMBER --signal carries system state (never decoration). Every token resolves in
+   both [data-theme="light"] and [data-theme="dark"]; never hardcode a hex.
+
+   MIGRATION NOTE (adapt-first): the canonical token set below is authoritative.
+   The legacy primitive scales (--bl-*, --navy-*, --blue-*, --cyan-*, --slate-*)
+   and the legacy semantic aliases (--surface-card, --text-primary, …) are RETAINED
+   and re-pointed to canon values so existing components keep working during the
+   migration. Direct references to the legacy primitives are purged per-surface and
+   finally in Phase 5. Do not add new references to the legacy primitives. */
 
 :root {
-  /* ---- Brand core ---- */
-  --bl-navy:        #152238; /* Navy Ink — darkest brand / hero base */
-  --bl-blue:        #1B54E4; /* Signal — the single accent + action */
-  --bl-cyan:        #5B83EF; /* Signal-on-dark (was teal; now light signal) */
-  --bl-white:       #FFFFFF;
-  --bl-slate:       #69707C; /* Slate — secondary text */
-  --bl-soft:        #FBFCFD; /* Paper — light surface */
+  /* ======================================================================
+     CANONICAL AUXION TOKENS — the source of truth (light values here;
+     dark overrides in [data-theme="dark"] below).
+     ====================================================================== */
 
-  /* ---- Navy scale (surfaces on dark) ---- */
-  --navy-950: #0E1626;
-  --navy-900: #152238;
-  --navy-850: #1A2B45;
-  --navy-800: #1C3055;
-  --navy-700: #223C5C;
-  --navy-600: #274A7C;
-  --navy-500: #345C93;
+  /* ---- Neutrals ---- */
+  --bg:          #F3F1EC; /* page canvas — architectural paper */
+  --surface:     #FBFAF8; /* cards & panels */
+  --surface-2:   #EDEAE3; /* recessed / chips / core */
+  --ink:         #16181D; /* primary text */
+  --ink-2:       #55585F; /* secondary text */
+  --ink-3:       #8A8D94; /* muted / meta */
+  --line:        rgba(22, 24, 29, 0.11);  /* hairline — 11% ink */
+  --line-strong: rgba(22, 24, 29, 0.20);  /* strong border — 20% ink */
 
-  /* ---- Blue / Signal scale (primary) ---- */
-  --blue-50:  #EAF0FE;
-  --blue-100: #D3E0FD;
-  --blue-200: #B0C6FB;
-  --blue-300: #85A5F4;
-  --blue-400: #5B83EF;
-  --blue-500: #1B54E4;
-  --blue-600: #153FC4;
-  --blue-700: #123AA0;
-  --blue-800: #143282;
+  /* ---- Action & signal ---- */
+  --action-bg:   #16181D; /* primary action fill (ink) */
+  --action-fg:   #FBFAF8; /* text/icon on the primary action */
+  --signal:      #B4571A; /* THE accent — amber, system state only */
+  --signal-tint: color-mix(in srgb, var(--signal) 12%, transparent); /* active fill — 12% signal */
+  --on-signal:   #FFFFFF; /* text/icon on a signal fill */
 
-  /* ---- Cyan scale (legacy name; now signal-tinted, no teal) ---- */
-  --cyan-50:  #EDF2FE;
-  --cyan-100: #DAE4FD;
-  --cyan-200: #BACDFB;
-  --cyan-300: #8FADF3;
-  --cyan-400: #5B83EF;
-  --cyan-500: #3E6AEA;
-  --cyan-600: #1B54E4;
+  /* ---- Semantic (state) ---- */
+  --positive:    #1F7A54; /* Operating / healthy */
+  --caution:     #B07514; /* Degraded / needs attention */
+  --critical:    #B23B3B; /* Fault / risk */
+  --info:        #3C5C8C; /* informational */
 
-  /* ---- Slate / neutral scale ---- */
-  --slate-50:  #FBFCFD;
-  --slate-100: #F2F4F7;
-  --slate-200: #E1E5EC;
-  --slate-300: #C4CCD7;
-  --slate-400: #98A6B6;
-  --slate-500: #69707C;
-  --slate-600: #4C5563;
-  --slate-700: #3B4557;
-  --slate-800: #26303F;
-  --slate-900: #141B26;
+  /* ======================================================================
+     LEGACY PRIMITIVE SCALES — retained for backwards-compat during
+     migration. DO NOT reference in new code; purged in Phase 5.
+     ====================================================================== */
+  --bl-navy:  #152238;
+  --bl-blue:  #1B54E4;
+  --bl-cyan:  #5B83EF;
+  --bl-white: #FFFFFF;
+  --bl-slate: #69707C;
+  --bl-soft:  #FBFCFD;
 
-  /* ---- Semantic status ---- */
-  --success: #1C7A45;
-  --warning: #B4791B;
-  --danger:  #D23B3A;
-  --info:    var(--bl-blue);
+  --navy-950: #0E1626; --navy-900: #152238; --navy-850: #1A2B45; --navy-800: #1C3055;
+  --navy-700: #223C5C; --navy-600: #274A7C; --navy-500: #345C93;
 
-  /* ---- Brand gradient (navy → signal) ---- */
-  --grad-loop: linear-gradient(135deg, var(--navy-600) 0%, var(--bl-blue) 100%);
-  --grad-loop-soft: linear-gradient(135deg, #274A7C 0%, #2C5BCF 55%, #1B54E4 100%); /* @kind color */
+  --blue-50: #EAF0FE; --blue-100: #D3E0FD; --blue-200: #B0C6FB; --blue-300: #85A5F4;
+  --blue-400: #5B83EF; --blue-500: #1B54E4; --blue-600: #153FC4; --blue-700: #123AA0; --blue-800: #143282;
 
-  --action-primary:       var(--bl-blue);
-  --action-primary-hover: var(--blue-600);
-  --action-primary-press: var(--blue-700);
+  --cyan-50: #EDF2FE; --cyan-100: #DAE4FD; --cyan-200: #BACDFB; --cyan-300: #8FADF3;
+  --cyan-400: #5B83EF; --cyan-500: #3E6AEA; --cyan-600: #1B54E4;
+
+  --slate-50: #FBFCFD; --slate-100: #F2F4F7; --slate-200: #E1E5EC; --slate-300: #C4CCD7;
+  --slate-400: #98A6B6; --slate-500: #69707C; --slate-600: #4C5563; --slate-700: #3B4557;
+  --slate-800: #26303F; --slate-900: #141B26;
 }
 
-/* ---- Semantic aliases: LIGHT (Living Blueprint / paper) is the DEFAULT ----
-   Living Blueprint is light-paper-first; navy is reserved for hero fields,
-   the footer, and CTA bands (opt in with data-theme="dark"). */
+/* ---- Semantic aliases: LIGHT (architectural paper) — the DEFAULT ----
+   Both themes are first-class with identical hierarchy; light is the default
+   canvas.
+
+   @deprecated COMPATIBILITY ALIASES — the legacy alias names below
+   (--surface-card, --text-primary, --action-primary, --success/--warning/
+   --danger, --grad-loop, …) are re-pointed to the canonical tokens ONLY to
+   avoid broad breakage during migration. Migrate consumers to the canon tokens
+   (--surface, --ink, --action-bg, --positive/--caution/--critical) and delete
+   these aliases in Phase 5. Do NOT reference them in new code. */
 :root,
 [data-theme="light"],
 .bl-theme-light {
-  --bg-base:       var(--bl-soft);
-  --bg-raised:     var(--bl-white);
-  --surface-card:  var(--bl-white);
-  --surface-inset: var(--slate-100);
-  --border-subtle: var(--slate-200);
-  --border-strong: var(--slate-300);
+  /* legacy surface aliases → canon */
+  --bg-base:       var(--bg);
+  --bg-raised:     var(--surface);
+  --surface-card:  var(--surface);
+  --surface-inset: var(--surface-2);
+  --border-subtle: var(--line);
+  --border-strong: var(--line-strong);
 
-  --text-primary:   var(--navy-900);
-  --text-secondary: var(--slate-700);
-  --text-muted:     var(--slate-500);
-  --text-accent:    var(--blue-600);
-  --text-link:      var(--blue-600);
-  --text-on-accent: var(--bl-white);
+  /* legacy text aliases → canon (one accent = --signal) */
+  --text-primary:   var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-muted:     var(--ink-3);
+  --text-accent:    var(--signal);
+  --text-link:      var(--signal);
+  --text-on-accent: var(--action-fg);
 
-  --focus-ring:     var(--bl-blue);
+  --focus-ring:     var(--signal);
+
+  /* legacy status aliases → canon */
+  --success: var(--positive);
+  --warning: var(--caution);
+  --danger:  var(--critical);
+
+  /* legacy action aliases → canon (ink-based primary action) */
+  --action-primary:       var(--action-bg);
+  --action-primary-hover: var(--action-bg);
+  --action-primary-press: var(--action-bg);
+
+  /* restrained, de-blued brand gradients (retained for existing consumers) */
+  --grad-loop:      linear-gradient(135deg, var(--surface-2) 0%, var(--signal-tint) 100%);
+  --grad-loop-soft: linear-gradient(135deg, var(--surface-2) 0%, var(--signal-tint) 100%);
 }
 
-/* ---- Semantic aliases: DARK (navy) — heroes, footer, CTA fields ---- */
+/* ---- Semantic aliases: DARK (precision command center) — co-equal ---- */
 [data-theme="dark"],
 .bl-theme-dark {
-  --bg-base:       var(--navy-900);
-  --bg-raised:     var(--navy-850);
-  --surface-card:  var(--navy-800);
-  --surface-inset: var(--navy-950);
-  --border-subtle: rgba(255,255,255,0.08);
-  --border-strong: rgba(255,255,255,0.16);
+  /* canon token dark overrides */
+  --bg:          #0B0C0F;
+  --surface:     #14161B;
+  --surface-2:   #1C1F26;
+  --ink:         #ECEDEF;
+  --ink-2:       #A2A6AE;
+  --ink-3:       #6C7079;
+  --line:        rgba(255, 255, 255, 0.09);
+  --line-strong: rgba(255, 255, 255, 0.18);
 
-  --text-primary:   var(--bl-white);
-  --text-secondary: var(--slate-300);
-  --text-muted:     var(--slate-400);
-  --text-accent:    var(--bl-cyan);
-  --text-link:      var(--blue-400);
-  --text-on-accent: var(--bl-white);
+  --action-bg:   #ECEDEF;
+  --action-fg:   #0B0C0F;
+  --signal:      #E8912F;
+  --signal-tint: rgba(232, 145, 47, 0.16);
+  --on-signal:   #17130A;
 
-  --focus-ring:     var(--bl-cyan);
+  --positive:    #46B98A;
+  --caution:     #E0A93C;
+  --critical:    #E06767;
+  --info:        #6E93C9;
+
+  /* legacy aliases re-resolve through the overridden canon tokens above */
+  --bg-base:       var(--bg);
+  --bg-raised:     var(--surface);
+  --surface-card:  var(--surface);
+  --surface-inset: var(--surface-2);
+  --border-subtle: var(--line);
+  --border-strong: var(--line-strong);
+
+  --text-primary:   var(--ink);
+  --text-secondary: var(--ink-2);
+  --text-muted:     var(--ink-3);
+  --text-accent:    var(--signal);
+  --text-link:      var(--signal);
+  --text-on-accent: var(--action-fg);
+
+  --focus-ring:     var(--signal);
+
+  --success: var(--positive);
+  --warning: var(--caution);
+  --danger:  var(--critical);
+
+  --action-primary:       var(--action-bg);
+  --action-primary-hover: var(--action-bg);
+  --action-primary-press: var(--action-bg);
+
+  --grad-loop:      linear-gradient(135deg, var(--surface-2) 0%, var(--signal-tint) 100%);
+  --grad-loop-soft: linear-gradient(135deg, var(--surface-2) 0%, var(--signal-tint) 100%);
 }
