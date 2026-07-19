@@ -103,6 +103,21 @@ textarea {
   top: var(--space-3, 12px);
 }
 
+/* Canonical motion keyframes (DNA §05 / DS §05). Transform + opacity only.
+   Reduce-motion collapses their durations to ~0 via the block below. */
+@keyframes auxRise {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes auxPulse { /* live core */
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
+}
+@keyframes auxBlink { /* assembling / loading */
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1; }
+}
+
 /* Honor reduced motion: entrance reveals become instant (handoff §11). */
 @media (prefers-reduced-motion: reduce) {
   *,

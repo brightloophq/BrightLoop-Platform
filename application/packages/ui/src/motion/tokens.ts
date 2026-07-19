@@ -11,15 +11,25 @@
  * are ever animated.
  * ========================================================================== */
 
-/** Durations in SECONDS (GSAP's unit), matching the CSS ms tokens. */
+/** Durations in SECONDS (GSAP's unit), matching the CSS ms tokens.
+ * Canon names (DNA §05): precise 240 / orchestrate 440 / enter 640. Legacy
+ * fast/base/slow retained so existing presets keep resolving. */
 export const DURATION = {
-  fast: 0.14, // --dur-fast 140ms — micro reveals
-  base: 0.24, // --dur-base 240ms — standard element entrance
-  slow: 0.42, // --dur-slow 420ms — the longest a coordinated step should take
+  precise: 0.24, // --dur-precise 240ms — controls, decisive settle
+  orchestrate: 0.44, // --dur-orchestrate 440ms — state change, symmetric
+  enter: 0.64, // --dur-enter 640ms — content arrival
+  fast: 0.14, // legacy — micro reveals
+  base: 0.24, // legacy — standard element entrance
+  slow: 0.42, // legacy — longest coordinated step
 } as const;
 
-/** Easing curves. `out` mirrors --ease-out cubic-bezier(.16,1,.3,1). */
+/** Easing curves (GSAP names approximating the canon cubic-beziers).
+ * precise ≈ (.2,.8,.2,1); orchestrate ≈ (.65,0,.35,1); enter ≈ (.16,1,.3,1). */
 export const EASE = {
+  precise: "power2.out",
+  orchestrate: "power2.inOut",
+  enter: "power3.out",
+  // legacy aliases (canon-equivalent)
   out: "power3.out",
   inOut: "power2.inOut",
 } as const;

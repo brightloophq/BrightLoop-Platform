@@ -53,8 +53,8 @@
   border-radius: var(--radius-lg);
   border: var(--border-hairline);
   background:
-    radial-gradient(70% 120% at 20% 15%, rgba(37, 99, 235, 0.22), transparent 60%),
-    radial-gradient(70% 120% at 85% 85%, rgba(34, 211, 238, 0.16), transparent 55%),
+    radial-gradient(70% 120% at 20% 15%, color-mix(in srgb, var(--signal) 22%, transparent), transparent 60%),
+    radial-gradient(70% 120% at 85% 85%, color-mix(in srgb, var(--signal) 16%, transparent), transparent 55%),
     var(--surface-inset);
   display: grid;
   place-items: center;
