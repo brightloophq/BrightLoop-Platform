@@ -110,7 +110,8 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
         <SectionHeader
           as="h1"
           size="page"
-          kicker={orgName}
+          index="01"
+          kicker={`System state · ${orgName}`}
           title={timeGreeting(new Date().getHours())}
           hint={
             scope.kind === "portfolio"
@@ -181,6 +182,7 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
       {/* ── Zone 2 · Transformation loop (the anchor) ───────────────── */}
       <OperationalPanel tone="anchor">
         <SectionHeader
+          index="02"
           kicker="The transformation loop"
           title="Pipeline"
           hint="Signal → Insight → Recommendation → Approval → Move → Execution → Measurement → Learning"
@@ -226,7 +228,7 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
       <div className={styles.feed}>
         <div className={styles.feedCol} data-animate="attention">
           <OperationalPanel>
-            <SectionHeader title="Attention required" />
+            <SectionHeader index="03" title="Attention required" />
             {view.attentionClear ? (
               <EmptyState
                 icon="check-circle"
@@ -260,7 +262,7 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
 
         <div className={styles.feedCol} data-animate="activity">
           <OperationalPanel>
-            <SectionHeader title="Recent activity" />
+            <SectionHeader index="04" title="Recent activity" />
             <Activity view={view} />
           </OperationalPanel>
         </div>
@@ -268,7 +270,7 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
 
       {/* Quick access strip */}
       <section data-animate="activity">
-        <SectionHeader title="Jump to" />
+        <SectionHeader index="05" title="Jump to" />
         <div className={styles.quick}>
           {QUICK.map((q) => (
             <Link key={q.href} href={q.href} className={styles.quickCard}>

@@ -338,6 +338,11 @@ generated-type/repository/domain-service/capability patterns. Routes:
   `activateDomain` action), the live **System Map on the Console** (organization +
   portfolio scope), and Business Scan + Activation nav items (capability-gated).
   No browser-direct DB writes.
+- **Phase 1D — canonical visual-fidelity pass:** §NN section headers
+  (`SectionRule`), state heroes (*Diagnosed.* / *Operating.*), unified instrument
+  cards (System Map + `IndexGauge`), 2-column assembly, mono ledger cells across
+  Console / Business Scan / Activation. Presentation only — the primitives (Badge
+  neutral-pill, `SystemMap`, tokens) were already canonical from Phase 0.
 
 ### Business Scan engine — roadmap foundation (contracts only)
 

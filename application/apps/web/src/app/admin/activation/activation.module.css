@@ -53,31 +53,53 @@
   color: var(--text-accent);
 }
 
-/* workspace */
-.top {
+/* instrument card — System Map (left) paired with the Index gauge (right) */
+.cardHead {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--border-hairline);
+}
+.instrument {
   display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-  gap: var(--space-5);
-  align-items: start;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+  gap: var(--space-6);
+  align-items: center;
+  padding: var(--space-5) 0;
 }
 .systemMap {
   display: flex;
   justify-content: center;
-  padding: var(--space-4) 0;
 }
-.metrics {
-  display: grid;
+.cardFoot {
+  display: flex;
+  justify-content: space-between;
   gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-top: var(--space-3);
+  border-top: var(--border-hairline);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
-/* assembly sequence */
+.ledgerPanel {
+  margin-top: var(--space-4);
+}
+
+/* assembly sequence — canonical 2-column grid of domain rows */
 .steps {
   list-style: none;
   margin: var(--space-3) 0 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-3);
 }
 .step {
   display: flex;
@@ -86,14 +108,25 @@
   padding: var(--space-3) var(--space-4);
   background: var(--surface-card);
   border: var(--border-hairline);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
+}
+.stepDot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--line-strong);
+  flex: none;
+}
+.stepDotLive {
+  background: var(--signal);
 }
 .stepCode {
   font-family: var(--font-mono);
   font-weight: var(--fw-semibold);
   font-size: var(--fs-xs);
-  color: var(--text-accent);
+  color: var(--text-muted);
   width: 3ch;
+  flex: none;
 }
 .stepLabel {
   flex: 1;
@@ -103,11 +136,16 @@
   font-size: var(--fs-sm);
 }
 .stepAction {
-  margin-left: var(--space-2);
+  margin-left: auto;
+  flex: none;
 }
 
-@media (max-width: 1023px) {
-  .top {
+@media (max-width: 740px) {
+  .instrument {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+  .steps {
     grid-template-columns: minmax(0, 1fr);
   }
 }

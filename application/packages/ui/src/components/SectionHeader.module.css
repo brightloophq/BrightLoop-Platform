@@ -14,11 +14,18 @@
 }
 
 .kicker {
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: var(--ls-eyebrow);
   color: var(--text-muted);
   font-weight: var(--fw-semibold);
+}
+.index {
+  color: var(--signal);
+}
+.sep {
+  color: var(--text-muted);
 }
 
 .title {
