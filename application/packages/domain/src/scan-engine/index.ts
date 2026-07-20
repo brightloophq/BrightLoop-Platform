@@ -22,5 +22,8 @@ export * from "./monitoring/index.js"; // L8
 export * from "./orchestration/index.js";
 export * from "./provider-router.js";
 
+/* ---- AI provider execution layer (Sprint 7) ---- */
+export * from "./execution/index.js";
+
 /* ---- provider registry + cost-aware routing (Sprint 2) ---- */
 export * from "./routing/index.js";
