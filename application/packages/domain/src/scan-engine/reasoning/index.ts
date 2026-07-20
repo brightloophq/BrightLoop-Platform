@@ -73,3 +73,27 @@ export interface ReasoningEngine {
 }
 
 export { reasoningStageSchema };
+
+/* ---- Sprint 6 · AI Reasoning Orchestrator (extends the skeleton above) ------
+ * The deterministic orchestration layer: job model + state machine, canonical
+ * stage specs, grounding guards, provider-routing integration, retry/fallback,
+ * multi-pass consensus, result provenance, and pure event constructors. No live
+ * model execution. `stages.ts` re-exports `reasoningStageSchema` (already exported
+ * above), so export it explicitly here to avoid an ambiguous duplicate re-export. */
+export * from "./job.js";
+export {
+  REASONING_OUTPUT_KINDS,
+  REASONING_STAGE_SPECS,
+  stageSpec,
+  preconditionsMet,
+  completionMet,
+  outputAllowed,
+  type ReasoningOutputKind,
+  type StageSpec,
+} from "./stages.js";
+export * from "./grounding.js";
+export * from "./routing-integration.js";
+export * from "./retry.js";
+export * from "./multipass.js";
+export * from "./provenance.js";
+export * as reasoningEvents from "./events.js";
