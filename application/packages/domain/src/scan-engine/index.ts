@@ -31,5 +31,8 @@ export * from "./pipeline-run/index.js";
 /* ---- recommendation engine & decision science (Sprint 9) ---- */
 export * from "./decision-science/index.js";
 
+/* ---- competitor intelligence framework (Sprint 10) ---- */
+export * from "./competitor-intelligence/index.js";
+
 /* ---- provider registry + cost-aware routing (Sprint 2) ---- */
 export * from "./routing/index.js";
