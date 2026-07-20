@@ -28,5 +28,8 @@ export * from "./execution/index.js";
 /* ---- end-to-end Business Intelligence pipeline (Sprint 8) ---- */
 export * from "./pipeline-run/index.js";
 
+/* ---- recommendation engine & decision science (Sprint 9) ---- */
+export * from "./decision-science/index.js";
+
 /* ---- provider registry + cost-aware routing (Sprint 2) ---- */
 export * from "./routing/index.js";
