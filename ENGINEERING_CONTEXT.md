@@ -3,12 +3,12 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Phase A · Sprint 8 (End-to-End
-> Business Intelligence Pipeline)**.
+> convention that changed). Last updated: after **Phase A · Sprint 9 (Recommendation
+> Engine & Decision Science)**.
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
 > (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
-> Engine** (the async scan/reasoning backend), built as **Phase A · Sprints 1–8**,
+> Engine** (the async scan/reasoning backend), built as **Phase A · Sprints 1–9**,
 > tracked in §13. Sprint numbers are per-track — "Sprint 5" means Signals in track A
 > and Discovery/Crawl in track B; always read them with their track.
 
@@ -125,8 +125,8 @@ and is on `main`.)
 
 **A separate track — the canonical UI migration and the Business Intelligence
 Engine — has since landed on `main`:** Phase 0 (PR #8), Phase 1 core surfaces
-(PRs #9, #12), and **Phase A engine Sprints 1–6 (PRs #13–#18)**. These are detailed
-in §13; the merge log is §11.
+(PRs #9, #12), and **Phase A engine Sprints 1–9 (PRs #13–#18, #20, #21, #23)**.
+These are detailed in §13; the merge log is §11.
 
 ---
 
@@ -289,7 +289,8 @@ Shape to copy for the next transformation module:
     Evidence Engine (#15, `3f30ba9`), Sprint 4 Intelligence Graph (#16, `932d5e2`),
     Sprint 5 Discovery/Crawl orchestration (#17, `a7167e4`), Sprint 6 AI Reasoning
     Orchestrator (#18, `dd4b3aa`), Sprint 7 AI Provider Execution Layer (#20, `c615f76`),
-    Sprint 8 End-to-End Business Intelligence Pipeline (#21, `05e1b0a`).
+    Sprint 8 End-to-End Business Intelligence Pipeline (#21, `05e1b0a`), Sprint 9
+    Recommendation Engine & Decision Science (#23, `331ac37`).
 - **Still open:** PR #6 (Insights canonical rebuild — pending, see §13); PR #5 (a
   Sprint 5 docs-only record) is **superseded by this update** and can be closed.
 - **Note on the auto-mode merge classifier:** in this environment `gh pr merge` is
@@ -313,7 +314,7 @@ AI-native case file); reconcile to that PDF, don't resurrect the old build (§13
 Subsequent A stages: Recommendations → Approvals (gate already enforced) → Moves →
 Execution → Measurement → Learning.
 
-**Track B — Business Intelligence Engine (Phase A).** Sprints 1–8 are complete and
+**Track B — Business Intelligence Engine (Phase A).** Sprints 1–9 are complete and
 merged (§13). The Phase A roadmap:
 
 - Sprint 1 ✅ Engine Skeleton
@@ -324,7 +325,8 @@ merged (§13). The Phase A roadmap:
 - Sprint 6 ✅ AI Reasoning Orchestrator
 - Sprint 7 ✅ AI Provider Execution Layer
 - Sprint 8 ✅ End-to-End Business Intelligence Pipeline
-- Sprint 9 ⏭ **Not yet scoped** — see the deferred layers below
+- Sprint 9 ✅ Recommendation Engine & Decision Science
+- Sprint 10 ⏭ **Not yet scoped** — see the deferred layers below
 
 **The engine is now wired end to end, but entirely as deterministic contracts +
 pure logic.** Nothing in Phase A performs real I/O: there is still no live model
@@ -332,7 +334,7 @@ call, no production provider SDK, no crawler runtime, no browser automation, no
 background worker, and no persistence — the pipeline runs on a deterministic
 in-memory provider adapter and a discovery/evidence fixture.
 
-**Deferred layers (candidate Sprint 9+ scope, in no fixed order):**
+**Deferred layers (candidate Sprint 10+ scope, in no fixed order):**
 1. **Runtime + persistence** — scan/pipeline-run persistence, the job queue and
    workers behind `ScanJobQueue`, and resumable runs backed by the DB (additive
    migrations on the existing RLS/pgTAP/generated-type patterns).
@@ -340,9 +342,12 @@ in-memory provider adapter and a discovery/evidence fixture.
    `ReasoningProviderAdapter` seam, replacing the in-memory test adapter.
 3. **Crawler + discovery runtime** — real fetching behind the Sprint-5 contracts,
    with the SSRF/robots guards already specified.
-4. **Recommendation mathematics + pricing** — the ROI/risk/priority model and the
-   pricing rules both explicitly deferred by Sprint 8.
-5. **Report surface** — the internal intelligence report is a data contract only;
+4. **Pricing + proposal generation** — Sprint 9 delivered the recommendation
+   *mathematics* (scoring, EV, priority, portfolio); **service pricing and proposal
+   assembly remain deferred**, and `effort`/budget stay abstract units until a cost
+   model exists. Financial EV and ROI are reported unavailable rather than estimated.
+5. **Report surface** — the internal intelligence report and DecisionBrief are data
+   contracts only;
    rendering/export is unbuilt.
 
 Whichever is chosen, the pure contracts stay authoritative and the layers are
@@ -403,12 +408,13 @@ generated-type/repository/domain-service/capability patterns. Routes:
   Console / Business Scan / Activation. Presentation only — the primitives (Badge
   neutral-pill, `SystemMap`, tokens) were already canonical from Phase 0.
 
-### Business Intelligence Engine — Phase A build (Sprints 1–8, all merged)
+### Business Intelligence Engine — Phase A build (Sprints 1–9, all merged)
 
 The Business Intelligence Scan/Reasoning backend is an **asynchronous, provider-
 pluggable** engine. **Phase A built it out as deterministic CONTRACTS + pure logic
-across eight sprints (PRs #13–#18, #20, #21)**, ending with Sprint 8 wiring every
-layer into one end-to-end pipeline. What still does **not** exist: any crawler
+across nine sprints (PRs #13–#18, #20, #21, #23)** — Sprint 8 wired every layer into
+one end-to-end pipeline, and Sprint 9 added the decision-science layer that scores
+and ranks its output. What still does **not** exist: any crawler
 runtime, live LLM/model call, benchmark API call, background worker, production
 provider SDK, persistence, or billing — every module takes a supplied `now` and is
 unit-testable without I/O (the pipeline runs on a deterministic in-memory test
@@ -432,7 +438,8 @@ subsystem specs. See `docs/design/scan-engine-architecture.md`,
 | **5** | #17 | `discovery.ts` | `discovery/*`, `crawler/*` | Discovery + Crawl orchestration contracts: plan/resolve, robots + SSRF security (pure regex URL parser — the domain package is **Node-free**), session/state machine (namespaced `discoveryStateMachine`). |
 | **6** | #18 | `reasoning.ts` | `reasoning/*` | **AI Reasoning Orchestrator**: job model + state machine, 6 stage specs, 10 grounding/hallucination guards, routing integration, retry/fallback, multi-pass consensus, result provenance, `reasoning.*` events. No live model execution; no hidden chain-of-thought. |
 | **7** | #20 | `execution.ts` | `execution/*` | **AI Provider Execution Layer** (merge `c615f76`): execution request/response contracts, the provider adapter boundary (opaque ids, capability/health/token-estimate/execute), structured-output validation with grounding enforcement (invalid output never promoted), retry + ordered fallback, usage + cost accounting, cancellation + timeout + deadline, `provider.*` execution events, and a deterministic in-memory test adapter (test only). 28 new tests. No vendor SDK; no hidden chain-of-thought. |
-| **8** | #21 | `pipeline.ts` | `pipeline-run/*` | **End-to-End BI Pipeline** (this update, merge `05e1b0a`): the run model (14 statuses) + 13 orchestration stages with a hard artifact-dependency gate; artifact registry with deterministic FNV-1a checksums + lineage; checkpoint / resume / downstream invalidation; 11 structured failure kinds (no silent fallthrough); scan → stage → reasoning-job budget propagation; computed finding synthesis (validated claims only); evidence-linked recommendation candidates (**ranking math + pricing deferred**); the Internal Intelligence Report contract; `pipeline.*` events; and the staged runner. 34 new tests. Purely additive (+1993/−0). |
+| **8** | #21 | `pipeline.ts` | `pipeline-run/*` | **End-to-End BI Pipeline** (merge `05e1b0a`): the run model (14 statuses) + 13 orchestration stages with a hard artifact-dependency gate; artifact registry with deterministic FNV-1a checksums + lineage; checkpoint / resume / downstream invalidation; 11 structured failure kinds (no silent fallthrough); scan → stage → reasoning-job budget propagation; computed finding synthesis (validated claims only); evidence-linked recommendation candidates (**ranking math + pricing deferred**); the Internal Intelligence Report contract; `pipeline.*` events; and the staged runner. 34 new tests. Purely additive (+1993/−0). |
+| **9** | #23 | `recommendation.ts` | `decision-science/*` | **Recommendation Engine & Decision Science** (this update, merge `331ac37`, AIS-003): the canonical `EngineRecommendation` entity; 12 normalized scoring factors each declaring its missing-data treatment; risk-adjusted expected value (`EV = p·I − (1−p)·L`, confidence- and time-adjusted; **ROI only as a band, withheld when cost is unknown — never fabricated**); the AIS-003 priority formula `π = C·(Σw·x)·U/(E+ε)` with penalties, weight redistribution for unavailable criteria, and a critical-risk floor (withheld for inferred-only evidence); a recommendation-specific dependency DAG; deterministic 7-key ranking with a stable id tie-break; greedy-knapsack portfolio selection; six scenarios; ±δ sensitivity (no Monte Carlo); the data-only `DecisionBrief`; and a pipeline stage writing **new** artifacts with lineage preserved. 50 new tests (incl. the AIS-003 §08 worked example). |
 
 **Domain-package constraint (learned in Sprints 5–6):** `@brightloop/domain` is
 **Node-free** (no `@types/node`) — no `node:*` imports and no `URL` global; use pure
