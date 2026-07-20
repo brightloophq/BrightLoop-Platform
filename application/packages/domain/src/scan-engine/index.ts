@@ -37,5 +37,8 @@ export * from "./competitor-intelligence/index.js";
 /* ---- proposal intelligence engine (Sprint 11) ---- */
 export * from "./proposal-intelligence/index.js";
 
+/* ---- report & narrative engine (Sprint 12) ---- */
+export * from "./narrative/index.js";
+
 /* ---- provider registry + cost-aware routing (Sprint 2) ---- */
 export * from "./routing/index.js";
