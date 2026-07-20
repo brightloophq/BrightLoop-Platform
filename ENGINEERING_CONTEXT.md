@@ -3,7 +3,14 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Sprint 5 (Signals)**.
+> convention that changed). Last updated: after **Phase A · Sprint 6 (AI Reasoning
+> Orchestrator)**.
+>
+> **Two work tracks run in parallel.** (A) The **transformation-cycle product**
+> (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
+> Engine** (the async scan/reasoning backend), built as **Phase A · Sprints 1–6**,
+> tracked in §13. Sprint numbers are per-track — "Sprint 5" means Signals in track A
+> and Discovery/Crawl in track B; always read them with their track.
 
 ---
 
@@ -110,11 +117,16 @@ there is **one** admin shell (`apps/web/src/app/admin/layout.tsx` +
 | **3** | **Live DB validation harness** — CI `db-verify` job (Supabase CLI + Docker): migrate → pgTAP → RLS → adapter integration tests → generated-type drift check; local `pnpm --filter @brightloop/db db:verify`. Fixed a systemic grant gap (migrations 0028/0029 grant API roles) and regenerated types. |
 | **4** | **Dashboard foundation + GSAP motion system** — motion layer in `@brightloop/ui/motion`, typed dashboard read model + adapter, refined `/admin` shell (premium sidebar + mobile drawer), dashboard page, transformation section placeholders. |
 | **4.1** | **Dashboard refinement + shared primitives** — centralized motion **preset system**, "operational canvas" (3 zones: Executive Overview → Transformation Loop → Operational Feed), and reusable primitives: `SectionHeader`, `OperationalPanel`, `MetricCard`, `PipelineNode`, `AttentionRow`, `SkeletonBlock`. |
-| **5** | **Signals module** — first end-to-end vertical slice (list/create/detail, lifecycle, audit, dashboard reflection). See §10. *Implemented on `sprint/05-signals`; open as PR #4 — **not yet merged to `main`.*** |
+| **5** | **Signals module** — first end-to-end vertical slice (list/create/detail, lifecycle, audit, dashboard reflection). See §10. **Merged to `main` via PR #4 (merge commit `bd20276`, 2026-07-18).** |
 
 (Prior product work — reputation CMS, leads/clients, delivery, sales, funnel,
 conversations, hardening, Auxion rebrand — predates these transformation sprints
 and is on `main`.)
+
+**A separate track — the canonical UI migration and the Business Intelligence
+Engine — has since landed on `main`:** Phase 0 (PR #8), Phase 1 core surfaces
+(PRs #9, #12), and **Phase A engine Sprints 1–6 (PRs #13–#18)**. These are detailed
+in §13; the merge log is §11.
 
 ---
 
@@ -267,27 +279,49 @@ Shape to copy for the next transformation module:
   Preview deploys: **Vercel** + **Netlify** on each PR.
 - **Merge**: non-fast-forward **merge commit** (`gh pr merge <n> --merge`), matching
   Sprints 3–4.1. After merge: sync `main`, delete local + remote branch, prune.
-- Merged to `main`: Sprint 3 (#1), Sprint 4 (#2), Sprint 4.1 (#3). **Sprint 5 is
-  implemented on `sprint/05-signals` and open as PR #4 (CI green) — not yet merged.**
+- **Merge log (chronological, all on `main`):**
+  - Transformation track: Sprint 3 (#1), Sprint 4 (#2), Sprint 4.1 (#3),
+    **Sprint 5 Signals (#4, `bd20276`)**.
+  - Canonical UI + core surfaces: Phase 0 design-system (#8, `7460efa`),
+    Phase 1A/B/C core surfaces (#9, `43e0865`), Phase 1 visual-fidelity (#12, `6453bd4`).
+  - **Business Intelligence Engine — Phase A:** Sprint 1 engine skeleton (#13,
+    `8c79426`), Sprint 2 provider registry + routing (#14, `38d4c9f`), Sprint 3
+    Evidence Engine (#15, `3f30ba9`), Sprint 4 Intelligence Graph (#16, `932d5e2`),
+    Sprint 5 Discovery/Crawl orchestration (#17, `a7167e4`), Sprint 6 AI Reasoning
+    Orchestrator (#18, `dd4b3aa`).
+- **Still open:** PR #6 (Insights canonical rebuild — pending, see §13); PR #5 (a
+  Sprint 5 docs-only record) is **superseded by this update** and can be closed.
+- **Note on the auto-mode merge classifier:** in this environment `gh pr merge` is
+  sometimes blocked by the permission classifier; when that happens the user merges
+  from the PR page (the code + CI are already green).
 
 ---
 
-## 12. Next planned sprint — Sprint 6: Insights
+## 12. Current state & what's next (both tracks)
 
-**Sprint 6 — Insights module** — the next stage of the transformation cycle
-(Signal → Insight).
-Build it as a vertical slice mirroring Signals (§10): reuse `TransformationService`
-(`createInsight` / `transitionInsight`; machine `insight`:
-generated → endorsed / dismissed), add a typed insights read adapter, replace the
-`/admin/insights` placeholder with list/create/detail routes, and reuse the shared
-operational primitives + motion presets. An Insight derives from a Signal + Evidence,
-so the create flow links to an existing Signal; keep the dashboard read model
-authoritative and reflect changes via `revalidatePath`. No schema change is expected
-(the `insights` table + machine already exist from Sprint 1) — verify against the
-canonical model first, exactly as Sprint 5 did.
+**Track A — transformation-cycle product.** Signals (§10) is the one complete
+vertical slice. **Insights** is the next stage (Signal → Insight): build it mirroring
+Signals — reuse `TransformationService` (`createInsight` / `transitionInsight`;
+machine `insight`: generated → endorsed / dismissed), a typed insights read adapter,
+list/create/detail routes over the `/admin/insights` placeholder, shared operational
+primitives + motion presets; an Insight links to an existing Signal + Evidence; no
+schema change expected (the `insights` table + machine exist from track-A Sprint 1) —
+verify against the canonical model first. **Caveat:** PR #6 opened an early Insights
+build but is held for a **canonical rebuild against `10-Insights.pdf`** (a richer
+AI-native case file); reconcile to that PDF, don't resurrect the old build (§13).
+Subsequent A stages: Recommendations → Approvals (gate already enforced) → Moves →
+Execution → Measurement → Learning.
 
-Subsequent stages follow the same pattern: Recommendations → Approvals (human
-approval gate already enforced) → Moves → Execution → Measurement → Learning.
+**Track B — Business Intelligence Engine (Phase A).** Sprints 1–6 are complete and
+merged (§13): engine skeleton, provider registry + cost-aware routing, Evidence
+Engine, Intelligence Graph, Discovery/Crawl orchestration, and the AI Reasoning
+Orchestrator. **Everything so far is deterministic CONTRACTS + pure logic — there is
+still no live model execution, crawler runtime, background worker, or provider SDK.**
+The natural next step (Phase A · Sprint 7) is the **runtime/execution layer** that the
+reasoning orchestrator deliberately deferred: provider adapters implementing the
+`AiOrchestrator` seam, actual model invocation behind the routing decision, the job
+queue/worker, and persistence — added on the existing migration/RLS/pgTAP/generated-
+type/repository/domain-service patterns, keeping the pure contracts authoritative.
 
 ---
 
@@ -344,15 +378,41 @@ generated-type/repository/domain-service/capability patterns. Routes:
   Console / Business Scan / Activation. Presentation only — the primitives (Badge
   neutral-pill, `SystemMap`, tokens) were already canonical from Phase 0.
 
-### Business Scan engine — roadmap foundation (contracts only)
+### Business Intelligence Engine — Phase A build (Sprints 1–6, all merged)
 
-The future Business Intelligence Scan is an **asynchronous, provider-pluggable**
-engine. Only the CONTRACTS exist today — no crawler, LLM call, benchmark API,
-proposal generation, or billing is implemented. Canonical spec: **PDF 26**
-(`docs/design/source/26-Business-Intelligence-Scan.pdf`) — **3 surfaces**
-(public scan / internal intelligence / client full scan), **15 screens**, **5
-roles**, **9 scan stages**. See `docs/design/scan-engine-architecture.md` and the
-phased roadmap `docs/design/scan-engine-roadmap.md`.
+The Business Intelligence Scan/Reasoning backend is an **asynchronous, provider-
+pluggable** engine. **Phase A built it out as deterministic CONTRACTS + pure logic
+across six sprints (PRs #13–#18).** What still does **not** exist: any crawler
+runtime, live LLM/model call, benchmark API call, background worker, provider SDK,
+or billing — every module takes a supplied `now` and is unit-testable without I/O.
+Canonical specs: **PDF 26** (`docs/design/source/26-Business-Intelligence-Scan.pdf`
+— surface model: 3 surfaces, 15 screens, 5 roles, 9 scan stages) and **PDF 27**
+(`27-Business-Scan-Engine.pdf` — the engine's **8 layers / 13-stage pipeline / 6
+reasoning stages / 4 evidence states / 6-factor confidence**), plus the AIS-001..006
+subsystem specs. See `docs/design/scan-engine-architecture.md`,
+`engine-27-architecture.md`, and `scan-engine-roadmap.md`.
+
+**Phase A sprints (each = a `@brightloop/schema` contract module + a pure
+`@brightloop/domain/scan-engine/*` logic module + deterministic tests):**
+
+| Sprint | PR | Schema | Domain | What it adds |
+|---|---|---|---|---|
+| **1** | #13 | `engine.ts` | `scan-engine/*` skeleton | PDF-27 engine skeleton: 13-stage pipeline, 6 reasoning stages, evidence states, Index dimensions, the `ReasoningEngine`/confidence seam (geometric-mean confidence — any near-zero factor caps it). |
+| **2** | #14 | `provider-registry.ts` | `routing/*` | Descriptor-based provider registry, health model, circuit breaker, cost model, and the pure cost-aware `route()` policy (capability/context/region/health/latency/budget checks → deterministic fallback chain + structured rationale). No vendor named. |
+| **3** | #15 | `evidence.ts` | `evidence/*` | Canonical Evidence Engine: `EngineEvidenceItem` (freshness/reliability/provenance/confidence/hash), bundle, coverage, conflict detection, 6-factor confidence, content-hash checksums. |
+| **4** | #16 | `graph.ts` | `graph/*` | Business Intelligence Graph: nodes/edges, assembly from evidence, dedupe, traversal, filters, snapshot + `graphChecksum`, and graph events. |
+| **5** | #17 | `discovery.ts` | `discovery/*`, `crawler/*` | Discovery + Crawl orchestration contracts: plan/resolve, robots + SSRF security (pure regex URL parser — the domain package is **Node-free**), session/state machine (namespaced `discoveryStateMachine`). |
+| **6** | #18 | `reasoning.ts` | `reasoning/*` | **AI Reasoning Orchestrator** (this update): job model + state machine, 6 stage specs, 10 grounding/hallucination guards, routing integration, retry/fallback, multi-pass consensus, result provenance, `reasoning.*` events. No live model execution; no hidden chain-of-thought. |
+
+**Domain-package constraint (learned in Sprints 5–6):** `@brightloop/domain` is
+**Node-free** (no `@types/node`) — no `node:*` imports and no `URL` global; use pure
+regex parsers and `hashContent` (FNV-1a over canonical JSON) for checksums. Keep pure
+functions deterministic by taking `now` as a parameter (no clock). When a new export
+collides with an existing barrel symbol, rename with a prefix (e.g.
+`EngineEvidenceItem`, `BuildResultProvenanceInput`) or namespace the barrel
+(`export * as reasoningEvents`).
+
+The original PDF-26 surface foundation (still current, underneath the Phase A build):
 
 - **Contracts** (`@brightloop/schema/scan-engine`): `ScanRequest`, `ScanJob`
   (+`ScanJobStatus`/`ScanStage` — the **9 canonical stages** + `lastCompletedStage`
