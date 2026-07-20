@@ -446,7 +446,12 @@ grant select, insert, update, delete on public.competitor_snapshots         to a
 grant select, insert, update, delete on public.proposal_versions            to authenticated;
 grant select, insert, update, delete on public.narrative_versions           to authenticated;
 grant select, insert, update, delete on public.job_queue                    to authenticated;
--- append-only: no UPDATE/DELETE privilege is granted on the event log at all
+-- Append-only event log. Migration 0029 grants default privileges to FUTURE
+-- tables, so a narrow grant alone is not the effective posture — UPDATE/DELETE
+-- are explicitly REVOKED below. Three independent defences apply:
+--   1. no UPDATE/DELETE privilege (the revoke below),
+--   2. no UPDATE/DELETE row policy (so RLS matches zero rows), and
+--   3. the bl_runtime_events_immutable() trigger (fires even when RLS is bypassed).
 grant select, insert                 on public.runtime_events               to authenticated;
 
 grant all on public.intelligence_runs            to service_role;
@@ -462,3 +467,7 @@ grant all on public.proposal_versions            to service_role;
 grant all on public.narrative_versions           to service_role;
 grant all on public.job_queue                    to service_role;
 grant select, insert on public.runtime_events    to service_role;
+
+-- Explicitly strip the UPDATE/DELETE inherited from migration 0029's default
+-- privileges. The event log is append-only for EVERY role, service_role included.
+revoke update, delete on public.runtime_events from authenticated, service_role;

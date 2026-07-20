@@ -127,15 +127,23 @@ select lives_ok(
      values ('ev_1', 'pipeline.created', 'run_1', 'run_1', 'run', 'cli_R1', 'scan_1', 1, 'usr_rt_owner') $$,
   'internal owner can APPEND a runtime event');
 
+-- Append-only, first line of defence: UPDATE/DELETE privileges are REVOKED, so an
+-- authenticated role is denied at the table level (42501) before RLS or the
+-- trigger is ever reached.
 select throws_ok(
   $$ update public.runtime_events set event_type = 'tampered' where id = 'ev_1' $$,
-  'runtime_events is append-only',
-  'UPDATE on runtime_events is blocked');
+  '42501', null,
+  'UPDATE on runtime_events is denied to authenticated (privilege revoked)');
 
 select throws_ok(
   $$ delete from public.runtime_events where id = 'ev_1' $$,
-  'runtime_events is append-only',
-  'DELETE on runtime_events is blocked');
+  '42501', null,
+  'DELETE on runtime_events is denied to authenticated (privilege revoked)');
+
+select is(
+  (select event_type from public.runtime_events where id = 'ev_1'),
+  'pipeline.created',
+  'the appended event is unchanged after the tamper attempts');
 
 select throws_ok(
   $$ insert into public.runtime_events (id, event_type, aggregate_id, aggregate_type, client_id, sequence)
@@ -144,6 +152,18 @@ select throws_ok(
   'duplicate (aggregate_type, aggregate_id, sequence) is rejected — deterministic ordering');
 
 reset role;
+
+-- ---- append-only, second line of defence: the trigger fires when RLS is -----
+-- bypassed (seeding superuser / service_role paths).
+select throws_ok(
+  $$ update public.runtime_events set event_type = 'tampered' where id = 'ev_1' $$,
+  'runtime_events is append-only',
+  'UPDATE on runtime_events raises via the immutability trigger (RLS bypassed)');
+
+select throws_ok(
+  $$ delete from public.runtime_events where id = 'ev_1' $$,
+  'runtime_events is append-only',
+  'DELETE on runtime_events raises via the immutability trigger (RLS bypassed)');
 
 -- ---- client role: denied read AND write across every runtime table ----------
 select set_config('request.jwt.claims', '{"sub":"usr_rt_client","app_metadata":{"role":"client_admin","client_id":"cli_R1"}}', true);
@@ -182,16 +202,21 @@ select throws_ok(
   '42501', null,
   'client role cannot APPEND a runtime event');
 
--- a client role cannot claim a lease on internal work (0 rows updated, no leak)
-select is(
-  (with claimed as (
-     update public.job_queue set lease_owner = 'rogue', lease_status = 'leased', status = 'leased'
-     where status = 'queued' returning 1)
-   select count(*)::int from claimed),
-  0,
-  'client role cannot LEASE a queued job');
+-- a client role cannot claim a lease on internal work: the statement matches no
+-- rows under RLS. Verified after `reset role` so the check is not itself filtered.
+update public.job_queue set lease_owner = 'rogue', lease_status = 'leased', status = 'leased'
+  where status = 'queued';
 
 reset role;
+
+select is(
+  (select count(*)::int from public.job_queue where lease_owner = 'rogue'),
+  0,
+  'client role cannot LEASE a queued job (queue lease isolation)');
+select is(
+  (select status::text from public.job_queue where id = 'q_1'),
+  'queued',
+  'the queued job is untouched after a client lease attempt');
 
 -- ---- cross-tenant: an internal role is not scoped, but a client of org B is --
 select set_config('request.jwt.claims', '{"sub":"usr_rt_client","app_metadata":{"role":"client_member","client_id":"cli_R2"}}', true);
