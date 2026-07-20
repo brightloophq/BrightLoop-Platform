@@ -34,5 +34,8 @@ export * from "./decision-science/index.js";
 /* ---- competitor intelligence framework (Sprint 10) ---- */
 export * from "./competitor-intelligence/index.js";
 
+/* ---- proposal intelligence engine (Sprint 11) ---- */
+export * from "./proposal-intelligence/index.js";
+
 /* ---- provider registry + cost-aware routing (Sprint 2) ---- */
 export * from "./routing/index.js";
