@@ -22,6 +22,7 @@ export * from "./recommendation.js";
 export * from "./competitor.js";
 export * from "./proposal.js";
 export * from "./narrative.js";
+export * from "./runtime.js";
 export * from "./reputation.js";
 // `catalog` re-exports the Discipline type that originates in `reputation`;
 // export the rest explicitly to avoid an ambiguous duplicate re-export.
