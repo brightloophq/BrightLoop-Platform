@@ -3,12 +3,12 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Phase A · Sprint 6 (AI Reasoning
-> Orchestrator)**.
+> convention that changed). Last updated: after **Phase A · Sprint 7 (AI Provider
+> Execution Layer)**.
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
 > (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
-> Engine** (the async scan/reasoning backend), built as **Phase A · Sprints 1–6**,
+> Engine** (the async scan/reasoning backend), built as **Phase A · Sprints 1–7**,
 > tracked in §13. Sprint numbers are per-track — "Sprint 5" means Signals in track A
 > and Discovery/Crawl in track B; always read them with their track.
 
@@ -288,7 +288,7 @@ Shape to copy for the next transformation module:
     `8c79426`), Sprint 2 provider registry + routing (#14, `38d4c9f`), Sprint 3
     Evidence Engine (#15, `3f30ba9`), Sprint 4 Intelligence Graph (#16, `932d5e2`),
     Sprint 5 Discovery/Crawl orchestration (#17, `a7167e4`), Sprint 6 AI Reasoning
-    Orchestrator (#18, `dd4b3aa`).
+    Orchestrator (#18, `dd4b3aa`), Sprint 7 AI Provider Execution Layer (#20, `c615f76`).
 - **Still open:** PR #6 (Insights canonical rebuild — pending, see §13); PR #5 (a
   Sprint 5 docs-only record) is **superseded by this update** and can be closed.
 - **Note on the auto-mode merge classifier:** in this environment `gh pr merge` is
@@ -312,16 +312,27 @@ AI-native case file); reconcile to that PDF, don't resurrect the old build (§13
 Subsequent A stages: Recommendations → Approvals (gate already enforced) → Moves →
 Execution → Measurement → Learning.
 
-**Track B — Business Intelligence Engine (Phase A).** Sprints 1–6 are complete and
-merged (§13): engine skeleton, provider registry + cost-aware routing, Evidence
-Engine, Intelligence Graph, Discovery/Crawl orchestration, and the AI Reasoning
-Orchestrator. **Everything so far is deterministic CONTRACTS + pure logic — there is
-still no live model execution, crawler runtime, background worker, or provider SDK.**
-The natural next step (Phase A · Sprint 7) is the **runtime/execution layer** that the
-reasoning orchestrator deliberately deferred: provider adapters implementing the
-`AiOrchestrator` seam, actual model invocation behind the routing decision, the job
-queue/worker, and persistence — added on the existing migration/RLS/pgTAP/generated-
-type/repository/domain-service patterns, keeping the pure contracts authoritative.
+**Track B — Business Intelligence Engine (Phase A).** Sprints 1–7 are complete and
+merged (§13). The Phase A roadmap:
+
+- Sprint 1 ✅ Engine Skeleton
+- Sprint 2 ✅ Provider Registry & Routing
+- Sprint 3 ✅ Evidence Engine & Confidence Model
+- Sprint 4 ✅ Business Intelligence Graph
+- Sprint 5 ✅ Discovery & Crawl Orchestration
+- Sprint 6 ✅ AI Reasoning Orchestrator
+- Sprint 7 ✅ AI Provider Execution Layer
+- Sprint 8 ⏭ End-to-End Business Intelligence Pipeline
+
+**Everything so far is deterministic contracts + pure logic (Sprints 1–6) plus a
+provider-neutral execution framework driven by a deterministic in-memory test
+adapter (Sprint 7) — there is still no live model call, crawler runtime, background
+worker, production provider SDK, or persistence.** The next step (Phase A · Sprint 8)
+is the **end-to-end Business Intelligence pipeline** that wires the built layers
+together — discovery → crawl → evidence → graph → reasoning → execution — behind the
+13-stage `SCAN_PIPELINE`, still deterministic and still without a live vendor SDK
+until a later runtime phase, added on the existing migration/RLS/pgTAP/generated-
+type/repository/domain-service patterns with the pure contracts authoritative.
 
 ---
 
@@ -378,13 +389,14 @@ generated-type/repository/domain-service/capability patterns. Routes:
   Console / Business Scan / Activation. Presentation only — the primitives (Badge
   neutral-pill, `SystemMap`, tokens) were already canonical from Phase 0.
 
-### Business Intelligence Engine — Phase A build (Sprints 1–6, all merged)
+### Business Intelligence Engine — Phase A build (Sprints 1–7, all merged)
 
 The Business Intelligence Scan/Reasoning backend is an **asynchronous, provider-
 pluggable** engine. **Phase A built it out as deterministic CONTRACTS + pure logic
-across six sprints (PRs #13–#18).** What still does **not** exist: any crawler
-runtime, live LLM/model call, benchmark API call, background worker, provider SDK,
-or billing — every module takes a supplied `now` and is unit-testable without I/O.
+across seven sprints (PRs #13–#18, #20).** What still does **not** exist: any crawler
+runtime, live LLM/model call, benchmark API call, background worker, production
+provider SDK, or billing — every module takes a supplied `now` and is unit-testable
+without I/O (Sprint 7's execution layer runs on a deterministic in-memory test adapter).
 Canonical specs: **PDF 26** (`docs/design/source/26-Business-Intelligence-Scan.pdf`
 — surface model: 3 surfaces, 15 screens, 5 roles, 9 scan stages) and **PDF 27**
 (`27-Business-Scan-Engine.pdf` — the engine's **8 layers / 13-stage pipeline / 6
@@ -402,7 +414,8 @@ subsystem specs. See `docs/design/scan-engine-architecture.md`,
 | **3** | #15 | `evidence.ts` | `evidence/*` | Canonical Evidence Engine: `EngineEvidenceItem` (freshness/reliability/provenance/confidence/hash), bundle, coverage, conflict detection, 6-factor confidence, content-hash checksums. |
 | **4** | #16 | `graph.ts` | `graph/*` | Business Intelligence Graph: nodes/edges, assembly from evidence, dedupe, traversal, filters, snapshot + `graphChecksum`, and graph events. |
 | **5** | #17 | `discovery.ts` | `discovery/*`, `crawler/*` | Discovery + Crawl orchestration contracts: plan/resolve, robots + SSRF security (pure regex URL parser — the domain package is **Node-free**), session/state machine (namespaced `discoveryStateMachine`). |
-| **6** | #18 | `reasoning.ts` | `reasoning/*` | **AI Reasoning Orchestrator** (this update): job model + state machine, 6 stage specs, 10 grounding/hallucination guards, routing integration, retry/fallback, multi-pass consensus, result provenance, `reasoning.*` events. No live model execution; no hidden chain-of-thought. |
+| **6** | #18 | `reasoning.ts` | `reasoning/*` | **AI Reasoning Orchestrator**: job model + state machine, 6 stage specs, 10 grounding/hallucination guards, routing integration, retry/fallback, multi-pass consensus, result provenance, `reasoning.*` events. No live model execution; no hidden chain-of-thought. |
+| **7** | #20 | `execution.ts` | `execution/*` | **AI Provider Execution Layer** (this update, merge `c615f76`): execution request/response contracts, the provider adapter boundary (opaque ids, capability/health/token-estimate/execute), structured-output validation with grounding enforcement (invalid output never promoted), retry + ordered fallback, usage + cost accounting, cancellation + timeout + deadline, `provider.*` execution events, and a deterministic in-memory test adapter (test only). 28 new tests. No vendor SDK; no hidden chain-of-thought. |
 
 **Domain-package constraint (learned in Sprints 5–6):** `@brightloop/domain` is
 **Node-free** (no `@types/node`) — no `node:*` imports and no `URL` global; use pure
