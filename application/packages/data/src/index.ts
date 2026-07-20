@@ -40,6 +40,8 @@ export { SupabaseTransformationDashboardRepository } from "./transformation/dash
 export { SupabaseSignalsRepository } from "./transformation/signals.read.js";
 // Core surfaces (Phase 1B) — fully typed Business Scan / Domains / Findings adapter.
 export { SupabaseCoreSurfaceRepository } from "./core-surfaces/adapter.js";
+// Runtime persistence (Phase B) — fully typed runtime repository adapter.
+export { SupabaseRuntimeRepository } from "./runtime/adapter.js";
 export {
   PLACEHOLDER_PROJECTS,
   PLACEHOLDER_TESTIMONIALS,

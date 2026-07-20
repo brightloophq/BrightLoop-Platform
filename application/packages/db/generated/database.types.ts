@@ -3544,6 +3544,42 @@ export type Database = {
       bl_in_conversation: { Args: { conv_id: string }; Returns: boolean }
       bl_is_finance: { Args: never; Returns: boolean }
       bl_is_internal: { Args: never; Returns: boolean }
+      bl_lease_next_job: {
+        Args: {
+          p_client_id?: string
+          p_job_type?: string
+          p_lease_seconds: number
+          p_owner: string
+        }
+        Returns: {
+          attempt: number
+          available_at: string
+          client_id: string | null
+          created_at: string
+          id: string
+          idempotency_key: string
+          job_type: string
+          last_error: string | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          lease_status: Database["public"]["Enums"]["runtime_lease_status"]
+          max_attempts: number
+          payload: Json
+          payload_ref: string | null
+          priority: number
+          run_id: string | null
+          scan_id: string | null
+          stage: string | null
+          status: Database["public"]["Enums"]["runtime_queue_status"]
+          updated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "job_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       bl_rls_audit: {
         Args: never
         Returns: {
