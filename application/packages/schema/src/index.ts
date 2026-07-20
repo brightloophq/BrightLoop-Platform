@@ -17,6 +17,7 @@ export * from "./graph.js";
 export * from "./discovery.js";
 export * from "./reasoning.js";
 export * from "./execution.js";
+export * from "./pipeline.js";
 export * from "./reputation.js";
 // `catalog` re-exports the Discipline type that originates in `reputation`;
 // export the rest explicitly to avoid an ambiguous duplicate re-export.
