@@ -1,13 +1,19 @@
 /* =============================================================================
- * RuntimeRepository — the PORT for Phase B runtime persistence (Sprint 13B §1).
+ * Runtime persistence PORTS (Phase B · Sprint 13B §1).
+ *
+ * THIRTEEN aggregate-scoped interfaces, one per runtime aggregate, composed into
+ * a single `RuntimeRepository` facade. The split is the contract; the facade is a
+ * convenience so a service can depend on exactly the aggregates it touches
+ * (`StageRepository & CheckpointRepository`) rather than the whole surface.
  *
  * A thin, tenant-safe persistence boundary. It does NOT decide ids, statuses,
  * timestamps, attribution, or capability — that is the runtime SERVICE's job
  * (Sprint 13C). Mirrors the CoreSurfaceRepository / TransformationRepository
  * pattern: the adapter runs under the caller's RLS-scoped session.
  *
- * EVERY method returns a `RuntimeResult` — no raw database error crosses this
- * boundary, and replay / conflict / not-found / lease-loss are explicit.
+ * NO SQL CONCEPT CROSSES THIS BOUNDARY. Every method returns a `RuntimeResult` —
+ * no raw database error escapes, and replay / conflict / not-found / lease-loss
+ * are explicit domain outcomes rather than exceptions.
  *
  * IDEMPOTENCY CONTRACT (§4), uniform across every write:
  *   · same key + same canonical payload  → `replayed` with the existing record
@@ -77,58 +83,118 @@ export interface ListEventsQuery {
   limit?: number;
 }
 
-/* ---- the port --------------------------------------------------------------- */
-export interface RuntimeRepository {
-  /** Resolve `public.users.id` from an auth user id, for `created_by` attribution. */
-  resolveUserId(authUserId: string): Promise<RuntimeResult<string | null>>;
-
-  // ---- runs ----------------------------------------------------------------
+/* ---- 1 · runs ---------------------------------------------------------------- */
+export interface IntelligenceRunRepository {
   createRun(record: RuntimeRun): Promise<RuntimeResult<RuntimeRun>>;
   getRun(id: string): Promise<RuntimeResult<RuntimeRun>>;
   getRunByIdempotencyKey(key: string): Promise<RuntimeResult<RuntimeRun>>;
   updateRunStatus(id: string, status: RuntimeRunStatus, patch?: Partial<Pick<RuntimeRun, "currentStage" | "failedStage" | "startedAt" | "completedAt" | "failedAt">>): Promise<RuntimeResult<RuntimeRun>>;
   /** Idempotent: cancelling an already-cancelled run replays; a completed run is `terminal_state`. */
   cancelRun(id: string, at: string): Promise<RuntimeResult<RuntimeRun>>;
+}
 
-  // ---- stages --------------------------------------------------------------
+/* ---- 2 · stages -------------------------------------------------------------- */
+/** Stage transitions are APPEND-ONLY — a transition is never rewritten in place. */
+export interface StageRepository {
   appendStageTransition(record: RuntimeStage): Promise<RuntimeResult<RuntimeStage>>;
   getLatestStage(runId: string): Promise<RuntimeResult<RuntimeStage>>;
   listStages(runId: string): Promise<RuntimeResult<RuntimeStage[]>>;
+}
 
-  // ---- checkpoints ---------------------------------------------------------
+/* ---- 3 · checkpoints --------------------------------------------------------- */
+/**
+ * Resume metadata: completed stage, attempt, next stage, source checksums and the
+ * artifacts that stage produced. Historical checkpoints are NEVER overwritten —
+ * superseding one marks it invalid and retains it for audit.
+ */
+export interface CheckpointRepository {
   saveCheckpoint(record: RuntimeCheckpoint): Promise<RuntimeResult<RuntimeCheckpoint>>;
   getLatestValidCheckpoint(runId: string): Promise<RuntimeResult<RuntimeCheckpoint>>;
   /** Marks checkpoints invalid (retained for audit, never deleted). Returns the affected ids. */
   invalidateCheckpoints(runId: string, fromStage: string, reason: string): Promise<RuntimeResult<string[]>>;
+}
 
-  // ---- artifacts -----------------------------------------------------------
+/* ---- 4 · artifacts ----------------------------------------------------------- */
+/**
+ * Artifacts are IMMUTABLE. There is deliberately no update method: a change is a
+ * new row at `version + 1` carrying its own checksum, with `sourceArtifactIds`
+ * preserving lineage back to what produced it.
+ */
+export interface ArtifactRepository {
   saveArtifact(record: RuntimeArtifact): Promise<RuntimeResult<RuntimeArtifact>>;
   getArtifact(id: string): Promise<RuntimeResult<RuntimeArtifact>>;
   listArtifactsByKind(runId: string, kind: RuntimeArtifactKind): Promise<RuntimeResult<RuntimeArtifact[]>>;
+}
 
-  // ---- reasoning -----------------------------------------------------------
+/* ---- 5 · reasoning jobs ------------------------------------------------------- */
+export interface ReasoningJobRepository {
   createReasoningJob(record: RuntimeReasoningJob): Promise<RuntimeResult<RuntimeReasoningJob>>;
   getReasoningJob(id: string): Promise<RuntimeResult<RuntimeReasoningJob>>;
   updateReasoningJobStatus(id: string, status: RuntimeReasoningJobStatus, patch?: Partial<Pick<RuntimeReasoningJob, "attempt" | "startedAt" | "completedAt" | "failedAt" | "cancelledAt">>): Promise<RuntimeResult<RuntimeReasoningJob>>;
+}
 
-  // ---- provider attempts ---------------------------------------------------
+/* ---- 6 · provider attempts ---------------------------------------------------- */
+/**
+ * The per-attempt provider ledger: provider, attempt, latency, usage, cost,
+ * validation outcome, failure and finish reason.
+ *
+ * RAW MODEL OUTPUT IS NEVER STORED. `rawResponseRef` is a REFERENCE only — the
+ * record carries no completion text and no chain-of-thought.
+ */
+export interface ProviderAttemptRepository {
   recordProviderAttempt(record: RuntimeProviderAttempt): Promise<RuntimeResult<RuntimeProviderAttempt>>;
   listProviderAttempts(reasoningJobId: string): Promise<RuntimeResult<RuntimeProviderAttempt[]>>;
+}
 
-  // ---- derived records -----------------------------------------------------
+/* ---- 7 · findings ------------------------------------------------------------- */
+export interface FindingRepository {
   saveFinding(record: RuntimeFinding): Promise<RuntimeResult<RuntimeFinding>>;
   listFindings(runId: string): Promise<RuntimeResult<RuntimeFinding[]>>;
+}
+
+/* ---- 8 · recommendations ------------------------------------------------------ */
+export interface RecommendationRepository {
   saveRecommendation(record: RuntimeRecommendation): Promise<RuntimeResult<RuntimeRecommendation>>;
   listRecommendations(runId: string): Promise<RuntimeResult<RuntimeRecommendation[]>>;
+}
 
-  // ---- snapshots / versions ------------------------------------------------
+/* ---- 9 · competitor snapshots -------------------------------------------------- */
+export interface CompetitorSnapshotRepository {
   saveCompetitorSnapshot(record: RuntimeCompetitorSnapshot): Promise<RuntimeResult<RuntimeCompetitorSnapshot>>;
-  saveProposalVersion(record: RuntimeProposalVersion): Promise<RuntimeResult<RuntimeProposalVersion>>;
-  saveNarrativeVersion(record: RuntimeNarrativeVersion): Promise<RuntimeResult<RuntimeNarrativeVersion>>;
-  getLatestProposalVersion(runId: string): Promise<RuntimeResult<RuntimeProposalVersion>>;
-  getLatestNarrativeVersion(runId: string, audience: string): Promise<RuntimeResult<RuntimeNarrativeVersion>>;
+}
 
-  // ---- queue ---------------------------------------------------------------
+/* ---- 10 · proposal versions ---------------------------------------------------- */
+/** Versioned and immutable; `supersedesId` preserves the lineage chain. */
+export interface ProposalVersionRepository {
+  saveProposalVersion(record: RuntimeProposalVersion): Promise<RuntimeResult<RuntimeProposalVersion>>;
+  getLatestProposalVersion(runId: string): Promise<RuntimeResult<RuntimeProposalVersion>>;
+}
+
+/* ---- 11 · narrative versions --------------------------------------------------- */
+/** Versioned per audience and immutable; `supersedesId` preserves the lineage chain. */
+export interface NarrativeVersionRepository {
+  saveNarrativeVersion(record: RuntimeNarrativeVersion): Promise<RuntimeResult<RuntimeNarrativeVersion>>;
+  getLatestNarrativeVersion(runId: string, audience: string): Promise<RuntimeResult<RuntimeNarrativeVersion>>;
+}
+
+/* ---- 12 · runtime events (append-only) ------------------------------------------ */
+/**
+ * APPEND ONLY. There is deliberately no update and no delete method — the
+ * database enforces the same rule with revoked privileges, no UPDATE/DELETE
+ * policy, and an immutability trigger.
+ */
+export interface RuntimeEventRepository {
+  /** Allocates the next per-aggregate sequence atomically; a race returns `serialization_conflict`. */
+  appendRuntimeEvent(input: AppendEventInput): Promise<RuntimeResult<RuntimeEvent>>;
+  listRuntimeEvents(query: ListEventsQuery): Promise<RuntimeResult<RuntimeEvent[]>>;
+}
+
+/* ---- 13 · job queue ------------------------------------------------------------ */
+/**
+ * Postgres-backed queue — no Redis, no BullMQ, no hosted provider. Leasing is a
+ * single `FOR UPDATE SKIP LOCKED` statement (§5).
+ */
+export interface JobQueueRepository {
   enqueueJob(record: RuntimeQueueJob): Promise<RuntimeResult<RuntimeQueueJob>>;
   getJob(id: string): Promise<RuntimeResult<RuntimeQueueJob>>;
   /**
@@ -150,9 +216,31 @@ export interface RuntimeRepository {
   cancelJob(jobId: string): Promise<RuntimeResult<RuntimeQueueJob>>;
   /** Owner-only. Pushes `available_at` out for a retry. */
   rescheduleJob(input: RescheduleInput): Promise<RuntimeResult<RuntimeQueueJob>>;
+}
 
-  // ---- events (append-only) -------------------------------------------------
-  /** Allocates the next per-aggregate sequence atomically; a race returns `serialization_conflict`. */
-  appendRuntimeEvent(input: AppendEventInput): Promise<RuntimeResult<RuntimeEvent>>;
-  listRuntimeEvents(query: ListEventsQuery): Promise<RuntimeResult<RuntimeEvent[]>>;
+/* ---- the composed facade -------------------------------------------------------- */
+/**
+ * Every runtime aggregate behind one binding. A service should depend on the
+ * NARROWEST composition it needs — `IntelligenceRunRepository & StageRepository`
+ * for a stage advancer — and reserve this facade for wiring.
+ *
+ * `resolveUserId` sits here rather than on an aggregate: it is cross-cutting
+ * attribution support, not a runtime aggregate of its own.
+ */
+export interface RuntimeRepository
+  extends IntelligenceRunRepository,
+    StageRepository,
+    CheckpointRepository,
+    ArtifactRepository,
+    ReasoningJobRepository,
+    ProviderAttemptRepository,
+    FindingRepository,
+    RecommendationRepository,
+    CompetitorSnapshotRepository,
+    ProposalVersionRepository,
+    NarrativeVersionRepository,
+    RuntimeEventRepository,
+    JobQueueRepository {
+  /** Resolve `public.users.id` from an auth user id, for `created_by` attribution. */
+  resolveUserId(authUserId: string): Promise<RuntimeResult<string | null>>;
 }

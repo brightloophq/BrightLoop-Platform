@@ -240,6 +240,60 @@ describe.skipIf(!LIVE)("SupabaseRuntimeRepository (live DB)", () => {
     expect(attempts.ok && attempts.value[0]!.rawResponseRef).toBe("blob://ref");
   });
 
+  /* ---- derived records ------------------------------------------------------ */
+  it("persists findings and recommendations idempotently, scoped to their run", async () => {
+    const run = await seedRun();
+    const other = await seedRun();
+    const base = { clientId, envelope: { note: "n" }, sourceArtifactIds: [], createdBy: null, createdAt: nowIso() };
+
+    const finding = {
+      ...base, id: uid(), runId: run.id, scanId: run.scanId, domain: "digital_presence",
+      severity: "high", version: 1, checksum: "f1", idempotencyKey: `idem_${uid()}`,
+    };
+    expect(await repo.saveFinding(finding)).toMatchObject({ ok: true, code: "created" });
+    expect(await repo.saveFinding(finding)).toMatchObject({ ok: true, code: "replayed" });
+    // same idempotency key, different checksum → conflict, never a silent overwrite
+    expect(await repo.saveFinding({ ...finding, id: uid(), checksum: "f1_CHANGED" }))
+      .toMatchObject({ ok: false, code: "conflict" });
+    // a second finding on the SAME run, plus one on another run that must not leak in
+    await repo.saveFinding({ ...base, id: uid(), runId: run.id, scanId: run.scanId, domain: "operations", severity: "low", version: 1, checksum: "f2", idempotencyKey: `idem_${uid()}` });
+    await repo.saveFinding({ ...base, id: uid(), runId: other.id, scanId: other.scanId, domain: "operations", severity: "low", version: 1, checksum: "f3", idempotencyKey: `idem_${uid()}` });
+
+    const findings = await repo.listFindings(run.id);
+    expect(findings.ok && findings.value.length).toBe(2);
+    expect(findings.ok && findings.value.every((f) => f.runId === run.id)).toBe(true);
+    // the envelope survives the jsonb round trip intact
+    expect(findings.ok && findings.value.some((f) => f.envelope["note"] === "n")).toBe(true);
+
+    const rec = {
+      ...base, id: uid(), runId: run.id, scanId: run.scanId, tier: "quick_win",
+      priority: 80, version: 1, checksum: "r1", idempotencyKey: `idem_${uid()}`,
+    };
+    expect(await repo.saveRecommendation(rec)).toMatchObject({ ok: true, code: "created" });
+    expect(await repo.saveRecommendation(rec)).toMatchObject({ ok: true, code: "replayed" });
+    expect(await repo.saveRecommendation({ ...rec, id: uid(), checksum: "r1_CHANGED" }))
+      .toMatchObject({ ok: false, code: "conflict" });
+    await repo.saveRecommendation({ ...base, id: uid(), runId: other.id, scanId: other.scanId, tier: "strategic", priority: 10, version: 1, checksum: "r2", idempotencyKey: `idem_${uid()}` });
+
+    const recs = await repo.listRecommendations(run.id);
+    expect(recs.ok && recs.value.length).toBe(1);
+    expect(recs.ok && recs.value[0]!.tier).toBe("quick_win");
+    expect(recs.ok && recs.value[0]!.priority).toBe(80);
+  });
+
+  it("persists a competitor snapshot idempotently and conflicts on a changed checksum", async () => {
+    const run = await seedRun();
+    const snap = {
+      id: uid(), runId: run.id, clientId, scanId: run.scanId, competitorCount: 4, version: 1,
+      checksum: "s1", envelope: {}, sourceArtifactIds: [], idempotencyKey: `idem_${uid()}`,
+      createdBy: null, createdAt: nowIso(),
+    };
+    expect(await repo.saveCompetitorSnapshot(snap)).toMatchObject({ ok: true, code: "created" });
+    expect(await repo.saveCompetitorSnapshot(snap)).toMatchObject({ ok: true, code: "replayed" });
+    expect(await repo.saveCompetitorSnapshot({ ...snap, id: uid(), checksum: "s1_CHANGED" }))
+      .toMatchObject({ ok: false, code: "conflict" });
+  });
+
   /* ---- versions ------------------------------------------------------------ */
   it("round-trips proposal and narrative versions with latest lookup", async () => {
     const run = await seedRun();
@@ -250,9 +304,18 @@ describe.skipIf(!LIVE)("SupabaseRuntimeRepository (live DB)", () => {
     expect(await repo.saveProposalVersion(p1)).toMatchObject({ ok: true, code: "replayed" });
     expect(await repo.saveProposalVersion({ ...p1, id: uid(), idempotencyKey: `idem_${uid()}`, checksum: "p1_CHANGED" }))
       .toMatchObject({ ok: false, code: "conflict" });
-    await repo.saveProposalVersion({ ...base, id: uid(), status: "draft", supersedesId: p1.id, version: 2, checksum: "p2", idempotencyKey: `idem_${uid()}` });
+    const p2Id = uid();
+    await repo.saveProposalVersion({ ...base, id: p2Id, status: "draft", supersedesId: p1.id, version: 2, checksum: "p2", idempotencyKey: `idem_${uid()}` });
     const latestProposal = await repo.getLatestProposalVersion(run.id);
     expect(latestProposal.ok && latestProposal.value.version).toBe(2);
+    // LINEAGE: v2 points back at v1, and v1 is untouched — a new version never
+    // rewrites its predecessor.
+    expect(latestProposal.ok && latestProposal.value.id).toBe(p2Id);
+    expect(latestProposal.ok && latestProposal.value.supersedesId).toBe(p1.id);
+    const { data: v1Row } = await service.from("proposal_versions").select("*").eq("id", p1.id).single();
+    expect(v1Row?.checksum).toBe("p1");
+    expect(v1Row?.version).toBe(1);
+    expect(v1Row?.supersedes_id).toBeNull();
 
     const n1 = { ...base, id: uid(), audience: "client", status: "draft", supersedesId: null, version: 1, checksum: "n1", idempotencyKey: `idem_${uid()}` };
     expect(await repo.saveNarrativeVersion(n1)).toMatchObject({ ok: true, code: "created" });
