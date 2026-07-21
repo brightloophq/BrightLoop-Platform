@@ -12,10 +12,12 @@ import {
 import {
   createTransformationService,
   createCoreSurfaceService,
+  createRuntimeServices,
   type CatalogRepository,
   type CoreSurfaceService,
   type DataSource,
   type ReputationRepository,
+  type RuntimeServices,
   type TransformationService,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
@@ -142,6 +144,21 @@ export async function getCoreSurfaceRepository(): Promise<SupabaseCoreSurfaceRep
 export async function getRuntimeRepository(): Promise<SupabaseRuntimeRepository> {
   const client = await createClient();
   return new SupabaseRuntimeRepository(client);
+}
+
+/**
+ * The Phase B runtime SERVICES + coordinator (Sprint 13C), bound to the
+ * request-scoped repository so every runtime write runs under the caller's RLS.
+ * Never cached — it carries the session.
+ *
+ * No route or server action consumes this yet. The coordinator performs exactly
+ * one worker turn per call and schedules nothing on its own: there is no daemon,
+ * no cron and no hosted queue behind it — Postgres is the queue, and the caller
+ * decides when a turn happens.
+ */
+export async function getRuntimeServices(): Promise<RuntimeServices> {
+  const client = await createClient();
+  return createRuntimeServices({ repo: new SupabaseRuntimeRepository(client), ids: newId });
 }
 
 /** The core-surfaces domain service for WRITES (scan/finding/domain/activation). */

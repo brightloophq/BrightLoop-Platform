@@ -7,3 +7,5 @@
 
 export * from "./results.js";
 export * from "./repository.js";
+export * from "./services/index.js";
+export { InMemoryRuntimeRepository } from "./testing/in-memory-repository.js";
