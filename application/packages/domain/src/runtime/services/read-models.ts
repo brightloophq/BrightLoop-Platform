@@ -97,10 +97,36 @@ export interface RunTimelineEntry {
   error: string | null;
 }
 
-/** Chronological, then by stage — deterministic for equal timestamps. */
+/**
+ * Lifecycle precedence within one stage+attempt.
+ *
+ * Timestamps ALONE cannot order these: a stage writes `running` and then
+ * `completed` routinely inside the same millisecond, and tied rows come back
+ * from Postgres in arbitrary order. Ranking by lifecycle position makes the
+ * ordering deterministic regardless of how the rows arrive.
+ *
+ * (An in-memory store hides this — V8's stable sort happens to preserve
+ * insertion order — which is exactly why the live suite is worth running.)
+ */
+const STATUS_RANK: Record<RuntimeStage["status"], number> = {
+  pending: 0,
+  running: 1,
+  skipped: 2,
+  cancelled: 3,
+  failed: 4,
+  completed: 5,
+};
+
+/** Chronological, then by stage, then by lifecycle position. Fully deterministic. */
 export function runTimelineView(stages: readonly RuntimeStage[]): RunTimelineEntry[] {
   return [...stages]
-    .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || a.stage.localeCompare(b.stage))
+    .sort(
+      (a, b) =>
+        a.createdAt.localeCompare(b.createdAt) ||
+        a.stage.localeCompare(b.stage) ||
+        a.attempt - b.attempt ||
+        STATUS_RANK[a.status] - STATUS_RANK[b.status],
+    )
     .map((s) => ({
       stage: s.stage,
       status: s.status,
@@ -118,10 +144,23 @@ export interface StageStatusRow {
   lastError: string | null;
 }
 
-/** The LATEST transition per stage — the current picture, not the history. */
+/**
+ * The LATEST transition per stage — the current picture, not the history.
+ *
+ * Ordered by (createdAt, attempt, lifecycle rank). The last two tiebreaks are
+ * load-bearing, not defensive: without them a `running` row written in the same
+ * millisecond as its `completed` row can win the race and report a finished
+ * stage as still in flight.
+ */
 export function stageStatusView(stages: readonly RuntimeStage[]): StageStatusRow[] {
   const latest = new Map<string, RuntimeStage>();
-  for (const s of [...stages].sort((a, b) => a.createdAt.localeCompare(b.createdAt))) latest.set(s.stage, s);
+  const ordered = [...stages].sort(
+    (a, b) =>
+      a.createdAt.localeCompare(b.createdAt) ||
+      a.attempt - b.attempt ||
+      STATUS_RANK[a.status] - STATUS_RANK[b.status],
+  );
+  for (const s of ordered) latest.set(s.stage, s);
   return [...latest.values()]
     .map((s) => ({
       stage: s.stage,

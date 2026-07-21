@@ -727,6 +727,32 @@ describe("read models", () => {
     expect(detail.events.map((e) => e.sequence)).toEqual([...detail.events.map((e) => e.sequence)].sort((a, b) => a - b));
   });
 
+  it("resolves same-millisecond stage transitions by lifecycle, in ANY arrival order", () => {
+    // A stage writes `running` then `completed` routinely inside one millisecond.
+    // Postgres returns tied rows in arbitrary order, so the view must not depend
+    // on arrival order — this is the defect the live suite caught.
+    const row = (status: "running" | "completed") => ({
+      id: `s-${status}`, runId: "r1", clientId: null, scanId: "s1", stage: "graph_assembly",
+      status, attempt: 0, idempotencyKey: `k-${status}`, metadata: {}, lastError: null,
+      createdBy: null, createdAt: T0, updatedAt: null, startedAt: null,
+      completedAt: null, failedAt: null, cancelledAt: null,
+    });
+
+    for (const order of [[row("running"), row("completed")], [row("completed"), row("running")]]) {
+      const view = views.stageStatusView(order);
+      expect(view).toHaveLength(1);
+      expect(view[0]!.status).toBe("completed");
+    }
+
+    // and a later attempt still supersedes an earlier completion
+    const retried = views.stageStatusView([
+      { ...row("completed"), attempt: 0 },
+      { ...row("running"), attempt: 1, id: "s-retry" },
+    ]);
+    expect(retried[0]!.status).toBe("running");
+    expect(retried[0]!.attempts).toBe(2);
+  });
+
   it("counts active runs and flags a passed deadline", () => {
     const now = "2026-07-21T00:01:00.000Z";
     const run = {
