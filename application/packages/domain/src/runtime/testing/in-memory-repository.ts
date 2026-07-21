@@ -91,7 +91,16 @@ class IdempotentStore<T extends { id: string; idempotencyKey: string }> {
 
 export class InMemoryRuntimeRepository implements RuntimeRepository {
   private readonly runs = new IdempotentStore<RuntimeRun>((r) => JSON.stringify([r.scanId, r.clientId, r.checksum]));
-  private readonly stages = new IdempotentStore<RuntimeStage>((r) => JSON.stringify([r.runId, r.stage, r.attempt, r.status]));
+  /**
+   * Fingerprint EXCLUDES status, mirroring the adapter exactly.
+   *
+   * `intelligence_run_stages` is `unique (run_id, stage, attempt)`: one row per
+   * attempt holding its outcome. Including status here would make the double
+   * stricter than production — a same-attempt rewrite would surface as
+   * `conflict` locally but `replayed` against Postgres, and the double would go
+   * on masking the very mismatch it exists to catch.
+   */
+  private readonly stages = new IdempotentStore<RuntimeStage>((r) => JSON.stringify([r.runId, r.stage, r.attempt]));
   private readonly checkpoints = new IdempotentStore<RuntimeCheckpoint>((r) => JSON.stringify([r.runId, r.stage, r.attempt, [...r.artifactIds].sort()]));
   private readonly artifacts = new IdempotentStore<RuntimeArtifact>((r) => JSON.stringify([r.runId, r.kind, r.version, r.checksum]));
   private readonly reasoning = new IdempotentStore<RuntimeReasoningJob>((r) => JSON.stringify([r.runId, r.stage, r.taskType]));

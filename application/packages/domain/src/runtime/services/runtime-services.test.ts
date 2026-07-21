@@ -198,6 +198,33 @@ describe("PipelineService", () => {
     expect(begun).toMatchObject({ ok: false, code: "terminal_state" });
   });
 
+  it("writes exactly ONE stage row per attempt, holding that attempt's outcome", async () => {
+    // intelligence_run_stages is unique(run_id, stage, attempt). Writing a
+    // `running` row and a `completed` row for one attempt collides, and because
+    // the fingerprint excludes status the collision resolves as `replayed` — a
+    // false success that leaves the stage reading `running` forever. Live
+    // Postgres caught exactly this; the double must now catch it too.
+    const h = harness();
+    const init = await h.svc.coordinator.initializeRun(START);
+    if (!init.ok) return;
+    const runId = init.value.run.id;
+    await drainQueue(h);
+
+    const stages = await h.svc.pipeline.listStages(runId);
+    expect(stages.ok).toBe(true);
+    if (!stages.ok) return;
+
+    // one row per (stage, attempt) — no duplicates
+    const keys = stages.value.map((s) => `${s.stage}:${s.attempt}`);
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(stages.value).toHaveLength(PIPELINE_STAGE_ORDER.length);
+
+    // and every row carries the OUTCOME, never a stranded `running`
+    expect(stages.value.filter((s) => s.status !== "completed")).toEqual([]);
+    const view = views.stageStatusView(stages.value);
+    expect(view.filter((s) => s.status !== "completed").map((s) => `${s.stage}=${s.status}`)).toEqual([]);
+  });
+
   it("allows a stage once its dependency artifact exists", async () => {
     const h = harness();
     const run = await h.svc.runs.createRun(START);

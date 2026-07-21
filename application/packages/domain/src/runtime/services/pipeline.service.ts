@@ -106,16 +106,28 @@ export class PipelineService {
   }
 
   /**
-   * Begin a stage. Refuses an illegal transition outright and records a BLOCKED
-   * transition (with the missing kinds) when dependencies are unmet — the run
-   * stays diagnosable instead of failing opaquely.
+   * Begin a stage: gate it and announce the start. Refuses an illegal transition
+   * outright and reports BLOCKED (naming the missing kinds) when dependencies are
+   * unmet, so the run stays diagnosable instead of failing opaquely.
+   *
+   * DELIBERATELY WRITES NO ROW. `intelligence_run_stages` is declared
+   * `unique (run_id, stage, attempt)` — one row per attempt holding its OUTCOME,
+   * not an append-only transition log. Writing `running` here and `completed`
+   * later would collide on that constraint, and because the adapter's stage
+   * fingerprint is (run, stage, attempt) with status excluded, the collision
+   * resolves as `replayed` — a FALSE SUCCESS that leaves the stage reading
+   * `running` forever.
+   *
+   * The start is therefore recorded where an append-only record belongs: the
+   * event log. The row is written once, by whichever terminal transition ends
+   * the attempt.
    */
   async beginStage(
     context: StageContext,
     from: PipelineRunStage | null,
     to: PipelineRunStage,
     attempt = 0,
-  ): Promise<RuntimeResult<RuntimeStage>> {
+  ): Promise<RuntimeResult<StageGate>> {
     const gate = await this.gate(context.runId, from, to);
     if (!gate.ok) return gate;
 
@@ -123,10 +135,6 @@ export class PipelineService {
       if (gate.value.reason === "illegal_transition") {
         return err("terminal_state", `illegal stage transition ${from} → ${to}`);
       }
-      const blocked = await this.record(context, to, "pending", attempt, {
-        blocked: true,
-        missingArtifacts: gate.value.missing,
-      });
       await this.events.emit({
         eventType: RUNTIME_EVENTS.stageBlocked,
         aggregateType: "intelligence_run",
@@ -137,15 +145,11 @@ export class PipelineService {
         stage: to,
         payload: { missingArtifacts: gate.value.missing },
       });
-      if (!blocked.ok) return blocked;
       return err("check_violation", `stage ${to} is blocked: missing ${gate.value.missing.join(", ")}`);
     }
 
-    const started = await this.record(context, to, "running", attempt, {});
-    if (started.ok && started.code === "created") {
-      await this.emitStage(RUNTIME_EVENTS.stageStarted, context, to, { attempt });
-    }
-    return started;
+    await this.emitStage(RUNTIME_EVENTS.stageStarted, context, to, { attempt });
+    return gate;
   }
 
   /** Record a stage as completed. */
@@ -187,6 +191,11 @@ export class PipelineService {
   }
 
   /* ---- internals ----------------------------------------------------------- */
+  /**
+   * Write the single row for this (run, stage, attempt), carrying the attempt's
+   * outcome. The key omits status to match the table's own uniqueness rule, so a
+   * genuine replay of the same attempt is the intended no-op.
+   */
   private async record(
     context: StageContext,
     stage: PipelineRunStage,
@@ -204,7 +213,7 @@ export class PipelineService {
       stage,
       status,
       attempt,
-      idempotencyKey: `${stageKey(context.runId, stage, attempt)}:${status}`,
+      idempotencyKey: stageKey(context.runId, stage, attempt),
       metadata,
       lastError,
       createdBy: this.ctx.actorId ?? null,
