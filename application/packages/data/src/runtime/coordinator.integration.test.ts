@@ -252,7 +252,9 @@ describe.skipIf(!LIVE)("RuntimeCoordinator over Supabase (live DB)", () => {
 
     expect(detail.run.status).toBe("completed");
     expect(detail.stageStatus).toHaveLength(PIPELINE_STAGE_ORDER.length);
-    expect(detail.stageStatus.every((s) => s.status === "completed")).toBe(true);
+    // name the offenders rather than asserting a bare boolean — a failure here
+    // must say WHICH stage and status, not just "expected false to be true"
+    expect(detail.stageStatus.filter((s) => s.status !== "completed").map((s) => `${s.stage}=${s.status}@${s.attempts}`)).toEqual([]);
     expect(detail.evidence.evidenceValidated).toBe(true);
     expect(detail.events.length).toBeGreaterThan(0);
   });
