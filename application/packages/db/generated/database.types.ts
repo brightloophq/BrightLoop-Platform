@@ -426,6 +426,73 @@ export type Database = {
           },
         ]
       }
+      competitor_snapshots: {
+        Row: {
+          checksum: string
+          client_id: string | null
+          competitor_count: number
+          created_at: string
+          created_by: string | null
+          envelope: Json
+          id: string
+          idempotency_key: string
+          run_id: string
+          scan_id: string
+          source_artifact_ids: string[]
+          version: number
+        }
+        Insert: {
+          checksum: string
+          client_id?: string | null
+          competitor_count?: number
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id: string
+          idempotency_key: string
+          run_id: string
+          scan_id: string
+          source_artifact_ids?: string[]
+          version?: number
+        }
+        Update: {
+          checksum?: string
+          client_id?: string | null
+          competitor_count?: number
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id?: string
+          idempotency_key?: string
+          run_id?: string
+          scan_id?: string
+          source_artifact_ids?: string[]
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "competitor_snapshots_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_snapshots_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "competitor_snapshots_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configurations: {
         Row: {
           assessment_id: string | null
@@ -936,6 +1003,445 @@ export type Database = {
           },
         ]
       }
+      intelligence_artifacts: {
+        Row: {
+          checksum: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          envelope: Json
+          id: string
+          idempotency_key: string
+          kind: Database["public"]["Enums"]["runtime_artifact_kind"]
+          payload_ref: string | null
+          run_id: string
+          scan_id: string
+          source_artifact_ids: string[]
+          validation_status: Database["public"]["Enums"]["runtime_artifact_status"]
+          version: number
+        }
+        Insert: {
+          checksum: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id: string
+          idempotency_key: string
+          kind: Database["public"]["Enums"]["runtime_artifact_kind"]
+          payload_ref?: string | null
+          run_id: string
+          scan_id: string
+          source_artifact_ids?: string[]
+          validation_status?: Database["public"]["Enums"]["runtime_artifact_status"]
+          version?: number
+        }
+        Update: {
+          checksum?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id?: string
+          idempotency_key?: string
+          kind?: Database["public"]["Enums"]["runtime_artifact_kind"]
+          payload_ref?: string | null
+          run_id?: string
+          scan_id?: string
+          source_artifact_ids?: string[]
+          validation_status?: Database["public"]["Enums"]["runtime_artifact_status"]
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_artifacts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_artifacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_artifacts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_checkpoints: {
+        Row: {
+          artifact_ids: string[]
+          attempt: number
+          client_id: string | null
+          created_at: string
+          id: string
+          idempotency_key: string
+          invalidation_reason: string | null
+          next_stage: string | null
+          run_id: string
+          scan_id: string
+          source_checksums: Json
+          stage: string
+          status: Database["public"]["Enums"]["runtime_checkpoint_status"]
+        }
+        Insert: {
+          artifact_ids?: string[]
+          attempt?: number
+          client_id?: string | null
+          created_at?: string
+          id: string
+          idempotency_key: string
+          invalidation_reason?: string | null
+          next_stage?: string | null
+          run_id: string
+          scan_id: string
+          source_checksums?: Json
+          stage: string
+          status?: Database["public"]["Enums"]["runtime_checkpoint_status"]
+        }
+        Update: {
+          artifact_ids?: string[]
+          attempt?: number
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          invalidation_reason?: string | null
+          next_stage?: string | null
+          run_id?: string
+          scan_id?: string
+          source_checksums?: Json
+          stage?: string
+          status?: Database["public"]["Enums"]["runtime_checkpoint_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_checkpoints_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_checkpoints_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_findings: {
+        Row: {
+          checksum: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          domain: string | null
+          envelope: Json
+          id: string
+          idempotency_key: string
+          run_id: string
+          scan_id: string
+          severity: string | null
+          source_artifact_ids: string[]
+          version: number
+        }
+        Insert: {
+          checksum: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          domain?: string | null
+          envelope?: Json
+          id: string
+          idempotency_key: string
+          run_id: string
+          scan_id: string
+          severity?: string | null
+          source_artifact_ids?: string[]
+          version?: number
+        }
+        Update: {
+          checksum?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          domain?: string | null
+          envelope?: Json
+          id?: string
+          idempotency_key?: string
+          run_id?: string
+          scan_id?: string
+          severity?: string | null
+          source_artifact_ids?: string[]
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_findings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_findings_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_findings_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_recommendations: {
+        Row: {
+          checksum: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          envelope: Json
+          id: string
+          idempotency_key: string
+          priority: number | null
+          run_id: string
+          scan_id: string
+          source_artifact_ids: string[]
+          tier: string | null
+          version: number
+        }
+        Insert: {
+          checksum: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id: string
+          idempotency_key: string
+          priority?: number | null
+          run_id: string
+          scan_id: string
+          source_artifact_ids?: string[]
+          tier?: string | null
+          version?: number
+        }
+        Update: {
+          checksum?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id?: string
+          idempotency_key?: string
+          priority?: number | null
+          run_id?: string
+          scan_id?: string
+          source_artifact_ids?: string[]
+          tier?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_recommendations_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_recommendations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_recommendations_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_run_stages: {
+        Row: {
+          attempt: number
+          cancelled_at: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          failed_at: string | null
+          id: string
+          idempotency_key: string
+          last_error: string | null
+          metadata: Json
+          run_id: string
+          scan_id: string
+          stage: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["runtime_stage_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          attempt?: number
+          cancelled_at?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_at?: string | null
+          id: string
+          idempotency_key: string
+          last_error?: string | null
+          metadata?: Json
+          run_id: string
+          scan_id: string
+          stage: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["runtime_stage_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          attempt?: number
+          cancelled_at?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          failed_at?: string | null
+          id?: string
+          idempotency_key?: string
+          last_error?: string | null
+          metadata?: Json
+          run_id?: string
+          scan_id?: string
+          stage?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["runtime_stage_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_run_stages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_run_stages_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_run_stages_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      intelligence_runs: {
+        Row: {
+          cancelled: boolean
+          cancelled_at: string | null
+          checksum: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          current_stage: string | null
+          deadline: string | null
+          failed_at: string | null
+          failed_stage: string | null
+          id: string
+          idempotency_key: string
+          metadata: Json
+          scan_id: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["runtime_run_status"]
+          updated_at: string | null
+          version: number
+        }
+        Insert: {
+          cancelled?: boolean
+          cancelled_at?: string | null
+          checksum?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_stage?: string | null
+          deadline?: string | null
+          failed_at?: string | null
+          failed_stage?: string | null
+          id: string
+          idempotency_key: string
+          metadata?: Json
+          scan_id: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["runtime_run_status"]
+          updated_at?: string | null
+          version?: number
+        }
+        Update: {
+          cancelled?: boolean
+          cancelled_at?: string | null
+          checksum?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          current_stage?: string | null
+          deadline?: string | null
+          failed_at?: string | null
+          failed_stage?: string | null
+          id?: string
+          idempotency_key?: string
+          metadata?: Json
+          scan_id?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["runtime_run_status"]
+          updated_at?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "intelligence_runs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_runs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       internal_notes: {
         Row: {
           author_id: string
@@ -1022,6 +1528,90 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      job_queue: {
+        Row: {
+          attempt: number
+          available_at: string
+          client_id: string | null
+          created_at: string
+          id: string
+          idempotency_key: string
+          job_type: string
+          last_error: string | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          lease_status: Database["public"]["Enums"]["runtime_lease_status"]
+          max_attempts: number
+          payload: Json
+          payload_ref: string | null
+          priority: number
+          run_id: string | null
+          scan_id: string | null
+          stage: string | null
+          status: Database["public"]["Enums"]["runtime_queue_status"]
+          updated_at: string | null
+        }
+        Insert: {
+          attempt?: number
+          available_at?: string
+          client_id?: string | null
+          created_at?: string
+          id: string
+          idempotency_key: string
+          job_type: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          lease_status?: Database["public"]["Enums"]["runtime_lease_status"]
+          max_attempts?: number
+          payload?: Json
+          payload_ref?: string | null
+          priority?: number
+          run_id?: string | null
+          scan_id?: string | null
+          stage?: string | null
+          status?: Database["public"]["Enums"]["runtime_queue_status"]
+          updated_at?: string | null
+        }
+        Update: {
+          attempt?: number
+          available_at?: string
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          job_type?: string
+          last_error?: string | null
+          lease_expires_at?: string | null
+          lease_owner?: string | null
+          lease_status?: Database["public"]["Enums"]["runtime_lease_status"]
+          max_attempts?: number
+          payload?: Json
+          payload_ref?: string | null
+          priority?: number
+          run_id?: string | null
+          scan_id?: string | null
+          stage?: string | null
+          status?: Database["public"]["Enums"]["runtime_queue_status"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_queue_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "job_queue_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
             referencedColumns: ["id"]
           },
         ]
@@ -1516,6 +2106,86 @@ export type Database = {
           },
         ]
       }
+      narrative_versions: {
+        Row: {
+          audience: string
+          checksum: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          envelope: Json
+          id: string
+          idempotency_key: string
+          run_id: string
+          scan_id: string
+          source_artifact_ids: string[]
+          status: string
+          supersedes_id: string | null
+          version: number
+        }
+        Insert: {
+          audience: string
+          checksum: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id: string
+          idempotency_key: string
+          run_id: string
+          scan_id: string
+          source_artifact_ids?: string[]
+          status: string
+          supersedes_id?: string | null
+          version?: number
+        }
+        Update: {
+          audience?: string
+          checksum?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id?: string
+          idempotency_key?: string
+          run_id?: string
+          scan_id?: string
+          source_artifact_ids?: string[]
+          status?: string
+          supersedes_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "narrative_versions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "narrative_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "narrative_versions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "narrative_versions_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "narrative_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           body: string | null
@@ -1894,6 +2564,83 @@ export type Database = {
           },
         ]
       }
+      proposal_versions: {
+        Row: {
+          checksum: string
+          client_id: string | null
+          created_at: string
+          created_by: string | null
+          envelope: Json
+          id: string
+          idempotency_key: string
+          run_id: string
+          scan_id: string
+          source_artifact_ids: string[]
+          status: string
+          supersedes_id: string | null
+          version: number
+        }
+        Insert: {
+          checksum: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id: string
+          idempotency_key: string
+          run_id: string
+          scan_id: string
+          source_artifact_ids?: string[]
+          status: string
+          supersedes_id?: string | null
+          version?: number
+        }
+        Update: {
+          checksum?: string
+          client_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          envelope?: Json
+          id?: string
+          idempotency_key?: string
+          run_id?: string
+          scan_id?: string
+          source_artifact_ids?: string[]
+          status?: string
+          supersedes_id?: string | null
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_versions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_versions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_versions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposal_versions_supersedes_id_fkey"
+            columns: ["supersedes_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposals: {
         Row: {
           change_note: string | null
@@ -1950,6 +2697,100 @@ export type Database = {
             columns: ["configuration_id"]
             isOneToOne: false
             referencedRelation: "configurations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      provider_attempts: {
+        Row: {
+          actual_cost: number | null
+          attempt: number
+          client_id: string | null
+          created_at: string
+          estimated_cost: number | null
+          id: string
+          idempotency_key: string
+          input_tokens: number | null
+          last_error: string | null
+          latency_ms: number | null
+          output_tokens: number | null
+          provider_id: string
+          raw_response_ref: string | null
+          reasoning_job_id: string
+          retry_disposition:
+            | Database["public"]["Enums"]["runtime_retry_disposition"]
+            | null
+          run_id: string
+          scan_id: string
+          status: Database["public"]["Enums"]["runtime_provider_attempt_status"]
+          usage_estimated: boolean
+        }
+        Insert: {
+          actual_cost?: number | null
+          attempt: number
+          client_id?: string | null
+          created_at?: string
+          estimated_cost?: number | null
+          id: string
+          idempotency_key: string
+          input_tokens?: number | null
+          last_error?: string | null
+          latency_ms?: number | null
+          output_tokens?: number | null
+          provider_id: string
+          raw_response_ref?: string | null
+          reasoning_job_id: string
+          retry_disposition?:
+            | Database["public"]["Enums"]["runtime_retry_disposition"]
+            | null
+          run_id: string
+          scan_id: string
+          status: Database["public"]["Enums"]["runtime_provider_attempt_status"]
+          usage_estimated?: boolean
+        }
+        Update: {
+          actual_cost?: number | null
+          attempt?: number
+          client_id?: string | null
+          created_at?: string
+          estimated_cost?: number | null
+          id?: string
+          idempotency_key?: string
+          input_tokens?: number | null
+          last_error?: string | null
+          latency_ms?: number | null
+          output_tokens?: number | null
+          provider_id?: string
+          raw_response_ref?: string | null
+          reasoning_job_id?: string
+          retry_disposition?:
+            | Database["public"]["Enums"]["runtime_retry_disposition"]
+            | null
+          run_id?: string
+          scan_id?: string
+          status?: Database["public"]["Enums"]["runtime_provider_attempt_status"]
+          usage_estimated?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_attempts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_attempts_reasoning_job_id_fkey"
+            columns: ["reasoning_job_id"]
+            isOneToOne: false
+            referencedRelation: "reasoning_jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_attempts_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
             referencedColumns: ["id"]
           },
         ]
@@ -2125,6 +2966,94 @@ export type Database = {
           },
         ]
       }
+      reasoning_jobs: {
+        Row: {
+          attempt: number
+          cancelled_at: string | null
+          client_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          failed_at: string | null
+          id: string
+          idempotency_key: string
+          max_attempts: number
+          metadata: Json
+          run_id: string
+          scan_id: string
+          stage: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["runtime_reasoning_job_status"]
+          task_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          attempt?: number
+          cancelled_at?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          failed_at?: string | null
+          id: string
+          idempotency_key: string
+          max_attempts?: number
+          metadata?: Json
+          run_id: string
+          scan_id: string
+          stage: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["runtime_reasoning_job_status"]
+          task_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          attempt?: number
+          cancelled_at?: string | null
+          client_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          failed_at?: string | null
+          id?: string
+          idempotency_key?: string
+          max_attempts?: number
+          metadata?: Json
+          run_id?: string
+          scan_id?: string
+          stage?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["runtime_reasoning_job_status"]
+          task_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reasoning_jobs_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reasoning_jobs_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reasoning_jobs_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recommendations: {
         Row: {
           ai_confidence: number | null
@@ -2206,6 +3135,75 @@ export type Database = {
             columns: ["insight_id"]
             isOneToOne: false
             referencedRelation: "insights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_events: {
+        Row: {
+          actor: string | null
+          aggregate_id: string
+          aggregate_type: string
+          causation_id: string | null
+          client_id: string | null
+          correlation_id: string | null
+          event_type: string
+          id: string
+          occurred_at: string
+          payload: Json
+          run_id: string | null
+          scan_id: string | null
+          schema_version: string
+          sequence: number
+          stage: string | null
+        }
+        Insert: {
+          actor?: string | null
+          aggregate_id: string
+          aggregate_type: string
+          causation_id?: string | null
+          client_id?: string | null
+          correlation_id?: string | null
+          event_type: string
+          id: string
+          occurred_at?: string
+          payload?: Json
+          run_id?: string | null
+          scan_id?: string | null
+          schema_version?: string
+          sequence: number
+          stage?: string | null
+        }
+        Update: {
+          actor?: string | null
+          aggregate_id?: string
+          aggregate_type?: string
+          causation_id?: string | null
+          client_id?: string | null
+          correlation_id?: string | null
+          event_type?: string
+          id?: string
+          occurred_at?: string
+          payload?: Json
+          run_id?: string | null
+          scan_id?: string | null
+          schema_version?: string
+          sequence?: number
+          stage?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_events_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_events_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
             referencedColumns: ["id"]
           },
         ]
@@ -2546,6 +3544,42 @@ export type Database = {
       bl_in_conversation: { Args: { conv_id: string }; Returns: boolean }
       bl_is_finance: { Args: never; Returns: boolean }
       bl_is_internal: { Args: never; Returns: boolean }
+      bl_lease_next_job: {
+        Args: {
+          p_client_id?: string
+          p_job_type?: string
+          p_lease_seconds: number
+          p_owner: string
+        }
+        Returns: {
+          attempt: number
+          available_at: string
+          client_id: string | null
+          created_at: string
+          id: string
+          idempotency_key: string
+          job_type: string
+          last_error: string | null
+          lease_expires_at: string | null
+          lease_owner: string | null
+          lease_status: Database["public"]["Enums"]["runtime_lease_status"]
+          max_attempts: number
+          payload: Json
+          payload_ref: string | null
+          priority: number
+          run_id: string | null
+          scan_id: string | null
+          stage: string | null
+          status: Database["public"]["Enums"]["runtime_queue_status"]
+          updated_at: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "job_queue"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       bl_rls_audit: {
         Args: never
         Returns: {
@@ -2693,6 +3727,72 @@ export type Database = {
         | "likely"
         | "almost_certain"
       risk_severity: "low" | "medium" | "high" | "critical"
+      runtime_artifact_kind:
+        | "discovery_manifest"
+        | "evidence_ingress"
+        | "evidence_bundle"
+        | "intelligence_graph"
+        | "graph_snapshot"
+        | "reasoning_jobs"
+        | "execution_outcomes"
+        | "validated_claims"
+        | "findings"
+        | "recommendation_candidates"
+        | "internal_intelligence_report"
+        | "competitor_snapshot"
+        | "proposal"
+        | "narrative"
+      runtime_artifact_status: "valid" | "invalid" | "unvalidated"
+      runtime_checkpoint_status: "valid" | "invalidated"
+      runtime_lease_status: "unleased" | "leased" | "expired" | "released"
+      runtime_provider_attempt_status:
+        | "succeeded"
+        | "rejected"
+        | "failed"
+        | "timed_out"
+        | "cancelled"
+        | "budget_exhausted"
+        | "deadline_exceeded"
+      runtime_queue_status:
+        | "queued"
+        | "leased"
+        | "completed"
+        | "failed"
+        | "cancelled"
+        | "dead_letter"
+      runtime_reasoning_job_status:
+        | "pending"
+        | "planned"
+        | "routed"
+        | "running"
+        | "validating"
+        | "completed"
+        | "failed"
+        | "cancelled"
+        | "blocked"
+      runtime_retry_disposition: "retry_same" | "retry_fallback" | "stop"
+      runtime_run_status:
+        | "pending"
+        | "discovering"
+        | "ingesting_evidence"
+        | "assembling_graph"
+        | "planning_reasoning"
+        | "executing_reasoning"
+        | "validating_results"
+        | "synthesizing_findings"
+        | "building_recommendations"
+        | "preparing_report"
+        | "completed"
+        | "failed"
+        | "cancelled"
+        | "blocked"
+      runtime_stage_status:
+        | "pending"
+        | "running"
+        | "completed"
+        | "failed"
+        | "skipped"
+        | "cancelled"
       scan_status: "diagnosing" | "diagnosed" | "activating" | "operating"
       signal_status: "detected" | "validated" | "prioritized" | "archived"
       user_account_status: "invited" | "active" | "suspended"
@@ -2978,6 +4078,78 @@ export const Constants = {
         "almost_certain",
       ],
       risk_severity: ["low", "medium", "high", "critical"],
+      runtime_artifact_kind: [
+        "discovery_manifest",
+        "evidence_ingress",
+        "evidence_bundle",
+        "intelligence_graph",
+        "graph_snapshot",
+        "reasoning_jobs",
+        "execution_outcomes",
+        "validated_claims",
+        "findings",
+        "recommendation_candidates",
+        "internal_intelligence_report",
+        "competitor_snapshot",
+        "proposal",
+        "narrative",
+      ],
+      runtime_artifact_status: ["valid", "invalid", "unvalidated"],
+      runtime_checkpoint_status: ["valid", "invalidated"],
+      runtime_lease_status: ["unleased", "leased", "expired", "released"],
+      runtime_provider_attempt_status: [
+        "succeeded",
+        "rejected",
+        "failed",
+        "timed_out",
+        "cancelled",
+        "budget_exhausted",
+        "deadline_exceeded",
+      ],
+      runtime_queue_status: [
+        "queued",
+        "leased",
+        "completed",
+        "failed",
+        "cancelled",
+        "dead_letter",
+      ],
+      runtime_reasoning_job_status: [
+        "pending",
+        "planned",
+        "routed",
+        "running",
+        "validating",
+        "completed",
+        "failed",
+        "cancelled",
+        "blocked",
+      ],
+      runtime_retry_disposition: ["retry_same", "retry_fallback", "stop"],
+      runtime_run_status: [
+        "pending",
+        "discovering",
+        "ingesting_evidence",
+        "assembling_graph",
+        "planning_reasoning",
+        "executing_reasoning",
+        "validating_results",
+        "synthesizing_findings",
+        "building_recommendations",
+        "preparing_report",
+        "completed",
+        "failed",
+        "cancelled",
+        "blocked",
+      ],
+      runtime_stage_status: [
+        "pending",
+        "running",
+        "completed",
+        "failed",
+        "skipped",
+        "cancelled",
+      ],
       scan_status: ["diagnosing", "diagnosed", "activating", "operating"],
       signal_status: ["detected", "validated", "prioritized", "archived"],
       user_account_status: ["invited", "active", "suspended"],

@@ -7,6 +7,7 @@ import {
   SupabaseSignalsRepository,
   SupabaseTransformationRepository,
   SupabaseCoreSurfaceRepository,
+  SupabaseRuntimeRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -127,6 +128,20 @@ export async function getSignalsRepository(): Promise<SupabaseSignalsRepository>
 export async function getCoreSurfaceRepository(): Promise<SupabaseCoreSurfaceRepository> {
   const client = await createClient();
   return new SupabaseCoreSurfaceRepository(client);
+}
+
+/**
+ * The Phase B runtime repository (runs, stages, checkpoints, artifacts, reasoning
+ * jobs, provider attempts, queue, append-only events). Request-scoped and
+ * RLS-scoped to the caller — never cached, never service-role. The runtime tables
+ * are internal-only, so a client-role session reads and writes nothing.
+ *
+ * No route or server action consumes this yet; the runtime SERVICES land in
+ * Sprint 13C and will own capability checks, status transitions and attribution.
+ */
+export async function getRuntimeRepository(): Promise<SupabaseRuntimeRepository> {
+  const client = await createClient();
+  return new SupabaseRuntimeRepository(client);
 }
 
 /** The core-surfaces domain service for WRITES (scan/finding/domain/activation). */

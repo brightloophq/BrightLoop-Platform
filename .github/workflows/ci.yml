@@ -102,6 +102,16 @@ jobs:
       - name: Run pgTAP tests
         run: supabase test db
 
+      # The integration suite runs `packages/data` from source, but its workspace
+      # dependencies are consumed as COMPILED output (`exports` → `./dist`). Type-only
+      # imports are erased and need nothing, so this job historically got away
+      # without a build — an adapter that imports a runtime VALUE from
+      # @brightloop/domain (e.g. the runtime result helpers) cannot resolve without
+      # it. Build the two packages data actually loads at runtime; @brightloop/db is
+      # types-only and needs no build.
+      - name: Build workspace dependencies for the integration run
+        run: pnpm --filter @brightloop/schema --filter @brightloop/domain build
+
       # Exercise the real Supabase transformation adapter (Sprint 2) end-to-end,
       # including the human-approval gate, idempotent execution, and cross-tenant
       # isolation. Credentials are pulled from the running local stack only.
