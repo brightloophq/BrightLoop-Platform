@@ -154,12 +154,16 @@ export class RuntimeCoordinator {
   async runOnce(
     owner: string,
     execute: StageExecutor,
-    options: { leaseSeconds?: number; jobType?: string } = {},
+    options: { leaseSeconds?: number; jobType?: string; clientId?: string | null } = {},
   ): Promise<RuntimeResult<StageOutcome | null>> {
     const leased = await this.svc.queue.lease({
       owner,
       leaseSeconds: options.leaseSeconds ?? 60,
       jobType: options.jobType ?? "advance_stage",
+      // A worker is generic by default and takes ANY eligible job. Scoping to a
+      // tenant is opt-in — for a dedicated worker pool, or to keep one caller's
+      // work from being picked up by a drain it did not intend.
+      clientId: options.clientId ?? null,
     });
     if (!leased.ok) {
       // an idle queue is a normal outcome, not a failure
