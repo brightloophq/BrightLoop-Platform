@@ -216,6 +216,36 @@ export class RuntimeCoordinator {
     }
   }
 
+  /* ---- retry ------------------------------------------------------------------ */
+  /**
+   * Retry a run's FAILED stage by reusing runtime recovery.
+   *
+   * The stage to retry is the resume point — the last valid checkpoint's
+   * `nextStage`, which for a failed stage is the stage that failed (a failed
+   * stage never checkpoints). Requeuing resets that stage's non-progressing job
+   * back to `queued`; a worker then re-drives from there, and every stage the
+   * checkpoints already prove complete is skipped, never re-run.
+   *
+   * Returns the requeued job. `terminal_state` when the RUN itself is terminal
+   * (a completed/cancelled/deadline-failed run is not resumable — start a new
+   * scan). `not_found` when there is no failed stage to retry (the run is not
+   * stuck, or work is already in flight).
+   */
+  async retryRun(runId: string): Promise<RuntimeResult<RuntimeQueueJob>> {
+    const loaded = await this.svc.runs.getRun(runId);
+    if (!loaded.ok) return loaded;
+    const run = loaded.value;
+
+    if (run.status === "completed" || run.status === "failed" || run.status === "cancelled" || run.cancelled) {
+      return err("terminal_state", `run ${runId} is ${run.status} and cannot be retried`);
+    }
+
+    const resume = await this.engine.resumePoint(runId);
+    if (!resume.ok) return resume;
+
+    return this.svc.queue.requeue(runId, resume.value);
+  }
+
   /* ---- cancellation ----------------------------------------------------------- */
   /**
    * Cancel a run. The run is cancelled FIRST, so any worker that leases in the

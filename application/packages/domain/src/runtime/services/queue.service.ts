@@ -168,6 +168,17 @@ export class QueueService {
     return this.repo.rescheduleJob({ jobId, owner, availableAt, reason });
   }
 
+  /**
+   * Reset a non-progressing job for a stage back to `queued` so recovery can
+   * re-drive it. `not_found` means there is nothing to retry. Emits a
+   * retry-scheduled event on success.
+   */
+  async requeue(runId: string, stage: string, jobType = "advance_stage"): Promise<RuntimeResult<RuntimeQueueJob>> {
+    const result = await this.repo.requeueJob(runId, stage, jobType, this.ctx.clock());
+    if (result.ok) await this.emitJob(RUNTIME_EVENTS.jobRetryScheduled, result.value, { stage, reason: "manual_retry" });
+    return result;
+  }
+
   async get(jobId: string): Promise<RuntimeResult<RuntimeQueueJob>> {
     return this.repo.getJob(jobId);
   }
