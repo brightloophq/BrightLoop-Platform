@@ -38,6 +38,9 @@ importers:
       '@brightloop/application':
         specifier: workspace:*
         version: link:../../packages/application
+      '@brightloop/crawler':
+        specifier: workspace:*
+        version: link:../../packages/crawler
       '@brightloop/data':
         specifier: workspace:*
         version: link:../../packages/data
@@ -103,6 +106,25 @@ importers:
         specifier: workspace:*
         version: link:../schema
     devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.8
+        version: 2.1.9(@types/node@22.20.1)
+
+  packages/crawler:
+    dependencies:
+      '@brightloop/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@brightloop/schema':
+        specifier: workspace:*
+        version: link:../schema
+    devDependencies:
+      '@types/node':
+        specifier: ^22.10.2
+        version: 22.20.1
       typescript:
         specifier: ^5.7.2
         version: 5.9.3

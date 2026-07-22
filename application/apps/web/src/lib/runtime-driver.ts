@@ -6,8 +6,10 @@ import {
   loadAnthropicConfig,
   buildProviderRegistry,
   type ReasoningTelemetry,
+  type StageExecutorRegistry,
 } from "@brightloop/providers";
 import { getRuntimeServices } from "./repositories";
+import { buildDiscoveryRegistry, DISCOVERY_STAGE_KEYS } from "./crawler";
 
 /**
  * Controlled Runtime Driver composition root (Phase C · Sprint C2.1 §2).
@@ -22,6 +24,11 @@ import { getRuntimeServices } from "./repositories";
  * the default — the provider registry is empty, the reasoning adapter is null,
  * and the reasoning stage blocks with a stable `provider_disabled` reason. No
  * SDK client is constructed and no credit is spent.
+ *
+ * The stage registry is COMPOSED (C3): discovery stages resolve through the
+ * crawler registry (gated by AUXION_CRAWLER_ENABLED), the reasoning stage through
+ * the provider registry, and every other stage blocks. Each sub-registry gates
+ * itself; nothing here starts a worker, and the driver still runs one stage.
  */
 
 /** Prefixed-id generator injected into the driver (mirrors the app convention). */
@@ -46,7 +53,7 @@ export async function buildRuntimeDriver(): Promise<ControlledRuntimeDriver> {
   // driver (reader), so safe reasoning metadata reaches the result.
   const telemetry: { current: ReasoningTelemetry | null } = { current: null };
 
-  const stageRegistry = createDefaultStageRegistry({
+  const providerRegistry = createDefaultStageRegistry({
     config,
     adapter,
     runtime,
@@ -58,9 +65,19 @@ export async function buildRuntimeDriver(): Promise<ControlledRuntimeDriver> {
     },
   });
 
+  // Discovery stages resolve through the crawler; everything else through the
+  // provider registry. Each sub-registry self-gates (crawler_disabled /
+  // provider_disabled) and blocks stages it does not implement.
+  const discoveryRegistry = buildDiscoveryRegistry(runtime);
+  const composedRegistry: StageExecutorRegistry = {
+    resolve(stage, run) {
+      return DISCOVERY_STAGE_KEYS.has(stage) ? discoveryRegistry.resolve(stage, run) : providerRegistry.resolve(stage, run);
+    },
+  };
+
   return new ControlledRuntimeDriver({
     services: runtime,
-    registry: stageRegistry,
+    registry: composedRegistry,
     reasoningProviderId: config.providerId,
     ids: newId,
     now: () => new Date().toISOString(),
