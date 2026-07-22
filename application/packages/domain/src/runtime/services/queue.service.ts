@@ -179,6 +179,11 @@ export class QueueService {
     return result;
   }
 
+  /** Non-mutating queue-depth peek for a dry-run eligibility check. */
+  async depth(jobType = "advance_stage", clientId: string | null = null): Promise<RuntimeResult<{ eligible: number; queued: number; leased: number }>> {
+    return this.repo.queueDepth(jobType, clientId, this.ctx.clock());
+  }
+
   async get(jobId: string): Promise<RuntimeResult<RuntimeQueueJob>> {
     return this.repo.getJob(jobId);
   }

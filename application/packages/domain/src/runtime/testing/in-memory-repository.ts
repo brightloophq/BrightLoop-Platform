@@ -428,6 +428,16 @@ export class InMemoryRuntimeRepository implements RuntimeRepository {
     return ok("updated", next);
   }
 
+  async queueDepth(jobType: string, clientId: string | null, now: string): Promise<RuntimeResult<{ eligible: number; queued: number; leased: number }>> {
+    const jobs = this.jobs.all().filter((j) => j.jobType === jobType && (clientId === null || j.clientId === clientId));
+    const queued = jobs.filter((j) => j.status === "queued");
+    return ok("found", {
+      eligible: queued.filter((j) => j.availableAt <= now).length,
+      queued: queued.length,
+      leased: jobs.filter((j) => j.status === "leased").length,
+    });
+  }
+
   async rescheduleJob(input: RescheduleInput): Promise<RuntimeResult<RuntimeQueueJob>> {
     const held = this.heldBy(input.jobId, input.owner);
     if (!held.ok) return held;

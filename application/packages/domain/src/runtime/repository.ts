@@ -243,6 +243,20 @@ export interface JobQueueRepository {
    * operation, and no worker holds the lease on a dead job.
    */
   requeueJob(runId: string, stage: string, jobType: string, availableAt: string): Promise<RuntimeResult<RuntimeQueueJob>>;
+  /**
+   * A NON-mutating peek at queue depth for a dry-run eligibility check: how many
+   * jobs are `eligible` (queued AND available now), plus the raw `queued` and
+   * `leased` counts. Does not lease, lock, or mutate anything — safe to call
+   * before deciding whether a turn is worth running.
+   */
+  queueDepth(jobType: string, clientId: string | null, now: string): Promise<RuntimeResult<QueueDepthCounts>>;
+}
+
+/** Counts returned by `queueDepth`. */
+export interface QueueDepthCounts {
+  eligible: number;
+  queued: number;
+  leased: number;
 }
 
 /* ---- the composed facade -------------------------------------------------------- */
