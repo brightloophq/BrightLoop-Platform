@@ -3,8 +3,8 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Phase C · Sprint C1 (Product API
-> Bridge)** — the application boundary that lets the web app drive the runtime.
+> convention that changed). Last updated: after **Phase C · Sprint C2 (Live Claude
+> Provider Adapter)** — the first production provider behind the reasoning seam.
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
 > (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
@@ -128,8 +128,10 @@ and is on `main`.)
 **A separate track — the canonical UI migration and the Business Intelligence
 Engine — has since landed on `main`:** Phase 0 (PR #8), Phase 1 core surfaces
 (PRs #9, #12), **Phase A engine Sprints 1–12 (PRs #13–#18, #20, #21, #23, #25, #26, #27)**,
-**Phase B runtime Sprints 13A–C (PRs #29, #30)**, and **Phase C · Sprint C1 —
-Product API Bridge (PR #32)**. These are detailed in §13; the merge log is §11.
+**Phase B runtime Sprints 13A–C (PRs #29, #30)**, and **Phase C Sprints C1 —
+Product API Bridge (PR #32) and C2 — Live Claude Provider Adapter (PR #35)**. These
+are detailed in §13; the merge log is §11. (The system architecture handbook —
+`docs/architecture/SYSTEM_ARCHITECTURE.md` — landed via PR #34.)
 
 ---
 
@@ -325,7 +327,8 @@ Execution → Measurement → Learning.
 - **Phase B — durable runtime foundation ✅** (Sprint 13A–C, §13)
 - **Phase C — productization** (exposing the engine to the product):
   - **C1 Product API Bridge ✅** (the application boundary, §13)
-  - **C2 Live Provider Adapter ⏭**
+  - **C2 Live Claude Provider Adapter ✅** (the first production provider, §13)
+  - **C2.1 Controlled Runtime Driver ⏭**
   - C3 Discovery/Crawler Runtime
   - C4 Internal Prospect Scanner
   - C5 Report & Proposal Rendering
@@ -605,7 +608,74 @@ Browser → Route Handler → @brightloop/application → RuntimeCoordinator
 - **Stuck in-flight runs MAY be re-driven from the last valid checkpoint** — retry
   resets a dead-lettered stage's job and resumes; completed stages are skipped.
 - **No live provider or crawler is wired yet** — a created scan enqueues its first
-  stage and waits; execution arrives in C2 (provider) and C3 (crawler).
+  stage and waits; the live provider arrives in C2, the crawler in C3.
+
+**C2 — Live Claude Provider Adapter (merged, PR #35, merge commit `86b76bc8`).**
+The first production `ReasoningProviderAdapter`: it lets one reasoning job execute
+through the existing routing → validation → accounting → persistence stack against
+the real Anthropic API, while the engine, runtime, and application layers stay
+vendor-agnostic. **Transport and normalization only — no business logic.**
+
+- **New package `@brightloop/providers`** — the ONLY workspace package that imports
+  a vendor AI SDK (the official `@anthropic-ai/sdk`, pinned). Server-only; depends
+  only on `@brightloop/domain` + `@brightloop/schema`. All SDK types are contained
+  in `transport.ts`; no SDK type reaches domain/application/data.
+- **`AnthropicReasoningProviderAdapter`** implements the Sprint-7 seam exactly
+  (`capabilities`/`supportsStructuredOutput`/`healthCheck`/`estimateTokens`/
+  `execute`) with an opaque provider id (`anthropic-primary`).
+- **Environment-driven model selection** — `AUXION_ANTHROPIC_MODEL` controls the
+  model (falling back to `claude-opus-4-8`); env always wins, no hardcoded default
+  overrides configuration.
+- **Two kill switches, disabled by default** — `AUXION_LIVE_AI_ENABLED` (global) +
+  `AUXION_ANTHROPIC_ENABLED` (provider). A disabled provider is never registered
+  and, defensively, makes no outbound call if asked to execute. A missing key is
+  safe while disabled and fails clearly (no secret in the message) only when
+  enabled.
+- **JSON-only structured-output translation** — the prompt requires a single JSON
+  object, the output-contract id, explicit citations and limitations; bans
+  fabricated metrics/competitors/benchmarks and unavailable-source claims; requests
+  no chain-of-thought/scratchpad; business content is fenced as DATA (prompt-
+  injection defence).
+- **Response normalization** — parses the JSON body into an untrusted object, maps
+  `stop_reason` → `FinishReason`, passes usage through; the Sprint-7 orchestrator
+  does all grounding/citation/schema validation. Malformed JSON is a `validation`
+  failure — rejected, never promoted.
+- **Safe `rawResponseRef`** — a pointer (`anthropic:<providerId>:<requestId>`),
+  never raw content. Raw model output is structurally unstorable.
+- **Stable provider error classification** — every transport category maps to a
+  `ReasoningFailureKind` + disposition (retryable/fallback/fatal/cancellation/
+  budget); no raw SDK error or secret crosses the boundary.
+- **Timeout and cancellation** — one `AbortController`, first terminal source wins
+  (user-cancel → `cancelled`, never retried; timeout → `timeout`, retryable;
+  deadline → cancelled); timers cleared in `finally`, no orphaned promise.
+- **Actual/estimated usage** — actual usage → `estimated:false`; omitted usage →
+  the existing estimated fallback. No pricing engine added.
+- **Server-only registration** — `buildProviderRegistry` at the composition root
+  (`apps/web/src/lib/providers.ts`, `import "server-only"`) includes the adapter
+  only when enabled and coexists with the in-memory test double.
+- **Controlled reasoning execution path** — `runControlledReasoning` drives one
+  job through `executeReasoningJob` + Phase-B runtime persistence. Server-only, not
+  a public endpoint, not a worker loop.
+- **33 provider tests** (fake transport, no SDK/network); **952 total** workspace
+  tests. The live test (`adapter.live.test.ts`) is gated on
+  `AUXION_RUN_LIVE_PROVIDER_TESTS=true` and excluded from the default suite — CI
+  spent **no live API credit** (0 `api.anthropic.com` calls).
+
+**C2 rules (do not regress):**
+
+- **The provider adapter performs transport and normalization only** — no
+  grounding, scoring, or business logic; that stays in the Phase-A orchestrator.
+- **Domain logic remains provider-neutral** — the vendor is an opaque id behind an
+  interface; the SDK is confined to `@brightloop/providers/transport.ts`.
+- **Live AI stays disabled by default** — both kill switches default off.
+- **Model selection is configuration-driven** — via `AUXION_ANTHROPIC_MODEL`; the
+  default is a fallback, never an override.
+- **Raw provider output is never persisted** — only a safe reference.
+- **Default CI never performs paid provider calls** — the live test is gated and
+  excluded from the normal run.
+- **The controlled reasoning path is server-only and not publicly exposed.**
+- **No permanent worker or crawler exists yet** — a caller drives one turn
+  explicitly; the runtime driver (C2.1) and crawler (C3) are future work.
 
 The original PDF-26 surface foundation (still current, underneath the Phase A build):
 
