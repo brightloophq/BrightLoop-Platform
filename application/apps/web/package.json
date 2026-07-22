@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@brightloop/application": "workspace:*",
+    "@brightloop/crawler": "workspace:*",
     "@brightloop/data": "workspace:*",
     "@brightloop/db": "workspace:*",
     "@brightloop/domain": "workspace:*",
