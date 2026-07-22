@@ -3,12 +3,14 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Phase A · Sprint 11 (Proposal
-> Intelligence Engine)**.
+> convention that changed). Last updated: after **Phase B · Sprint 13C (Runtime
+> Services & Queue Orchestration)** — the durable runtime foundation is complete.
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
 > (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
-> Engine** (the async scan/reasoning backend), built as **Phase A · Sprints 1–11**,
+> Engine** (the async scan/reasoning backend): **Phase A** (Sprints 1–12) built it
+> as deterministic contracts + pure logic; **Phase B** (Sprint 13A–C) added the
+> durable runtime — persistence, repositories, services, and queue orchestration —
 > tracked in §13. Sprint numbers are per-track — "Sprint 5" means Signals in track A
 > and Discovery/Crawl in track B; always read them with their track.
 
@@ -125,8 +127,9 @@ and is on `main`.)
 
 **A separate track — the canonical UI migration and the Business Intelligence
 Engine — has since landed on `main`:** Phase 0 (PR #8), Phase 1 core surfaces
-(PRs #9, #12), and **Phase A engine Sprints 1–11 (PRs #13–#18, #20, #21, #23, #25, #26)**.
-These are detailed in §13; the merge log is §11.
+(PRs #9, #12), **Phase A engine Sprints 1–12 (PRs #13–#18, #20, #21, #23, #25, #26, #27)**,
+and **Phase B runtime Sprints 13A–C (PRs #29, #30)**. These are detailed in §13; the
+merge log is §11.
 
 ---
 
@@ -316,45 +319,53 @@ AI-native case file); reconcile to that PDF, don't resurrect the old build (§13
 Subsequent A stages: Recommendations → Approvals (gate already enforced) → Moves →
 Execution → Measurement → Learning.
 
-**Track B — Business Intelligence Engine (Phase A).** Sprints 1–11 are complete and
-merged (§13). The Phase A roadmap:
+**Track B — Business Intelligence Engine.** **Phase roadmap:**
 
-- Sprint 1 ✅ Engine Skeleton
-- Sprint 2 ✅ Provider Registry & Routing
-- Sprint 3 ✅ Evidence Engine & Confidence Model
-- Sprint 4 ✅ Business Intelligence Graph
-- Sprint 5 ✅ Discovery & Crawl Orchestration
-- Sprint 6 ✅ AI Reasoning Orchestrator
-- Sprint 7 ✅ AI Provider Execution Layer
-- Sprint 8 ✅ End-to-End Business Intelligence Pipeline
-- Sprint 9 ✅ Recommendation Engine & Decision Science
-- Sprint 10 ✅ Competitor Intelligence Framework
-- Sprint 11 ✅ Proposal Intelligence Engine
-- Sprint 12 ⏭ Report & Narrative Engine
+- **Phase A — deterministic intelligence foundation ✅** (Sprints 1–12, §13)
+- **Phase B — durable runtime foundation ✅** (Sprint 13A–C, §13)
+- **Phase C — productization ⏭** (live adapters, crawler runtime, pricing,
+  rendering/export/signature, and the operator UI over the runtime)
 
-**The engine is now wired end to end, but entirely as deterministic contracts +
-pure logic.** Nothing in Phase A performs real I/O: there is still no live model
-call, no production provider SDK, no crawler runtime, no browser automation, no
-background worker, and no persistence — the pipeline runs on a deterministic
-in-memory provider adapter and a discovery/evidence fixture.
+**Phase A sprints (all merged, §13):**
 
-**Deferred layers (beyond Sprint 12, in no fixed order):**
-1. **Runtime + persistence** — scan/pipeline-run persistence, the job queue and
-   workers behind `ScanJobQueue`, and resumable runs backed by the DB (additive
-   migrations on the existing RLS/pgTAP/generated-type patterns).
-2. **Live provider adapters** — real vendor implementations of the Sprint-7
+- Sprint 1 ✅ Engine Skeleton · Sprint 2 ✅ Provider Registry & Routing ·
+  Sprint 3 ✅ Evidence Engine & Confidence Model · Sprint 4 ✅ BI Graph ·
+  Sprint 5 ✅ Discovery & Crawl Orchestration · Sprint 6 ✅ AI Reasoning Orchestrator ·
+  Sprint 7 ✅ AI Provider Execution Layer · Sprint 8 ✅ End-to-End BI Pipeline ·
+  Sprint 9 ✅ Recommendation Engine & Decision Science ·
+  Sprint 10 ✅ Competitor Intelligence Framework · Sprint 11 ✅ Proposal Intelligence
+  Engine · Sprint 12 ✅ Report & Narrative Engine
+
+**Phase B sprints (all merged, §13):** Sprint 13A ✅ Runtime Persistence · Sprint 13B
+✅ Repository Ports & Typed Adapters · Sprint 13C ✅ Runtime Services & Queue
+Orchestration.
+
+**Phase A is deterministic contracts + pure logic** — no real I/O: no live model
+call, no production provider SDK, no crawler runtime, no browser automation. **Phase
+B makes runs durable** — persistence, RLS, an atomic Postgres job queue, and the
+services/coordinator that drive the 13-stage pipeline — but still calls no provider
+and runs no worker daemon: the queue is Postgres and a caller drives one turn at a
+time. Everything remains deterministic and testable without a network.
+
+**Deferred to Phase C (in no fixed order):**
+1. **Live provider adapters** — real vendor implementations of the Sprint-7
    `ReasoningProviderAdapter` seam, replacing the in-memory test adapter.
-3. **Crawler + discovery runtime** — real fetching behind the Sprint-5 contracts,
+2. **Crawler + discovery runtime** — real fetching behind the Sprint-5 contracts,
    with the SSRF/robots guards already specified. Competitor discovery (Sprint 10)
    defines its inputs but likewise does not execute.
-4. **Service pricing** — Sprint 9 delivered the recommendation *mathematics* and
+3. **Service pricing** — Sprint 9 delivered the recommendation *mathematics* and
    Sprint 11 the proposal *structure*, but **pricing itself is still deferred**:
    `effort`/budget stay abstract units, `InvestmentStructureInputs` carries only the
    inputs a future pricing engine will consume, and financial EV/ROI are reported
    unavailable rather than estimated.
-5. **Rendering, export & signature** — the internal intelligence report,
+4. **Rendering, export & signature** — the internal intelligence report,
    DecisionBrief, and ProposalArtifact are **data contracts only**. PDF generation,
    client-facing UI, contracts, and e-signature integration are all unbuilt.
+5. **Operator UI over the runtime** — routes and server actions that drive
+   `RuntimeCoordinator` and surface the §13 read models. The runtime services exist
+   and are wired (`getRuntimeServices`), but no route consumes them yet.
+
+**Runtime + persistence is no longer deferred — Phase B built it (§13).**
 
 Whichever is chosen, the pure contracts stay authoritative and the layers are
 extended, never rewritten.
@@ -414,17 +425,18 @@ generated-type/repository/domain-service/capability patterns. Routes:
   Console / Business Scan / Activation. Presentation only — the primitives (Badge
   neutral-pill, `SystemMap`, tokens) were already canonical from Phase 0.
 
-### Business Intelligence Engine — Phase A build (Sprints 1–11, all merged)
+### Business Intelligence Engine — Phase A build (Sprints 1–12, all merged)
 
 The Business Intelligence Scan/Reasoning backend is an **asynchronous, provider-
 pluggable** engine. **Phase A built it out as deterministic CONTRACTS + pure logic
-across eleven sprints (PRs #13–#18, #20, #21, #23, #25, #26)** — Sprint 8 wired every layer into
-one end-to-end pipeline, and Sprint 9 added the decision-science layer that scores
-and ranks its output. What still does **not** exist: any crawler
-runtime, live LLM/model call, benchmark API call, background worker, production
-provider SDK, persistence, or billing — every module takes a supplied `now` and is
-unit-testable without I/O (the pipeline runs on a deterministic in-memory test
-adapter plus a discovery/evidence fixture).
+across twelve sprints (PRs #13–#18, #20, #21, #23, #25, #26, #27)** — Sprint 8 wired every layer
+into one end-to-end pipeline, Sprint 9 added the decision-science layer that scores
+and ranks its output, and Sprint 12 the audience-scoped Report & Narrative Engine.
+What still does **not** exist in Phase A: any crawler runtime, live LLM/model call,
+benchmark API call, background worker, production provider SDK, or billing — every
+module takes a supplied `now` and is unit-testable without I/O (the pipeline runs on
+a deterministic in-memory test adapter plus a discovery/evidence fixture).
+**Persistence + queue arrived in Phase B (below).**
 Canonical specs: **PDF 26** (`docs/design/source/26-Business-Intelligence-Scan.pdf`
 — surface model: 3 surfaces, 15 screens, 5 roles, 9 scan stages) and **PDF 27**
 (`27-Business-Scan-Engine.pdf` — the engine's **8 layers / 13-stage pipeline / 6
@@ -448,6 +460,7 @@ subsystem specs. See `docs/design/scan-engine-architecture.md`,
 | **9** | #23 | `recommendation.ts` | `decision-science/*` | **Recommendation Engine & Decision Science** (this update, merge `331ac37`, AIS-003): the canonical `EngineRecommendation` entity; 12 normalized scoring factors each declaring its missing-data treatment; risk-adjusted expected value (`EV = p·I − (1−p)·L`, confidence- and time-adjusted; **ROI only as a band, withheld when cost is unknown — never fabricated**); the AIS-003 priority formula `π = C·(Σw·x)·U/(E+ε)` with penalties, weight redistribution for unavailable criteria, and a critical-risk floor (withheld for inferred-only evidence); a recommendation-specific dependency DAG; deterministic 7-key ranking with a stable id tie-break; greedy-knapsack portfolio selection; six scenarios; ±δ sensitivity (no Monte Carlo); the data-only `DecisionBrief`; and a pipeline stage writing **new** artifacts with lineage preserved. 50 new tests (incl. the AIS-003 §08 worked example). |
 | **10** | #25 | `competitor.ts` | `competitor-intelligence/*` | **Competitor Intelligence Framework** (merge `81538cd`, AIS-005): canonical `EngineCompetitorCandidate` (6 statuses); identity validation + false-positive prevention (14 issue kinds — duplicate, alias, parent/subsidiary, franchise, directory, marketplace, supplier, inactive, category, regional); similarity/relevance scoring (`Sim(c) = Σ wk·simk`, `Rank(c) = Sim(c)·C(c)`, weight redistributed for unavailable axes); deterministic **top-10 ranking** with stable id tie-break; benchmark normalization (higher/lower/categorical/ordinal/binary, median, percentile, winsorization); the four **evidence-basis labels** with weaker-side confidence capping; competitive gap analysis (deficit/parity/advantage/**unknown**); market-position model gating "market leader" claims on coverage + set quality; opportunity/threat outputs; graph + decision-science integration; competitor-set confidence; snapshots + changesets. **The two inviolable rules — never fabricate a competitor, never fabricate a benchmark — are enforced, not assumed.** 52 new tests. |
 | **11** | #26 | `proposal.ts` | `proposal-intelligence/*` | **Proposal Intelligence Engine** (this update, merge `df92f8c`, AIS-004): proposal request (**budget never inferred**) and strategy whose every statement must trace to a finding, recommendation, or competitor evidence — untraceable statements are rejected, not published; **evidence-backed scope** (work requires a finding AND evidence); deliverables; phases cut along the dependency DAG with a milestone DAG (topological order, cycle + blocked detection); success metrics (unavailable baseline stays unavailable; **no fabricated ROI**); assumptions/risks/exclusions with no hidden caveats; **investment structure INPUTS only** (no price, rate, or total); four nested deterministic option packages; **verified + approved proof only**; the data-only `ProposalArtifact` with a content-addressed checksum; **immutable versions with approval reset on material change**; pipeline integration preserving lineage. 48 new tests. |
+| **12** | #27 | `narrative.ts` | `scan-engine/narrative/*` | **Report & Narrative Engine** (merge from PR #27, PDF-27 §16/§17): audience/tone policy and the six narrative builders (internal operator, executive summary, client diagnosis, board summary, public preview, proposal narrative); claim validation + safety guards (**no narrative claim without evidence**, no hidden chain-of-thought); citations + confidence language; **redaction runs BEFORE the length budget** so forbidden public sections are locked, not silently dropped; the checksummed `NarrativeArtifact`; **immutable versions with approval reset on material change**; pipeline lineage. 49 new tests. |
 
 **Domain-package constraint (learned in Sprints 5–6):** `@brightloop/domain` is
 **Node-free** (no `@types/node`) — no `node:*` imports and no `URL` global; use pure
@@ -456,6 +469,65 @@ functions deterministic by taking `now` as a parameter (no clock). When a new ex
 collides with an existing barrel symbol, rename with a prefix (e.g.
 `EngineEvidenceItem`, `BuildResultProvenanceInput`) or namespace the barrel
 (`export * as reasoningEvents`).
+
+### Business Intelligence Engine — Phase B build (Runtime, Sprint 13A–C, all merged)
+
+Phase B turns the Phase-A pure engine into a **durable runtime**: the pipeline can
+now be persisted, resumed after a crash, and coordinated through services and a
+Postgres-backed job queue — while every Phase-A decision (stage graph, transitions,
+retry policy, checksums) stays authoritative and is **consulted, never restated**.
+Still no live provider call, no worker daemon, no hosted queue: Postgres *is* the
+queue, and a caller drives one worker turn at a time. Canonical specs: PDF 27 plus
+AIS-001..006 (AIS-006 *Continuous Monitoring* binds the runtime toward immutable
+snapshots, an append-only timeline and per-account isolation — its monitor/alert
+surface has no tables yet and is Phase C).
+
+| Sprint | PR (merge) | Layer | What it adds |
+|---|---|---|---|
+| **13A** | #29 (bundled) | schema + migration | Runtime **contracts** (`schema/runtime.ts`) and **13 additive tables** (`intelligence_runs`, `_stages`, `_checkpoints`, `_artifacts`, `reasoning_jobs`, `provider_attempts`, `intelligence_findings`, `_recommendations`, `competitor_snapshots`, `proposal_versions`, `narrative_versions`, `runtime_events`, `job_queue`) with 10 `runtime_*` enums; **RLS** (internal-only via `bl_is_internal()`) + explicit grants; **pgTAP**; regenerated **generated types**; **idempotency** foundations (every write carries an `idempotency_key`); **queue + lease** schema; **append-only `runtime_events`** (UPDATE/DELETE revoked + immutability trigger). |
+| **13B** | #29 (`4ed86dd`) | ports + adapter | **13 narrow repository interfaces** composed into `RuntimeRepository`; the **typed Supabase adapter** (`data/runtime/adapter.ts`, row types derived from generated types — no `any`, no hand-authored DB types); **atomic queue leasing** via `bl_lease_next_job` (SECURITY INVOKER, single `UPDATE … FOR UPDATE SKIP LOCKED`); the **replay/conflict result model** (`RuntimeResult` — no raw DB error crosses the boundary; same key + same payload → `replayed`, changed payload → `conflict`); **20 live integration tests**; **version lineage** (`supersedesId`); findings/recommendations/snapshots **persistence**; **generated-type drift zero**. |
+| **13C** | #30 (`a4441537`) | services + orchestration | **12 runtime services** (one aggregate each, narrow deps); the **`RuntimeExecutionEngine`** (how one stage executes — preflight → recovery → gate → work → artifact → checkpoint; **never touches the queue**); the **`RuntimeCoordinator`** (run lifecycle + queue orchestration + retry disposition); **checkpoint recovery** (resume from last valid checkpoint; completed stages skipped, never re-run); **artifact immutability** (no update path; changed content at a version → `conflict`); **append-only event flow** (services emit, repos persist, nothing writes SQL); **13 read-model projections**; the **`InMemoryRuntimeRepository`** double (mirrors adapter semantics exactly); **53 deterministic service tests** + **7 live coordinator integration tests**; `docs/engineering/runtime-sequences.md` (10 sequence diagrams). |
+
+**Three defects the live-Postgres CI caught that the in-memory double had hidden**
+(the reason both suites exist — a double can only confirm it agrees with itself):
+
+1. **Cross-test tenant contamination.** The live integration tests shared one client,
+   and a worker is generic (`runOnce` leases *any* eligible job), so tests drained one
+   another's queue work. The "contention" failure was 5 workers taking 3 *different*
+   jobs, not a `SKIP LOCKED` breach. Fix: each test provisions its own tenant and
+   scopes its leases; `runOnce` gained an opt-in `clientId`.
+2. **Unstable stage-status ordering.** `stageStatusView` picked the latest row per
+   stage by `created_at` alone; a stage's rows land in the same millisecond, and V8's
+   stable sort masked the tie in-memory while Postgres returned ties arbitrarily. Fix:
+   order by `(created_at, attempt, lifecycle rank)`.
+3. **False replay success (the serious one).** `intelligence_run_stages` is
+   `unique (run_id, stage, attempt)` — one row per attempt holding its *outcome*, not
+   a transition log. `PipelineService` wrote `running` then `completed` for one
+   attempt; the collision re-read on a fingerprint that **excludes status**, matched,
+   and returned `ok("replayed", runningRow)`. So `completeStage` reported success while
+   all 13 stages sat at `running` forever, despite the run completing and every
+   checkpoint landing. Fix below.
+
+**Runtime invariants (the final rules — do not "simplify" these away):**
+
+- **`intelligence_run_stages` stores ONE terminal row per attempt**, carrying that
+  attempt's outcome. It is not an append-only transition log.
+- **Stage-start is represented in the append-only `runtime_events` log**, not by a
+  stage row. `beginStage` writes no row; the row is written once by the terminal
+  transition, and its idempotency key drops the status suffix to match the table's
+  own uniqueness rule.
+- **The in-memory double's stage fingerprint excludes status too** — a double stricter
+  than production hides exactly the mismatch it exists to catch.
+- **Completed artifacts persist BEFORE checkpoints** — a checkpoint must never
+  reference an artifact that does not exist.
+- **Blocked jobs release WITHOUT consuming an attempt** — unmet dependencies are not a
+  failed try; charging one would eventually dead-letter recoverable work.
+- **`RuntimeExecutionEngine` owns one-stage execution; `RuntimeCoordinator` owns run
+  and queue orchestration.** Every multi-service sequence lives in one of those two
+  files and nowhere else — orchestration never leaks into repositories or services.
+- **Deduplication is structural, not procedural** — every idempotency key is a pure
+  function of natural identity, so a crash-and-retry recomputes the same key and the
+  repository replays. No dedupe table, no lock.
 
 The original PDF-26 surface foundation (still current, underneath the Phase A build):
 
