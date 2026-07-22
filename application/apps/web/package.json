@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@brightloop/application": "workspace:*",
     "@brightloop/data": "workspace:*",
     "@brightloop/db": "workspace:*",
     "@brightloop/domain": "workspace:*",

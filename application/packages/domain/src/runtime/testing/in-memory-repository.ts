@@ -41,6 +41,7 @@ import type {
   FailJobInput,
   LeaseRequest,
   ListEventsQuery,
+  ListRunsQuery,
   RescheduleInput,
   RuntimeRepository,
 } from "../repository.js";
@@ -151,6 +152,16 @@ export class InMemoryRuntimeRepository implements RuntimeRepository {
     const next = { ...row, ...patch, status, updatedAt: this.now() };
     this.runs.replace(next);
     return ok("updated", next);
+  }
+
+  async listRuns(query: ListRunsQuery): Promise<RuntimeResult<RuntimeRun[]>> {
+    const statuses = query.statuses === undefined ? null : new Set(query.statuses);
+    let rows = this.runs
+      .all()
+      .filter((r) => (query.clientId == null || r.clientId === query.clientId) && (statuses === null || statuses.has(r.status)))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || b.id.localeCompare(a.id));
+    if (query.limit !== undefined) rows = rows.slice(0, query.limit);
+    return ok("found", rows);
   }
 
   async cancelRun(id: string, at: string): Promise<RuntimeResult<RuntimeRun>> {
@@ -393,6 +404,26 @@ export class InMemoryRuntimeRepository implements RuntimeRepository {
     if (row.status === "cancelled") return ok("replayed", row);
     if (TERMINAL_QUEUE.has(row.status)) return err("terminal_state", `job ${jobId} is ${row.status}`);
     const next = { ...row, status: "cancelled" as const, leaseOwner: null, leaseExpiresAt: null, updatedAt: this.now() };
+    this.jobs.replace(next);
+    return ok("updated", next);
+  }
+
+  async requeueJob(runId: string, stage: string, jobType: string, availableAt: string): Promise<RuntimeResult<RuntimeQueueJob>> {
+    const resettable = new Set<RuntimeQueueJob["status"]>(["failed", "dead_letter", "cancelled"]);
+    const job = this.jobs
+      .all()
+      .find((j) => j.runId === runId && j.stage === stage && j.jobType === jobType && resettable.has(j.status));
+    if (job === undefined) return err("not_found", `requeueJob: no resettable job for ${runId}/${stage}`);
+    const next: RuntimeQueueJob = {
+      ...job,
+      status: "queued",
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      attempt: 0,
+      availableAt,
+      lastError: null,
+      updatedAt: this.now(),
+    };
     this.jobs.replace(next);
     return ok("updated", next);
   }

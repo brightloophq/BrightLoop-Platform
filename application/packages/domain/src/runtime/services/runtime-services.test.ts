@@ -125,6 +125,25 @@ describe("RunService", () => {
     h.advance(11_000);
     expect(run.ok && h.svc.runs.isPastDeadline(run.value, h.now())).toBe(true);
   });
+
+  it("lists runs newest-first, filtered by tenant and status", async () => {
+    const h = harness();
+    await h.svc.runs.createRun({ clientId: "c1", scanId: "s1" });
+    h.advance(1_000);
+    const b = await h.svc.runs.createRun({ clientId: "c1", scanId: "s2" });
+    h.advance(1_000);
+    await h.svc.runs.createRun({ clientId: "c2", scanId: "s3" });
+    if (b.ok) await h.svc.runs.completeRun(b.value.id);
+
+    const c1 = await h.svc.runs.list({ clientId: "c1" });
+    expect(c1.ok && c1.value.map((r) => r.scanId)).toEqual(["s2", "s1"]); // newest first
+
+    const done = await h.svc.runs.list({ clientId: "c1", statuses: ["completed"] });
+    expect(done.ok && done.value.map((r) => r.scanId)).toEqual(["s2"]);
+
+    const limited = await h.svc.runs.list({ limit: 1 });
+    expect(limited.ok && limited.value).toHaveLength(1);
+  });
 });
 
 /* ===== 2 · artifacts: immutability + lineage ================================= */
@@ -356,6 +375,26 @@ describe("QueueService", () => {
     expect(await h.svc.queue.cancel(job.id)).toMatchObject({ ok: true, code: "updated" });
     expect(await h.svc.queue.cancel(job.id)).toMatchObject({ ok: true, code: "replayed" });
   });
+
+  it("requeues only a NON-progressing job, resetting it to eligible", async () => {
+    const h = harness();
+    await h.svc.queue.enqueue({ jobType: "advance_stage", clientId: "c1", runId: "r1", scanId: "s1", stage: "a", maxAttempts: 1 });
+
+    // a queued job has nothing to retry
+    expect(await h.svc.queue.requeue("r1", "a")).toMatchObject({ ok: false, code: "not_found" });
+
+    // drive it to dead-letter, then requeue resets it to queued with attempt 0
+    const leased = await h.svc.queue.lease({ owner: "w1", leaseSeconds: 60 });
+    if (!leased.ok) return;
+    await h.svc.queue.fail(leased.value, "w1", "boom");
+    expect(h.repo.allJobs()[0]!.status).toBe("dead_letter");
+
+    const requeued = await h.svc.queue.requeue("r1", "a");
+    expect(requeued).toMatchObject({ ok: true, code: "updated" });
+    expect(requeued.ok && requeued.value.status).toBe("queued");
+    expect(requeued.ok && requeued.value.attempt).toBe(0);
+    expect(h.repo.allEvents().some((e) => e.eventType === "runtime.queue.retry_scheduled")).toBe(true);
+  });
 });
 
 /* ===== 5 · reasoning + provider attempts ======================================== */
@@ -549,6 +588,45 @@ describe("RuntimeCoordinator", () => {
     const after = await h.svc.coordinator.advanceStage(runId, PIPELINE_STAGE_ORDER[1]!, tracking);
     expect(after.ok && after.value.status).toBe("cancelled");
     expect(executed).toEqual([]);
+  });
+
+  it("retries a failed stage by resetting its dead-lettered job, reusing recovery", async () => {
+    const h = harness();
+    const init = await h.svc.coordinator.initializeRun(START);
+    if (!init.ok) return;
+    const runId = init.value.run.id;
+
+    // exhaust the first stage's attempts so its job dead-letters (run stays in-flight)
+    const throwing = async (): Promise<StageWork> => { throw new Error("stage exploded"); };
+    for (let i = 0; i < 6; i += 1) {
+      await h.svc.coordinator.runOnce("w1", throwing);
+      h.advance(600_000); // clear the backoff so the retry lease is eligible
+    }
+    expect(h.repo.allJobs()[0]!.status).toBe("dead_letter");
+
+    // retry re-drives the resume stage (stage 0, since nothing checkpointed)
+    const retry = await h.svc.coordinator.retryRun(runId);
+    expect(retry).toMatchObject({ ok: true, code: "updated" });
+    expect(retry.ok && retry.value.status).toBe("queued");
+
+    // with real work it now completes end to end
+    await drainQueue(h, "w2");
+    const run = await h.svc.runs.getRun(runId);
+    expect(run.ok && run.value.status).toBe("completed");
+  });
+
+  it("refuses to retry a terminal run", async () => {
+    const h = harness();
+    const a = await h.svc.runs.createRun(START);
+    if (!a.ok) return;
+    await h.svc.runs.completeRun(a.value.id);
+    expect(await h.svc.coordinator.retryRun(a.value.id)).toMatchObject({ ok: false, code: "terminal_state" });
+
+    // nothing to retry on a healthy in-flight run
+    const h2 = harness();
+    const init = await h2.svc.coordinator.initializeRun(START);
+    if (!init.ok) return;
+    expect(await h2.svc.coordinator.retryRun(init.value.run.id)).toMatchObject({ ok: false, code: "not_found" });
   });
 
   it("fails the run when its deadline passes mid-pipeline", async () => {

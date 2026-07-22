@@ -28,7 +28,7 @@ import type {
 import {
   err, mapDatabaseError, ok, SQLSTATE,
   type AppendEventInput, type FailJobInput, type LeaseRequest, type ListEventsQuery,
-  type RescheduleInput, type RuntimeRepository, type RuntimeResult,
+  type ListRunsQuery, type RescheduleInput, type RuntimeRepository, type RuntimeResult,
 } from "@brightloop/domain";
 import {
   artifactFingerprint, checkpointFingerprint, checksumFingerprint, narrativeFingerprint,
@@ -115,6 +115,14 @@ export class SupabaseRuntimeRepository implements RuntimeRepository {
 
   async getRun(id: string): Promise<RuntimeResult<RuntimeRun>> {
     return this.single("getRun", this.db.from("intelligence_runs").select("*").eq("id", id).maybeSingle(), toRun);
+  }
+
+  async listRuns(query: ListRunsQuery): Promise<RuntimeResult<RuntimeRun[]>> {
+    let q = this.db.from("intelligence_runs").select("*").order("created_at", { ascending: false });
+    if (query.clientId != null) q = q.eq("client_id", query.clientId);
+    if (query.statuses !== undefined && query.statuses.length > 0) q = q.in("status", [...query.statuses]);
+    if (query.limit !== undefined) q = q.limit(query.limit);
+    return this.many("listRuns", q, toRun);
   }
 
   async getRunByIdempotencyKey(key: string): Promise<RuntimeResult<RuntimeRun>> {
@@ -469,6 +477,22 @@ export class SupabaseRuntimeRepository implements RuntimeRepository {
       .eq("id", jobId).select("*").maybeSingle();
     if (error !== null) return mapDatabaseError(error, "cancelJob");
     if (data === null) return err("not_found", "cancelJob: no job");
+    return ok("updated", toQueueJob(data));
+  }
+
+  async requeueJob(runId: string, stage: string, jobType: string, availableAt: string): Promise<RuntimeResult<RuntimeQueueJob>> {
+    // Only a non-progressing job is resettable; an active (queued/leased) job has
+    // nothing to retry. The `.in(status)` filter makes that atomic — no read-first.
+    const { data, error } = await this.db.from("job_queue")
+      .update({
+        status: "queued", lease_status: "unleased", lease_owner: null, lease_expires_at: null,
+        attempt: 0, available_at: availableAt, last_error: null, updated_at: new Date().toISOString(),
+      })
+      .eq("run_id", runId).eq("stage", stage).eq("job_type", jobType)
+      .in("status", ["failed", "dead_letter", "cancelled"])
+      .select("*").maybeSingle();
+    if (error !== null) return mapDatabaseError(error, "requeueJob");
+    if (data === null) return err("not_found", "requeueJob: no resettable job for this stage");
     return ok("updated", toQueueJob(data));
   }
 

@@ -83,6 +83,15 @@ export interface ListEventsQuery {
   limit?: number;
 }
 
+/** Filter for listing runs (the product read side). All fields optional. */
+export interface ListRunsQuery {
+  /** Restrict to one tenant; omit for the caller's full RLS scope. */
+  clientId?: string | null;
+  /** Restrict to these lifecycle statuses; omit for all. */
+  statuses?: readonly RuntimeRunStatus[];
+  limit?: number;
+}
+
 /* ---- 1 · runs ---------------------------------------------------------------- */
 export interface IntelligenceRunRepository {
   createRun(record: RuntimeRun): Promise<RuntimeResult<RuntimeRun>>;
@@ -91,6 +100,12 @@ export interface IntelligenceRunRepository {
   updateRunStatus(id: string, status: RuntimeRunStatus, patch?: Partial<Pick<RuntimeRun, "currentStage" | "failedStage" | "startedAt" | "completedAt" | "failedAt">>): Promise<RuntimeResult<RuntimeRun>>;
   /** Idempotent: cancelling an already-cancelled run replays; a completed run is `terminal_state`. */
   cancelRun(id: string, at: string): Promise<RuntimeResult<RuntimeRun>>;
+  /**
+   * The product read side: runs the caller may see, newest first. Tenant/status
+   * filters are applied in-query; RLS is still the real boundary, so a client
+   * role sees nothing on these internal-only tables regardless of `clientId`.
+   */
+  listRuns(query: ListRunsQuery): Promise<RuntimeResult<RuntimeRun[]>>;
 }
 
 /* ---- 2 · stages -------------------------------------------------------------- */
@@ -216,6 +231,18 @@ export interface JobQueueRepository {
   cancelJob(jobId: string): Promise<RuntimeResult<RuntimeQueueJob>>;
   /** Owner-only. Pushes `available_at` out for a retry. */
   rescheduleJob(input: RescheduleInput): Promise<RuntimeResult<RuntimeQueueJob>>;
+  /**
+   * Reset the job for (runId, stage, jobType) from a NON-PROGRESSING state
+   * (`failed` / `dead_letter` / `cancelled`) back to `queued`, so recovery can
+   * re-drive a failed stage. Clears the lease, resets the attempt counter, and
+   * makes it eligible now.
+   *
+   * Returns `not_found` when there is no resettable job — either none exists, or
+   * the job is already active (`queued`/`leased`), in which case there is nothing
+   * to retry. NOT owner-gated: retry is a supervisory action, not a lease
+   * operation, and no worker holds the lease on a dead job.
+   */
+  requeueJob(runId: string, stage: string, jobType: string, availableAt: string): Promise<RuntimeResult<RuntimeQueueJob>>;
 }
 
 /* ---- the composed facade -------------------------------------------------------- */

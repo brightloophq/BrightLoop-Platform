@@ -12,7 +12,7 @@
 
 import type { RuntimeRun, RuntimeRunStatus } from "@brightloop/schema";
 import { canRunTransition, isRunTerminal } from "../../scan-engine/pipeline-run/run.js";
-import type { IntelligenceRunRepository } from "../repository.js";
+import type { IntelligenceRunRepository, ListRunsQuery } from "../repository.js";
 import { err, type RuntimeResult } from "../results.js";
 import type { EventService } from "./event.service.js";
 import { RUNTIME_EVENTS, runKey, type RuntimeServiceContext } from "./support.js";
@@ -78,6 +78,11 @@ export class RunService {
 
   async getRunForScan(scanId: string): Promise<RuntimeResult<RuntimeRun>> {
     return this.repo.getRunByIdempotencyKey(runKey(scanId));
+  }
+
+  /** The product read side: runs the caller may see, newest first. */
+  async list(query: ListRunsQuery): Promise<RuntimeResult<RuntimeRun[]>> {
+    return this.repo.listRuns(query);
   }
 
   /**
