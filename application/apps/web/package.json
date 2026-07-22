@@ -15,6 +15,7 @@
     "@brightloop/data": "workspace:*",
     "@brightloop/db": "workspace:*",
     "@brightloop/domain": "workspace:*",
+    "@brightloop/providers": "workspace:*",
     "@brightloop/schema": "workspace:*",
     "@brightloop/ui": "workspace:*",
     "@opentelemetry/api": "^1.9.1",
