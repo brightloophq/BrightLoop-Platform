@@ -103,7 +103,20 @@ export class RunService {
     if (current.value.status !== to && !canRunTransition(current.value.status, to)) {
       return err("terminal_state", `illegal run transition ${current.value.status} → ${to}`);
     }
-    return this.repo.updateRunStatus(id, to, patch);
+
+    // Stamp `startedAt` on the FIRST transition into an active (non-pending,
+    // non-terminal) status, and only then — the same `?? now` idempotency
+    // `markStarted` uses, generalized to any active transition. A resumed run
+    // already has `startedAt`, so `current.startedAt === null` is false and it is
+    // preserved; a run cancelled before it ever ran never reaches an active
+    // transition, so its `startedAt` stays null. An explicit `startedAt` in the
+    // patch (e.g. from `markStarted`) is never overridden.
+    const activeStart = to !== "pending" && !isRunTerminal(to);
+    const stamped: typeof patch =
+      activeStart && current.value.startedAt === null && patch.startedAt === undefined
+        ? { ...patch, startedAt: this.ctx.clock() }
+        : patch;
+    return this.repo.updateRunStatus(id, to, stamped);
   }
 
   /** Mark the run as executing and stamp `startedAt` once. */

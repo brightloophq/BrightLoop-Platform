@@ -9,6 +9,7 @@
  * ========================================================================== */
 
 export * from "./anthropic/index.js";
+export * from "./driver/index.js";
 export { FakeAnthropicTransport } from "./testing/fake-transport.js";
 export type {
   ScriptedTransportStep,

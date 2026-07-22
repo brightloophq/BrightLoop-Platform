@@ -39,6 +39,22 @@ export interface StageWork {
 
 export type StageExecutor = (stage: PipelineRunStage, run: RuntimeRun) => Promise<StageWork>;
 
+/**
+ * Thrown by a `StageExecutor` to signal the stage cannot run YET — its
+ * implementation is not wired, or a required capability (e.g. a live provider)
+ * is disabled. It is NOT a failure: the engine returns a `blocked` outcome, no
+ * stage failure is recorded, and the lease is released without consuming an
+ * attempt, so the queued work stays recoverable once the dependency exists.
+ */
+export class StageBlockedError extends Error {
+  readonly reason: string;
+  constructor(reason: string) {
+    super(reason);
+    this.name = "StageBlockedError";
+    this.reason = reason;
+  }
+}
+
 /** What executing one stage produced. */
 export interface StageOutcome {
   stage: PipelineRunStage;
@@ -202,7 +218,14 @@ export class RuntimeExecutionEngine {
     return null;
   }
 
-  /** Run the caller's work, converting a thrown error into a recorded stage failure. */
+  /**
+   * Run the caller's work, converting a thrown error into a recorded stage
+   * failure — UNLESS the executor throws `StageBlockedError`, which signals the
+   * stage cannot run yet (its implementation isn't wired, or a provider is
+   * disabled). A block is NOT a failure: no stage failure row is written, and the
+   * outcome is `blocked` so the coordinator releases the lease without consuming
+   * an attempt (the queued work stays recoverable).
+   */
   private async runWork(
     context: StageContext,
     run: RuntimeRun,
@@ -214,6 +237,9 @@ export class RuntimeExecutionEngine {
       const produced = await work(stage, run);
       return { ok: true, code: "found", value: { work: produced, outcome: null } };
     } catch (cause) {
+      if (cause instanceof StageBlockedError) {
+        return { ok: true, code: "found", value: { work: null, outcome: stageOutcome(stage, "blocked", null, cause.reason) } };
+      }
       const detail = cause instanceof Error ? cause.message : String(cause);
       const failed = await this.svc.pipeline.failStage(context, stage, attempt, detail);
       if (!failed.ok) return failed;

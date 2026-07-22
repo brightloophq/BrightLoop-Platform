@@ -36,6 +36,21 @@ import type { RuntimeServiceContext } from "./support.js";
 
 /** Re-exported so callers depend on the coordinator, not on the engine's module. */
 export type { StageExecutor, StageOutcome, StageWork } from "./execution-engine.js";
+export { StageBlockedError } from "./execution-engine.js";
+
+/**
+ * Options for `runOnce`. `onLease` / `onEnqueue` are informational observability
+ * hooks — they change no behaviour, and let a caller (e.g. the controlled runtime
+ * driver) capture the leased job and the downstream job id for a structured
+ * result without re-implementing the lease/settle sequence.
+ */
+export interface RunOnceOptions {
+  leaseSeconds?: number;
+  jobType?: string;
+  clientId?: string | null;
+  onLease?: (job: RuntimeQueueJob) => void;
+  onEnqueue?: (jobId: string) => void;
+}
 
 export interface CoordinatorServices {
   runs: RunService;
@@ -154,7 +169,7 @@ export class RuntimeCoordinator {
   async runOnce(
     owner: string,
     execute: StageExecutor,
-    options: { leaseSeconds?: number; jobType?: string; clientId?: string | null } = {},
+    options: RunOnceOptions = {},
   ): Promise<RuntimeResult<StageOutcome | null>> {
     const leased = await this.svc.queue.lease({
       owner,
@@ -172,6 +187,9 @@ export class RuntimeCoordinator {
     }
 
     const job = leased.value;
+    // Observability hook — the leased job, for a caller that needs its id/stage
+    // (e.g. the controlled runtime driver). Purely informational; no behaviour.
+    options.onLease?.(job);
     if (job.runId === null || job.stage === null) {
       await this.svc.queue.fail(job, owner, "job is missing runId or stage", { fatal: true });
       return err("check_violation", `job ${job.id} has no runId/stage to advance`);
@@ -183,7 +201,7 @@ export class RuntimeCoordinator {
       return advanced;
     }
 
-    await this.settleJob(job, owner, advanced.value);
+    await this.settleJob(job, owner, advanced.value, options.onEnqueue);
     return { ok: true, code: "found", value: advanced.value };
   }
 
@@ -194,12 +212,15 @@ export class RuntimeCoordinator {
    * ready yet is not a failed attempt, and charging it one would eventually
    * dead-letter perfectly recoverable work.
    */
-  private async settleJob(job: RuntimeQueueJob, owner: string, outcome: StageOutcome): Promise<void> {
+  private async settleJob(job: RuntimeQueueJob, owner: string, outcome: StageOutcome, onEnqueue?: (jobId: string) => void): Promise<void> {
     switch (outcome.status) {
       case "completed":
       case "skipped":
         await this.svc.queue.complete(job.id, owner);
-        if (job.runId !== null) await this.enqueueNext(job.runId, outcome.stage);
+        if (job.runId !== null) {
+          const next = await this.enqueueNext(job.runId, outcome.stage);
+          if (next.ok && next.value !== null) onEnqueue?.(next.value.id);
+        }
         break;
       case "blocked":
         await this.svc.queue.release(job.id, owner);
