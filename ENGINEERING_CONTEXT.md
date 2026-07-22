@@ -3,8 +3,8 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Phase B · Sprint 13C (Runtime
-> Services & Queue Orchestration)** — the durable runtime foundation is complete.
+> convention that changed). Last updated: after **Phase C · Sprint C1 (Product API
+> Bridge)** — the application boundary that lets the web app drive the runtime.
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
 > (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
@@ -128,8 +128,8 @@ and is on `main`.)
 **A separate track — the canonical UI migration and the Business Intelligence
 Engine — has since landed on `main`:** Phase 0 (PR #8), Phase 1 core surfaces
 (PRs #9, #12), **Phase A engine Sprints 1–12 (PRs #13–#18, #20, #21, #23, #25, #26, #27)**,
-and **Phase B runtime Sprints 13A–C (PRs #29, #30)**. These are detailed in §13; the
-merge log is §11.
+**Phase B runtime Sprints 13A–C (PRs #29, #30)**, and **Phase C · Sprint C1 —
+Product API Bridge (PR #32)**. These are detailed in §13; the merge log is §11.
 
 ---
 
@@ -323,8 +323,13 @@ Execution → Measurement → Learning.
 
 - **Phase A — deterministic intelligence foundation ✅** (Sprints 1–12, §13)
 - **Phase B — durable runtime foundation ✅** (Sprint 13A–C, §13)
-- **Phase C — productization ⏭** (live adapters, crawler runtime, pricing,
-  rendering/export/signature, and the operator UI over the runtime)
+- **Phase C — productization** (exposing the engine to the product):
+  - **C1 Product API Bridge ✅** (the application boundary, §13)
+  - **C2 Live Provider Adapter ⏭**
+  - C3 Discovery/Crawler Runtime
+  - C4 Internal Prospect Scanner
+  - C5 Report & Proposal Rendering
+  - C6 Client Portal Integration
 
 **Phase A sprints (all merged, §13):**
 
@@ -361,11 +366,13 @@ time. Everything remains deterministic and testable without a network.
 4. **Rendering, export & signature** — the internal intelligence report,
    DecisionBrief, and ProposalArtifact are **data contracts only**. PDF generation,
    client-facing UI, contracts, and e-signature integration are all unbuilt.
-5. **Operator UI over the runtime** — routes and server actions that drive
-   `RuntimeCoordinator` and surface the §13 read models. The runtime services exist
-   and are wired (`getRuntimeServices`), but no route consumes them yet.
+5. **Operator UI over the runtime** — the API bridge now exists (C1, §13): eight
+   `/api/scans` route handlers drive `RuntimeCoordinator` through the
+   `@brightloop/application` boundary. What remains is the UI itself — components,
+   pages, and client-side wiring over these endpoints.
 
-**Runtime + persistence is no longer deferred — Phase B built it (§13).**
+**Runtime + persistence is no longer deferred — Phase B built it (§13). The
+application boundary is no longer deferred — C1 built it (§13).**
 
 Whichever is chosen, the pure contracts stay authoritative and the layers are
 extended, never rewritten.
@@ -528,6 +535,77 @@ surface has no tables yet and is Phase C).
 - **Deduplication is structural, not procedural** — every idempotency key is a pure
   function of natural identity, so a crash-and-retry recomputes the same key and the
   repository replays. No dedupe table, no lock.
+
+### Business Intelligence Engine — Phase C build (Productization)
+
+Phase C exposes the runtime to the product, one thin layer at a time. The engine
+and runtime stay authoritative; C sprints wrap them, never rewrite them.
+
+**C1 — Product API Bridge (merged, PR #32, merge commit `4bb1ca53`).** The
+application boundary between the web app and the intelligence runtime:
+
+```
+Browser → Route Handler → @brightloop/application → RuntimeCoordinator
+        → RuntimeExecutionEngine → Repositories → DB
+```
+
+- **New package `@brightloop/application`** — the thin orchestration layer,
+  depending only on `@brightloop/domain` + `@brightloop/schema`. Knows no HTTP,
+  React, or Supabase Auth. A use-case receives an `AppContext` (runtime services
+  bound to the caller's RLS session, plus the actor) and typed input, and returns
+  a DTO or throws a canonical `ApplicationError`.
+- **Nine scan use-cases**, one file each, no shared god-service:
+  `create-scan · cancel-scan · retry-scan · get-scan · list-scans · timeline ·
+  report · proposal · narrative` (+ a `shared.ts` load-and-authorize helper).
+- **DTO boundary** — `toScanDTO` is the ONLY `RuntimeRun → wire` bridge. DTOs carry
+  status/progress/stage/timestamps/ids/metadata/summary and nothing else; tests
+  assert no `idempotencyKey`/`checksum`/`cancelled`/DB fields and no raw runtime
+  events leak.
+- **Canonical application errors** (9): `not_found` (404), `forbidden` (403),
+  `conflict`/`already_running`/`already_completed`/`cancelled`/`retry_unavailable`
+  (409), `validation` (422), `runtime_unavailable` (503). Only `ApplicationError#
+  toBody` is ever serialized — no SQLSTATE, message, or stack crosses the boundary.
+- **Authorization + ownership** — `authorize(actor, capability, targetClientId)`
+  uses the domain capability matrix (`may`); writes need `transformation.scan.write`,
+  reads `transformation.read` (both internal-only). Ownership is checked against the
+  LOADED run's `clientId`, so a caller can never assert ownership of an id it does
+  not own; RLS remains the final boundary.
+- **Input validation** — every endpoint validates id format, ISO timestamps, object
+  shape and enum values BEFORE the runtime; failures are `ValidationError` (422).
+- **Runtime → application error mapping** — one `unwrap` funnel reads only the stable
+  `RuntimeErr.code` (never `detail`), with per-use-case overrides for ambiguous codes
+  (`terminal_state` → AlreadyCompleted for cancel, RetryUnavailable for retry).
+- **Eight `/api/scans` route handlers** (`apps/web/src/app/api/scans/`), thin over
+  `lib/runtime-api.ts` (the HTTP↔application seam): `GET/POST /api/scans`,
+  `GET /api/scans/:id`, `POST /:id/{cancel,retry}`, `GET /:id/{timeline,report,
+  proposal,narrative}`. Timeline/report/proposal/narrative are read endpoints
+  returning already-transformed JSON — no rendering, no PDF.
+- **Additive runtime primitives** (additive only — no schema, migration, or RLS
+  change): `IntelligenceRunRepository.listRuns`, `JobQueueRepository.requeueJob`,
+  `RuntimeCoordinator.retryRun` (reuses `resumePoint` recovery), plus the two thin
+  service-layer conduits that surface the repo primitives through the service
+  boundary — `RunService.list` and `QueueService.requeue`. Nothing else was added to
+  Phase B.
+- **47 new tests** (application unit 26 · web route integration 17 · domain 4);
+  **919 total** workspace tests. db-verify green, pgTAP **133** passing,
+  generated-type drift **zero**.
+
+**C1 rules (do not regress):**
+
+- **Routes stay thin** — a handler resolves the actor, builds an `AppContext`, calls
+  ONE use-case, and serializes. No logic in the route.
+- **Routes never call repositories directly** — they call use-cases; use-cases call
+  runtime services. The browser never reaches a repository.
+- **Browser DTOs never expose domain entities or database rows** — only the DTO
+  shapes cross outward.
+- **Authorization happens against the loaded run's `clientId`** — load first, then
+  authorize on the row, never on the request.
+- **Failed terminal runs are NOT resurrected** — a deadline-`failed` run is terminal;
+  retry returns `retry_unavailable` ("start a new scan").
+- **Stuck in-flight runs MAY be re-driven from the last valid checkpoint** — retry
+  resets a dead-lettered stage's job and resumes; completed stages are skipped.
+- **No live provider or crawler is wired yet** — a created scan enqueues its first
+  stage and waits; execution arrives in C2 (provider) and C3 (crawler).
 
 The original PDF-26 surface foundation (still current, underneath the Phase A build):
 
