@@ -3,8 +3,8 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Phase C · Sprint C2.1 (Controlled
-> Runtime Driver)** — the one-turn server-side execution seam over the runtime.
+> convention that changed). Last updated: after **Phase C · Sprint C3 (Discovery/
+> Crawler Runtime)** — the first real, SSRF-guarded website ingress into the pipeline.
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
 > (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
@@ -329,8 +329,8 @@ Execution → Measurement → Learning.
   - **C1 Product API Bridge ✅** (the application boundary, §13)
   - **C2 Live Claude Provider Adapter ✅** (the first production provider, §13)
   - **C2.1 Controlled Runtime Driver ✅** (the one-turn execution seam, §13)
-  - C3 Discovery/Crawler Runtime ⏭
-  - C4 Internal Prospect Scanner
+  - **C3 Discovery/Crawler Runtime ✅** (the first real website ingress, §13)
+  - C4 Internal Prospect Scanner ⏭
   - C5 Report & Proposal Rendering
   - C6 Client Portal Integration
 
@@ -749,6 +749,86 @@ logic.
 - **Raw provider output is never persisted, returned, or logged** — only safe
   metadata and a reference.
 - **No service-role bypass exists** — the route uses the caller's RLS session.
+
+**C3 — Discovery/Crawler Runtime (merged, PR #39, merge commit `20b9e21c`).** The
+first REAL website ingress: a controlled business URL is normalized, SSRF-guarded
+(string + DNS), robots-checked, fetched, extracted into bounded structured
+evidence, and handed to the Evidence Engine — driven through the C2.1 controlled
+runtime driver ONE stage at a time. It collects and provenances only; it does not
+reason, score, recommend, or infer competitors.
+
+- **New package `@brightloop/crawler`** — server-only infrastructure. Depends only
+  on `@brightloop/domain` + `@brightloop/schema` (+ dev `@types/node`); it is the
+  live adapter for the pure Phase-A discovery contracts and holds NO reasoning,
+  recommendation, prompt, provider SDK, persistence, repository, SQL, Supabase,
+  API route, rendering, pricing, or monitoring code. Never imported by a client
+  bundle (it pulls Node networking + DNS).
+- **Node HTTP transport** — a narrow `HttpTransport` seam; `FetchHttpTransport`
+  does ONE hop (`redirect: "manual"`) over Node's global `fetch`, streams the body
+  with a hard byte cap, times out via `AbortController` (cleared in `finally`),
+  sends `credentials: "omit"` + `referrerPolicy: "no-referrer"`, and retains only a
+  safe header subset — never cookies or authorization.
+- **DNS resolution + IP classification** — `NodeDnsResolver` resolves every A/AAAA
+  address; `classifyIp` flags IPv4 AND IPv6 loopback, RFC1918 private, ULA
+  (`fc00::/7`), CGNAT (`100.64/10`), link-local, multicast, unspecified, reserved,
+  and IPv4-mapped IPv6.
+- **SSRF enforcement before every request** — `guardFetchUrl` layers the pure
+  Phase-A `evaluateSsrf` (scheme/credentials/literal-IP/localhost) over the
+  resolved-IP check, fail-closed. It runs on the initial URL AND on **every
+  redirect target** (the fetcher re-guards each hop and bounds the redirect count),
+  so a redirect cannot smuggle the crawler onto a private address.
+- **robots.txt handling** — fetched through the transport and parsed by the pure
+  Phase-A `parseRobots`; missing / non-2xx / empty / malformed → allow-all;
+  crawl-delay, sitemaps, wildcard + explicit user-agents, allow/disallow all
+  honoured; disallowed paths are excluded at planning and never fetched.
+- **Conservative crawl planning** — canonical same-origin paths (+ custom) via the
+  pure `planSession`/`buildResult`; caps on pages/depth/bytes/timeout/total-deadline/
+  concurrency/redirects, all disabled-by-default-safe. No recursive/unbounded crawl.
+- **Deterministic HTML extraction (no JS execution)** — regex/string parsing only
+  (no DOM, no Playwright/Puppeteer): title, meta description, canonical, lang,
+  headings, internal/external links, forms, emails, phones, JSON-LD @types, social
+  links, SEO + accessibility signals. Identical HTML → identical extract.
+- **Sanitization + prompt-injection marking** — strips script/style/comments,
+  removes control characters, caps length, checksums (FNV-1a via the domain hasher),
+  and FLAGS prompt-injection phrasings as data. Website text can never override
+  Auxion system policy.
+- **EvidenceIngress handoff** — crawled pages map to the canonical Phase-A
+  `EvidenceIngress` plus per-page items carrying source URL, timestamp, method,
+  checksum, provenance, freshness, and state. Observed (fetched) vs Unavailable
+  (failed/excluded); nothing is fabricated for a page that never loaded.
+- **Runtime stage executors** — resolved by the C2.1 `StageExecutorRegistry` shape:
+  `discovery_planning` (validate + plan, no artifact) → `discovery_completion` (run
+  the crawl → `discovery_manifest` artifact) → `evidence_normalization` (map pages →
+  `evidence_ingress` artifact). Composed with the provider registry in
+  `apps/web/src/lib/runtime-driver.ts` (discovery stages via the crawler, the
+  reasoning stage via the provider, everything else blocked). Disabled by default
+  (`AUXION_CRAWLER_ENABLED`) → stable `crawler_disabled` block, no outbound request,
+  no fabricated artifact/success.
+- **27 crawler tests** (21 unit + 6 runtime-integration; deterministic, offline via
+  a fake transport + DNS); **994 total** workspace tests. The live crawl test
+  (`crawler.live.test.ts`) is gated on `AUXION_RUN_LIVE_CRAWLER_TESTS=true` + a
+  configured `AUXION_CRAWLER_TEST_URL` and excluded from the default suite — default
+  CI makes **no external network call**.
+
+**C3 rules (do not regress):**
+
+- **The crawler collects and normalizes evidence only** — it does not reason, score,
+  recommend, or infer competitors.
+- **Phase-A discovery logic remains the source of truth** — the crawler CALLS the
+  pure functions (`normalizeUrl`, `evaluateSsrf`, `parseRobots`, `planSession`,
+  `buildResult`, `toEvidenceIngress`, `sourceForKind`, `hashContent`); it duplicates
+  no algorithm.
+- **The runtime remains responsible** for leasing, artifacts, checkpoints, events,
+  retries, recovery, and downstream enqueue — the crawler owns none of these and
+  enqueues nothing; the driver still runs one stage per turn.
+- **Every URL and redirect must pass string AND DNS SSRF validation** — fail-closed.
+- **Website content is untrusted data** — prompt-injection markers are flagged,
+  never obeyed.
+- **Raw HTML, cookies, authorization headers, and secrets are never persisted** —
+  only bounded sanitized text, checksums, references, and safe metadata.
+- **Unsupported or unavailable pages become explicit Unavailable evidence** — never
+  a fabricated success.
+- **The crawler is server-only and disabled by default.**
 
 The original PDF-26 surface foundation (still current, underneath the Phase A build):
 
