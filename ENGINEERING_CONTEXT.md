@@ -3,8 +3,8 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Phase C · Sprint C2 (Live Claude
-> Provider Adapter)** — the first production provider behind the reasoning seam.
+> convention that changed). Last updated: after **Phase C · Sprint C2.1 (Controlled
+> Runtime Driver)** — the one-turn server-side execution seam over the runtime.
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
 > (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
@@ -328,8 +328,8 @@ Execution → Measurement → Learning.
 - **Phase C — productization** (exposing the engine to the product):
   - **C1 Product API Bridge ✅** (the application boundary, §13)
   - **C2 Live Claude Provider Adapter ✅** (the first production provider, §13)
-  - **C2.1 Controlled Runtime Driver ⏭**
-  - C3 Discovery/Crawler Runtime
+  - **C2.1 Controlled Runtime Driver ✅** (the one-turn execution seam, §13)
+  - C3 Discovery/Crawler Runtime ⏭
   - C4 Internal Prospect Scanner
   - C5 Report & Proposal Rendering
   - C6 Client Portal Integration
@@ -676,6 +676,79 @@ vendor-agnostic. **Transport and normalization only — no business logic.**
 - **The controlled reasoning path is server-only and not publicly exposed.**
 - **No permanent worker or crawler exists yet** — a caller drives one turn
   explicitly; the runtime driver (C2.1) and crawler (C3) are future work.
+
+**C2.1 — Controlled Runtime Driver (merged, PR #37, merge commit `e53c5ff6`).**
+The server-side execution seam between a queued scan and a real executed stage: a
+driver that performs **exactly one** controlled runtime turn — lease ≤1 job →
+execute ≤1 stage → persist ≤1 outcome → enqueue ≤1 downstream → return. It is a
+coordinator, not an engine; it duplicates none of the runtime's transition,
+retry, routing, grounding, validation, budget, checkpoint, artifact, or lease
+logic.
+
+- **`ControlledRuntimeDriver`** (`@brightloop/providers/src/driver`) —
+  `runQueueTurn` / `runRunTurn` / `checkEligibility` (non-mutating dry-run) /
+  `cancel`. It calls `RuntimeCoordinator.runOnce` (which stays the authority for
+  the whole lease → execute → settle → enqueue sequence) and maps the resulting
+  `StageOutcome` + captured job + reasoning telemetry into a safe `DriverResult`
+  DTO — no domain entity, no DB row, no key, no raw provider output, no prompt.
+- **`StageExecutorRegistry`** (`createDefaultStageRegistry`) — resolves each stage
+  to an executable implementation or a stable named block. `provider_execution` is
+  executable through the existing Claude adapter (the C2 controlled reasoning
+  path); **every other stage returns a stable `blocked` reason** naming the
+  runtime dependency not yet wired. There is **no fabricated placeholder artifact,
+  no fake success, and no hidden fallthrough**.
+- **Internal `POST /api/internal/runtime/run-once`** — `server-only` (a client
+  import is a build error). **owner/admin/team_member only** via the
+  `transformation.executions.write` capability; **client roles are rejected**
+  (401 unauthenticated / 403 under-capability). Uses the caller's **request-scoped
+  RLS Supabase client** — **no service-role bypass** — so the DB stays the final
+  tenant boundary. Structured JSON only; a generic 500 on an unexpected throw
+  leaks no message or stack.
+- **Live-provider gating** — reasoning runs only when all of
+  `AUXION_LIVE_AI_ENABLED` + `AUXION_ANTHROPIC_ENABLED` + a valid key + a
+  configured model + an authorized internal actor + an eligible job + budget + no
+  cancellation + a valid deadline hold. Disabled (the default) → the reasoning
+  stage blocks with the stable reason `provider_disabled`; **no SDK client is
+  constructed and no credit is spent**.
+- **`startedAt` first-execution stamping** — `RunService.transition` stamps
+  `startedAt` on the FIRST transition into an active (non-`pending`,
+  non-terminal) status, and only then. **Idempotent** (a later active transition
+  does not re-stamp); **replay/resume preserves the original `startedAt`**; a run
+  **cancelled before it ever started remains unstamped**; an explicit
+  `patch.startedAt` is never overridden. No schema or migration change.
+- **Additive runtime primitives (only these four)** — `StageBlockedError` (an
+  executor signals "blocked" without recording a failure; the engine releases the
+  lease consuming no attempt); `RunOnceOptions` observability hooks
+  (`onLease`/`onEnqueue`, informational, behaviour-neutral, return type
+  unchanged); `queueDepth` (a non-mutating queue-depth peek for the dry-run
+  eligibility check); and the `startedAt` stamping above. No schema, migration,
+  RLS, or generated-type change.
+- **15 driver tests** (deterministic, injected clock + counter ids, fake
+  transport — no SDK/network): idle → `no_job_available`; blocked stages consume
+  no attempt and fabricate nothing; reasoning executes once and persists
+  metadata-only artifact + checkpoint + one downstream; the one-turn guarantee;
+  failure mapping; cancel; `startedAt` stamped-once/preserved/unset; registry
+  resolution; raw-output leak asserted absent. The live driver test
+  (`driver.live.test.ts`) is **gated** on `AUXION_RUN_LIVE_PROVIDER_TESTS=true`
+  and **excluded from the default suite** — CI executed the 15 driver tests and
+  spent **no Anthropic credit** (0 `api.anthropic.com` calls).
+
+**C2.1 invariants (do not regress):**
+
+- **`RuntimeCoordinator.runOnce` remains the runtime authority** — the driver
+  coordinates it, never reimplements the lease/execute/settle/enqueue sequence.
+- **The driver performs one turn only** — one lease, one stage, one outcome, one
+  downstream enqueue, then return. **There is still no permanent worker loop** (no
+  loop/recursion/timer/polling/cron/daemon/scheduler).
+- **There is still no crawler** — discovery/evidence/graph/synthesis stages block
+  with stable reasons until C3+ wire them.
+- **Provider calls remain server-only** — behind `import "server-only"` and the
+  env gate; never reached from the browser.
+- **Client roles cannot invoke the internal execution route** — internal actors
+  with the execution capability only.
+- **Raw provider output is never persisted, returned, or logged** — only safe
+  metadata and a reference.
+- **No service-role bypass exists** — the route uses the caller's RLS session.
 
 The original PDF-26 surface foundation (still current, underneath the Phase A build):
 
