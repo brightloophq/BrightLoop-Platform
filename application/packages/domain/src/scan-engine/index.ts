@@ -40,5 +40,8 @@ export * from "./proposal-intelligence/index.js";
 /* ---- report & narrative engine (Sprint 12) ---- */
 export * from "./narrative/index.js";
 
+/* ---- prospect intelligence engine (Phase C · Sprint C5) ---- */
+export * from "./prospect-intelligence/index.js";
+
 /* ---- provider registry + cost-aware routing (Sprint 2) ---- */
 export * from "./routing/index.js";
