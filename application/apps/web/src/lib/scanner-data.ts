@@ -1,0 +1,162 @@
+import "server-only";
+
+import {
+  getScan,
+  getScanArtifact,
+  getScanProposal,
+  getScanReport,
+  getScanTimeline,
+  listScans,
+  type ArtifactDTO,
+  type ScanDTO,
+  type TimelineEntryDTO,
+} from "@brightloop/application";
+import { loadCrawlerConfig } from "@brightloop/crawler";
+import { loadAnthropicConfig } from "@brightloop/providers";
+import { buildAppContext } from "./runtime-api";
+import {
+  buildDiscoveryView,
+  buildEvidenceView,
+  buildStructuredView,
+  buildProspectSummary,
+  computeReasoningReadiness,
+  nextStageView,
+  readIdentity,
+  PROPOSAL_SECTIONS,
+  REPORT_SECTIONS,
+  type DiscoveryView,
+  type EvidenceView,
+  type NextStageView,
+  type ProspectIdentity,
+  type ProspectSummaryView,
+  type ReasoningReadinessView,
+  type RuntimeFlags,
+  type StructuredView,
+} from "./prospect-scanner";
+
+/**
+ * Prospect Scanner data loading (Phase C · Sprint C4).
+ *
+ * Server-only. Every read goes through a C1 application use-case — this module
+ * never touches a repository or a runtime service, so the page inherits the same
+ * authorization, tenancy and DTO boundary as the public API. `server-only` keeps
+ * the crawler/provider config (and their SDK/DNS imports) out of the browser.
+ */
+
+/** Read the kill switches + the cost envelope for one reasoning turn. */
+export function readRuntimeFlags(): RuntimeFlags {
+  const crawler = loadCrawlerConfig();
+  const provider = loadAnthropicConfig();
+
+  // An UPPER BOUND for one turn, from configured caps × configured rates. This
+  // is a safety disclosure, not billing: nothing is charged, metered, or stored.
+  const estimatedMaxCostUsd = provider.enabled
+    ? (provider.maxInputTokens / 1_000_000) * provider.cost.inputPerMTokens +
+      (provider.maxOutputTokens / 1_000_000) * provider.cost.outputPerMTokens
+    : null;
+
+  return {
+    crawlerEnabled: crawler.enabled,
+    providerEnabled: provider.enabled,
+    modelId: provider.enabled ? provider.model : null,
+    maxOutputTokens: provider.enabled ? provider.maxOutputTokens : null,
+    estimatedMaxCostUsd,
+  };
+}
+
+/** Swallow a "not produced yet" read into `null` — a legitimate empty state. */
+async function optional<T>(read: Promise<T>): Promise<T | null> {
+  try {
+    return await read;
+  } catch {
+    return null;
+  }
+}
+
+export interface ScannerListData {
+  scans: { scan: ScanDTO; identity: ProspectIdentity }[];
+  flags: RuntimeFlags;
+}
+
+/** The scanner index: the operator's recent prospect scans. */
+export async function loadScannerList(limit = 25): Promise<ScannerListData | null> {
+  const ctx = await buildAppContext();
+  if (ctx === null) return null;
+  const scans = await listScans(ctx, { limit });
+  return {
+    scans: scans.map((scan) => ({ scan, identity: readIdentity(scan.metadata) })),
+    flags: readRuntimeFlags(),
+  };
+}
+
+export interface ScanWorkspaceData {
+  scan: ScanDTO;
+  identity: ProspectIdentity;
+  flags: RuntimeFlags;
+  next: NextStageView;
+  timeline: TimelineEntryDTO[];
+  discovery: DiscoveryView;
+  evidence: EvidenceView;
+  report: StructuredView;
+  proposal: StructuredView;
+  readiness: ReasoningReadinessView;
+  summary: ProspectSummaryView;
+}
+
+/**
+ * Everything one scan workspace renders, read through use-cases in parallel.
+ * Artifacts that do not exist yet resolve to their empty view rather than an
+ * error, so the operator sees an explicit "not produced yet" state.
+ */
+export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceData | null> {
+  const ctx = await buildAppContext();
+  if (ctx === null) return null;
+
+  const scan = await getScan(ctx, runId);
+  const flags = readRuntimeFlags();
+
+  const [timeline, manifestArtifact, ingressArtifact, reportArtifact, proposalArtifact] = await Promise.all([
+    optional(getScanTimeline(ctx, runId)),
+    optional(getScanArtifact(ctx, runId, "discovery_manifest")),
+    optional(getScanArtifact(ctx, runId, "evidence_ingress")),
+    optional<ArtifactDTO>(getScanReport(ctx, runId)),
+    optional<ArtifactDTO>(getScanProposal(ctx, runId)),
+  ]);
+
+  const identity = readIdentity(scan.metadata);
+  const next = nextStageView(scan, flags);
+  const discovery = buildDiscoveryView(manifestArtifact ?? null);
+  const evidence = buildEvidenceView(ingressArtifact ?? null);
+  const report = buildStructuredView(reportArtifact, [...REPORT_SECTIONS]);
+  const proposal = buildStructuredView(proposalArtifact, [...PROPOSAL_SECTIONS]);
+  const readiness = computeReasoningReadiness({
+    scan,
+    flags,
+    discovery,
+    evidence,
+    next,
+    now: new Date().toISOString(),
+  });
+
+  return {
+    scan,
+    identity,
+    flags,
+    next,
+    timeline: timeline ?? [],
+    discovery,
+    evidence,
+    report,
+    proposal,
+    readiness,
+    summary: buildProspectSummary({ scan, identity, discovery, evidence, report, proposal, readiness, next }),
+  };
+}
+
+/** Organizations the operator can attach a prospect scan to. */
+export async function listScanOrganizations(): Promise<{ id: string; name: string }[]> {
+  const { createClient } = await import("./supabase/server");
+  const supabase = await createClient();
+  const { data } = await supabase.from("clients").select("id, company").order("company", { ascending: true }).limit(200);
+  return (data ?? []).map((r) => ({ id: r.id, name: r.company }));
+}
