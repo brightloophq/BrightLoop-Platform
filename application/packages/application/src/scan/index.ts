@@ -14,4 +14,11 @@ export { getScanTimeline } from "./timeline.js";
 export { getScanReport } from "./report.js";
 export { getScanProposal } from "./proposal.js";
 export { getScanNarrative, parseAudience } from "./narrative.js";
+export {
+  getScanArtifact,
+  parseArtifactKind,
+  isReadableArtifactKind,
+  READABLE_ARTIFACT_KINDS,
+  type ReadableArtifactKind,
+} from "./artifact.js";
 export { loadAuthorizedRun } from "./shared.js";

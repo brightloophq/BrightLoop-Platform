@@ -1,0 +1,427 @@
+/* =============================================================================
+ * Internal Prospect Scanner (Phase C · Sprint C4).
+ *
+ * Instrument-panel language: mono rails, hairline frames, amber system-state
+ * cues. Token-only — no literal colours, no shadows outside the token set, so it
+ * inherits the Auxion canon rather than looking like a generic admin template.
+ * ========================================================================== */
+
+.page {
+  flex: 1;
+  background: var(--surface-inset);
+}
+.canvas {
+  max-width: 1320px;
+  margin-inline: auto;
+  padding: clamp(var(--space-5), 3vw, var(--space-7));
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+/* ---- mono rails (panel head / foot) ---------------------------------------- */
+.railHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--border-hairline);
+}
+.railFoot {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  padding-top: var(--space-3);
+  margin-top: var(--space-4);
+  border-top: var(--border-hairline);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* ---- header ---------------------------------------------------------------- */
+.headerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: var(--space-5);
+  align-items: start;
+  padding-top: var(--space-4);
+}
+.identity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.identityName {
+  font-family: var(--font-display, var(--font-sans));
+  font-size: var(--fs-xl, 1.5rem);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+.identityUrl {
+  color: var(--text-accent);
+  text-decoration: none;
+  font-size: var(--fs-sm);
+  overflow-wrap: anywhere;
+}
+.identityUrl:hover {
+  text-decoration: underline;
+}
+.identityUrl:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-sm, 4px);
+}
+.badgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+.progressWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ---- metric strip ---------------------------------------------------------- */
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+}
+
+/* ---- controls -------------------------------------------------------------- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+}
+.controlForm {
+  display: contents;
+}
+.stageCallout {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-inset);
+  border: var(--border-hairline);
+  border-left: 3px solid var(--text-accent);
+  border-radius: var(--radius-md);
+  flex: 1 1 260px;
+  min-width: 0;
+}
+.stageCalloutMuted {
+  border-left-color: var(--border-strong);
+}
+.stageLabel {
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+}
+.stageReason {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
+/* ---- switch chips ---------------------------------------------------------- */
+.switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.switchDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--border-strong);
+  flex: none;
+}
+.switchOn .switchDot {
+  background: var(--text-accent);
+}
+.switchOn {
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+/* ---- readiness ------------------------------------------------------------- */
+.factorGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+.factor {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  font-size: var(--fs-sm);
+}
+.factorLabel {
+  color: var(--text-muted);
+  font-size: var(--fs-xs);
+}
+.factorValue {
+  font-family: var(--font-mono);
+  color: var(--text-primary);
+}
+.factorOk {
+  border-left: 2px solid var(--text-accent);
+}
+.factorGap {
+  border-left: 2px solid var(--border-strong);
+}
+
+/* ---- content preview (bounded, plain text only) ----------------------------- */
+.preview {
+  display: block;
+  font-size: var(--fs-xs);
+  line-height: 1.55;
+  color: var(--text-muted);
+  max-width: 52ch;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.pageTitle {
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* ---- sections (report / proposal) ------------------------------------------ */
+.sectionList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.sectionBlock {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.sectionLabel {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-accent);
+}
+.sectionLines {
+  margin: 0;
+  padding-left: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+.sectionLines li {
+  overflow-wrap: anywhere;
+}
+
+/* ---- summary card ---------------------------------------------------------- */
+.summaryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+.summaryItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+}
+.summaryKey {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.summaryValue {
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.gapList {
+  margin: 0;
+  padding-left: var(--space-4);
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  line-height: 1.6;
+}
+
+/* ---- form ------------------------------------------------------------------ */
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-4);
+}
+.formWide {
+  grid-column: 1 / -1;
+}
+.selectField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.selectLabel {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
+  color: var(--text-primary);
+}
+.select {
+  height: 42px;
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  color: var(--text-primary);
+  font-size: var(--fs-sm);
+  padding: 0 var(--space-3);
+  width: 100%;
+}
+.select:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+.fieldError {
+  font-size: var(--fs-xs);
+  color: var(--text-danger, var(--text-primary));
+}
+.checkRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+}
+.checkRow input {
+  margin-top: 3px;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--text-accent);
+}
+.checkRow input:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+.checkText {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1, 4px);
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+}
+.checkHint {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.formActions {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-4);
+  padding-top: var(--space-4);
+  border-top: var(--border-hairline);
+}
+
+/* ---- scan list ------------------------------------------------------------- */
+.scanLink {
+  color: var(--text-primary);
+  text-decoration: none;
+  font-weight: var(--fw-medium);
+  overflow-wrap: anywhere;
+}
+.scanLink:hover {
+  color: var(--text-accent);
+}
+.scanLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+  border-radius: var(--radius-sm, 4px);
+}
+
+/* ---- execution result ------------------------------------------------------ */
+.execGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: var(--space-3);
+  margin-top: var(--space-3);
+}
+
+/* ---- responsive ------------------------------------------------------------ */
+@media (max-width: 900px) {
+  .headerGrid {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+@media (max-width: 640px) {
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .preview {
+    max-width: none;
+  }
+}
+
+/* Motion is restrained by default and removed entirely on request. */
+@media (prefers-reduced-motion: reduce) {
+  .stageCallout,
+  .switch,
+  .factor {
+    transition: none !important;
+  }
+}
