@@ -26,6 +26,14 @@ export interface InitiativeRepository {
   /** Persist the seeded initiatives for a workspace (idempotent per initiative id). */
   createMany(initiatives: readonly Initiative[]): Promise<RuntimeResult<Initiative[]>>;
   listByWorkspace(workspaceId: string): Promise<RuntimeResult<Initiative[]>>;
+  /** Load a single initiative by id (D2 lifecycle). */
+  getById(id: string): Promise<RuntimeResult<Initiative | null>>;
+  /**
+   * Persist a transitioned initiative under optimistic concurrency (D2). The write
+   * must match `expectedVersion`; a mismatch returns `conflict` (a concurrent
+   * transition won). `next.version` is the new version to store.
+   */
+  save(next: Initiative, expectedVersion: number): Promise<RuntimeResult<Initiative>>;
 }
 
 export interface TransformationActivityRepository {

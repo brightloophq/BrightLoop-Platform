@@ -28,6 +28,8 @@ export const TRANSFORMATION_WRITE_CAP = "transformation.write";
 export const TRANSFORMATION_READ_CAP = "transformation.read";
 /** Phase D · capability to read initiatives (internal). */
 export const INITIATIVE_READ_CAP = "initiative.read";
+/** Phase D · capability to transition an initiative's lifecycle (internal, D2). */
+export const INITIATIVE_WRITE_CAP = "initiative.write";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the

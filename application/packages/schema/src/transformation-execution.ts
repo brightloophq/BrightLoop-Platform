@@ -22,12 +22,22 @@ export const TRANSFORMATION_WORKSPACE_FORMULA_VERSION = "tx-workspace-1.0";
 export const transformationWorkspaceStatusSchema = z.enum(["seeded"]);
 export type TransformationWorkspaceStatus = z.infer<typeof transformationWorkspaceStatusSchema>;
 
-/** D1 initiative execution status: seeded, not yet executing. Lifecycle in D2+. */
-export const initiativeExecutionStatusSchema = z.enum(["seeded"]);
+/**
+ * Initiative execution status (D2 lifecycle). Forward-only:
+ * `seeded → planned → active → completed → archived`. No other transitions.
+ */
+export const initiativeExecutionStatusSchema = z.enum(["seeded", "planned", "active", "completed", "archived"]);
 export type InitiativeExecutionStatus = z.infer<typeof initiativeExecutionStatusSchema>;
 
-/** The only activity types D1 records — workspace creation + initiative seeding. */
-export const transformationActivityTypeSchema = z.enum(["workspace_created", "initiative_seeded"]);
+/** Activity types: D1 seed events + the D2 lifecycle transition events. */
+export const transformationActivityTypeSchema = z.enum([
+  "workspace_created",
+  "initiative_seeded",
+  "initiative_planned",
+  "initiative_activated",
+  "initiative_completed",
+  "initiative_archived",
+]);
 export type TransformationActivityType = z.infer<typeof transformationActivityTypeSchema>;
 
 export const activitySubjectTypeSchema = z.enum(["workspace", "initiative"]);
@@ -55,6 +65,8 @@ export const initiativeSchema = z.object({
   /** The Phase C proposal artifact this initiative traces to. */
   proposalArtifactId: z.string(),
   executionStatus: initiativeExecutionStatusSchema,
+  /** Optimistic-concurrency version; bumped on every lifecycle transition (D2). */
+  version: z.number().int().positive().default(1),
   createdAt: z.string(),
 });
 export type Initiative = z.infer<typeof initiativeSchema>;

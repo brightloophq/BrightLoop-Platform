@@ -53,6 +53,13 @@ function makeExecutionRepos(): TransformationExecutionRepositories {
     initiatives: {
       createMany: async (items) => { for (const i of items) initiatives.set(i.id, i); return ok("created", [...items]); },
       listByWorkspace: async (wid) => ok("found", [...initiatives.values()].filter((i) => i.workspaceId === wid)),
+      getById: async (id) => ok("found", initiatives.get(id) ?? null),
+      save: async (next, expectedVersion) => {
+        const cur = initiatives.get(next.id);
+        if (!cur || cur.version !== expectedVersion) return { ok: false, code: "conflict", message: "version mismatch", detail: null };
+        initiatives.set(next.id, next);
+        return ok("updated", next);
+      },
     },
     activities: {
       append: async (a) => { if (!activities.has(a.commandId)) activities.set(a.commandId, a); return ok(activities.get(a.commandId) === a ? "created" : "replayed", activities.get(a.commandId)!); },

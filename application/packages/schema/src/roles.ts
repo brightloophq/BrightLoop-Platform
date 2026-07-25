@@ -68,10 +68,12 @@ export const PERMISSIONS = {
     // `transformation.read`; owner/admin hold these via the `transformation.*` wildcard.
     "transformation.scan.write",
     "transformation.activation.write",
-    // Phase D · Transformation Execution (Sprint D1): seed + read a workspace and
-    // read its initiatives. Approval/task/timeline authority arrives in D2+.
+    // Phase D · Transformation Execution: seed + read a workspace and read its
+    // initiatives (D1); transition an initiative's lifecycle (D2). Approval / task
+    // / timeline authority arrives in D3+.
     "transformation.write",
     "initiative.read",
+    "initiative.write",
   ],
   client_admin: [
     "own.project.read",

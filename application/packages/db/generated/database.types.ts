@@ -3497,6 +3497,7 @@ export type Database = {
           source_proposal_item_id: string
           supporting_evidence_ids: Json
           title: string
+          version: number
           workspace_id: string
         }
         Insert: {
@@ -3513,6 +3514,7 @@ export type Database = {
           source_proposal_item_id: string
           supporting_evidence_ids?: Json
           title: string
+          version?: number
           workspace_id: string
         }
         Update: {
@@ -3529,6 +3531,7 @@ export type Database = {
           source_proposal_item_id?: string
           supporting_evidence_ids?: Json
           title?: string
+          version?: number
           workspace_id?: string
         }
         Relationships: [

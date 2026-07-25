@@ -18,6 +18,8 @@ export interface InitiativeDTO {
   dependencies: string[];
   supportingEvidenceIds: string[];
   executionStatus: Initiative["executionStatus"];
+  /** Optimistic-concurrency version (D2). */
+  version: number;
   sourceProposalItemId: string;
 }
 
@@ -67,8 +69,16 @@ export function toInitiativeDTO(i: Initiative): InitiativeDTO {
     dependencies: i.dependencies,
     supportingEvidenceIds: i.supportingEvidenceIds,
     executionStatus: i.executionStatus,
+    version: i.version,
     sourceProposalItemId: i.sourceProposalItemId,
   };
+}
+
+/** Per-initiative read model: current state/version + its transition history. */
+export interface InitiativeDetailDTO {
+  initiative: InitiativeDTO;
+  /** The append-only activity for this initiative, oldest first. */
+  history: ActivitySummaryDTO[];
 }
 
 export function toWorkspaceSummaryDTO(w: TransformationWorkspace, initiativeCount: number): WorkspaceSummaryDTO {
