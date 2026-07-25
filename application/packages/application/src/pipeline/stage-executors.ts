@@ -40,10 +40,12 @@ import {
   newReasoningJob,
   runCompetitorIntelligence,
   runProspectIntelligence,
+  synthesizeNarrative,
   synthesizeProposalIntelligence,
   validateGrounding,
   type GroundingClaim,
   type GroundingContext,
+  type NarrativeProspectInput,
   type ProposalCandidateInput,
   type RuntimeServices,
   type StageExecutor,
@@ -55,6 +57,7 @@ import {
   type EvidenceState,
   type FreshnessBand,
   type IntelligenceGraph,
+  type NarrativeSnapshot,
   type PipelineRunStage,
   type ProposalIntelligenceSnapshot,
   type ProspectIntelligenceResult,
@@ -437,7 +440,8 @@ function reportAssembly(deps: IntelligenceStageDeps): StageExecutor {
     // C9 · Proposal Intelligence — a bounded, deterministic report section read
     // from the persisted snapshot. Present with status `unavailable` when evidence
     // is insufficient; the runtime never fails on absence.
-    envelope["proposalIntelligence"] = proposal === null ? UNAVAILABLE_PROPOSAL_SECTION : summarizeProposal(proposal.envelope as unknown as ProposalIntelligenceSnapshot);
+    const proposalSnap = proposal === null ? null : (proposal.envelope as unknown as ProposalIntelligenceSnapshot);
+    envelope["proposalIntelligence"] = proposalSnap === null ? UNAVAILABLE_PROPOSAL_SECTION : summarizeProposal(proposalSnap);
 
     // Safe provider-enrichment metadata only — counts + status + safe reason
     // codes, never claim text or provider payloads.
@@ -451,8 +455,104 @@ function reportAssembly(deps: IntelligenceStageDeps): StageExecutor {
       rejectionCategories: claims === null ? [] : (claims.envelope["parserRejectionCategories"] as unknown[] ?? []),
     };
 
-    const sources = [bundleArtifact.id, ...[snapshot, claims, findings, recs, competitor, proposal].filter((a): a is RuntimeArtifact => a !== null).map((a) => a.id)];
+    // C10 · Narrative Engine — the deterministic PRESENTATION layer. It is built
+    // from the intelligence already assembled above (never new reasoning),
+    // persisted as its own `narrative` artifact, and consumed back into the report
+    // as the presentation section. It always exists (UNAVAILABLE when there is not
+    // enough intelligence), so the runtime never fails on absence.
+    const providerEnriched = groundedCount > 0;
+    const narrativeSnap = await ensureNarrativeSnapshot(deps, run, result, envelope, {
+      competitor: competitor === null ? null : (competitor.envelope as unknown as CompetitorIntelligenceSnapshot),
+      competitorArtifactId: competitor?.id ?? null,
+      proposal: proposalSnap,
+      proposalArtifactId: proposal?.id ?? null,
+      providerEnriched,
+      lineage: [bundleArtifact.id, ...[findings, competitor, proposal].filter((a): a is RuntimeArtifact => a !== null).map((a) => a.id)],
+    });
+    const narrativeArtifact = await latest(deps, run.id, "narrative");
+    envelope["narrative"] = narrativeSection(narrativeSnap);
+
+    const sources = [bundleArtifact.id, ...[snapshot, claims, findings, recs, competitor, proposal, narrativeArtifact].filter((a): a is RuntimeArtifact => a !== null).map((a) => a.id)];
     return { envelope, kind: "internal_intelligence_report", sourceArtifactIds: sources };
+  };
+}
+
+/**
+ * Build + persist the deterministic Narrative snapshot from the already-assembled
+ * intelligence, then return it. Presentation only — it reads the report envelope's
+ * projected fields and the competitor/proposal snapshots; it invents nothing and
+ * changes no confidence. The `narrative` artifact is content-addressed → idempotent.
+ */
+async function ensureNarrativeSnapshot(
+  deps: IntelligenceStageDeps,
+  run: RuntimeRun,
+  result: ProspectIntelligenceResult,
+  reportEnvelope: Record<string, unknown>,
+  extra: {
+    competitor: CompetitorIntelligenceSnapshot | null;
+    competitorArtifactId: string | null;
+    proposal: ProposalIntelligenceSnapshot | null;
+    proposalArtifactId: string | null;
+    providerEnriched: boolean;
+    lineage: string[];
+  },
+): Promise<NarrativeSnapshot> {
+  const profile = (reportEnvelope["businessProfile"] ?? {}) as { identity?: unknown };
+  const provenance = (reportEnvelope["provenance"] ?? {}) as { evidenceItemCount?: unknown };
+  const prospect: NarrativeProspectInput = {
+    executiveOverview: typeof reportEnvelope["executiveOverview"] === "string" ? (reportEnvelope["executiveOverview"] as string) : "",
+    businessIdentity: typeof profile.identity === "string" ? (profile.identity as string) : null,
+    indexSummary: typeof reportEnvelope["indexSummary"] === "string" ? (reportEnvelope["indexSummary"] as string) : "",
+    confidence: { value: result.confidence.value, band: result.confidence.band },
+    strengths: result.strengths.map((s) => ({ title: s.title, evidenceIds: s.evidenceIds })),
+    weaknesses: result.weaknesses.map((w) => ({ title: w.title, evidenceIds: w.evidenceIds })),
+    opportunities: result.opportunities.map((o) => ({ title: o.title, evidenceIds: o.evidenceIds })),
+    evidenceItemCount: typeof provenance.evidenceItemCount === "number" ? (provenance.evidenceItemCount as number) : 0,
+    sourceArtifacts: extra.lineage,
+  };
+  const snapshot = synthesizeNarrative({
+    scanId: run.scanId,
+    now: deps.now(),
+    prospect,
+    competitor: extra.competitor,
+    competitorArtifactId: extra.competitorArtifactId,
+    proposal: extra.proposal,
+    proposalArtifactId: extra.proposalArtifactId,
+    providerEnriched: extra.providerEnriched,
+    sourceArtifactIds: extra.lineage,
+    idFor: (prefix, index) => `${prefix}:${run.scanId}:${index + 1}`,
+  });
+  const persisted = await deps.runtime.artifacts.persist({
+    runId: run.id,
+    clientId: run.clientId,
+    scanId: run.scanId,
+    kind: "narrative",
+    envelope: snapshot as unknown as Record<string, unknown>,
+    sourceArtifactIds: extra.lineage,
+    checksum: snapshot.checksum,
+  });
+  if (!persisted.ok) throw new StageBlockedError("narrative_unpersisted");
+  return snapshot;
+}
+
+/** Bounded projection of the narrative snapshot into the report presentation section. */
+function narrativeSection(snapshot: NarrativeSnapshot): Record<string, unknown> {
+  return {
+    status: snapshot.status,
+    reason: snapshot.reason,
+    confidence: snapshot.confidence.value,
+    confidenceBand: snapshot.confidence.band,
+    reviewRequired: snapshot.reviewRequired,
+    summary: snapshot.summary,
+    sections: snapshot.sections.map((s) => ({
+      key: s.key,
+      heading: s.heading,
+      paragraphs: s.paragraphs,
+      supportingEvidenceIds: s.supportingEvidenceIds,
+      supportingArtifacts: s.supportingArtifacts,
+      confidence: s.confidence.value,
+      reviewRequired: s.reviewRequired,
+    })),
   };
 }
 
