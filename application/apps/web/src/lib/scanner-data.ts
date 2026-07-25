@@ -3,6 +3,7 @@ import "server-only";
 import {
   getScan,
   getScanArtifact,
+  getScanAssessment,
   getScanProposal,
   getScanReport,
   getScanTimeline,
@@ -101,6 +102,10 @@ export interface ScanWorkspaceData {
   proposal: StructuredView;
   readiness: ReasoningReadinessView;
   summary: ProspectSummaryView;
+  /** True when the report shown is the machine-derived C6 assessment awaiting review. */
+  reportReviewRequired: boolean;
+  /** True when a discovery manifest exists, so an assessment can be run. */
+  canAssess: boolean;
 }
 
 /**
@@ -115,19 +120,30 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const scan = await getScan(ctx, runId);
   const flags = readRuntimeFlags();
 
-  const [timeline, manifestArtifact, ingressArtifact, reportArtifact, proposalArtifact] = await Promise.all([
+  const [timeline, manifestArtifact, ingressArtifact, reportArtifact, proposalArtifact, assessment] = await Promise.all([
     optional(getScanTimeline(ctx, runId)),
     optional(getScanArtifact(ctx, runId, "discovery_manifest")),
     optional(getScanArtifact(ctx, runId, "evidence_ingress")),
     optional<ArtifactDTO>(getScanReport(ctx, runId)),
     optional<ArtifactDTO>(getScanProposal(ctx, runId)),
+    optional(getScanAssessment(ctx, runId)),
   ]);
 
   const identity = readIdentity(scan.metadata);
   const next = nextStageView(scan, flags);
   const discovery = buildDiscoveryView(manifestArtifact ?? null);
   const evidence = buildEvidenceView(ingressArtifact ?? null);
-  const report = buildStructuredView(reportArtifact, [...REPORT_SECTIONS]);
+
+  // Prefer an operator-approved (valid) C1 report; otherwise fall back to the
+  // machine-derived C6 assessment, surfaced explicitly as "review required".
+  const assessmentReport = assessment?.report ?? null;
+  const reportSource: ArtifactDTO | null =
+    reportArtifact ??
+    (assessmentReport === null
+      ? null
+      : { id: assessmentReport.id, kind: assessmentReport.kind, version: assessmentReport.version, status: assessmentReport.validationStatus, createdAt: assessmentReport.createdAt, content: assessmentReport.content });
+  const reportReviewRequired = reportArtifact === null && assessmentReport !== null;
+  const report = buildStructuredView(reportSource, [...REPORT_SECTIONS]);
   const proposal = buildStructuredView(proposalArtifact, [...PROPOSAL_SECTIONS]);
   const readiness = computeReasoningReadiness({
     scan,
@@ -150,6 +166,8 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     proposal,
     readiness,
     summary: buildProspectSummary({ scan, identity, discovery, evidence, report, proposal, readiness, next }),
+    reportReviewRequired,
+    canAssess: manifestArtifact !== null,
   };
 }
 

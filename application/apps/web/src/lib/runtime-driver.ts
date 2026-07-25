@@ -8,6 +8,7 @@ import {
   type ReasoningTelemetry,
   type StageExecutorRegistry,
 } from "@brightloop/providers";
+import { createIntelligenceStageRegistry, INTELLIGENCE_STAGE_KEYS } from "@brightloop/application";
 import { getRuntimeServices } from "./repositories";
 import { buildDiscoveryRegistry, DISCOVERY_STAGE_KEYS } from "./crawler";
 
@@ -65,13 +66,19 @@ export async function buildRuntimeDriver(): Promise<ControlledRuntimeDriver> {
     },
   });
 
-  // Discovery stages resolve through the crawler; everything else through the
-  // provider registry. Each sub-registry self-gates (crawler_disabled /
-  // provider_disabled) and blocks stages it does not implement.
+  // Stage routing (C3 + C6.2):
+  //   discovery stages           → crawler registry
+  //   deterministic intelligence → intelligence registry (evidence_validation,
+  //                                graph_assembly, graph_snapshot)
+  //   reasoning + everything else → provider registry
+  // Each sub-registry self-gates and blocks stages it does not implement.
   const discoveryRegistry = buildDiscoveryRegistry(runtime);
+  const intelligenceRegistry = createIntelligenceStageRegistry({ runtime, now: () => new Date().toISOString() });
   const composedRegistry: StageExecutorRegistry = {
     resolve(stage, run) {
-      return DISCOVERY_STAGE_KEYS.has(stage) ? discoveryRegistry.resolve(stage, run) : providerRegistry.resolve(stage, run);
+      if (DISCOVERY_STAGE_KEYS.has(stage)) return discoveryRegistry.resolve(stage, run);
+      if (INTELLIGENCE_STAGE_KEYS.has(stage)) return intelligenceRegistry.resolve(stage, run);
+      return providerRegistry.resolve(stage, run);
     },
   };
 

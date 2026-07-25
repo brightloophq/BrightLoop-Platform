@@ -4,7 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AuthorizationError, assertCapability } from "@brightloop/domain";
 import { isApplicationError } from "@brightloop/application";
-import { Alert, EmptyWorkspace, OperationalPanel, SectionHeader, SkeletonBlock } from "@brightloop/ui";
+import { Alert, Button, EmptyWorkspace, OperationalPanel, SectionHeader, SkeletonBlock } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { loadScanWorkspace } from "@/lib/scanner-data";
@@ -19,7 +19,7 @@ import { ReasoningReadiness } from "../components/ReasoningReadiness";
 import { RuntimeTimeline } from "../components/RuntimeTimeline";
 import { InternalReportView, ProposalReview } from "../components/StructuredArtifactView";
 import { ProspectSummary } from "../components/ProspectSummary";
-import { cancelProspectScanForm, retryProspectScanForm } from "../scanner-actions";
+import { assessProspectForm, cancelProspectScanForm, retryProspectScanForm } from "../scanner-actions";
 import styles from "../scanner.module.css";
 
 export const dynamic = "force-dynamic";
@@ -82,7 +82,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
   }
   if (data === null) notFound();
 
-  const { scan, identity, flags, next, discovery, evidence, report, proposal, readiness, summary, timeline } = data;
+  const { scan, identity, flags, next, discovery, evidence, report, proposal, readiness, summary, timeline, reportReviewRequired, canAssess } = data;
   const rows = buildTimelineRows(timeline);
   const latestEvent = rows[0]?.type ?? null;
 
@@ -137,6 +137,33 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
       <ReasoningReadiness readiness={readiness} flags={flags} />
       <EvidenceCoverage evidence={evidence} />
       <RuntimeTimeline rows={rows} />
+
+      <OperationalPanel>
+        <div className={styles.railHead}>
+          <span>Prospect assessment · deterministic</span>
+          <span>{report.present ? "produced" : "not run"}</span>
+        </div>
+        <div style={{ paddingTop: "var(--space-3)", display: "flex", gap: "var(--space-3)", alignItems: "center", flexWrap: "wrap" }}>
+          <form action={assessProspectForm}>
+            <input type="hidden" name="runId" value={scan.id} />
+            <Button type="submit" variant={report.present ? "secondary" : "primary"} disabled={!canAssess}>
+              {report.present ? "Re-run assessment" : "Run assessment"}
+            </Button>
+          </form>
+          <span className={styles.stageReason}>
+            {canAssess
+              ? "Runs discovery evidence through the Prospect Intelligence Engine and produces reviewable artifacts. No AI credit is spent."
+              : "Run the discovery stages first — an assessment needs a discovery manifest."}
+          </span>
+        </div>
+      </OperationalPanel>
+
+      {reportReviewRequired ? (
+        <Alert tone="warning" title="Machine-derived assessment — review required">
+          This report was produced deterministically from crawled evidence and has not been approved. Every figure traces to evidence; review it before it
+          reaches a prospect.
+        </Alert>
+      ) : null}
       <InternalReportView view={report} />
       <ProposalReview view={proposal} />
       <ProspectSummary summary={summary} />
