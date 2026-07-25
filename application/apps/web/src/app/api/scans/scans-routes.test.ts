@@ -18,7 +18,7 @@ const session = vi.hoisted(() => ({ actor: null as Actor | null, services: null 
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ getActor: async () => session.actor }));
-vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services }));
+vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services, getExecutionRepositories: async () => ({ workspaces: {}, initiatives: {}, activities: {} }) }));
 
 // Import handlers AFTER the mocks are registered.
 import { GET as listScansRoute, POST as createScanRoute } from "./route";

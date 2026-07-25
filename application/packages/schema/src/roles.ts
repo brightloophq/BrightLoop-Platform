@@ -35,7 +35,11 @@ export const PERMISSIONS = {
     "settings.*",
     // Strategist authority over the transformation cycle, including granting
     // approvals (`transformation.approve` is included by this namespace wildcard).
+    // The wildcard also grants the Phase D `transformation.write` (workspace seed).
     "transformation.*",
+    // Phase D · Transformation Execution — initiatives live in their own namespace,
+    // so the `transformation.*` wildcard does not cover them.
+    "initiative.*",
   ],
   team_member: [
     "projects.read",
@@ -64,6 +68,10 @@ export const PERMISSIONS = {
     // `transformation.read`; owner/admin hold these via the `transformation.*` wildcard.
     "transformation.scan.write",
     "transformation.activation.write",
+    // Phase D · Transformation Execution (Sprint D1): seed + read a workspace and
+    // read its initiatives. Approval/task/timeline authority arrives in D2+.
+    "transformation.write",
+    "initiative.read",
   ],
   client_admin: [
     "own.project.read",

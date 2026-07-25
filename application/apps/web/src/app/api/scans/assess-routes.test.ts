@@ -15,7 +15,7 @@ const session = vi.hoisted(() => ({ actor: null as Actor | null, services: null 
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ getActor: async () => session.actor }));
-vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services }));
+vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services, getExecutionRepositories: async () => ({ workspaces: {}, initiatives: {}, activities: {} }) }));
 
 import { POST as assessRoute } from "./[id]/assess/route";
 import { GET as assessmentRoute } from "./[id]/assessment/route";

@@ -17,7 +17,7 @@ const redirects = vi.hoisted(() => ({ calls: [] as string[] }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ getActor: async () => session.actor }));
-vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services }));
+vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services, getExecutionRepositories: async () => ({ workspaces: {}, initiatives: {}, activities: {} }) }));
 vi.mock("next/cache", () => ({ revalidatePath: () => undefined }));
 vi.mock("next/navigation", () => ({
   redirect: (url: string) => {

@@ -3393,6 +3393,57 @@ export type Database = {
           },
         ]
       }
+      transformation_activity: {
+        Row: {
+          at: string
+          client_id: string | null
+          command_id: string
+          id: string
+          subject_id: string
+          subject_type: string
+          summary: string
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          at?: string
+          client_id?: string | null
+          command_id: string
+          id: string
+          subject_id: string
+          subject_type: string
+          summary: string
+          type: string
+          workspace_id: string
+        }
+        Update: {
+          at?: string
+          client_id?: string | null
+          command_id?: string
+          id?: string
+          subject_id?: string
+          subject_type?: string
+          summary?: string
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_activity_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_activity_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transformation_index: {
         Row: {
           at: string
@@ -3424,6 +3475,122 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "transformation_index_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transformation_initiative: {
+        Row: {
+          business_impact: string
+          client_id: string | null
+          created_at: string
+          dependencies: Json
+          effort: string
+          execution_status: string
+          id: string
+          objective: string | null
+          priority: string
+          proposal_artifact_id: string
+          source_proposal_item_id: string
+          supporting_evidence_ids: Json
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          business_impact: string
+          client_id?: string | null
+          created_at?: string
+          dependencies?: Json
+          effort: string
+          execution_status?: string
+          id: string
+          objective?: string | null
+          priority: string
+          proposal_artifact_id?: string
+          source_proposal_item_id: string
+          supporting_evidence_ids?: Json
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          business_impact?: string
+          client_id?: string | null
+          created_at?: string
+          dependencies?: Json
+          effort?: string
+          execution_status?: string
+          id?: string
+          objective?: string | null
+          priority?: string
+          proposal_artifact_id?: string
+          source_proposal_item_id?: string
+          supporting_evidence_ids?: Json
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_initiative_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_initiative_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transformation_workspace: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          objectives: Json
+          proposal_artifact_id: string | null
+          report_artifact_id: string | null
+          scan_run_id: string
+          seed_checksum: string
+          status: string
+          title: string
+          version: number
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id: string
+          objectives?: Json
+          proposal_artifact_id?: string | null
+          report_artifact_id?: string | null
+          scan_run_id: string
+          seed_checksum: string
+          status?: string
+          title: string
+          version?: number
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          objectives?: Json
+          proposal_artifact_id?: string | null
+          report_artifact_id?: string | null
+          scan_run_id?: string
+          seed_checksum?: string
+          status?: string
+          title?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_workspace_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"

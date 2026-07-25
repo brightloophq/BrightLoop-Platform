@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { systemClock, type Actor } from "@brightloop/domain";
 import { ApplicationError, ForbiddenError, isApplicationError, type AppContext } from "@brightloop/application";
 import { getActor } from "./auth";
-import { getRuntimeServices } from "./repositories";
+import { getRuntimeServices, getExecutionRepositories } from "./repositories";
 
 /**
  * The HTTP ↔ application seam for the intelligence runtime.
@@ -29,8 +29,8 @@ function newId(prefix: string): string {
 export async function buildAppContext(): Promise<AppContext | null> {
   const actor: Actor | null = await getActor();
   if (actor === null) return null;
-  const services = await getRuntimeServices();
-  return { services, actor, ids: newId, clock: systemClock };
+  const [services, execution] = await Promise.all([getRuntimeServices(), getExecutionRepositories()]);
+  return { services, actor, ids: newId, clock: systemClock, execution };
 }
 
 /** JSON body from the request, or `undefined` when the body is absent/unparseable. */
