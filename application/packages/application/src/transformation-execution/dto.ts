@@ -6,7 +6,7 @@
  * envelopes. Mirrors the C1 `toScanDTO` boundary discipline.
  * ========================================================================== */
 
-import type { Initiative, TransformationActivity, TransformationWorkspace } from "@brightloop/schema";
+import type { Assignment, Dependency, Initiative, Review, Task, TransformationActivity, TransformationWorkspace } from "@brightloop/schema";
 
 export interface InitiativeDTO {
   id: string;
@@ -113,4 +113,80 @@ export function toWorkspaceDetailDTO(w: TransformationWorkspace, initiatives: re
     progress: toProgressDTO(initiatives),
     activities: activities.map(toActivitySummaryDTO),
   };
+}
+
+/* ---- D3/D4 execution-management DTOs --------------------------------------- */
+
+export interface ReviewDTO {
+  id: string;
+  initiativeId: string;
+  status: Review["status"];
+  note: string | null;
+  decisionActorId: string | null;
+  version: number;
+  createdAt: string;
+}
+export function toReviewDTO(r: Review): ReviewDTO {
+  return { id: r.id, initiativeId: r.initiativeId, status: r.status, note: r.note, decisionActorId: r.decisionActorId, version: r.version, createdAt: r.createdAt };
+}
+
+export interface TaskDTO {
+  id: string;
+  initiativeId: string;
+  title: string;
+  description: string | null;
+  status: Task["status"];
+  priority: Task["priority"];
+  estimate: string | null;
+  assigneeActorId: string | null;
+  order: number;
+  dependencyIds: string[];
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+export function toTaskDTO(t: Task): TaskDTO {
+  return { id: t.id, initiativeId: t.initiativeId, title: t.title, description: t.description, status: t.status, priority: t.priority, estimate: t.estimate, assigneeActorId: t.assigneeActorId, order: t.order, dependencyIds: t.dependencyIds, version: t.version, createdAt: t.createdAt, updatedAt: t.updatedAt };
+}
+
+export interface AssignmentDTO {
+  id: string;
+  taskId: string;
+  action: Assignment["action"];
+  assigneeActorId: string | null;
+  assignedByActorId: string;
+  at: string;
+}
+export function toAssignmentDTO(a: Assignment): AssignmentDTO {
+  return { id: a.id, taskId: a.taskId, action: a.action, assigneeActorId: a.assigneeActorId, assignedByActorId: a.assignedByActorId, at: a.at };
+}
+
+export interface DependencyDTO {
+  id: string;
+  fromInitiativeId: string;
+  toInitiativeId: string;
+  type: Dependency["type"];
+  createdAt: string;
+}
+export function toDependencyDTO(d: Dependency): DependencyDTO {
+  return { id: d.id, fromInitiativeId: d.fromInitiativeId, toInitiativeId: d.toInitiativeId, type: d.type, createdAt: d.createdAt };
+}
+
+/** The execution read model for one initiative: reviews + tasks + readiness. */
+export interface InitiativeExecutionDTO {
+  initiativeId: string;
+  reviews: ReviewDTO[];
+  tasks: TaskDTO[];
+  /** True when an approved review exists — the initiative may execute. */
+  executionReady: boolean;
+  taskCounts: { todo: number; in_progress: number; blocked: number; completed: number };
+}
+
+/** The workspace-level execution summary: dependency graph + per-initiative rollups. */
+export interface WorkspaceExecutionDTO {
+  workspaceId: string;
+  dependencies: DependencyDTO[];
+  reviews: ReviewDTO[];
+  tasks: TaskDTO[];
+  executionReadyInitiativeIds: string[];
 }

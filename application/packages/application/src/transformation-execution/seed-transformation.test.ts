@@ -65,6 +65,10 @@ function makeExecutionRepos(): TransformationExecutionRepositories {
       append: async (a) => { if (!activities.has(a.commandId)) activities.set(a.commandId, a); return ok(activities.get(a.commandId) === a ? "created" : "replayed", activities.get(a.commandId)!); },
       listByWorkspace: async (wid) => ok("found", [...activities.values()].filter((a) => a.workspaceId === wid)),
     },
+    reviews: { create: async (r) => ok("created", r), getById: async () => ok("found", null), listByInitiative: async () => ok("found", []), listByWorkspace: async () => ok("found", []), save: async (next) => ok("updated", next) },
+    tasks: { create: async (t) => ok("created", t), getById: async () => ok("found", null), listByInitiative: async () => ok("found", []), listByWorkspace: async () => ok("found", []), save: async (next) => ok("updated", next) },
+    assignments: { append: async (a) => ok("created", a), listByTask: async () => ok("found", []) },
+    dependencies: { create: async (d) => ok("created", d), remove: async () => ok("updated", null), getById: async () => ok("found", null), listByWorkspace: async () => ok("found", []) },
   };
 }
 

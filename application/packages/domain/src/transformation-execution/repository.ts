@@ -10,7 +10,7 @@
  * with the workflow engine in D2+.
  * ========================================================================== */
 
-import type { Initiative, TransformationActivity, TransformationWorkspace } from "@brightloop/schema";
+import type { Assignment, Dependency, Initiative, Review, Task, TransformationActivity, TransformationWorkspace } from "@brightloop/schema";
 import type { RuntimeResult } from "../runtime/results.js";
 
 export interface TransformationWorkspaceRepository {
@@ -42,9 +42,46 @@ export interface TransformationActivityRepository {
   listByWorkspace(workspaceId: string): Promise<RuntimeResult<TransformationActivity[]>>;
 }
 
-/** The three ports the Phase D application use-cases are wired with. */
+/* ---- D3/D4 execution-management ports -------------------------------------- */
+
+export interface ReviewRepository {
+  create(review: Review): Promise<RuntimeResult<Review>>;
+  getById(id: string): Promise<RuntimeResult<Review | null>>;
+  listByInitiative(initiativeId: string): Promise<RuntimeResult<Review[]>>;
+  listByWorkspace(workspaceId: string): Promise<RuntimeResult<Review[]>>;
+  /** Optimistic-concurrency decision write; a version mismatch returns `conflict`. */
+  save(next: Review, expectedVersion: number): Promise<RuntimeResult<Review>>;
+}
+
+export interface TaskRepository {
+  create(task: Task): Promise<RuntimeResult<Task>>;
+  getById(id: string): Promise<RuntimeResult<Task | null>>;
+  listByInitiative(initiativeId: string): Promise<RuntimeResult<Task[]>>;
+  listByWorkspace(workspaceId: string): Promise<RuntimeResult<Task[]>>;
+  /** Optimistic-concurrency write (status / fields / assignee); mismatch → `conflict`. */
+  save(next: Task, expectedVersion: number): Promise<RuntimeResult<Task>>;
+}
+
+export interface AssignmentRepository {
+  /** Append one immutable assignment record (history is never edited). */
+  append(record: Assignment): Promise<RuntimeResult<Assignment>>;
+  listByTask(taskId: string): Promise<RuntimeResult<Assignment[]>>;
+}
+
+export interface DependencyRepository {
+  create(dependency: Dependency): Promise<RuntimeResult<Dependency>>;
+  remove(id: string): Promise<RuntimeResult<null>>;
+  getById(id: string): Promise<RuntimeResult<Dependency | null>>;
+  listByWorkspace(workspaceId: string): Promise<RuntimeResult<Dependency[]>>;
+}
+
+/** The ports the Phase D application use-cases are wired with (D1 → D4). */
 export interface TransformationExecutionRepositories {
   workspaces: TransformationWorkspaceRepository;
   initiatives: InitiativeRepository;
   activities: TransformationActivityRepository;
+  reviews: ReviewRepository;
+  tasks: TaskRepository;
+  assignments: AssignmentRepository;
+  dependencies: DependencyRepository;
 }

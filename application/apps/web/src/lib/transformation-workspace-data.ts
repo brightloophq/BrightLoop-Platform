@@ -2,12 +2,20 @@ import "server-only";
 
 import {
   getTransformationWorkspace,
+  getWorkspaceExecution,
   listTransformationWorkspaces,
   isApplicationError,
   type WorkspaceDetailDTO,
+  type WorkspaceExecutionDTO,
   type WorkspaceSummaryDTO,
 } from "@brightloop/application";
 import { buildAppContext } from "./runtime-api";
+
+/** A workspace detail + its execution rollup (reviews / tasks / dependencies). */
+export interface WorkspaceExecutionView {
+  detail: WorkspaceDetailDTO;
+  execution: WorkspaceExecutionDTO;
+}
 
 /**
  * Transformation Execution read models (Phase D · Sprint D1).
@@ -31,6 +39,19 @@ export async function loadTransformationWorkspace(id: string): Promise<Workspace
   if (ctx === null) return null;
   try {
     return await getTransformationWorkspace(ctx, id);
+  } catch (error) {
+    if (isApplicationError(error) && (error.status === 404 || error.status === 403)) return null;
+    throw error;
+  }
+}
+
+/** A workspace detail + execution rollup (D3/D4), or `null` when not visible. */
+export async function loadTransformationWorkspaceExecution(id: string): Promise<WorkspaceExecutionView | null> {
+  const ctx = await buildAppContext();
+  if (ctx === null) return null;
+  try {
+    const [detail, execution] = await Promise.all([getTransformationWorkspace(ctx, id), getWorkspaceExecution(ctx, id)]);
+    return { detail, execution };
   } catch (error) {
     if (isApplicationError(error) && (error.status === 404 || error.status === 403)) return null;
     throw error;

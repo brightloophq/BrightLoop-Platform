@@ -114,3 +114,57 @@ export function toActivity(row: Record<string, unknown>): TransformationActivity
     at: String(row["at"]),
   };
 }
+
+/* ---- D3/D4 execution-management mappers ------------------------------------ */
+import type { Assignment, Dependency, Review, Task } from "@brightloop/schema";
+
+export function reviewRow(r: Review): Record<string, unknown> {
+  return { id: r.id, workspace_id: r.workspaceId, initiative_id: r.initiativeId, client_id: r.clientId, status: r.status, note: r.note, decision_actor_id: r.decisionActorId, version: r.version, created_at: r.createdAt };
+}
+export function toReview(row: Record<string, unknown>): Review {
+  return {
+    id: String(row["id"]), workspaceId: String(row["workspace_id"]), initiativeId: String(row["initiative_id"]),
+    clientId: (row["client_id"] as string | null) ?? null, status: row["status"] as Review["status"],
+    note: (row["note"] as string | null) ?? null, decisionActorId: (row["decision_actor_id"] as string | null) ?? null,
+    version: typeof row["version"] === "number" ? (row["version"] as number) : 1, createdAt: String(row["created_at"]),
+  };
+}
+
+export function taskRow(t: Task): Record<string, unknown> {
+  return {
+    id: t.id, initiative_id: t.initiativeId, workspace_id: t.workspaceId, client_id: t.clientId, title: t.title,
+    description: t.description, status: t.status, priority: t.priority, estimate: t.estimate, assignee_actor_id: t.assigneeActorId,
+    order_index: t.order, dependency_ids: t.dependencyIds, version: t.version, created_at: t.createdAt, updated_at: t.updatedAt,
+  };
+}
+export function toTask(row: Record<string, unknown>): Task {
+  return {
+    id: String(row["id"]), initiativeId: String(row["initiative_id"]), workspaceId: String(row["workspace_id"]),
+    clientId: (row["client_id"] as string | null) ?? null, title: String(row["title"]), description: (row["description"] as string | null) ?? null,
+    status: row["status"] as Task["status"], priority: row["priority"] as Task["priority"], estimate: (row["estimate"] as string | null) ?? null,
+    assigneeActorId: (row["assignee_actor_id"] as string | null) ?? null, order: typeof row["order_index"] === "number" ? (row["order_index"] as number) : 0,
+    dependencyIds: toStringArray(row["dependency_ids"]), version: typeof row["version"] === "number" ? (row["version"] as number) : 1,
+    createdAt: String(row["created_at"]), updatedAt: String(row["updated_at"]),
+  };
+}
+
+export function assignmentRow(a: Assignment): Record<string, unknown> {
+  return { id: a.id, task_id: a.taskId, workspace_id: a.workspaceId, client_id: a.clientId, action: a.action, assignee_actor_id: a.assigneeActorId, assigned_by_actor_id: a.assignedByActorId, at: a.at };
+}
+export function toAssignment(row: Record<string, unknown>): Assignment {
+  return {
+    id: String(row["id"]), taskId: String(row["task_id"]), workspaceId: String(row["workspace_id"]), clientId: (row["client_id"] as string | null) ?? null,
+    action: row["action"] as Assignment["action"], assigneeActorId: (row["assignee_actor_id"] as string | null) ?? null,
+    assignedByActorId: String(row["assigned_by_actor_id"]), at: String(row["at"]),
+  };
+}
+
+export function dependencyRow(d: Dependency): Record<string, unknown> {
+  return { id: d.id, workspace_id: d.workspaceId, client_id: d.clientId, from_initiative_id: d.fromInitiativeId, to_initiative_id: d.toInitiativeId, type: d.type, created_at: d.createdAt };
+}
+export function toDependency(row: Record<string, unknown>): Dependency {
+  return {
+    id: String(row["id"]), workspaceId: String(row["workspace_id"]), clientId: (row["client_id"] as string | null) ?? null,
+    fromInitiativeId: String(row["from_initiative_id"]), toInitiativeId: String(row["to_initiative_id"]), type: row["type"] as Dependency["type"], createdAt: String(row["created_at"]),
+  };
+}

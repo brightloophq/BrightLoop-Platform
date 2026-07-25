@@ -37,9 +37,13 @@ export const PERMISSIONS = {
     // approvals (`transformation.approve` is included by this namespace wildcard).
     // The wildcard also grants the Phase D `transformation.write` (workspace seed).
     "transformation.*",
-    // Phase D · Transformation Execution — initiatives live in their own namespace,
-    // so the `transformation.*` wildcard does not cover them.
+    // Phase D · Transformation Execution — initiatives + execution-management
+    // aggregates live in their own namespaces (not under `transformation.*`).
     "initiative.*",
+    "review.*",
+    "task.*",
+    "assignment.*",
+    "dependency.*",
   ],
   team_member: [
     "projects.read",
@@ -74,6 +78,13 @@ export const PERMISSIONS = {
     "transformation.write",
     "initiative.read",
     "initiative.write",
+    // D3/D4 execution management (internal operators).
+    "review.read",
+    "review.write",
+    "task.read",
+    "task.write",
+    "assignment.write",
+    "dependency.write",
   ],
   client_admin: [
     "own.project.read",

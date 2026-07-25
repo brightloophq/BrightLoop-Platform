@@ -15,5 +15,18 @@ export const TRANSFORMATION_WORKSPACE_EVENTS = [
   "initiative.activated",
   "initiative.completed",
   "initiative.archived",
+  // D3/D4 · execution management
+  "review.approved",
+  "review.rejected",
+  "review.changes_requested",
+  "task.created",
+  "task.updated",
+  "task.completed",
+  "task.blocked",
+  "task.assigned",
+  "task.reassigned",
+  "task.unassigned",
+  "dependency.linked",
+  "dependency.removed",
 ] as const;
 export type TransformationWorkspaceEventName = (typeof TRANSFORMATION_WORKSPACE_EVENTS)[number];
