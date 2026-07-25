@@ -23,4 +23,5 @@ export * from "./proof.js";
 export * from "./artifact.js";
 export * from "./lifecycle.js";
 export * from "./integration.js";
+export * from "./runtime.js";
 export * as proposalEvents from "./events.js";

@@ -40,9 +40,11 @@ import {
   newReasoningJob,
   runCompetitorIntelligence,
   runProspectIntelligence,
+  synthesizeProposalIntelligence,
   validateGrounding,
   type GroundingClaim,
   type GroundingContext,
+  type ProposalCandidateInput,
   type RuntimeServices,
   type StageExecutor,
 } from "@brightloop/domain";
@@ -54,6 +56,7 @@ import {
   type FreshnessBand,
   type IntelligenceGraph,
   type PipelineRunStage,
+  type ProposalIntelligenceSnapshot,
   type ProspectIntelligenceResult,
   type RuntimeArtifact,
   type RuntimeArtifactKind,
@@ -341,12 +344,67 @@ function findingSynthesis(deps: IntelligenceStageDeps): StageExecutor {
   };
 }
 
+/**
+ * Proposal Intelligence runtime step (C9) — deterministic, evidence-only.
+ *
+ * Converts the deterministic recommendation candidates into STRUCTURED proposal
+ * objects. It runs INSIDE recommendation_candidates (right after the candidates
+ * are derived, so the flow's `recommendations → proposal` adjacency holds) without
+ * adding a canonical pipeline stage. Categories carrying both a strength and a
+ * weakness are conflicting findings and reduce confidence; evidence confidence is
+ * the ceiling. With no candidates it persists an UNAVAILABLE snapshot and the
+ * runtime continues. The `proposal` artifact is content-addressed → idempotent.
+ */
+async function ensureProposalSnapshot(deps: IntelligenceStageDeps, run: RuntimeRun, result: ProspectIntelligenceResult, bundleArtifact: RuntimeArtifact, findingsId: string | null): Promise<ProposalIntelligenceSnapshot> {
+  const bundle = evidenceBundleSchema.parse(bundleArtifact.envelope);
+  const evidenceConfidence = new Map(bundle.items.map((i) => [i.id, i.confidence.value]));
+  const weaknessCats = new Set(result.weaknesses.map((w) => w.category));
+  const conflictedCategories = [...new Set(result.strengths.map((s) => s.category))].filter((c) => weaknessCats.has(c));
+  const candidates: ProposalCandidateInput[] = result.recommendationInputs.map((r) => ({
+    id: r.id,
+    title: r.title,
+    category: r.category,
+    problemStatement: r.problemStatement,
+    proposedAction: r.proposedAction,
+    affectedDimensions: r.affectedDimensions,
+    impact: r.impact,
+    effort: r.effort,
+    evidenceIds: r.evidenceIds,
+    riskIds: r.riskIds,
+    confidence: r.confidence.value,
+    limitations: r.limitations,
+  }));
+  const lineage = [bundleArtifact.id, ...(findingsId === null ? [] : [findingsId])];
+  const snapshot = synthesizeProposalIntelligence({
+    scanId: run.scanId,
+    candidates,
+    conflictedCategories,
+    evidenceConfidence,
+    sourceArtifactIds: lineage,
+    now: deps.now(),
+    idFor: (prefix, index) => `${prefix}:${run.scanId}:${index + 1}`,
+  });
+  const persisted = await deps.runtime.artifacts.persist({
+    runId: run.id,
+    clientId: run.clientId,
+    scanId: run.scanId,
+    kind: "proposal",
+    envelope: snapshot as unknown as Record<string, unknown>,
+    sourceArtifactIds: lineage,
+    checksum: snapshot.checksum,
+  });
+  if (!persisted.ok) throw new StageBlockedError("proposal_unpersisted");
+  return snapshot;
+}
+
 /** recommendation_candidates → recommendation_candidates (deterministic inputs). */
 function recommendationCandidates(deps: IntelligenceStageDeps): StageExecutor {
   return async (_stage, run) => {
     const bundleArtifact = await requireArtifact(deps, run.id, "evidence_bundle", "evidence_bundle_missing");
     const findings = await latest(deps, run.id, "findings");
     const { result } = assess(bundleArtifact, run.scanId, deps.now());
+    // C9 · Proposal Intelligence runs right after the recommendation candidates.
+    await ensureProposalSnapshot(deps, run, result, bundleArtifact, findings === null ? null : findings.id);
     return {
       envelope: toRecommendationEnvelope(result),
       kind: "recommendation_candidates",
@@ -365,6 +423,7 @@ function reportAssembly(deps: IntelligenceStageDeps): StageExecutor {
     const findings = await latest(deps, run.id, "findings");
     const recs = await latest(deps, run.id, "recommendation_candidates");
     const competitor = await latest(deps, run.id, "competitor_snapshot");
+    const proposal = await latest(deps, run.id, "proposal");
 
     const envelope = toInternalReportEnvelope(result);
     envelope["graphSummary"] =
@@ -374,6 +433,11 @@ function reportAssembly(deps: IntelligenceStageDeps): StageExecutor {
     // from the persisted snapshot. When no competitor evidence exists the section
     // is present with status `unavailable` (the runtime never fails on absence).
     envelope["competitorIntelligence"] = competitor === null ? UNAVAILABLE_COMPETITOR_SECTION : summarizeCompetitor(competitor.envelope as unknown as CompetitorIntelligenceSnapshot);
+
+    // C9 · Proposal Intelligence — a bounded, deterministic report section read
+    // from the persisted snapshot. Present with status `unavailable` when evidence
+    // is insufficient; the runtime never fails on absence.
+    envelope["proposalIntelligence"] = proposal === null ? UNAVAILABLE_PROPOSAL_SECTION : summarizeProposal(proposal.envelope as unknown as ProposalIntelligenceSnapshot);
 
     // Safe provider-enrichment metadata only — counts + status + safe reason
     // codes, never claim text or provider payloads.
@@ -387,8 +451,44 @@ function reportAssembly(deps: IntelligenceStageDeps): StageExecutor {
       rejectionCategories: claims === null ? [] : (claims.envelope["parserRejectionCategories"] as unknown[] ?? []),
     };
 
-    const sources = [bundleArtifact.id, ...[snapshot, claims, findings, recs, competitor].filter((a): a is RuntimeArtifact => a !== null).map((a) => a.id)];
+    const sources = [bundleArtifact.id, ...[snapshot, claims, findings, recs, competitor, proposal].filter((a): a is RuntimeArtifact => a !== null).map((a) => a.id)];
     return { envelope, kind: "internal_intelligence_report", sourceArtifactIds: sources };
+  };
+}
+
+/** The proposal report section when no snapshot exists (evidence absent, safe). */
+const UNAVAILABLE_PROPOSAL_SECTION = {
+  status: "unavailable",
+  reason: "insufficient_evidence",
+  proposalCount: 0,
+  critical: 0,
+  high: 0,
+  medium: 0,
+  low: 0,
+  confidence: 0,
+  confidenceBand: "very_low",
+  reviewRequired: false,
+  summary: "Unavailable — insufficient evidence to propose work.",
+} as const;
+
+/**
+ * Bounded, deterministic proposal report section — status, counts, confidence.
+ * Never dumps the full proposal set into the report.
+ */
+function summarizeProposal(snapshot: ProposalIntelligenceSnapshot): Record<string, unknown> {
+  return {
+    status: snapshot.status,
+    reason: snapshot.reason,
+    proposalCount: snapshot.proposals.length,
+    critical: snapshot.counts.critical,
+    high: snapshot.counts.high,
+    medium: snapshot.counts.medium,
+    low: snapshot.counts.low,
+    conflicts: snapshot.conflicts,
+    confidence: snapshot.confidence.value,
+    confidenceBand: snapshot.confidence.band,
+    reviewRequired: snapshot.reviewRequired,
+    summary: snapshot.summary,
   };
 }
 
