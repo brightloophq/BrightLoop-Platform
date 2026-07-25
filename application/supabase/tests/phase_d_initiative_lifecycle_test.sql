@@ -28,8 +28,11 @@ select lives_ok($$
 select lives_ok($$ update public.transformation_initiative set execution_status = 'planned', version = 2 where id = 'init_d2' and version = 1 $$, 'seeded → planned (optimistic v1→v2)');
 select is((select version from public.transformation_initiative where id = 'init_d2'), 2, 'version bumped to 2');
 
--- optimistic concurrency: an update against a stale version matches 0 rows
-select is((select count(*)::int from (update public.transformation_initiative set execution_status = 'active', version = 3 where id = 'init_d2' and version = 1 returning 1) u), 0, 'stale-version UPDATE matches 0 rows');
+-- optimistic concurrency: an UPDATE guarded by a stale version changes nothing
+-- (current version is 2; the `version = 1` guard matches zero rows).
+update public.transformation_initiative set execution_status = 'active', version = 3 where id = 'init_d2' and version = 1;
+select is((select execution_status from public.transformation_initiative where id = 'init_d2'), 'planned', 'stale-version UPDATE changed no status');
+select is((select version from public.transformation_initiative where id = 'init_d2'), 2, 'stale-version UPDATE did not bump version');
 
 -- an out-of-range status is rejected by the check constraint (23514)
 select throws_ok($$ update public.transformation_initiative set execution_status = 'bogus' where id = 'init_d2' $$, '23514', null, 'invalid status rejected');
