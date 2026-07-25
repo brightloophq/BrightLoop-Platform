@@ -7,5 +7,6 @@
  * ========================================================================== */
 
 export * from "./seed.js";
+export * from "./lifecycle.js";
 export * from "./repository.js";
 export * from "./events.js";

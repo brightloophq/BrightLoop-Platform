@@ -16,6 +16,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Initiative, TransformationActivity, TransformationWorkspace } from "@brightloop/schema";
 import {
+  err,
   mapDatabaseError,
   ok,
   type InitiativeRepository,
@@ -79,6 +80,27 @@ export class SupabaseInitiativeRepository implements InitiativeRepository {
     const { data, error } = await this.db.from(INIT).select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: true });
     if (error) return mapDatabaseError(error, "initiative.listByWorkspace");
     return ok("found", (data ?? []).map((r) => m.toInitiative(r as Record<string, unknown>)));
+  }
+
+  async getById(id: string): Promise<RuntimeResult<Initiative | null>> {
+    const { data, error } = await this.db.from(INIT).select("*").eq("id", id).maybeSingle();
+    if (error) return mapDatabaseError(error, "initiative.getById");
+    return ok("found", data ? m.toInitiative(data as Record<string, unknown>) : null);
+  }
+
+  async save(next: Initiative, expectedVersion: number): Promise<RuntimeResult<Initiative>> {
+    // Optimistic concurrency: the UPDATE only matches the expected version; a
+    // concurrent transition leaves zero rows → `conflict`.
+    const { data, error } = await this.db
+      .from(INIT)
+      .update({ execution_status: next.executionStatus, version: next.version })
+      .eq("id", next.id)
+      .eq("version", expectedVersion)
+      .select("*")
+      .maybeSingle();
+    if (error) return mapDatabaseError(error, "initiative.save");
+    if (data === null) return err("conflict", "initiative.save: version mismatch (concurrent transition)");
+    return ok("updated", m.toInitiative(data as Record<string, unknown>));
   }
 }
 

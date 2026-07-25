@@ -6,5 +6,14 @@
  * transformation-cycle `TRANSFORMATION_EVENTS`.
  * ========================================================================== */
 
-export const TRANSFORMATION_WORKSPACE_EVENTS = ["workspace.created", "initiative.seeded"] as const;
+export const TRANSFORMATION_WORKSPACE_EVENTS = [
+  // D1 · seed
+  "workspace.created",
+  "initiative.seeded",
+  // D2 · initiative lifecycle
+  "initiative.planned",
+  "initiative.activated",
+  "initiative.completed",
+  "initiative.archived",
+] as const;
 export type TransformationWorkspaceEventName = (typeof TRANSFORMATION_WORKSPACE_EVENTS)[number];

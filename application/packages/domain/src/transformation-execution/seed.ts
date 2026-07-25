@@ -68,6 +68,7 @@ export function seedTransformationWorkspace(input: SeedTransformationInput): Tra
     supportingEvidenceIds: [...new Set(item.supportingEvidenceIds)].sort(),
     proposalArtifactId: proposalArtifactId ?? "",
     executionStatus: "seeded",
+    version: 1,
     createdAt: now,
   }));
 

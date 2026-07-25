@@ -61,6 +61,7 @@ export function initiativeRow(i: Initiative): Record<string, unknown> {
     supporting_evidence_ids: i.supportingEvidenceIds,
     proposal_artifact_id: i.proposalArtifactId,
     execution_status: i.executionStatus,
+    version: i.version,
     created_at: i.createdAt,
   };
 }
@@ -80,6 +81,7 @@ export function toInitiative(row: Record<string, unknown>): Initiative {
     supportingEvidenceIds: toStringArray(row["supporting_evidence_ids"]),
     proposalArtifactId: String(row["proposal_artifact_id"] ?? ""),
     executionStatus: row["execution_status"] as Initiative["executionStatus"],
+    version: typeof row["version"] === "number" ? (row["version"] as number) : 1,
     createdAt: String(row["created_at"]),
   };
 }
