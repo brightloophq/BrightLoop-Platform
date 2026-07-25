@@ -20,6 +20,7 @@ export * from "./execution.js";
 export * from "./pipeline.js";
 export * from "./recommendation.js";
 export * from "./competitor.js";
+export * from "./competitor-intelligence.js";
 export * from "./proposal.js";
 export * from "./narrative.js";
 export * from "./prospect-intelligence.js";

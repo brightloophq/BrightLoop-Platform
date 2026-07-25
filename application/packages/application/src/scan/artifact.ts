@@ -33,6 +33,7 @@ export const READABLE_ARTIFACT_KINDS = [
   "evidence_ingress",
   "evidence_bundle",
   "execution_outcomes",
+  "competitor_snapshot",
   "findings",
   "recommendation_candidates",
 ] as const satisfies readonly RuntimeArtifactKind[];

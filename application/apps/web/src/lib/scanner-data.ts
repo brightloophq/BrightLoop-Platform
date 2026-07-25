@@ -16,15 +16,18 @@ import { loadCrawlerConfig } from "@brightloop/crawler";
 import { loadAnthropicConfig } from "@brightloop/providers";
 import { buildAppContext } from "./runtime-api";
 import {
+  buildCompetitorIntelligenceView,
   buildDiscoveryView,
   buildEvidenceView,
   buildStructuredView,
   buildProspectSummary,
   computeReasoningReadiness,
+  emptyCompetitorIntelligenceView,
   nextStageView,
   readIdentity,
   PROPOSAL_SECTIONS,
   REPORT_SECTIONS,
+  type CompetitorIntelligenceView,
   type DiscoveryView,
   type EvidenceView,
   type NextStageView,
@@ -102,6 +105,8 @@ export interface ScanWorkspaceData {
   proposal: StructuredView;
   readiness: ReasoningReadinessView;
   summary: ProspectSummaryView;
+  /** Read-only Competitor Intelligence status surface (C8). */
+  competitor: CompetitorIntelligenceView;
   /** True when the report shown is the machine-derived C6 assessment awaiting review. */
   reportReviewRequired: boolean;
   /** True when a discovery manifest exists, so an assessment can be run. */
@@ -120,10 +125,11 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const scan = await getScan(ctx, runId);
   const flags = readRuntimeFlags();
 
-  const [timeline, manifestArtifact, ingressArtifact, reportArtifact, proposalArtifact, assessment] = await Promise.all([
+  const [timeline, manifestArtifact, ingressArtifact, competitorArtifact, reportArtifact, proposalArtifact, assessment] = await Promise.all([
     optional(getScanTimeline(ctx, runId)),
     optional(getScanArtifact(ctx, runId, "discovery_manifest")),
     optional(getScanArtifact(ctx, runId, "evidence_ingress")),
+    optional(getScanArtifact(ctx, runId, "competitor_snapshot")),
     optional<ArtifactDTO>(getScanReport(ctx, runId)),
     optional<ArtifactDTO>(getScanProposal(ctx, runId)),
     optional(getScanAssessment(ctx, runId)),
@@ -144,6 +150,7 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
       : { id: assessmentReport.id, kind: assessmentReport.kind, version: assessmentReport.version, status: assessmentReport.validationStatus, createdAt: assessmentReport.createdAt, content: assessmentReport.content });
   const reportReviewRequired = reportArtifact === null && assessmentReport !== null;
   const report = buildStructuredView(reportSource, [...REPORT_SECTIONS]);
+  const competitor = competitorArtifact ? buildCompetitorIntelligenceView(competitorArtifact.content) : emptyCompetitorIntelligenceView();
   const proposal = buildStructuredView(proposalArtifact, [...PROPOSAL_SECTIONS]);
   const readiness = computeReasoningReadiness({
     scan,
@@ -166,6 +173,7 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     proposal,
     readiness,
     summary: buildProspectSummary({ scan, identity, discovery, evidence, report, proposal, readiness, next }),
+    competitor,
     reportReviewRequired,
     canAssess: manifestArtifact !== null,
   };
