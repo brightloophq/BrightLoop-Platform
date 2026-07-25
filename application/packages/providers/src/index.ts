@@ -9,6 +9,7 @@
  * ========================================================================== */
 
 export * from "./anthropic/index.js";
+export { parseProviderClaims, type ParseClaimsResult } from "./anthropic/claim-parser.js";
 export * from "./driver/index.js";
 export { FakeAnthropicTransport } from "./testing/fake-transport.js";
 export type {

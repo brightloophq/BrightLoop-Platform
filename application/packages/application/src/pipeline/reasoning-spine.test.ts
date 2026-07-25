@@ -191,7 +191,9 @@ describe("end-to-end deterministic spine (provider disabled)", () => {
     const report = await services.artifacts.latest(run.id, "internal_intelligence_report");
     if (!report.ok || !report.value) throw new Error("report");
     expect(report.value.envelope["reviewRequired"]).toBe(true);
-    expect((report.value.envelope["groundedClaimSummary"] as { providerEnriched: boolean }).providerEnriched).toBe(false);
+    const enrichment = report.value.envelope["providerEnrichment"] as { status: string; deterministicOnly: boolean };
+    expect(enrichment.status).toBe("unavailable");
+    expect(enrichment.deterministicOnly).toBe(true);
     expect(report.value.envelope["indexSummary"]).toBeTruthy();
   });
 

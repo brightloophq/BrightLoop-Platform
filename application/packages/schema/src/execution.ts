@@ -144,5 +144,65 @@ export const executionOutcomeSchema = z.object({
 });
 export type ExecutionOutcome = z.infer<typeof executionOutcomeSchema>;
 
+/* ---- safe provider claim candidates (Phase C · Sprint C7) ----------------- */
+
+/**
+ * A SAFE, structured claim candidate distilled from validated provider output.
+ *
+ * This is the ONLY provider-derived shape allowed to leave the provider boundary
+ * and reach grounding. By construction it can carry no raw model prose, no
+ * prompt, no chain-of-thought, and no arbitrary JSON: `statement` is a bounded
+ * normalized string, every other field is a scalar or an id list, and the schema
+ * rejects unknown keys elsewhere. Provider confidence is ADVISORY only — it never
+ * becomes the final grounded confidence automatically.
+ */
+export const providerClaimCategorySchema = z.enum(["observation", "strength", "weakness", "risk", "opportunity", "context"]);
+export type ProviderClaimCategory = z.infer<typeof providerClaimCategorySchema>;
+
+export const providerClaimStatusSchema = z.enum(["accepted", "rejected", "unsupported"]);
+export type ProviderClaimStatus = z.infer<typeof providerClaimStatusSchema>;
+
+/** Safe, enumerated rejection reason codes — never raw content. */
+export const providerClaimRejectionSchema = z.enum([
+  "no_evidence",
+  "unknown_evidence",
+  "cross_run_evidence",
+  "statement_too_long",
+  "malformed",
+  "duplicate",
+  "over_limit",
+  "unsupported_category",
+]);
+export type ProviderClaimRejection = z.infer<typeof providerClaimRejectionSchema>;
+
+export const providerClaimCandidateSchema = z.object({
+  id: z.string().max(80),
+  category: providerClaimCategorySchema,
+  /** A concise, normalized claim — bounded so no prose dump can pass. */
+  statement: z.string().max(400),
+  evidenceIds: z.array(z.string().max(160)).max(20).default([]),
+  /** Advisory provider confidence (0–100). Never the final grounded confidence. */
+  confidence: z.number().int().min(0).max(100).nullable().default(null),
+  validationStatus: providerClaimStatusSchema,
+  rejectionReason: providerClaimRejectionSchema.nullable().default(null),
+});
+export type ProviderClaimCandidate = z.infer<typeof providerClaimCandidateSchema>;
+
+/** The provider-enrichment section persisted inside the execution_outcomes envelope. */
+export const providerEnrichmentStatusSchema = z.enum(["unavailable", "attempted", "partial", "accepted", "rejected"]);
+export type ProviderEnrichmentStatus = z.infer<typeof providerEnrichmentStatusSchema>;
+
+export const providerEnrichmentSchema = z.object({
+  status: providerEnrichmentStatusSchema,
+  accepted: z.number().int().nonnegative(),
+  rejected: z.number().int().nonnegative(),
+  candidates: z.array(providerClaimCandidateSchema).max(50).default([]),
+  rejectionCategories: z.array(providerClaimRejectionSchema).default([]),
+});
+export type ProviderEnrichment = z.infer<typeof providerEnrichmentSchema>;
+
+/** Hard caps applied by the safe parser. */
+export const PROVIDER_CLAIM_LIMITS = { maxCandidates: 25, maxStatementChars: 400, maxEvidenceIdsPerClaim: 20 } as const;
+
 /* ---- token estimate re-export (shared with the registry cost model) ------- */
 export { tokenEstimateSchema, providerCapabilitySchema };

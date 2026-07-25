@@ -79,7 +79,7 @@ describe.skipIf(!LIVE)("ControlledRuntimeDriver (LIVE)", () => {
 
     // no raw content in any artifact envelope or event
     const artifact = repo.allArtifacts().find((a) => a.kind === "execution_outcomes")!;
-    expect(Object.keys(artifact.envelope).sort()).toEqual(["attempts", "finalStatus", "kind", "model", "providerId", "validationStatus"]);
+    expect(Object.keys(artifact.envelope).sort()).toEqual(["attempts", "enrichment", "finalStatus", "kind", "model", "providerId", "validationStatus"]);
 
     const inTok = result.usage?.inputTokens ?? 0;
     const outTok = result.usage?.outputTokens ?? 0;

@@ -205,7 +205,7 @@ describe("ControlledRuntimeDriver · reasoning executes", () => {
     const artifact = h.repo.allArtifacts().find((a) => a.kind === "execution_outcomes")!;
     expect(artifact).toBeDefined();
     const keys = Object.keys(artifact.envelope).sort();
-    expect(keys).toEqual(["attempts", "finalStatus", "kind", "model", "providerId", "validationStatus"]);
+    expect(keys).toEqual(["attempts", "enrichment", "finalStatus", "kind", "model", "providerId", "validationStatus"]);
     // the raw model output never appears anywhere in the envelope
     expect(JSON.stringify(artifact.envelope)).not.toContain(RAW_SENTINEL);
     expect(JSON.stringify(artifact.envelope)).not.toContain("analysis");
@@ -397,7 +397,7 @@ describe("reasoning_jobs → provider_execution seam", () => {
     expect(work.sourceArtifactIds).toEqual([jobs.value.id]);
     // envelope stays metadata-only — the raw model sentinel must never appear
     expect(JSON.stringify(work.envelope)).not.toContain(RAW_SENTINEL);
-    expect(Object.keys(work.envelope ?? {}).sort()).toEqual(["attempts", "finalStatus", "kind", "model", "providerId", "validationStatus"]);
+    expect(Object.keys(work.envelope ?? {}).sort()).toEqual(["attempts", "enrichment", "finalStatus", "kind", "model", "providerId", "validationStatus"]);
   });
 
   it("falls back to the run input with empty lineage when no reasoning_jobs artifact exists", async () => {
@@ -409,5 +409,71 @@ describe("reasoning_jobs → provider_execution seam", () => {
     const work = await support.execute(REASONING_STAGE, run.value);
     expect(work.kind).toBe("execution_outcomes");
     expect(work.sourceArtifactIds).toEqual([]);
+  });
+});
+
+/* ===== 10 · safe provider claim enrichment (C7) ============================= */
+describe("safe claim enrichment", () => {
+  const CLAIM_SENTINEL = "CLAIM_RAW_PROSE_do_not_persist";
+  // A structured claim referencing a known evidence id, plus a hostile extra field.
+  const CLAIM_SCRIPT: FakeTransportOptions = {
+    script: [{
+      text: JSON.stringify({
+        claims: [
+          { category: "strength", statement: "The site publishes contact details.", evidenceIds: ["ev:scan-1:website"], confidence: 80, chainOfThought: CLAIM_SENTINEL },
+          { category: "risk", statement: "The business is the market leader.", evidenceIds: [], confidence: 95 },
+        ],
+      }),
+      usage: { inputTokens: 200, outputTokens: 60 },
+    }],
+  };
+
+  function registryWith(svc: RuntimeServices, script: FakeTransportOptions) {
+    const config = loadAnthropicConfig({ AUXION_LIVE_AI_ENABLED: "true", AUXION_ANTHROPIC_ENABLED: "true", ANTHROPIC_API_KEY: "k" });
+    return createDefaultStageRegistry({
+      config, adapter: new AnthropicReasoningProviderAdapter({ config, transport: new FakeAnthropicTransport(script) }),
+      runtime: svc, now: T0, traceId: "t", ids: (p) => `${p}_x`,
+    });
+  }
+
+  async function seedJobs(h: Harness) {
+    const run = await h.svc.runs.createRun(START);
+    if (!run.ok) throw new Error("run");
+    await h.svc.artifacts.persist({
+      runId: run.value.id, clientId: run.value.clientId, scanId: run.value.scanId, kind: "reasoning_jobs",
+      envelope: { scanId: run.value.scanId, jobs: [{ id: "job", stage: "executive_summary", inputRefs: { evidenceIds: ["ev:scan-1:website"] } }] },
+      validationStatus: "valid",
+    });
+    return run.value;
+  }
+
+  it("distils safe structured candidates and never persists raw prose", async () => {
+    const h = harness({ enabled: true });
+    const run = await seedJobs(h);
+    const support = registryWith(h.svc, CLAIM_SCRIPT).resolve(REASONING_STAGE, run);
+    if (support.kind !== "executable") throw new Error("not executable");
+    const work = await support.execute(REASONING_STAGE, run);
+
+    const enrichment = work.envelope!["enrichment"] as { status: string; accepted: number; rejected: number; candidates: { statement: string; evidenceIds: string[]; confidence: number }[] };
+    // one grounded (has evidence), one dropped (no evidence)
+    expect(enrichment.accepted).toBe(1);
+    expect(enrichment.candidates[0]!.statement).toBe("The site publishes contact details.");
+    expect(enrichment.candidates[0]!.evidenceIds).toEqual(["ev:scan-1:website"]);
+    // the hostile chain-of-thought field and the unsupported claim text never survive
+    const serialized = JSON.stringify(work.envelope);
+    expect(serialized).not.toContain(CLAIM_SENTINEL);
+    expect(serialized).not.toContain("market leader");
+  });
+
+  it("yields an attempted-but-empty enrichment when the output has no claims", async () => {
+    const h = harness({ enabled: true });
+    const run = await seedJobs(h);
+    const support = registryWith(h.svc, OK_SCRIPT).resolve(REASONING_STAGE, run);
+    if (support.kind !== "executable") throw new Error("not executable");
+    const work = await support.execute(REASONING_STAGE, run);
+    const enrichment = work.envelope!["enrichment"] as { status: string; accepted: number };
+    expect(enrichment.accepted).toBe(0);
+    expect(["attempted", "rejected"]).toContain(enrichment.status);
+    expect(JSON.stringify(work.envelope)).not.toContain(RAW_SENTINEL);
   });
 });
