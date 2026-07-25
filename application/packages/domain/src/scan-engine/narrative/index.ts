@@ -18,4 +18,5 @@ export * from "./redaction.js";
 export * from "./builders.js";
 export * from "./artifact.js";
 export * from "./integration.js";
+export * from "./runtime.js";
 export * as narrativeEvents from "./events.js";
