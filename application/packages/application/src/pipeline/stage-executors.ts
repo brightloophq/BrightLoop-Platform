@@ -38,6 +38,7 @@ import {
   assembleGraph,
   createSnapshot,
   newReasoningJob,
+  runCompetitorIntelligence,
   runProspectIntelligence,
   validateGrounding,
   type GroundingClaim,
@@ -47,6 +48,7 @@ import {
 } from "@brightloop/domain";
 import {
   evidenceBundleSchema,
+  type CompetitorIntelligenceSnapshot,
   type EvidenceBundle,
   type EvidenceState,
   type FreshnessBand,
@@ -114,6 +116,39 @@ function assess(bundleArtifact: RuntimeArtifact, scanId: string, now: string): {
     now,
   });
   return { result, bundleId: bundleArtifact.id };
+}
+
+/**
+ * Competitor Intelligence runtime step (C8) — deterministic, evidence-only.
+ *
+ * Runs between the graph and Prospect Intelligence, INSIDE finding_synthesis so
+ * the flow's `competitor intelligence → prospect intelligence` adjacency holds
+ * without adding a canonical pipeline stage (which would reorder the 13-stage
+ * runtime — out of scope). It reads ONLY verified competitor evidence in the
+ * bundle; with none it persists an explicit UNAVAILABLE snapshot and the runtime
+ * continues. The persisted `competitor_snapshot` is content-addressed (its own
+ * checksum), so re-execution/replay is idempotent — no duplicate artifact.
+ */
+async function ensureCompetitorSnapshot(deps: IntelligenceStageDeps, run: RuntimeRun, bundleArtifact: RuntimeArtifact): Promise<CompetitorIntelligenceSnapshot> {
+  const bundle = evidenceBundleSchema.parse(bundleArtifact.envelope);
+  const snapshot = runCompetitorIntelligence({
+    scanId: run.scanId,
+    evidence: bundle.items,
+    sourceArtifactIds: [bundleArtifact.id],
+    now: deps.now(),
+    idFor: (prefix) => `${prefix}:${run.scanId}:1`,
+  });
+  const persisted = await deps.runtime.artifacts.persist({
+    runId: run.id,
+    clientId: run.clientId,
+    scanId: run.scanId,
+    kind: "competitor_snapshot",
+    envelope: snapshot as unknown as Record<string, unknown>,
+    sourceArtifactIds: [bundleArtifact.id],
+    checksum: snapshot.checksum,
+  });
+  if (!persisted.ok) throw new StageBlockedError("competitor_snapshot_unpersisted");
+  return snapshot;
 }
 
 /* ---- C6.2a · evidence + graph ------------------------------------------------ */
@@ -293,6 +328,9 @@ function freshestBand(bands: FreshnessBand[]): FreshnessBand {
 function findingSynthesis(deps: IntelligenceStageDeps): StageExecutor {
   return async (_stage, run) => {
     const bundleArtifact = await requireArtifact(deps, run.id, "evidence_bundle", "evidence_bundle_missing");
+    // C8 · competitor intelligence runs BEFORE prospect intelligence (evidence-only,
+    // deterministic; UNAVAILABLE snapshot when there is no competitor evidence).
+    await ensureCompetitorSnapshot(deps, run, bundleArtifact);
     const { result } = assess(bundleArtifact, run.scanId, deps.now());
     const claims = await latest(deps, run.id, "validated_claims");
     const envelope = toFindingsEnvelope(result);
@@ -326,10 +364,16 @@ function reportAssembly(deps: IntelligenceStageDeps): StageExecutor {
     const claims = await latest(deps, run.id, "validated_claims");
     const findings = await latest(deps, run.id, "findings");
     const recs = await latest(deps, run.id, "recommendation_candidates");
+    const competitor = await latest(deps, run.id, "competitor_snapshot");
 
     const envelope = toInternalReportEnvelope(result);
     envelope["graphSummary"] =
       snapshot === null ? null : { nodeCount: snapshot.envelope["nodeCount"], edgeCount: snapshot.envelope["edgeCount"], checksum: snapshot.envelope["checksum"] };
+
+    // C8 · Competitor Intelligence — a bounded, deterministic report section read
+    // from the persisted snapshot. When no competitor evidence exists the section
+    // is present with status `unavailable` (the runtime never fails on absence).
+    envelope["competitorIntelligence"] = competitor === null ? UNAVAILABLE_COMPETITOR_SECTION : summarizeCompetitor(competitor.envelope as unknown as CompetitorIntelligenceSnapshot);
 
     // Safe provider-enrichment metadata only — counts + status + safe reason
     // codes, never claim text or provider payloads.
@@ -343,8 +387,45 @@ function reportAssembly(deps: IntelligenceStageDeps): StageExecutor {
       rejectionCategories: claims === null ? [] : (claims.envelope["parserRejectionCategories"] as unknown[] ?? []),
     };
 
-    const sources = [bundleArtifact.id, ...[snapshot, claims, findings, recs].filter((a): a is RuntimeArtifact => a !== null).map((a) => a.id)];
+    const sources = [bundleArtifact.id, ...[snapshot, claims, findings, recs, competitor].filter((a): a is RuntimeArtifact => a !== null).map((a) => a.id)];
     return { envelope, kind: "internal_intelligence_report", sourceArtifactIds: sources };
+  };
+}
+
+/** The competitor report section when no snapshot exists (evidence absent, safe). */
+const UNAVAILABLE_COMPETITOR_SECTION = {
+  status: "unavailable",
+  reason: "no_competitor_evidence",
+  competitorCount: 0,
+  marketPosition: "undetermined",
+  keyDifferentiators: [] as string[],
+  opportunityCount: 0,
+  threatCount: 0,
+  confidence: 0,
+  confidenceBand: "very_low",
+  reviewRequired: false,
+  summary: "Unavailable — no verified competitor evidence.",
+} as const;
+
+/**
+ * Bounded, deterministic competitor report section — counts + status + a small
+ * cap of differentiator statements. Never dumps the full snapshot into the report.
+ */
+function summarizeCompetitor(snapshot: CompetitorIntelligenceSnapshot): Record<string, unknown> {
+  return {
+    status: snapshot.status,
+    reason: snapshot.reason,
+    competitorCount: snapshot.competitors.length,
+    marketPosition: snapshot.marketPosition,
+    keyDifferentiators: snapshot.differentiators.slice(0, 5).map((d) => d.statement),
+    opportunityCount: snapshot.opportunities.length,
+    threatCount: snapshot.threats.length,
+    conflicts: snapshot.conflicts,
+    confidence: snapshot.confidence.value,
+    confidenceBand: snapshot.confidence.band,
+    evidenceCount: snapshot.evidenceIds.length,
+    reviewRequired: snapshot.reviewRequired,
+    summary: snapshot.summary,
   };
 }
 

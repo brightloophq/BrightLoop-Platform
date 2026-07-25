@@ -678,6 +678,54 @@ export interface SummaryInput {
   next: NextStageView;
 }
 
+/* ---- Competitor Intelligence (Phase C · Sprint C8) ------------------------- */
+
+/** A read-only surface for the deterministic competitor snapshot. No redesign. */
+export interface CompetitorIntelligenceView {
+  present: boolean;
+  /** Available / Unavailable / Review Required — the operator-facing status. */
+  status: "available" | "unavailable" | "review_required";
+  statusLabel: string;
+  competitorCount: number;
+  evidenceCount: number;
+  confidence: number | null;
+  confidenceBand: string | null;
+  marketPosition: string | null;
+  reviewRequired: boolean;
+  summary: string;
+}
+
+/** The empty view when no competitor snapshot exists yet. */
+export function emptyCompetitorIntelligenceView(): CompetitorIntelligenceView {
+  return { present: false, status: "unavailable", statusLabel: "Not produced yet", competitorCount: 0, evidenceCount: 0, confidence: null, confidenceBand: null, marketPosition: null, reviewRequired: false, summary: "Competitor intelligence has not run yet." };
+}
+
+/**
+ * Build the operator surface from a persisted `competitor_snapshot` envelope.
+ * Everything is DERIVED — no invention. A missing snapshot yields the empty view.
+ */
+export function buildCompetitorIntelligenceView(content: unknown): CompetitorIntelligenceView {
+  if (content === null || typeof content !== "object") return emptyCompetitorIntelligenceView();
+  const c = content as Record<string, unknown>;
+  const rawStatus = c["status"] === "available" ? "available" : "unavailable";
+  const reviewRequired = c["reviewRequired"] === true;
+  const status: CompetitorIntelligenceView["status"] = rawStatus === "available" && reviewRequired ? "review_required" : rawStatus;
+  const statusLabel = status === "available" ? "Available" : status === "review_required" ? "Review Required" : "Unavailable";
+  const confidence = c["confidence"];
+  return {
+    present: true,
+    status,
+    statusLabel,
+    competitorCount: Array.isArray(c["competitors"]) ? (c["competitors"] as unknown[]).length : 0,
+    evidenceCount: Array.isArray(c["evidenceIds"]) ? (c["evidenceIds"] as unknown[]).length : 0,
+    confidence: confidence !== null && typeof confidence === "object" && typeof (confidence as Record<string, unknown>)["value"] === "number" ? ((confidence as Record<string, unknown>)["value"] as number) : null,
+    confidenceBand: confidence !== null && typeof confidence === "object" && typeof (confidence as Record<string, unknown>)["band"] === "string" ? ((confidence as Record<string, unknown>)["band"] as string) : null,
+    marketPosition: typeof c["marketPosition"] === "string" ? (c["marketPosition"] as string) : null,
+    reviewRequired,
+    summary: typeof c["summary"] === "string" ? (c["summary"] as string) : "",
+  };
+}
+
 function firstLine(view: StructuredView, key: string): string | null {
   const section = view.sections.find((s) => s.key === key);
   return section?.lines[0] ?? null;

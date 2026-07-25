@@ -22,5 +22,6 @@ export * from "./outputs.js";
 export * from "./decision-inputs.js";
 export * from "./confidence.js";
 export * from "./snapshot.js";
+export * from "./runtime.js";
 export * as competitorGraph from "./graph.js";
 export * as competitorEvents from "./events.js";
