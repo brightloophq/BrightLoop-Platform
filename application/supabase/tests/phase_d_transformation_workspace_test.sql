@@ -38,15 +38,19 @@ select throws_ok($$
   insert into public.transformation_workspace (id, client_id, scan_run_id, title, seed_checksum)
   values ('txw_dup', 'cli_d1', 'run_1', 'WS', 'chk_1') $$, '23505', null, 'duplicate seed rejected');
 
--- append-only activity: UPDATE and DELETE both blocked
-select throws_ok($$ update public.transformation_activity set summary = 'x' where id = 'act_1' $$, null, null, 'activity UPDATE blocked');
-select throws_ok($$ delete from public.transformation_activity where id = 'act_1' $$, null, null, 'activity DELETE blocked');
 -- activity command_id is unique (idempotent append)
 select throws_ok($$
   insert into public.transformation_activity (id, workspace_id, client_id, type, subject_type, subject_id, summary, command_id)
   values ('act_dup', 'txw_1', 'cli_d1', 'workspace_created', 'workspace', 'txw_1', 'seeded', 'cmd_1') $$, '23505', null, 'duplicate command_id rejected');
 
 reset role;
+
+-- append-only trigger: exercised as the table owner (superuser bypasses RLS +
+-- grants, so the row is actually targeted and the trigger fires). For the
+-- `authenticated` role the row is unreachable for UPDATE/DELETE anyway (no policy
+-- + no grant) — the trigger is the defence-in-depth for any privileged writer.
+select throws_ok($$ update public.transformation_activity set summary = 'x' where id = 'act_1' $$, 'P0001', 'transformation_activity is append-only', 'activity UPDATE blocked by trigger');
+select throws_ok($$ delete from public.transformation_activity where id = 'act_1' $$, 'P0001', 'transformation_activity is append-only', 'activity DELETE blocked by trigger');
 
 -- ---- client role: tenant isolation -----------------------------------------
 select set_config('request.jwt.claims', '{"sub":"u_cli","app_metadata":{"role":"client_admin","client_id":"cli_d1_other"}}', true);
