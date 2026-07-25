@@ -48,5 +48,6 @@ export * from "./transformation/index.js";
 export * from "./core-surfaces/index.js";
 // Scan engine foundation — provider ports, entitlements, pipeline (engine deferred).
 export * from "./scan-engine/index.js";
+export * from "./transformation-execution/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";

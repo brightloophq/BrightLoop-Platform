@@ -23,6 +23,7 @@ export * from "./competitor.js";
 export * from "./competitor-intelligence.js";
 export * from "./proposal.js";
 export * from "./proposal-intelligence.js";
+export * from "./transformation-execution.js";
 export * from "./narrative.js";
 export * from "./narrative-intelligence.js";
 export * from "./prospect-intelligence.js";

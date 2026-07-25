@@ -8,6 +8,9 @@ import {
   SupabaseTransformationRepository,
   SupabaseCoreSurfaceRepository,
   SupabaseRuntimeRepository,
+  SupabaseTransformationWorkspaceRepository,
+  SupabaseInitiativeRepository,
+  SupabaseTransformationActivityRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -19,6 +22,7 @@ import {
   type ReputationRepository,
   type RuntimeServices,
   type TransformationService,
+  type TransformationExecutionRepositories,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -159,6 +163,19 @@ export async function getRuntimeRepository(): Promise<SupabaseRuntimeRepository>
 export async function getRuntimeServices(): Promise<RuntimeServices> {
   const client = await createClient();
   return createRuntimeServices({ repo: new SupabaseRuntimeRepository(client), ids: newId });
+}
+
+/**
+ * Phase D · Transformation Execution repositories, bound to the request-scoped
+ * RLS session. Wired into the AppContext by `buildAppContext`. Never cached.
+ */
+export async function getExecutionRepositories(): Promise<TransformationExecutionRepositories> {
+  const client = await createClient();
+  return {
+    workspaces: new SupabaseTransformationWorkspaceRepository(client),
+    initiatives: new SupabaseInitiativeRepository(client),
+    activities: new SupabaseTransformationActivityRepository(client),
+  };
 }
 
 /** The core-surfaces domain service for WRITES (scan/finding/domain/activation). */

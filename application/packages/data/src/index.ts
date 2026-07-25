@@ -34,6 +34,12 @@ export type { AuxionSupabaseClient } from "./supabase/reputation.repository.js";
 export { toPortfolioProject, toTestimonial } from "./supabase/mappers.js";
 // Transformation cycle — Supabase-backed adapter for the domain repository port.
 export { SupabaseTransformationRepository } from "./transformation/repository.js";
+// Phase D · Transformation Execution — workspace / initiative / activity adapters.
+export {
+  SupabaseTransformationWorkspaceRepository,
+  SupabaseInitiativeRepository,
+  SupabaseTransformationActivityRepository,
+} from "./transformation-execution/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

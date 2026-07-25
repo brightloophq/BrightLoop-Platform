@@ -19,3 +19,4 @@ export * from "./runtime-result.js";
 export * from "./validate.js";
 export * from "./scan/index.js";
 export * from "./pipeline/index.js";
+export * from "./transformation-execution/index.js";
