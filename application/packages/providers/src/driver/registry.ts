@@ -72,6 +72,19 @@ const BLOCK_REASONS: Partial<Record<PipelineRunStage, string>> = {
  * final status, so the engine records a stage failure and the driver maps the
  * disposition (budget_exhausted / deadline / retryable).
  */
+/** The first job in a `reasoning_jobs` envelope, reduced to what execution needs. */
+function firstReasoningJob(envelope: Record<string, unknown>): { id: string; stage: string; evidenceIds: string[] } | null {
+  const jobs = envelope["jobs"];
+  if (!Array.isArray(jobs) || jobs.length === 0) return null;
+  const job = jobs[0] as Record<string, unknown>;
+  const inputRefs = (job["inputRefs"] ?? {}) as Record<string, unknown>;
+  return {
+    id: typeof job["id"] === "string" ? job["id"] : "",
+    stage: typeof job["stage"] === "string" ? job["stage"] : "reasoning",
+    evidenceIds: Array.isArray(inputRefs["evidenceIds"]) ? (inputRefs["evidenceIds"] as unknown[]).filter((x): x is string => typeof x === "string") : [],
+  };
+}
+
 function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
   return async (_stage: PipelineRunStage, run: RuntimeRun): Promise<StageWork> => {
     if (!deps.config.enabled || deps.adapter === null) {
@@ -79,14 +92,23 @@ function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
     }
     const adapter = deps.adapter;
 
+    // C6.2c · consume the `reasoning_jobs` artifact when it exists, so the runtime
+    // job (produced by reasoning_job_creation) drives this execution's input and
+    // lineage. Backward-compatible: with no job artifact, the input falls back to
+    // the run itself, exactly as before. This never changes the execution_outcomes
+    // envelope (still metadata-only — no model output is persisted).
+    const jobsArtifact = await deps.runtime.artifacts.latest(run.id, "reasoning_jobs");
+    const job = jobsArtifact.ok && jobsArtifact.value !== null ? firstReasoningJob(jobsArtifact.value.envelope) : null;
+    const sourceArtifactIds = jobsArtifact.ok && jobsArtifact.value !== null ? [jobsArtifact.value.id] : [];
+
     const outcome = await runControlledReasoning(
       {
         runId: run.id,
         clientId: run.clientId,
         scanId: run.scanId,
-        objective: "Execute the reasoning stage for this scan and return a grounded structured result.",
+        objective: job === null ? "Execute the reasoning stage for this scan and return a grounded structured result." : `Execute the ${job.stage} reasoning job and return a grounded structured result.`,
         outputSchemaId: "execution_outcomes",
-        businessContext: run.metadata,
+        businessContext: job === null ? run.metadata : { ...run.metadata, reasoningJobId: job.id, evidenceIds: job.evidenceIds },
       },
       { config: deps.config, adapter, now: deps.now, traceId: deps.traceId, ids: deps.ids, runtime: deps.runtime },
     );
@@ -122,7 +144,7 @@ function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
         attempts: outcome.attempts.length,
       },
       kind: "execution_outcomes",
-      sourceArtifactIds: [],
+      sourceArtifactIds,
     };
   };
 }

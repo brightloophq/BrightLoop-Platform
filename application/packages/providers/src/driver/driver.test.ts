@@ -363,3 +363,51 @@ describe("stage-executor registry", () => {
     }
   });
 });
+
+/* ===== 9 · provider_execution consumes reasoning_jobs (C6.2c seam) ========== */
+describe("reasoning_jobs → provider_execution seam", () => {
+  function enabledRegistry(svc: RuntimeServices) {
+    const config = loadAnthropicConfig({ AUXION_LIVE_AI_ENABLED: "true", AUXION_ANTHROPIC_ENABLED: "true", ANTHROPIC_API_KEY: "k" });
+    return createDefaultStageRegistry({
+      config,
+      adapter: new AnthropicReasoningProviderAdapter({ config, transport: new FakeAnthropicTransport(OK_SCRIPT) }),
+      runtime: svc,
+      now: T0,
+      traceId: "t",
+      ids: (p) => `${p}_x`,
+    });
+  }
+
+  it("carries lineage to the reasoning_jobs artifact when present (and never leaks raw output)", async () => {
+    const h = harness({ enabled: true });
+    const run = await h.svc.runs.createRun(START);
+    if (!run.ok) throw new Error("run");
+    const jobs = await h.svc.artifacts.persist({
+      runId: run.value.id, clientId: run.value.clientId, scanId: run.value.scanId, kind: "reasoning_jobs",
+      envelope: { scanId: run.value.scanId, jobs: [{ id: "job:scan-1:executive_summary", stage: "executive_summary", inputRefs: { evidenceIds: ["ev:scan-1:website"] } }] },
+      validationStatus: "valid",
+    });
+    if (!jobs.ok) throw new Error("jobs");
+
+    const support = enabledRegistry(h.svc).resolve(REASONING_STAGE, run.value);
+    if (support.kind !== "executable") throw new Error("not executable");
+    const work = await support.execute(REASONING_STAGE, run.value);
+
+    expect(work.kind).toBe("execution_outcomes");
+    expect(work.sourceArtifactIds).toEqual([jobs.value.id]);
+    // envelope stays metadata-only — the raw model sentinel must never appear
+    expect(JSON.stringify(work.envelope)).not.toContain(RAW_SENTINEL);
+    expect(Object.keys(work.envelope ?? {}).sort()).toEqual(["attempts", "finalStatus", "kind", "model", "providerId", "validationStatus"]);
+  });
+
+  it("falls back to the run input with empty lineage when no reasoning_jobs artifact exists", async () => {
+    const h = harness({ enabled: true });
+    const run = await h.svc.runs.createRun(START);
+    if (!run.ok) throw new Error("run");
+    const support = enabledRegistry(h.svc).resolve(REASONING_STAGE, run.value);
+    if (support.kind !== "executable") throw new Error("not executable");
+    const work = await support.execute(REASONING_STAGE, run.value);
+    expect(work.kind).toBe("execution_outcomes");
+    expect(work.sourceArtifactIds).toEqual([]);
+  });
+});

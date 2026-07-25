@@ -16,7 +16,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { cancelScan, createScan, isApplicationError, retryScan } from "@brightloop/application";
+import { assessProspect, cancelScan, createScan, isApplicationError, retryScan } from "@brightloop/application";
 import { buildAppContext } from "@/lib/runtime-api";
 import { parseProspectScanForm, type FieldErrors } from "@/lib/prospect-form";
 
@@ -99,6 +99,24 @@ export async function createProspectScanState(_prev: ScannerActionResult, formDa
   return result;
 }
 
+/**
+ * Run the deterministic prospect assessment (Phase C · Sprint C6): discovery
+ * evidence → Prospect Intelligence → reviewable artifacts. No provider call.
+ */
+export async function assessProspectAction(runId: string): Promise<ScannerActionResult> {
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) return { ok: false, error: "You are not signed in." };
+    const outcome = await assessProspect(ctx, runId);
+    revalidatePath(`${SCANNER_PATH}/${runId}`);
+    if (outcome.status === "blocked") return { ok: false, error: `Assessment blocked: ${outcome.blockedReason ?? "prerequisite missing"}.` };
+    if (outcome.status === "failed") return { ok: false, error: `Assessment failed: ${outcome.failureCategory ?? "unknown"}.` };
+    return { ok: true, id: runId };
+  } catch (error) {
+    return failure(error, "Couldn't run the assessment.");
+  }
+}
+
 /* ---- form wrappers ----------------------------------------------------------- */
 
 /**
@@ -126,4 +144,10 @@ export async function retryProspectScanForm(formData: FormData): Promise<void> {
   const runId = String(formData.get("runId") ?? "");
   const result = await retryProspectScanAction(runId);
   redirect(result.ok ? `${SCANNER_PATH}/${runId}` : `${SCANNER_PATH}/${runId}?actionError=${encodeURIComponent(result.error ?? "Couldn't retry.")}`);
+}
+
+export async function assessProspectForm(formData: FormData): Promise<void> {
+  const runId = String(formData.get("runId") ?? "");
+  const result = await assessProspectAction(runId);
+  redirect(result.ok ? `${SCANNER_PATH}/${runId}` : `${SCANNER_PATH}/${runId}?actionError=${encodeURIComponent(result.error ?? "Couldn't run the assessment.")}`);
 }
