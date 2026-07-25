@@ -192,9 +192,10 @@ interface RawClaim {
   id?: unknown;
   statement?: unknown;
   evidenceIds?: unknown;
-  evidenceState?: unknown;
+  /** C7 safe-candidate confidence (0–100). */
+  confidence?: unknown;
+  /** Legacy field name, still read for compatibility. */
   confidenceValue?: unknown;
-  freshnessBand?: unknown;
   limitations?: unknown;
   isCausal?: unknown;
   assertsMetric?: unknown;
@@ -225,37 +226,67 @@ function groundingValidation(deps: IntelligenceStageDeps): StageExecutor {
     const grounded: unknown[] = [];
     const rejected: unknown[] = [];
 
+    let index = 0;
     for (const raw of rawClaims) {
+      const evidenceIds = Array.isArray(raw.evidenceIds) ? raw.evidenceIds.filter((x): x is string => typeof x === "string") : [];
+      // Derive the claim's evidence facts from the bundle it references — the
+      // strongest state + freshest band, and the evidence confidence as a CEILING.
+      const facts = evidenceIds.map((id) => context.evidenceById.get(id)).filter((f): f is NonNullable<typeof f> => f !== undefined);
+      const state = strongestState(facts.map((f) => f.state));
+      const band = freshestBand(facts.map((f) => f.freshnessBand));
+      const ceiling = facts.length === 0 ? 0 : Math.min(...facts.map((f) => f.confidenceValue));
+      // Provider confidence is advisory and CANNOT exceed the evidence ceiling.
+      const providerConf = typeof raw.confidence === "number" ? raw.confidence : typeof raw.confidenceValue === "number" ? raw.confidenceValue : ceiling;
+
       const claim: GroundingClaim = {
-        id: typeof raw.id === "string" ? raw.id : `claim:${grounded.length + rejected.length}`,
-        statement: typeof raw.statement === "string" ? raw.statement.slice(0, 2000) : "",
-        evidenceIds: Array.isArray(raw.evidenceIds) ? raw.evidenceIds.filter((x): x is string => typeof x === "string") : [],
-        evidenceState: isState(raw.evidenceState) ? raw.evidenceState : "inferred",
-        confidenceValue: typeof raw.confidenceValue === "number" ? raw.confidenceValue : 0,
-        freshnessBand: isBand(raw.freshnessBand) ? raw.freshnessBand : "expired",
+        id: typeof raw.id === "string" ? raw.id : `claim:${index}`,
+        statement: typeof raw.statement === "string" ? raw.statement.slice(0, 400) : "",
+        evidenceIds,
+        evidenceState: state,
+        confidenceValue: Math.max(0, Math.min(providerConf, ceiling)),
+        freshnessBand: band,
         limitations: Array.isArray(raw.limitations) ? raw.limitations.filter((x): x is string => typeof x === "string") : [],
         isCausal: raw.isCausal === true,
         assertsMetric: raw.assertsMetric === true,
       };
+      index += 1;
       const rejections = validateGrounding(claim, context);
       if (rejections.length === 0) grounded.push({ id: claim.id, claim: claim.statement, evidenceIds: claim.evidenceIds, evidenceState: claim.evidenceState, confidenceValue: claim.confidenceValue, grounded: true });
       else rejected.push({ id: claim.id, reasons: rejections.map((r) => r.reason) });
     }
 
+    const enrichment = outcome === null ? null : (outcome.envelope["enrichment"] as { status?: unknown; rejectionCategories?: unknown } | undefined);
     return {
       envelope: {
         scanId: run.scanId,
-        providerEnriched: outcome !== null,
+        providerEnriched: grounded.length > 0,
+        providerAttempted: outcome !== null,
+        enrichmentStatus: outcome === null ? "unavailable" : typeof enrichment?.status === "string" ? enrichment.status : "attempted",
         claims: grounded,
         rejected,
         groundedCount: grounded.length,
         rejectedCount: rejected.length,
+        parserRejectionCategories: Array.isArray(enrichment?.rejectionCategories) ? enrichment.rejectionCategories : [],
         note: outcome === null ? "No provider output — deterministic path only." : "Provider claims validated against evidence; ungrounded claims excluded.",
       },
       kind: "validated_claims",
       sourceArtifactIds: outcome === null ? [bundleArtifact.id] : [outcome.id, bundleArtifact.id],
     };
   };
+}
+
+const STATE_RANK: Record<EvidenceState, number> = { observed: 3, estimated: 2, inferred: 1, unavailable: 0 };
+const BAND_RANK: Record<FreshnessBand, number> = { fresh: 3, recent: 2, stale: 1, expired: 0 };
+
+/** The strongest evidence state among a claim's references (observed wins). */
+function strongestState(states: EvidenceState[]): EvidenceState {
+  if (states.length === 0) return "inferred";
+  return states.reduce((best, s) => (STATE_RANK[s] > STATE_RANK[best] ? s : best), states[0]!);
+}
+/** The freshest band among a claim's references. */
+function freshestBand(bands: FreshnessBand[]): FreshnessBand {
+  if (bands.length === 0) return "expired";
+  return bands.reduce((best, b) => (BAND_RANK[b] > BAND_RANK[best] ? b : best), bands[0]!);
 }
 
 /** finding_synthesis → findings (deterministic Prospect Intelligence; claims enrich). */
@@ -299,7 +330,18 @@ function reportAssembly(deps: IntelligenceStageDeps): StageExecutor {
     const envelope = toInternalReportEnvelope(result);
     envelope["graphSummary"] =
       snapshot === null ? null : { nodeCount: snapshot.envelope["nodeCount"], edgeCount: snapshot.envelope["edgeCount"], checksum: snapshot.envelope["checksum"] };
-    envelope["groundedClaimSummary"] = { providerEnriched: claims !== null && (claims.envelope["groundedCount"] as number ?? 0) > 0, groundedCount: claims === null ? 0 : (claims.envelope["groundedCount"] as number ?? 0) };
+
+    // Safe provider-enrichment metadata only — counts + status + safe reason
+    // codes, never claim text or provider payloads.
+    const groundedCount = claims === null ? 0 : (claims.envelope["groundedCount"] as number ?? 0);
+    const rejectedCount = claims === null ? 0 : (claims.envelope["rejectedCount"] as number ?? 0);
+    envelope["providerEnrichment"] = {
+      status: claims === null ? "unavailable" : (claims.envelope["enrichmentStatus"] as string ?? "attempted"),
+      deterministicOnly: groundedCount === 0,
+      acceptedClaims: groundedCount,
+      rejectedClaims: rejectedCount,
+      rejectionCategories: claims === null ? [] : (claims.envelope["parserRejectionCategories"] as unknown[] ?? []),
+    };
 
     const sources = [bundleArtifact.id, ...[snapshot, claims, findings, recs].filter((a): a is RuntimeArtifact => a !== null).map((a) => a.id)];
     return { envelope, kind: "internal_intelligence_report", sourceArtifactIds: sources };
@@ -333,8 +375,13 @@ export function createIntelligenceStageRegistry(deps: IntelligenceStageDeps): In
 /* ---- claim extraction (defensive) -------------------------------------------- */
 
 function extractClaims(envelope: Record<string, unknown>): RawClaim[] {
-  // The provider's structured output may carry claims either at the top level or
-  // under `response.claims`. Read defensively; never assume a shape.
+  // C7: the provider executor persists SAFE candidates under `enrichment.candidates`.
+  const enrichment = envelope["enrichment"];
+  if (enrichment !== null && typeof enrichment === "object") {
+    const candidates = (enrichment as Record<string, unknown>)["candidates"];
+    if (Array.isArray(candidates)) return candidates as RawClaim[];
+  }
+  // Legacy fallbacks (top-level / nested) — read defensively; never assume a shape.
   const direct = envelope["claims"];
   if (Array.isArray(direct)) return direct as RawClaim[];
   const response = envelope["response"];
@@ -343,11 +390,4 @@ function extractClaims(envelope: Record<string, unknown>): RawClaim[] {
     if (Array.isArray(nested)) return nested as RawClaim[];
   }
   return [];
-}
-
-function isState(v: unknown): v is EvidenceState {
-  return v === "observed" || v === "estimated" || v === "inferred" || v === "unavailable";
-}
-function isBand(v: unknown): v is FreshnessBand {
-  return v === "fresh" || v === "recent" || v === "stale" || v === "expired";
 }

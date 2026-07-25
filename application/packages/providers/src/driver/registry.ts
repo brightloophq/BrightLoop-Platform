@@ -12,10 +12,11 @@
  * ========================================================================== */
 
 import { StageBlockedError, type ReasoningProviderAdapter, type RuntimeServices, type StageExecutor, type StageWork } from "@brightloop/domain";
-import type { PipelineRunStage, RuntimeRun } from "@brightloop/schema";
+import { providerEnrichmentSchema, type PipelineRunStage, type ProviderEnrichment, type RuntimeRun } from "@brightloop/schema";
 import type { AnthropicConfig } from "../anthropic/config.js";
 import { PROVIDER_DISABLED_REASON } from "../anthropic/config.js";
 import { runControlledReasoning } from "../anthropic/controlled-run.js";
+import { parseProviderClaims, type ParseClaimsResult } from "../anthropic/claim-parser.js";
 import type { StageExecutorRegistry, StageSupport } from "./contract.js";
 
 /** The one stage a live reasoning provider drives. */
@@ -132,8 +133,15 @@ function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
       throw new Error(`reasoning ${outcome.finalStatus}`);
     }
 
-    // The artifact carries execution METADATA only — never the raw model output.
-    // The validated output already flowed through the provider-attempt ledger.
+    // C7 · distil SAFE, structured claim candidates from the VALIDATED output,
+    // bounded to the evidence the reasoning job referenced. The parser is the
+    // leak boundary: it copies only a bounded statement, an enum category, known
+    // evidence ids and an integer confidence — never raw prose. The artifact
+    // still carries NO raw model output.
+    const known = new Set(job?.evidenceIds ?? []);
+    const parsed = parseProviderClaims(response?.output ?? null, known);
+    const enrichment = buildEnrichment(parsed);
+
     return {
       envelope: {
         kind: "execution_outcomes",
@@ -142,11 +150,27 @@ function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
         finalStatus: outcome.finalStatus,
         validationStatus,
         attempts: outcome.attempts.length,
+        enrichment,
       },
       kind: "execution_outcomes",
       sourceArtifactIds,
     };
   };
+}
+
+/** Build the safe enrichment section from a parse result. Never carries prose. */
+function buildEnrichment(parsed: ParseClaimsResult): ProviderEnrichment {
+  const accepted = parsed.candidates.length;
+  const rejected = parsed.rejections.length;
+  const status: ProviderEnrichment["status"] =
+    accepted > 0 && rejected > 0 ? "partial" : accepted > 0 ? "accepted" : rejected > 0 ? "rejected" : "attempted";
+  return providerEnrichmentSchema.parse({
+    status,
+    accepted,
+    rejected,
+    candidates: parsed.candidates,
+    rejectionCategories: parsed.rejections,
+  });
 }
 
 /** The default registry: reasoning stage executable, everything else blocked. */
