@@ -700,6 +700,60 @@ export function emptyCompetitorIntelligenceView(): CompetitorIntelligenceView {
   return { present: false, status: "unavailable", statusLabel: "Not produced yet", competitorCount: 0, evidenceCount: 0, confidence: null, confidenceBand: null, marketPosition: null, reviewRequired: false, summary: "Competitor intelligence has not run yet." };
 }
 
+/* ---- Proposal Intelligence (Phase C · Sprint C9) --------------------------- */
+
+/** A read-only surface for the deterministic proposal snapshot. No redesign. */
+export interface ProposalIntelligenceView {
+  present: boolean;
+  /** Available / Unavailable / Review Required — the operator-facing status. */
+  status: "available" | "unavailable" | "review_required";
+  statusLabel: string;
+  proposalCount: number;
+  critical: number;
+  high: number;
+  medium: number;
+  low: number;
+  confidence: number | null;
+  confidenceBand: string | null;
+  reviewRequired: boolean;
+  summary: string;
+}
+
+/** The empty view when no proposal snapshot exists yet. */
+export function emptyProposalIntelligenceView(): ProposalIntelligenceView {
+  return { present: false, status: "unavailable", statusLabel: "Not produced yet", proposalCount: 0, critical: 0, high: 0, medium: 0, low: 0, confidence: null, confidenceBand: null, reviewRequired: false, summary: "Proposal intelligence has not run yet." };
+}
+
+/**
+ * Build the operator surface from a persisted `proposal` snapshot envelope.
+ * Everything is DERIVED — no invention. A missing snapshot yields the empty view.
+ */
+export function buildProposalIntelligenceView(content: unknown): ProposalIntelligenceView {
+  if (content === null || typeof content !== "object") return emptyProposalIntelligenceView();
+  const c = content as Record<string, unknown>;
+  const rawStatus = c["status"] === "available" ? "available" : "unavailable";
+  const reviewRequired = c["reviewRequired"] === true;
+  const status: ProposalIntelligenceView["status"] = rawStatus === "available" && reviewRequired ? "review_required" : rawStatus;
+  const statusLabel = status === "available" ? "Available" : status === "review_required" ? "Review Required" : "Unavailable";
+  const counts = (c["counts"] ?? {}) as Record<string, unknown>;
+  const num = (v: unknown): number => (typeof v === "number" ? v : 0);
+  const confidence = c["confidence"];
+  return {
+    present: true,
+    status,
+    statusLabel,
+    proposalCount: Array.isArray(c["proposals"]) ? (c["proposals"] as unknown[]).length : 0,
+    critical: num(counts["critical"]),
+    high: num(counts["high"]),
+    medium: num(counts["medium"]),
+    low: num(counts["low"]),
+    confidence: confidence !== null && typeof confidence === "object" && typeof (confidence as Record<string, unknown>)["value"] === "number" ? ((confidence as Record<string, unknown>)["value"] as number) : null,
+    confidenceBand: confidence !== null && typeof confidence === "object" && typeof (confidence as Record<string, unknown>)["band"] === "string" ? ((confidence as Record<string, unknown>)["band"] as string) : null,
+    reviewRequired,
+    summary: typeof c["summary"] === "string" ? (c["summary"] as string) : "",
+  };
+}
+
 /**
  * Build the operator surface from a persisted `competitor_snapshot` envelope.
  * Everything is DERIVED — no invention. A missing snapshot yields the empty view.

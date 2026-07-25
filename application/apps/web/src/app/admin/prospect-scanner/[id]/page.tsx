@@ -19,6 +19,7 @@ import { ReasoningReadiness } from "../components/ReasoningReadiness";
 import { RuntimeTimeline } from "../components/RuntimeTimeline";
 import { InternalReportView, ProposalReview } from "../components/StructuredArtifactView";
 import { CompetitorIntelligencePanel } from "../components/CompetitorIntelligencePanel";
+import { ProposalIntelligencePanel } from "../components/ProposalIntelligencePanel";
 import { ProspectSummary } from "../components/ProspectSummary";
 import { assessProspectForm, cancelProspectScanForm, retryProspectScanForm } from "../scanner-actions";
 import styles from "../scanner.module.css";
@@ -83,7 +84,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
   }
   if (data === null) notFound();
 
-  const { scan, identity, flags, next, discovery, evidence, report, proposal, readiness, summary, competitor, timeline, reportReviewRequired, canAssess } = data;
+  const { scan, identity, flags, next, discovery, evidence, report, proposal, readiness, summary, competitor, proposalIntelligence, timeline, reportReviewRequired, canAssess } = data;
   const rows = buildTimelineRows(timeline);
   const latestEvent = rows[0]?.type ?? null;
 
@@ -167,6 +168,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
       ) : null}
       <InternalReportView view={report} />
       <CompetitorIntelligencePanel competitor={competitor} />
+      <ProposalIntelligencePanel proposal={proposalIntelligence} />
       <ProposalReview view={proposal} />
       <ProspectSummary summary={summary} />
     </>

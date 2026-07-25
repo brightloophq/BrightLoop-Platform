@@ -36,6 +36,7 @@ export const READABLE_ARTIFACT_KINDS = [
   "competitor_snapshot",
   "findings",
   "recommendation_candidates",
+  "proposal",
 ] as const satisfies readonly RuntimeArtifactKind[];
 
 export type ReadableArtifactKind = (typeof READABLE_ARTIFACT_KINDS)[number];
