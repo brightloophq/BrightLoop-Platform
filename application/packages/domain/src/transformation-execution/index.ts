@@ -8,5 +8,8 @@
 
 export * from "./seed.js";
 export * from "./lifecycle.js";
+export * from "./review.js";
+export * from "./task.js";
+export * from "./dependency.js";
 export * from "./repository.js";
 export * from "./events.js";

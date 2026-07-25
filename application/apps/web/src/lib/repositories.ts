@@ -11,6 +11,10 @@ import {
   SupabaseTransformationWorkspaceRepository,
   SupabaseInitiativeRepository,
   SupabaseTransformationActivityRepository,
+  SupabaseReviewRepository,
+  SupabaseTaskRepository,
+  SupabaseAssignmentRepository,
+  SupabaseDependencyRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -175,6 +179,10 @@ export async function getExecutionRepositories(): Promise<TransformationExecutio
     workspaces: new SupabaseTransformationWorkspaceRepository(client),
     initiatives: new SupabaseInitiativeRepository(client),
     activities: new SupabaseTransformationActivityRepository(client),
+    reviews: new SupabaseReviewRepository(client),
+    tasks: new SupabaseTaskRepository(client),
+    assignments: new SupabaseAssignmentRepository(client),
+    dependencies: new SupabaseDependencyRepository(client),
   };
 }
 

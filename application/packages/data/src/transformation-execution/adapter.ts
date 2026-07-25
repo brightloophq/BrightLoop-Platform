@@ -130,3 +130,114 @@ export class SupabaseTransformationActivityRepository implements TransformationA
     return ok("found", (data ?? []).map((r) => m.toActivity(r as Record<string, unknown>)));
   }
 }
+
+/* ---- D3/D4 execution-management adapters ----------------------------------- */
+import type { Assignment, Dependency, Review, Task } from "@brightloop/schema";
+import type { AssignmentRepository, DependencyRepository, ReviewRepository, TaskRepository } from "@brightloop/domain";
+
+const REV = "transformation_review";
+const TASK = "transformation_task";
+const ASG = "transformation_assignment";
+const DEP = "transformation_dependency";
+
+export class SupabaseReviewRepository implements ReviewRepository {
+  private readonly db: SupabaseClient;
+  constructor(client: AuxionSupabaseClient) { this.db = client as unknown as SupabaseClient; }
+  async create(review: Review): Promise<RuntimeResult<Review>> {
+    const { data, error } = await this.db.from(REV).insert(m.reviewRow(review)).select("*").single();
+    if (error) return mapDatabaseError(error, "review.create");
+    return ok("created", m.toReview(data as Record<string, unknown>));
+  }
+  async getById(id: string): Promise<RuntimeResult<Review | null>> {
+    const { data, error } = await this.db.from(REV).select("*").eq("id", id).maybeSingle();
+    if (error) return mapDatabaseError(error, "review.getById");
+    return ok("found", data ? m.toReview(data as Record<string, unknown>) : null);
+  }
+  async listByInitiative(initiativeId: string): Promise<RuntimeResult<Review[]>> {
+    const { data, error } = await this.db.from(REV).select("*").eq("initiative_id", initiativeId).order("created_at", { ascending: true });
+    if (error) return mapDatabaseError(error, "review.listByInitiative");
+    return ok("found", (data ?? []).map((r) => m.toReview(r as Record<string, unknown>)));
+  }
+  async listByWorkspace(workspaceId: string): Promise<RuntimeResult<Review[]>> {
+    const { data, error } = await this.db.from(REV).select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: true });
+    if (error) return mapDatabaseError(error, "review.listByWorkspace");
+    return ok("found", (data ?? []).map((r) => m.toReview(r as Record<string, unknown>)));
+  }
+  async save(next: Review, expectedVersion: number): Promise<RuntimeResult<Review>> {
+    const { data, error } = await this.db.from(REV).update({ status: next.status, note: next.note, decision_actor_id: next.decisionActorId, version: next.version }).eq("id", next.id).eq("version", expectedVersion).select("*").maybeSingle();
+    if (error) return mapDatabaseError(error, "review.save");
+    if (data === null) return err("conflict", "review.save: version mismatch");
+    return ok("updated", m.toReview(data as Record<string, unknown>));
+  }
+}
+
+export class SupabaseTaskRepository implements TaskRepository {
+  private readonly db: SupabaseClient;
+  constructor(client: AuxionSupabaseClient) { this.db = client as unknown as SupabaseClient; }
+  async create(task: Task): Promise<RuntimeResult<Task>> {
+    const { data, error } = await this.db.from(TASK).insert(m.taskRow(task)).select("*").single();
+    if (error) return mapDatabaseError(error, "task.create");
+    return ok("created", m.toTask(data as Record<string, unknown>));
+  }
+  async getById(id: string): Promise<RuntimeResult<Task | null>> {
+    const { data, error } = await this.db.from(TASK).select("*").eq("id", id).maybeSingle();
+    if (error) return mapDatabaseError(error, "task.getById");
+    return ok("found", data ? m.toTask(data as Record<string, unknown>) : null);
+  }
+  async listByInitiative(initiativeId: string): Promise<RuntimeResult<Task[]>> {
+    const { data, error } = await this.db.from(TASK).select("*").eq("initiative_id", initiativeId).order("order_index", { ascending: true });
+    if (error) return mapDatabaseError(error, "task.listByInitiative");
+    return ok("found", (data ?? []).map((r) => m.toTask(r as Record<string, unknown>)));
+  }
+  async listByWorkspace(workspaceId: string): Promise<RuntimeResult<Task[]>> {
+    const { data, error } = await this.db.from(TASK).select("*").eq("workspace_id", workspaceId).order("order_index", { ascending: true });
+    if (error) return mapDatabaseError(error, "task.listByWorkspace");
+    return ok("found", (data ?? []).map((r) => m.toTask(r as Record<string, unknown>)));
+  }
+  async save(next: Task, expectedVersion: number): Promise<RuntimeResult<Task>> {
+    const { data, error } = await this.db.from(TASK).update({ title: next.title, description: next.description, status: next.status, priority: next.priority, estimate: next.estimate, assignee_actor_id: next.assigneeActorId, order_index: next.order, dependency_ids: next.dependencyIds, version: next.version, updated_at: next.updatedAt }).eq("id", next.id).eq("version", expectedVersion).select("*").maybeSingle();
+    if (error) return mapDatabaseError(error, "task.save");
+    if (data === null) return err("conflict", "task.save: version mismatch");
+    return ok("updated", m.toTask(data as Record<string, unknown>));
+  }
+}
+
+export class SupabaseAssignmentRepository implements AssignmentRepository {
+  private readonly db: SupabaseClient;
+  constructor(client: AuxionSupabaseClient) { this.db = client as unknown as SupabaseClient; }
+  async append(record: Assignment): Promise<RuntimeResult<Assignment>> {
+    const { data, error } = await this.db.from(ASG).insert(m.assignmentRow(record)).select("*").single();
+    if (error) return mapDatabaseError(error, "assignment.append");
+    return ok("created", m.toAssignment(data as Record<string, unknown>));
+  }
+  async listByTask(taskId: string): Promise<RuntimeResult<Assignment[]>> {
+    const { data, error } = await this.db.from(ASG).select("*").eq("task_id", taskId).order("at", { ascending: true });
+    if (error) return mapDatabaseError(error, "assignment.listByTask");
+    return ok("found", (data ?? []).map((r) => m.toAssignment(r as Record<string, unknown>)));
+  }
+}
+
+export class SupabaseDependencyRepository implements DependencyRepository {
+  private readonly db: SupabaseClient;
+  constructor(client: AuxionSupabaseClient) { this.db = client as unknown as SupabaseClient; }
+  async create(dependency: Dependency): Promise<RuntimeResult<Dependency>> {
+    const { data, error } = await this.db.from(DEP).insert(m.dependencyRow(dependency)).select("*").single();
+    if (error) return mapDatabaseError(error, "dependency.create");
+    return ok("created", m.toDependency(data as Record<string, unknown>));
+  }
+  async remove(id: string): Promise<RuntimeResult<null>> {
+    const { error } = await this.db.from(DEP).delete().eq("id", id);
+    if (error) return mapDatabaseError(error, "dependency.remove");
+    return ok("updated", null);
+  }
+  async getById(id: string): Promise<RuntimeResult<Dependency | null>> {
+    const { data, error } = await this.db.from(DEP).select("*").eq("id", id).maybeSingle();
+    if (error) return mapDatabaseError(error, "dependency.getById");
+    return ok("found", data ? m.toDependency(data as Record<string, unknown>) : null);
+  }
+  async listByWorkspace(workspaceId: string): Promise<RuntimeResult<Dependency[]>> {
+    const { data, error } = await this.db.from(DEP).select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: true });
+    if (error) return mapDatabaseError(error, "dependency.listByWorkspace");
+    return ok("found", (data ?? []).map((r) => m.toDependency(r as Record<string, unknown>)));
+  }
+}
