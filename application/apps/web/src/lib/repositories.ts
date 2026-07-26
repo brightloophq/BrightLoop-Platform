@@ -58,6 +58,18 @@ import {
   SupabaseTransformationRoadmapRepository,
   SupabaseStrategyCitationRepository,
   SupabaseStrategyFeedbackRepository,
+  SupabasePlanningSessionRepository,
+  SupabaseExecutionPlanRepository,
+  SupabaseInitiativePlanRepository,
+  SupabaseMilestonePlanRepository,
+  SupabaseTaskPlanRepository,
+  SupabaseDependencyPlanRepository,
+  SupabaseTimelinePlanRepository,
+  SupabaseReviewPlanRepository,
+  SupabaseKpiPlanRepository,
+  SupabaseResourceEstimateRepository,
+  SupabaseExecutionRiskRepository,
+  SupabasePlanningFeedbackRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -77,6 +89,7 @@ import {
   type EmbeddingProviderRegistry,
   type VectorStorePort,
   type StrategistRepositories,
+  type ProjectManagerRepositories,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -324,6 +337,25 @@ export async function getStrategistRepositories(): Promise<StrategistRepositorie
     roadmaps: new SupabaseTransformationRoadmapRepository(client),
     citations: new SupabaseStrategyCitationRepository(client),
     feedback: new SupabaseStrategyFeedbackRepository(client),
+  };
+}
+
+/** Phase E · AI Project Manager repositories (E4), bound to the caller's RLS session. */
+export async function getProjectManagerRepositories(): Promise<ProjectManagerRepositories> {
+  const client = await createClient();
+  return {
+    sessions: new SupabasePlanningSessionRepository(client),
+    plans: new SupabaseExecutionPlanRepository(client),
+    initiatives: new SupabaseInitiativePlanRepository(client),
+    milestones: new SupabaseMilestonePlanRepository(client),
+    tasks: new SupabaseTaskPlanRepository(client),
+    dependencies: new SupabaseDependencyPlanRepository(client),
+    timelines: new SupabaseTimelinePlanRepository(client),
+    reviews: new SupabaseReviewPlanRepository(client),
+    kpis: new SupabaseKpiPlanRepository(client),
+    resources: new SupabaseResourceEstimateRepository(client),
+    risks: new SupabaseExecutionRiskRepository(client),
+    feedback: new SupabasePlanningFeedbackRepository(client),
   };
 }
 

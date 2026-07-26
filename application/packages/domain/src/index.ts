@@ -57,5 +57,7 @@ export * from "./ai-foundation/index.js";
 export * from "./knowledge/index.js";
 // AI Strategist (Phase E · E3) — structured business-transformation reasoning.
 export * from "./strategist/index.js";
+// AI Project Manager (Phase E · E4) — strategy → executable plan (→ Phase D).
+export * from "./project-manager/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";
