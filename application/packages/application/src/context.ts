@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AiFoundationRepositories, AiProviderRegistry, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
+import type { Actor, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -85,6 +85,13 @@ export const PLANNING_RUN_CAP = "planning.run";
 export const PLANNING_REVIEW_CAP = "planning.review";
 export const PLANNING_APPROVE_CAP = "planning.approve";
 export const PLANNING_FEEDBACK_CAP = "planning.feedback";
+/** Phase E · AI Automation Builder capabilities (E5). */
+export const AUTOMATION_READ_CAP = "automation.read";
+export const AUTOMATION_WRITE_CAP = "automation.write";
+export const AUTOMATION_GENERATE_CAP = "automation.generate";
+export const AUTOMATION_PUBLISH_CAP = "automation.publish";
+export const AUTOMATION_DEPLOY_CAP = "automation.deploy";
+export const AUTOMATION_FEEDBACK_CAP = "automation.feedback";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the
@@ -130,6 +137,8 @@ export interface AppContext {
   strategist?: StrategistRepositories;
   /** Phase E · AI Project Manager repositories (E4). Required via `requireProjectManager`. */
   projectManager?: ProjectManagerRepositories;
+  /** Phase E · AI Automation Builder repositories (E5). Required via `requireAutomationBuilder`. */
+  automationBuilder?: AutomationBuilderRepositories;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -202,6 +211,14 @@ export function requireProjectManager(ctx: AppContext): ProjectManagerRepositori
     throw new RuntimeUnavailableError("The project manager store is not available");
   }
   return ctx.projectManager;
+}
+
+/** Assert the AI Automation Builder repositories are wired, or fail with a clean 503. */
+export function requireAutomationBuilder(ctx: AppContext): AutomationBuilderRepositories {
+  if (ctx.automationBuilder === undefined) {
+    throw new RuntimeUnavailableError("The automation builder store is not available");
+  }
+  return ctx.automationBuilder;
 }
 
 /**

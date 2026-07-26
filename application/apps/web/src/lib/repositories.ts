@@ -70,6 +70,18 @@ import {
   SupabaseResourceEstimateRepository,
   SupabaseExecutionRiskRepository,
   SupabasePlanningFeedbackRepository,
+  SupabaseExecutionIntentRepository,
+  SupabaseAutomationPlanRepository,
+  SupabaseWorkflowDefinitionRepository,
+  SupabaseWorkflowStepRepository,
+  SupabaseTriggerDefinitionRepository,
+  SupabaseActionDefinitionRepository,
+  SupabaseConditionDefinitionRepository,
+  SupabaseVariableDefinitionRepository,
+  SupabaseIntegrationBindingRepository,
+  SupabaseDeploymentPackageRepository,
+  SupabaseAutomationVersionRepository,
+  SupabaseAutomationFeedbackRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -90,6 +102,7 @@ import {
   type VectorStorePort,
   type StrategistRepositories,
   type ProjectManagerRepositories,
+  type AutomationBuilderRepositories,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -356,6 +369,25 @@ export async function getProjectManagerRepositories(): Promise<ProjectManagerRep
     resources: new SupabaseResourceEstimateRepository(client),
     risks: new SupabaseExecutionRiskRepository(client),
     feedback: new SupabasePlanningFeedbackRepository(client),
+  };
+}
+
+/** Phase E · AI Automation Builder repositories (E5), bound to the caller's RLS session. */
+export async function getAutomationBuilderRepositories(): Promise<AutomationBuilderRepositories> {
+  const client = await createClient();
+  return {
+    intents: new SupabaseExecutionIntentRepository(client),
+    plans: new SupabaseAutomationPlanRepository(client),
+    workflows: new SupabaseWorkflowDefinitionRepository(client),
+    steps: new SupabaseWorkflowStepRepository(client),
+    triggers: new SupabaseTriggerDefinitionRepository(client),
+    actions: new SupabaseActionDefinitionRepository(client),
+    conditions: new SupabaseConditionDefinitionRepository(client),
+    variables: new SupabaseVariableDefinitionRepository(client),
+    integrations: new SupabaseIntegrationBindingRepository(client),
+    deployments: new SupabaseDeploymentPackageRepository(client),
+    versions: new SupabaseAutomationVersionRepository(client),
+    feedback: new SupabaseAutomationFeedbackRepository(client),
   };
 }
 

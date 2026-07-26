@@ -114,6 +114,21 @@ export {
   SupabaseExecutionRiskRepository,
   SupabasePlanningFeedbackRepository,
 } from "./project-manager/adapter.js";
+// Phase E · AI Automation Builder (E5) — twelve repository adapters.
+export {
+  SupabaseExecutionIntentRepository,
+  SupabaseAutomationPlanRepository,
+  SupabaseWorkflowDefinitionRepository,
+  SupabaseWorkflowStepRepository,
+  SupabaseTriggerDefinitionRepository,
+  SupabaseActionDefinitionRepository,
+  SupabaseConditionDefinitionRepository,
+  SupabaseVariableDefinitionRepository,
+  SupabaseIntegrationBindingRepository,
+  SupabaseDeploymentPackageRepository,
+  SupabaseAutomationVersionRepository,
+  SupabaseAutomationFeedbackRepository,
+} from "./automation-builder/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

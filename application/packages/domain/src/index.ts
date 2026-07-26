@@ -59,5 +59,7 @@ export * from "./knowledge/index.js";
 export * from "./strategist/index.js";
 // AI Project Manager (Phase E · E4) — strategy → executable plan (→ Phase D).
 export * from "./project-manager/index.js";
+// AI Automation Builder (Phase E · E5) — approved plan → automation workflows.
+export * from "./automation-builder/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";
