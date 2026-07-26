@@ -15,7 +15,7 @@ const session = vi.hoisted(() => ({ actor: null as Actor | null, services: null 
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ getActor: async () => session.actor }));
-vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services, getExecutionRepositories: async () => ({ workspaces: {}, initiatives: {}, activities: {} }), getCollaborationRepositories: async () => ({ subscriptions: {}, mentions: {}, notifications: {}, inbox: {}, readReceipts: {} }) }));
+vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services, getExecutionRepositories: async () => ({ workspaces: {}, initiatives: {}, activities: {} }), getCollaborationRepositories: async () => ({ subscriptions: {}, mentions: {}, notifications: {}, inbox: {}, readReceipts: {} }), getAiFoundationRepositories: async () => ({ providers: {}, prompts: {}, promptVersions: {}, executions: {}, results: {}, usage: {}, costs: {}, audit: {}, conversations: {}, messages: {}, evaluations: {} }), getAiProviderRegistry: () => ({}) }));
 
 import { POST as assessRoute } from "./[id]/assess/route";
 import { GET as assessmentRoute } from "./[id]/assessment/route";

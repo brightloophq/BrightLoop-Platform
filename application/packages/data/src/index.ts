@@ -56,6 +56,21 @@ export {
   SupabaseInboxRepository,
   SupabaseReadReceiptRepository,
 } from "./collaboration/adapter.js";
+// Phase E · AI Foundation (E1) — eleven repository adapters + deterministic provider.
+export {
+  SupabaseAiProviderRepository,
+  SupabasePromptRepository,
+  SupabasePromptVersionRepository,
+  SupabasePromptExecutionRepository,
+  SupabasePromptResultRepository,
+  SupabaseUsageRecordRepository,
+  SupabaseCostRecordRepository,
+  SupabaseAuditEventRepository,
+  SupabaseConversationRepository,
+  SupabaseConversationMessageRepository,
+  SupabaseEvaluationResultRepository,
+} from "./ai-foundation/adapter.js";
+export { createDeterministicAiProvider } from "./ai-foundation/deterministic-provider.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

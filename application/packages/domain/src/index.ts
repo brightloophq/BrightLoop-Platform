@@ -51,5 +51,7 @@ export * from "./scan-engine/index.js";
 export * from "./transformation-execution/index.js";
 // Collaboration & operational awareness (Phase D · D7).
 export * from "./collaboration/index.js";
+// AI Foundation (Phase E · E1) — provider-agnostic AI substrate.
+export * from "./ai-foundation/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";

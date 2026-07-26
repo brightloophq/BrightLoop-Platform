@@ -24,6 +24,18 @@ import {
   SupabaseNotificationRepository,
   SupabaseInboxRepository,
   SupabaseReadReceiptRepository,
+  SupabaseAiProviderRepository,
+  SupabasePromptRepository,
+  SupabasePromptVersionRepository,
+  SupabasePromptExecutionRepository,
+  SupabasePromptResultRepository,
+  SupabaseUsageRecordRepository,
+  SupabaseCostRecordRepository,
+  SupabaseAuditEventRepository,
+  SupabaseConversationRepository,
+  SupabaseConversationMessageRepository,
+  SupabaseEvaluationResultRepository,
+  createDeterministicAiProvider,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -37,6 +49,8 @@ import {
   type TransformationService,
   type TransformationExecutionRepositories,
   type CollaborationRepositories,
+  type AiFoundationRepositories,
+  type AiProviderRegistry,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -209,6 +223,37 @@ export async function getCollaborationRepositories(): Promise<CollaborationRepos
     notifications: new SupabaseNotificationRepository(client),
     inbox: new SupabaseInboxRepository(client),
     readReceipts: new SupabaseReadReceiptRepository(client),
+  };
+}
+
+/** Phase E · AI Foundation repositories (E1), bound to the caller's RLS session. */
+export async function getAiFoundationRepositories(): Promise<AiFoundationRepositories> {
+  const client = await createClient();
+  return {
+    providers: new SupabaseAiProviderRepository(client),
+    prompts: new SupabasePromptRepository(client),
+    promptVersions: new SupabasePromptVersionRepository(client),
+    executions: new SupabasePromptExecutionRepository(client),
+    results: new SupabasePromptResultRepository(client),
+    usage: new SupabaseUsageRecordRepository(client),
+    costs: new SupabaseCostRecordRepository(client),
+    audit: new SupabaseAuditEventRepository(client),
+    conversations: new SupabaseConversationRepository(client),
+    messages: new SupabaseConversationMessageRepository(client),
+    evaluations: new SupabaseEvaluationResultRepository(client),
+  };
+}
+
+/**
+ * The AI provider registry. Until real SDK adapters are wired with credentials,
+ * every provider resolves to the deterministic, network-free adapter (mirrors the
+ * mock-until-configured pattern for payments/email). Business code never names one.
+ */
+export function getAiProviderRegistry(): AiProviderRegistry {
+  return {
+    anthropic: createDeterministicAiProvider("anthropic"),
+    openai: createDeterministicAiProvider("openai"),
+    google: createDeterministicAiProvider("google"),
   };
 }
 
