@@ -52,6 +52,13 @@ export const PERMISSIONS = {
     "notification.*",
     "subscription.*",
     "mention.*",
+    // E1 AI Foundation — admins manage providers + all AI operations.
+    "prompt.*",
+    "usage.*",
+    "cost.*",
+    "conversation.*",
+    "evaluation.*",
+    "ai.*",
   ],
   team_member: [
     "projects.read",
@@ -108,6 +115,17 @@ export const PERMISSIONS = {
     "subscription.write",
     "mention.read",
     "mention.write",
+    // E1 AI Foundation — operators author/run prompts + read usage/cost, but do
+    // NOT manage provider configuration (no `ai.provider.write`).
+    "prompt.read",
+    "prompt.write",
+    "prompt.publish",
+    "prompt.execute",
+    "usage.read",
+    "cost.read",
+    "conversation.read",
+    "conversation.write",
+    "evaluation.read",
   ],
   client_admin: [
     "own.project.read",

@@ -20,7 +20,8 @@ export type AppErrorCode =
   | "already_completed"
   | "cancelled"
   | "retry_unavailable"
-  | "runtime_unavailable";
+  | "runtime_unavailable"
+  | "ai_execution_failed";
 
 /** Base class — carries the HTTP status and stable code, nothing sensitive. */
 export abstract class ApplicationError extends Error {
@@ -110,6 +111,15 @@ export class RuntimeUnavailableError extends ApplicationError {
   readonly code = "runtime_unavailable" as const;
   readonly status = 503;
   constructor(message = "The intelligence runtime is temporarily unavailable") {
+    super(message);
+  }
+}
+
+/** An AI provider execution failed after retries + failover (upstream fault). */
+export class AiExecutionError extends ApplicationError {
+  readonly code = "ai_execution_failed" as const;
+  readonly status = 502;
+  constructor(message = "The AI provider could not complete the request") {
     super(message);
   }
 }

@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, Clock, CollaborationRepositories, RuntimeIdGen, RuntimeServices, TransformationExecutionRepositories } from "@brightloop/domain";
+import type { Actor, AiFoundationRepositories, AiProviderRegistry, Clock, CollaborationRepositories, RuntimeIdGen, RuntimeServices, TransformationExecutionRepositories } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -52,6 +52,18 @@ export const SUBSCRIPTION_READ_CAP = "subscription.read";
 export const SUBSCRIPTION_WRITE_CAP = "subscription.write";
 export const MENTION_READ_CAP = "mention.read";
 export const MENTION_WRITE_CAP = "mention.write";
+/** Phase E · AI Foundation capabilities (internal, E1). */
+export const PROMPT_READ_CAP = "prompt.read";
+export const PROMPT_WRITE_CAP = "prompt.write";
+export const PROMPT_PUBLISH_CAP = "prompt.publish";
+export const PROMPT_EXECUTE_CAP = "prompt.execute";
+export const USAGE_READ_CAP = "usage.read";
+export const COST_READ_CAP = "cost.read";
+export const CONVERSATION_READ_CAP = "conversation.read";
+export const CONVERSATION_WRITE_CAP = "conversation.write";
+export const EVALUATION_READ_CAP = "evaluation.read";
+/** Capability to manage provider configuration (owner/admin only). */
+export const AI_PROVIDER_WRITE_CAP = "ai.provider.write";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the
@@ -76,6 +88,17 @@ export interface AppContext {
    * collaboration use-cases require it via `requireCollaboration`.
    */
   collaboration?: CollaborationRepositories;
+  /**
+   * Phase E · AI Foundation repositories (E1), bound to the caller's RLS-scoped
+   * session. Optional; the AI use-cases require it via `requireAiFoundation`.
+   */
+  ai?: AiFoundationRepositories;
+  /**
+   * The concrete provider adapters keyed by kind (mock in dev/tests; real SDK
+   * adapters in production). The execution engine selects from these — business
+   * code never names one. Optional; required by the execution engine.
+   */
+  aiProviders?: AiProviderRegistry;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -92,6 +115,22 @@ export function requireCollaboration(ctx: AppContext): CollaborationRepositories
     throw new RuntimeUnavailableError("The collaboration store is not available");
   }
   return ctx.collaboration;
+}
+
+/** Assert the AI Foundation repositories are wired, or fail with a clean 503. */
+export function requireAiFoundation(ctx: AppContext): AiFoundationRepositories {
+  if (ctx.ai === undefined) {
+    throw new RuntimeUnavailableError("The AI foundation store is not available");
+  }
+  return ctx.ai;
+}
+
+/** Assert at least one AI provider adapter is wired, or fail with a clean 503. */
+export function requireAiProviders(ctx: AppContext): AiProviderRegistry {
+  if (ctx.aiProviders === undefined || Object.keys(ctx.aiProviders).length === 0) {
+    throw new RuntimeUnavailableError("No AI provider is configured");
+  }
+  return ctx.aiProviders;
 }
 
 /**
