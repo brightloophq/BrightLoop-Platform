@@ -1828,6 +1828,54 @@ export type Database = {
           },
         ]
       }
+      dependency_plan: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          from_task_id: string
+          id: string
+          kind: string
+          planning_session_id: string
+          to_task_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          from_task_id: string
+          id: string
+          kind: string
+          planning_session_id: string
+          to_task_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          from_task_id?: string
+          id?: string
+          kind?: string
+          planning_session_id?: string
+          to_task_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dependency_plan_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dependency_plan_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_chunk: {
         Row: {
           checksum: string
@@ -2123,6 +2171,72 @@ export type Database = {
           },
         ]
       }
+      execution_plan: {
+        Row: {
+          client_id: string | null
+          confidence: number
+          created_at: string
+          critical_path_duration_days: number
+          id: string
+          initiative_count: number
+          kpi_count: number
+          milestone_count: number
+          planning_session_id: string
+          risk_count: number
+          status: string
+          summary: string
+          task_count: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          critical_path_duration_days?: number
+          id: string
+          initiative_count?: number
+          kpi_count?: number
+          milestone_count?: number
+          planning_session_id: string
+          risk_count?: number
+          status?: string
+          summary?: string
+          task_count?: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          critical_path_duration_days?: number
+          id?: string
+          initiative_count?: number
+          kpi_count?: number
+          milestone_count?: number
+          planning_session_id?: string
+          risk_count?: number
+          status?: string
+          summary?: string
+          task_count?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_plan_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_plan_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       execution_records: {
         Row: {
           attempts: number
@@ -2187,6 +2301,66 @@ export type Database = {
           },
         ]
       }
+      execution_risk: {
+        Row: {
+          category: string
+          client_id: string | null
+          contingency: string
+          created_at: string
+          description: string
+          id: string
+          likelihood: string
+          mitigation: string
+          planning_session_id: string
+          severity: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          category: string
+          client_id?: string | null
+          contingency?: string
+          created_at?: string
+          description?: string
+          id: string
+          likelihood: string
+          mitigation?: string
+          planning_session_id: string
+          severity: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          category?: string
+          client_id?: string | null
+          contingency?: string
+          created_at?: string
+          description?: string
+          id?: string
+          likelihood?: string
+          mitigation?: string
+          planning_session_id?: string
+          severity?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_risk_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "execution_risk_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_uploads: {
         Row: {
           deliverable_id: string | null
@@ -2237,6 +2411,78 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      initiative_plan: {
+        Row: {
+          business_objective: string
+          client_id: string | null
+          created_at: string
+          expected_outcome: string
+          id: string
+          linked_initiative_id: string | null
+          linked_recommendation_ids: Json
+          order_index: number
+          owner: string | null
+          planning_session_id: string
+          priority: string
+          roadmap_phase: number | null
+          timeline_end: string | null
+          timeline_start: string | null
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          business_objective?: string
+          client_id?: string | null
+          created_at?: string
+          expected_outcome?: string
+          id: string
+          linked_initiative_id?: string | null
+          linked_recommendation_ids?: Json
+          order_index?: number
+          owner?: string | null
+          planning_session_id: string
+          priority?: string
+          roadmap_phase?: number | null
+          timeline_end?: string | null
+          timeline_start?: string | null
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          business_objective?: string
+          client_id?: string | null
+          created_at?: string
+          expected_outcome?: string
+          id?: string
+          linked_initiative_id?: string | null
+          linked_recommendation_ids?: Json
+          order_index?: number
+          owner?: string | null
+          planning_session_id?: string
+          priority?: string
+          roadmap_phase?: number | null
+          timeline_end?: string | null
+          timeline_start?: string | null
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "initiative_plan_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "initiative_plan_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
             referencedColumns: ["id"]
           },
         ]
@@ -3199,6 +3445,63 @@ export type Database = {
           },
         ]
       }
+      kpi_plan: {
+        Row: {
+          baseline: number
+          client_id: string | null
+          created_at: string
+          formula: string
+          id: string
+          measurement_frequency: string
+          name: string
+          planning_session_id: string
+          target: number
+          unit: string
+          workspace_id: string
+        }
+        Insert: {
+          baseline?: number
+          client_id?: string | null
+          created_at?: string
+          formula: string
+          id: string
+          measurement_frequency?: string
+          name: string
+          planning_session_id: string
+          target: number
+          unit?: string
+          workspace_id: string
+        }
+        Update: {
+          baseline?: number
+          client_id?: string | null
+          created_at?: string
+          formula?: string
+          id?: string
+          measurement_frequency?: string
+          name?: string
+          planning_session_id?: string
+          target?: number
+          unit?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_plan_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_plan_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           company: string | null
@@ -3528,6 +3831,73 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      milestone_plan: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          deliverables: Json
+          entry_criteria: string
+          exit_criteria: string
+          id: string
+          initiative_plan_id: string
+          order_index: number
+          planned_date: string | null
+          planning_session_id: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          deliverables?: Json
+          entry_criteria?: string
+          exit_criteria?: string
+          id: string
+          initiative_plan_id: string
+          order_index?: number
+          planned_date?: string | null
+          planning_session_id: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          deliverables?: Json
+          entry_criteria?: string
+          exit_criteria?: string
+          id?: string
+          initiative_plan_id?: string
+          order_index?: number
+          planned_date?: string | null
+          planning_session_id?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "milestone_plan_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestone_plan_initiative_plan_id_fkey"
+            columns: ["initiative_plan_id"]
+            isOneToOne: false
+            referencedRelation: "initiative_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "milestone_plan_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
             referencedColumns: ["id"]
           },
         ]
@@ -3880,6 +4250,140 @@ export type Database = {
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planning_feedback: {
+        Row: {
+          client_id: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          kind: string
+          planning_session_id: string
+          rating: number | null
+          subject_user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id: string
+          kind: string
+          planning_session_id: string
+          rating?: number | null
+          subject_user_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          planning_session_id?: string
+          rating?: number | null
+          subject_user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planning_feedback_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "planning_feedback_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      planning_session: {
+        Row: {
+          ai_duration_ms: number
+          client_id: string | null
+          confidence: number
+          cost: number
+          created_at: string
+          currency: string
+          id: string
+          model: string | null
+          plan_size: number
+          planning_duration_ms: number
+          prompt_id: string | null
+          provider: string | null
+          requested_by_user_id: string
+          retrieval_duration_ms: number
+          status: string
+          strategy_session_id: string
+          title: string
+          token_total: number
+          updated_at: string
+          validation_duration_ms: number
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          ai_duration_ms?: number
+          client_id?: string | null
+          confidence?: number
+          cost?: number
+          created_at?: string
+          currency?: string
+          id: string
+          model?: string | null
+          plan_size?: number
+          planning_duration_ms?: number
+          prompt_id?: string | null
+          provider?: string | null
+          requested_by_user_id: string
+          retrieval_duration_ms?: number
+          status?: string
+          strategy_session_id: string
+          title: string
+          token_total?: number
+          updated_at?: string
+          validation_duration_ms?: number
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          ai_duration_ms?: number
+          client_id?: string | null
+          confidence?: number
+          cost?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          model?: string | null
+          plan_size?: number
+          planning_duration_ms?: number
+          prompt_id?: string | null
+          provider?: string | null
+          requested_by_user_id?: string
+          retrieval_duration_ms?: number
+          status?: string
+          strategy_session_id?: string
+          title?: string
+          token_total?: number
+          updated_at?: string
+          validation_duration_ms?: number
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "planning_session_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -4816,6 +5320,73 @@ export type Database = {
           },
         ]
       }
+      resource_estimate: {
+        Row: {
+          client_id: string | null
+          complexity: string
+          confidence: number
+          cost_category: string
+          created_at: string
+          duration_days: number
+          id: string
+          initiative_plan_id: string
+          people: number
+          planning_session_id: string
+          skills: Json
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          complexity?: string
+          confidence?: number
+          cost_category?: string
+          created_at?: string
+          duration_days?: number
+          id: string
+          initiative_plan_id: string
+          people?: number
+          planning_session_id: string
+          skills?: Json
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          complexity?: string
+          confidence?: number
+          cost_category?: string
+          created_at?: string
+          duration_days?: number
+          id?: string
+          initiative_plan_id?: string
+          people?: number
+          planning_session_id?: string
+          skills?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resource_estimate_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_estimate_initiative_plan_id_fkey"
+            columns: ["initiative_plan_id"]
+            isOneToOne: false
+            referencedRelation: "initiative_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "resource_estimate_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       retrieval_session: {
         Row: {
           cache_hit: boolean
@@ -4934,6 +5505,57 @@ export type Database = {
             columns: ["session_id"]
             isOneToOne: false
             referencedRelation: "retrieval_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      review_plan: {
+        Row: {
+          approval_gates: Json
+          cadence: string
+          client_id: string | null
+          created_at: string
+          id: string
+          planning_session_id: string
+          quality_gates: Json
+          success_metrics: Json
+          workspace_id: string
+        }
+        Insert: {
+          approval_gates?: Json
+          cadence?: string
+          client_id?: string | null
+          created_at?: string
+          id: string
+          planning_session_id: string
+          quality_gates?: Json
+          success_metrics?: Json
+          workspace_id: string
+        }
+        Update: {
+          approval_gates?: Json
+          cadence?: string
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          planning_session_id?: string
+          quality_gates?: Json
+          success_metrics?: Json
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "review_plan_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "review_plan_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
             referencedColumns: ["id"]
           },
         ]
@@ -5456,6 +6078,88 @@ export type Database = {
           },
         ]
       }
+      task_plan: {
+        Row: {
+          acceptance_criteria: Json
+          client_id: string | null
+          created_at: string
+          dependency_task_ids: Json
+          description: string
+          effort: string
+          estimated_duration_days: number
+          id: string
+          initiative_plan_id: string
+          order_index: number
+          owner: string | null
+          planning_session_id: string
+          priority: string
+          related_recommendation_id: string | null
+          required_knowledge: Json
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          acceptance_criteria?: Json
+          client_id?: string | null
+          created_at?: string
+          dependency_task_ids?: Json
+          description?: string
+          effort?: string
+          estimated_duration_days?: number
+          id: string
+          initiative_plan_id: string
+          order_index?: number
+          owner?: string | null
+          planning_session_id: string
+          priority?: string
+          related_recommendation_id?: string | null
+          required_knowledge?: Json
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          acceptance_criteria?: Json
+          client_id?: string | null
+          created_at?: string
+          dependency_task_ids?: Json
+          description?: string
+          effort?: string
+          estimated_duration_days?: number
+          id?: string
+          initiative_plan_id?: string
+          order_index?: number
+          owner?: string | null
+          planning_session_id?: string
+          priority?: string
+          related_recommendation_id?: string | null
+          required_knowledge?: Json
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_plan_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_plan_initiative_plan_id_fkey"
+            columns: ["initiative_plan_id"]
+            isOneToOne: false
+            referencedRelation: "initiative_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "task_plan_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       testimonials: {
         Row: {
           author: string
@@ -5521,6 +6225,70 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "portfolio_projects"
             referencedColumns: ["slug"]
+          },
+        ]
+      }
+      timeline_plan: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          duration_days: number
+          finish_day: number
+          id: string
+          initiative_plan_id: string
+          on_critical_path: boolean
+          planning_session_id: string
+          slack_days: number
+          start_day: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          duration_days: number
+          finish_day: number
+          id: string
+          initiative_plan_id: string
+          on_critical_path?: boolean
+          planning_session_id: string
+          slack_days?: number
+          start_day: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          duration_days?: number
+          finish_day?: number
+          id?: string
+          initiative_plan_id?: string
+          on_critical_path?: boolean
+          planning_session_id?: string
+          slack_days?: number
+          start_day?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timeline_plan_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timeline_plan_initiative_plan_id_fkey"
+            columns: ["initiative_plan_id"]
+            isOneToOne: false
+            referencedRelation: "initiative_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "timeline_plan_planning_session_id_fkey"
+            columns: ["planning_session_id"]
+            isOneToOne: false
+            referencedRelation: "planning_session"
+            referencedColumns: ["id"]
           },
         ]
       }
