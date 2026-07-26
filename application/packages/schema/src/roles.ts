@@ -59,6 +59,8 @@ export const PERMISSIONS = {
     "conversation.*",
     "evaluation.*",
     "ai.*",
+    // E2 Knowledge Base — admins administer collections + all knowledge ops.
+    "knowledge.*",
   ],
   team_member: [
     "projects.read",
@@ -126,6 +128,13 @@ export const PERMISSIONS = {
     "conversation.read",
     "conversation.write",
     "evaluation.read",
+    // E2 Knowledge Base — operators read/write/embed/retrieve, but do NOT
+    // administer collections/permissions (no `knowledge.admin`).
+    "knowledge.read",
+    "knowledge.write",
+    "knowledge.delete",
+    "knowledge.embed",
+    "knowledge.retrieve",
   ],
   client_admin: [
     "own.project.read",

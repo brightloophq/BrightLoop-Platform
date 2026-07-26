@@ -36,6 +36,19 @@ import {
   SupabaseConversationMessageRepository,
   SupabaseEvaluationResultRepository,
   createDeterministicAiProvider,
+  SupabaseKnowledgeCollectionRepository,
+  SupabaseKnowledgeDocumentRepository,
+  SupabaseDocumentVersionRepository,
+  SupabaseDocumentChunkRepository,
+  SupabaseEmbeddingVectorRepository,
+  SupabaseEmbeddingJobRepository,
+  SupabaseRetrievalSessionRepository,
+  SupabaseRetrievedContextRepository,
+  SupabaseKnowledgeCitationRepository,
+  SupabaseKnowledgePermissionRepository,
+  SupabaseKnowledgeSourceRepository,
+  SupabaseVectorStore,
+  createDeterministicEmbeddingProvider,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -51,6 +64,9 @@ import {
   type CollaborationRepositories,
   type AiFoundationRepositories,
   type AiProviderRegistry,
+  type KnowledgeRepositories,
+  type EmbeddingProviderRegistry,
+  type VectorStorePort,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -255,6 +271,34 @@ export function getAiProviderRegistry(): AiProviderRegistry {
     openai: createDeterministicAiProvider("openai"),
     google: createDeterministicAiProvider("google"),
   };
+}
+
+/** Phase E · Knowledge Base repositories (E2), bound to the caller's RLS session. */
+export async function getKnowledgeRepositories(): Promise<KnowledgeRepositories> {
+  const client = await createClient();
+  return {
+    collections: new SupabaseKnowledgeCollectionRepository(client),
+    documents: new SupabaseKnowledgeDocumentRepository(client),
+    versions: new SupabaseDocumentVersionRepository(client),
+    chunks: new SupabaseDocumentChunkRepository(client),
+    vectors: new SupabaseEmbeddingVectorRepository(client),
+    jobs: new SupabaseEmbeddingJobRepository(client),
+    sessions: new SupabaseRetrievalSessionRepository(client),
+    contexts: new SupabaseRetrievedContextRepository(client),
+    citations: new SupabaseKnowledgeCitationRepository(client),
+    permissions: new SupabaseKnowledgePermissionRepository(client),
+    sources: new SupabaseKnowledgeSourceRepository(client),
+  };
+}
+
+/** Embedding providers (separate from LLM). Deterministic/no-network until SDKs wired. */
+export function getEmbeddingProviderRegistry(): EmbeddingProviderRegistry {
+  return { openai: createDeterministicEmbeddingProvider("openai"), gemini: createDeterministicEmbeddingProvider("gemini") };
+}
+
+/** The vector store — a read view over embedding_vector; business code never names it. */
+export async function getVectorStore(): Promise<VectorStorePort> {
+  return new SupabaseVectorStore(await createClient());
 }
 
 /** The core-surfaces domain service for WRITES (scan/finding/domain/activation). */
