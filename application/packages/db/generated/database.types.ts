@@ -899,6 +899,66 @@ export type Database = {
           },
         ]
       }
+      business_finding: {
+        Row: {
+          business_impact: string
+          category: string
+          client_id: string | null
+          confidence: number
+          created_at: string
+          detail: string
+          dimension: string
+          evidence_count: number
+          id: string
+          session_id: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          business_impact?: string
+          category: string
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          detail?: string
+          dimension: string
+          evidence_count?: number
+          id: string
+          session_id: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          business_impact?: string
+          category?: string
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          detail?: string
+          dimension?: string
+          evidence_count?: number
+          id?: string
+          session_id?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_finding_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_finding_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_health: {
         Row: {
           basis: string | null
@@ -3988,6 +4048,79 @@ export type Database = {
           },
         ]
       }
+      priority_score: {
+        Row: {
+          automation_potential: number
+          business_impact: number
+          client_id: string | null
+          created_at: string
+          customer_value: number
+          id: string
+          implementation_effort: number
+          recommendation_id: string
+          risk_reduction: number
+          session_id: string
+          strategic_alignment: number
+          total: number
+          urgency: number
+          workspace_id: string
+        }
+        Insert: {
+          automation_potential: number
+          business_impact: number
+          client_id?: string | null
+          created_at?: string
+          customer_value: number
+          id: string
+          implementation_effort: number
+          recommendation_id: string
+          risk_reduction: number
+          session_id: string
+          strategic_alignment: number
+          total: number
+          urgency: number
+          workspace_id: string
+        }
+        Update: {
+          automation_potential?: number
+          business_impact?: number
+          client_id?: string | null
+          created_at?: string
+          customer_value?: number
+          id?: string
+          implementation_effort?: number
+          recommendation_id?: string
+          risk_reduction?: number
+          session_id?: string
+          strategic_alignment?: number
+          total?: number
+          urgency?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "priority_score_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priority_score_recommendation_id_fkey"
+            columns: ["recommendation_id"]
+            isOneToOne: false
+            referencedRelation: "recommendation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "priority_score_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       projects: {
         Row: {
           client_id: string
@@ -4526,6 +4659,78 @@ export type Database = {
           },
         ]
       }
+      recommendation: {
+        Row: {
+          client_id: string | null
+          confidence: number
+          created_at: string
+          dependencies: Json
+          description: string
+          effort: string
+          estimated_timeline: string | null
+          expected_impact: string
+          id: string
+          order_index: number
+          priority: number
+          reasoning: string
+          recommended_owner: string | null
+          session_id: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          dependencies?: Json
+          description?: string
+          effort?: string
+          estimated_timeline?: string | null
+          expected_impact?: string
+          id: string
+          order_index?: number
+          priority?: number
+          reasoning?: string
+          recommended_owner?: string | null
+          session_id: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          dependencies?: Json
+          description?: string
+          effort?: string
+          estimated_timeline?: string | null
+          expected_impact?: string
+          id?: string
+          order_index?: number
+          priority?: number
+          reasoning?: string
+          recommended_owner?: string | null
+          session_id?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recommendation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recommendation_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       recommendations: {
         Row: {
           ai_confidence: number | null
@@ -4733,6 +4938,63 @@ export type Database = {
           },
         ]
       }
+      risk_assessment: {
+        Row: {
+          client_id: string | null
+          confidence: number
+          created_at: string
+          description: string
+          id: string
+          likelihood: string
+          mitigation: string
+          session_id: string
+          severity: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          description?: string
+          id: string
+          likelihood: string
+          mitigation?: string
+          session_id: string
+          severity: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          description?: string
+          id?: string
+          likelihood?: string
+          mitigation?: string
+          session_id?: string
+          severity?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessment_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "risk_assessment_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       runtime_events: {
         Row: {
           actor: string | null
@@ -4918,6 +5180,281 @@ export type Database = {
           to_state?: string
         }
         Relationships: []
+      }
+      strategy_analysis: {
+        Row: {
+          ai_duration_ms: number
+          clarifications: Json
+          client_id: string | null
+          confidence: number
+          confidence_reason: string
+          created_at: string
+          current_state: string
+          executive_summary: string
+          expected_impact: string
+          id: string
+          missing_information: Json
+          model: string | null
+          prompt_version: number | null
+          provider: string | null
+          retrieval_latency_ms: number
+          session_id: string
+          tokens_used: number
+          workspace_id: string
+        }
+        Insert: {
+          ai_duration_ms?: number
+          clarifications?: Json
+          client_id?: string | null
+          confidence?: number
+          confidence_reason?: string
+          created_at?: string
+          current_state?: string
+          executive_summary?: string
+          expected_impact?: string
+          id: string
+          missing_information?: Json
+          model?: string | null
+          prompt_version?: number | null
+          provider?: string | null
+          retrieval_latency_ms?: number
+          session_id: string
+          tokens_used?: number
+          workspace_id: string
+        }
+        Update: {
+          ai_duration_ms?: number
+          clarifications?: Json
+          client_id?: string | null
+          confidence?: number
+          confidence_reason?: string
+          created_at?: string
+          current_state?: string
+          executive_summary?: string
+          expected_impact?: string
+          id?: string
+          missing_information?: Json
+          model?: string | null
+          prompt_version?: number | null
+          provider?: string | null
+          retrieval_latency_ms?: number
+          session_id?: string
+          tokens_used?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_analysis_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategy_analysis_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_citation: {
+        Row: {
+          chunk_id: string
+          client_id: string | null
+          collection_id: string
+          created_at: string
+          document_id: string
+          finding_id: string | null
+          heading: string | null
+          id: string
+          page: number | null
+          recommendation_id: string | null
+          session_id: string
+          similarity: number
+          workspace_id: string
+        }
+        Insert: {
+          chunk_id: string
+          client_id?: string | null
+          collection_id: string
+          created_at?: string
+          document_id: string
+          finding_id?: string | null
+          heading?: string | null
+          id: string
+          page?: number | null
+          recommendation_id?: string | null
+          session_id: string
+          similarity: number
+          workspace_id: string
+        }
+        Update: {
+          chunk_id?: string
+          client_id?: string | null
+          collection_id?: string
+          created_at?: string
+          document_id?: string
+          finding_id?: string | null
+          heading?: string | null
+          id?: string
+          page?: number | null
+          recommendation_id?: string | null
+          session_id?: string
+          similarity?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_citation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategy_citation_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_feedback: {
+        Row: {
+          client_id: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          kind: string
+          rating: number | null
+          session_id: string
+          subject_user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id: string
+          kind: string
+          rating?: number | null
+          session_id: string
+          subject_user_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          rating?: number | null
+          session_id?: string
+          subject_user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_feedback_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "strategy_feedback_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      strategy_session: {
+        Row: {
+          analysis_duration_ms: number
+          client_id: string | null
+          collection_ids: Json
+          confidence: number
+          cost: number
+          created_at: string
+          currency: string
+          dimensions: Json
+          goal: string
+          id: string
+          model: string | null
+          prompt_id: string | null
+          prompt_version: number | null
+          provider: string | null
+          requested_by_user_id: string
+          retrieval_count: number
+          status: string
+          title: string
+          token_total: number
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          analysis_duration_ms?: number
+          client_id?: string | null
+          collection_ids?: Json
+          confidence?: number
+          cost?: number
+          created_at?: string
+          currency?: string
+          dimensions?: Json
+          goal?: string
+          id: string
+          model?: string | null
+          prompt_id?: string | null
+          prompt_version?: number | null
+          provider?: string | null
+          requested_by_user_id: string
+          retrieval_count?: number
+          status?: string
+          title: string
+          token_total?: number
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          analysis_duration_ms?: number
+          client_id?: string | null
+          collection_ids?: Json
+          confidence?: number
+          cost?: number
+          created_at?: string
+          currency?: string
+          dimensions?: Json
+          goal?: string
+          id?: string
+          model?: string | null
+          prompt_id?: string | null
+          prompt_version?: number | null
+          provider?: string | null
+          requested_by_user_id?: string
+          retrieval_count?: number
+          status?: string
+          title?: string
+          token_total?: number
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "strategy_session_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       testimonials: {
         Row: {
@@ -5503,6 +6040,48 @@ export type Database = {
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transformation_roadmap: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          phases: Json
+          session_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id: string
+          phases?: Json
+          session_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          phases?: Json
+          session_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_roadmap_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_roadmap_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "strategy_session"
             referencedColumns: ["id"]
           },
         ]
