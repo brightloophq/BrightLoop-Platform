@@ -61,6 +61,8 @@ export const PERMISSIONS = {
     "ai.*",
     // E2 Knowledge Base — admins administer collections + all knowledge ops.
     "knowledge.*",
+    // E3 AI Strategist — full access.
+    "strategy.*",
   ],
   team_member: [
     "projects.read",
@@ -135,6 +137,12 @@ export const PERMISSIONS = {
     "knowledge.delete",
     "knowledge.embed",
     "knowledge.retrieve",
+    // E3 AI Strategist — operators author + run + review strategies.
+    "strategy.read",
+    "strategy.write",
+    "strategy.run",
+    "strategy.review",
+    "strategy.feedback",
   ],
   client_admin: [
     "own.project.read",
@@ -147,12 +155,18 @@ export const PERMISSIONS = {
     // Read-only access to their OWN transformation progress (Business Health /
     // Transformation Index). Additionally row-scoped to the org by RLS.
     "own.transformation.read",
+    // E3 AI Strategist — clients may VIEW and give FEEDBACK on their own strategy,
+    // but never run or edit it (RLS + ownership scope to the org).
+    "strategy.read",
+    "strategy.feedback",
   ],
   client_member: [
     "own.project.read",
     "own.deliverables.comment",
     "own.reports.read",
     "own.transformation.read",
+    "strategy.read",
+    "strategy.feedback",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 

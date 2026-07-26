@@ -49,6 +49,15 @@ import {
   SupabaseKnowledgeSourceRepository,
   SupabaseVectorStore,
   createDeterministicEmbeddingProvider,
+  SupabaseStrategySessionRepository,
+  SupabaseStrategyAnalysisRepository,
+  SupabaseBusinessFindingRepository,
+  SupabaseRiskAssessmentRepository,
+  SupabaseRecommendationRepository,
+  SupabasePriorityScoreRepository,
+  SupabaseTransformationRoadmapRepository,
+  SupabaseStrategyCitationRepository,
+  SupabaseStrategyFeedbackRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -67,6 +76,7 @@ import {
   type KnowledgeRepositories,
   type EmbeddingProviderRegistry,
   type VectorStorePort,
+  type StrategistRepositories,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -299,6 +309,22 @@ export function getEmbeddingProviderRegistry(): EmbeddingProviderRegistry {
 /** The vector store — a read view over embedding_vector; business code never names it. */
 export async function getVectorStore(): Promise<VectorStorePort> {
   return new SupabaseVectorStore(await createClient());
+}
+
+/** Phase E · AI Strategist repositories (E3), bound to the caller's RLS session. */
+export async function getStrategistRepositories(): Promise<StrategistRepositories> {
+  const client = await createClient();
+  return {
+    sessions: new SupabaseStrategySessionRepository(client),
+    analyses: new SupabaseStrategyAnalysisRepository(client),
+    findings: new SupabaseBusinessFindingRepository(client),
+    risks: new SupabaseRiskAssessmentRepository(client),
+    recommendations: new SupabaseRecommendationRepository(client),
+    priorityScores: new SupabasePriorityScoreRepository(client),
+    roadmaps: new SupabaseTransformationRoadmapRepository(client),
+    citations: new SupabaseStrategyCitationRepository(client),
+    feedback: new SupabaseStrategyFeedbackRepository(client),
+  };
 }
 
 /** The core-surfaces domain service for WRITES (scan/finding/domain/activation). */

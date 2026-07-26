@@ -87,6 +87,18 @@ export {
   SupabaseVectorStore,
   createDeterministicEmbeddingProvider,
 } from "./knowledge/adapter.js";
+// Phase E · AI Strategist (E3) — nine repository adapters.
+export {
+  SupabaseStrategySessionRepository,
+  SupabaseStrategyAnalysisRepository,
+  SupabaseBusinessFindingRepository,
+  SupabaseRiskAssessmentRepository,
+  SupabaseRecommendationRepository,
+  SupabasePriorityScoreRepository,
+  SupabaseTransformationRoadmapRepository,
+  SupabaseStrategyCitationRepository,
+  SupabaseStrategyFeedbackRepository,
+} from "./strategist/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.
