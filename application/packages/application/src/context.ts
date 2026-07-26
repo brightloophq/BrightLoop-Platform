@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, Clock, RuntimeIdGen, RuntimeServices, TransformationExecutionRepositories } from "@brightloop/domain";
+import type { Actor, Clock, CollaborationRepositories, RuntimeIdGen, RuntimeServices, TransformationExecutionRepositories } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -45,6 +45,13 @@ export const MILESTONE_WRITE_CAP = "milestone.write";
 export const KPI_READ_CAP = "kpi.read";
 export const KPI_WRITE_CAP = "kpi.write";
 export const PROGRESS_READ_CAP = "progress.read";
+/** Phase D · collaboration & operational awareness capabilities (internal, D7). */
+export const NOTIFICATION_READ_CAP = "notification.read";
+export const NOTIFICATION_WRITE_CAP = "notification.write";
+export const SUBSCRIPTION_READ_CAP = "subscription.read";
+export const SUBSCRIPTION_WRITE_CAP = "subscription.write";
+export const MENTION_READ_CAP = "mention.read";
+export const MENTION_WRITE_CAP = "mention.write";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the
@@ -63,6 +70,12 @@ export interface AppContext {
    * `requireExecution`.
    */
   execution?: TransformationExecutionRepositories;
+  /**
+   * Phase D · Collaboration repositories (D7), bound to the caller's RLS-scoped
+   * session by the route. Optional so pre-D7 contexts are unaffected; the
+   * collaboration use-cases require it via `requireCollaboration`.
+   */
+  collaboration?: CollaborationRepositories;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -71,6 +84,14 @@ export function requireExecution(ctx: AppContext): TransformationExecutionReposi
     throw new RuntimeUnavailableError("The transformation execution store is not available");
   }
   return ctx.execution;
+}
+
+/** Assert the collaboration repositories are wired, or fail with a clean 503. */
+export function requireCollaboration(ctx: AppContext): CollaborationRepositories {
+  if (ctx.collaboration === undefined) {
+    throw new RuntimeUnavailableError("The collaboration store is not available");
+  }
+  return ctx.collaboration;
 }
 
 /**

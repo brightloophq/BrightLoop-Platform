@@ -19,6 +19,11 @@ import {
   SupabaseMilestoneRepository,
   SupabaseKpiRepository,
   SupabaseProgressSnapshotRepository,
+  SupabaseSubscriptionRepository,
+  SupabaseMentionRepository,
+  SupabaseNotificationRepository,
+  SupabaseInboxRepository,
+  SupabaseReadReceiptRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -31,6 +36,7 @@ import {
   type RuntimeServices,
   type TransformationService,
   type TransformationExecutionRepositories,
+  type CollaborationRepositories,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -191,6 +197,18 @@ export async function getExecutionRepositories(): Promise<TransformationExecutio
     milestones: new SupabaseMilestoneRepository(client),
     kpis: new SupabaseKpiRepository(client),
     progress: new SupabaseProgressSnapshotRepository(client),
+  };
+}
+
+/** Phase D · Collaboration repositories (D7), bound to the caller's RLS session. */
+export async function getCollaborationRepositories(): Promise<CollaborationRepositories> {
+  const client = await createClient();
+  return {
+    subscriptions: new SupabaseSubscriptionRepository(client),
+    mentions: new SupabaseMentionRepository(client),
+    notifications: new SupabaseNotificationRepository(client),
+    inbox: new SupabaseInboxRepository(client),
+    readReceipts: new SupabaseReadReceiptRepository(client),
   };
 }
 

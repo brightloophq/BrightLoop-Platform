@@ -48,6 +48,14 @@ export {
   SupabaseKpiRepository,
   SupabaseProgressSnapshotRepository,
 } from "./transformation-execution/adapter.js";
+// Phase D · Collaboration (D7) — subscription / mention / notification / inbox / receipt adapters.
+export {
+  SupabaseSubscriptionRepository,
+  SupabaseMentionRepository,
+  SupabaseNotificationRepository,
+  SupabaseInboxRepository,
+  SupabaseReadReceiptRepository,
+} from "./collaboration/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

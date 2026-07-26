@@ -426,6 +426,245 @@ export type Database = {
           },
         ]
       }
+      collaboration_inbox_item: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          notification_id: string
+          status: string
+          updated_at: string
+          user_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id: string
+          notification_id: string
+          status?: string
+          updated_at?: string
+          user_id: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          notification_id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_inbox_item_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_inbox_item_notification_id_fkey"
+            columns: ["notification_id"]
+            isOneToOne: false
+            referencedRelation: "collaboration_notification"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_inbox_item_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaboration_mention: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          mentioned_by_user_id: string
+          mentioned_user_id: string
+          note: string | null
+          subject_id: string
+          subject_type: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id: string
+          mentioned_by_user_id: string
+          mentioned_user_id: string
+          note?: string | null
+          subject_id: string
+          subject_type: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          mentioned_by_user_id?: string
+          mentioned_user_id?: string
+          note?: string | null
+          subject_id?: string
+          subject_type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_mention_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_mention_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaboration_notification: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          recipient_user_id: string
+          source_activity_id: string | null
+          subject_id: string
+          subject_type: string
+          summary: string
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id: string
+          recipient_user_id: string
+          source_activity_id?: string | null
+          subject_id: string
+          subject_type: string
+          summary: string
+          type: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          recipient_user_id?: string
+          source_activity_id?: string | null
+          subject_id?: string
+          subject_type?: string
+          summary?: string
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_notification_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_notification_source_activity_id_fkey"
+            columns: ["source_activity_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_activity"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_notification_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaboration_read_receipt: {
+        Row: {
+          entity_id: string
+          entity_type: string
+          id: string
+          read_at: string
+          user_id: string
+        }
+        Insert: {
+          entity_id: string
+          entity_type: string
+          id: string
+          read_at?: string
+          user_id: string
+        }
+        Update: {
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          read_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      collaboration_subscription: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          target_id: string
+          target_type: string
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id: string
+          target_id: string
+          target_type: string
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          target_id?: string
+          target_type?: string
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaboration_subscription_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaboration_subscription_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       competitor_snapshots: {
         Row: {
           checksum: string
@@ -3395,6 +3634,7 @@ export type Database = {
       }
       transformation_activity: {
         Row: {
+          actor_id: string | null
           at: string
           client_id: string | null
           command_id: string
@@ -3406,6 +3646,7 @@ export type Database = {
           workspace_id: string
         }
         Insert: {
+          actor_id?: string | null
           at?: string
           client_id?: string | null
           command_id: string
@@ -3417,6 +3658,7 @@ export type Database = {
           workspace_id: string
         }
         Update: {
+          actor_id?: string | null
           at?: string
           client_id?: string | null
           command_id?: string

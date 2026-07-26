@@ -97,6 +97,7 @@ export function activityRow(a: TransformationActivity): Record<string, unknown> 
     subject_id: a.subjectId,
     summary: a.summary,
     command_id: a.commandId,
+    actor_id: a.actorId ?? null,
     at: a.at,
   };
 }
@@ -111,6 +112,7 @@ export function toActivity(row: Record<string, unknown>): TransformationActivity
     subjectId: String(row["subject_id"]),
     summary: String(row["summary"]),
     commandId: String(row["command_id"]),
+    actorId: (row["actor_id"] as string | null) ?? null,
     at: String(row["at"]),
   };
 }

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Alert, Badge, Button, OperationalPanel, SectionHeader, SectionRule } from "@brightloop/ui";
@@ -7,18 +8,22 @@ import { loadTransformationWorkspaceExecution } from "@/lib/transformation-works
 import {
   dependencyLinkFormAction,
   dependencyUnlinkFormAction,
+  inboxFormAction,
   kpiCreateFormAction,
   kpiUpdateFormAction,
   milestoneCreateFormAction,
   milestoneTransitionFormAction,
+  noteFormAction,
   progressCalculateFormAction,
   reviewFormAction,
+  subscribeFormAction,
   taskAssignFormAction,
   taskCreateFormAction,
   taskTransitionFormAction,
   timelineCreateFormAction,
   timelineTransitionFormAction,
   transitionInitiativeFormAction,
+  unsubscribeFormAction,
   workspaceHealthFormAction,
 } from "../transformation-actions";
 
@@ -68,8 +73,9 @@ export default async function TransformationWorkspacePage({ params, searchParams
   const data = await loadTransformationWorkspaceExecution(id);
   if (data === null) notFound();
 
-  const { detail, execution, performance } = data;
-  const { workspace, initiatives, activities } = detail;
+  const { detail, execution, performance, feed, inbox, subscriptions } = data;
+  const { workspace, initiatives } = detail;
+  const subscribedTargetIds = new Set(subscriptions.subscriptions.map((s) => s.targetId));
   const readySet = new Set(execution.executionReadyInitiativeIds);
   const wsField = hidden("workspaceId", workspace.id);
   const initiativeTitle = (iid: string) => initiatives.find((i) => i.id === iid)?.title ?? iid;
@@ -90,6 +96,7 @@ export default async function TransformationWorkspacePage({ params, searchParams
           <Badge status="active">{readySet.size} execution-ready</Badge>
           <Badge status="idle">{execution.tasks.length} tasks</Badge>
           <Badge status="idle">{execution.dependencies.length} dependencies</Badge>
+          <Badge status={inbox.unread > 0 ? "active" : "idle"}>inbox: {inbox.unread} unread</Badge>
         </div>
       </OperationalPanel>
 
@@ -248,6 +255,31 @@ export default async function TransformationWorkspacePage({ params, searchParams
                 </div>
               );
             })()}
+
+            {(() => {
+              const sub = subscriptions.subscriptions.find((s) => s.targetType === "initiative" && s.targetId === i.id) ?? null;
+              return (
+                <div style={{ marginTop: "var(--space-3)", display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap", borderTop: "1px solid var(--line)", paddingTop: "var(--space-3)" }}>
+                  {sub ? (
+                    <form action={unsubscribeFormAction} style={{ display: "inline" }}>
+                      {wsField}{hidden("subscriptionId", sub.id)}
+                      <Button type="submit" variant="ghost">Unwatch</Button>
+                    </form>
+                  ) : (
+                    <form action={subscribeFormAction} style={{ display: "inline" }}>
+                      {wsField}{hidden("targetType", "initiative")}{hidden("targetId", i.id)}
+                      <Button type="submit" variant="ghost">Watch</Button>
+                    </form>
+                  )}
+                  <form action={noteFormAction} style={{ display: "flex", gap: "var(--space-1)", alignItems: "center", flexWrap: "wrap", flex: 1 }}>
+                    {wsField}{hidden("subjectType", "initiative")}{hidden("subjectId", i.id)}
+                    <input type="text" name="text" placeholder="Add a note…" aria-label="note" style={{ flex: "1 1 200px", padding: "2px 6px", border: "1px solid var(--line)", borderRadius: "var(--radius-sm)", background: "var(--surface)", color: "var(--ink)", fontSize: "0.8rem" }} />
+                    <input type="text" name="mentions" placeholder="@mention user ids" aria-label="mentions" style={inputStyle} />
+                    <Button type="submit" variant="ghost">Note</Button>
+                  </form>
+                </div>
+              );
+            })()}
           </OperationalPanel>
         );
       })}
@@ -319,17 +351,72 @@ export default async function TransformationWorkspacePage({ params, searchParams
         </form>
       </OperationalPanel>
 
-      <OperationalPanel>
-        <SectionRule index="06" label="Activity" meta="append-only audit" />
-        <ul style={{ listStyle: "none", padding: 0, margin: "var(--space-3) 0 0", display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
-          {activities.map((a) => (
-            <li key={a.id} style={{ display: "flex", gap: "var(--space-2)", fontSize: "0.85rem" }}>
-              <Badge status="idle">{a.type}</Badge>
-              <span style={{ opacity: 0.8 }}>{a.summary}</span>
+      <OperationalPanel tone="anchor">
+        <SectionRule index="06" label="Inbox" meta={`${inbox.unread} unread · ${inbox.total} total`} />
+        <ul style={{ listStyle: "none", padding: 0, margin: "var(--space-3) 0 0", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          {inbox.items.filter((it) => it.status !== "dismissed").length === 0 ? (
+            <li style={{ fontSize: "0.85rem", opacity: 0.7 }}>Nothing in your inbox.</li>
+          ) : inbox.items.filter((it) => it.status !== "dismissed").map((it) => (
+            <li key={it.id} style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap", padding: "var(--space-2)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", fontSize: "0.85rem" }}>
+              <Badge status={it.status === "unread" ? "active" : "idle"}>{it.status}</Badge>
+              <Badge status="idle">{it.notification?.type ?? "—"}</Badge>
+              <span style={{ opacity: 0.85 }}>{renderMentions(it.notification?.summary ?? "")}</span>
+              <span style={{ marginLeft: "auto", display: "inline-flex", gap: "var(--space-1)" }}>
+                {/* archived is terminal, so it offers no further transitions */}
+                {(it.status === "unread" ? ["read", "archive", "dismiss"] : it.status === "read" ? ["unread", "archive", "dismiss"] : []).map((act) => (
+                  <form key={act} action={inboxFormAction} style={{ display: "inline" }}>
+                    {wsField}{hidden("inboxItemId", it.id)}{hidden("action", act)}
+                    <Button type="submit" variant="ghost">{act}</Button>
+                  </form>
+                ))}
+              </span>
             </li>
           ))}
         </ul>
       </OperationalPanel>
+
+      <OperationalPanel>
+        <SectionRule index="07" label="Subscriptions" meta={`${subscriptions.count}`} />
+        <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)", flexWrap: "wrap", alignItems: "center" }}>
+          {subscriptions.subscriptions.length === 0 ? <span style={{ fontSize: "0.85rem", opacity: 0.7 }}>Not watching anything.</span> : null}
+          {subscriptions.subscriptions.map((s) => (
+            <span key={s.id} style={{ display: "inline-flex", gap: "var(--space-1)", alignItems: "center", fontSize: "0.8rem" }}>
+              <Badge status="idle">{s.targetType}: {s.targetType === "initiative" ? initiativeTitle(s.targetId) : s.targetId}</Badge>
+              <form action={unsubscribeFormAction} style={{ display: "inline" }}>
+                {wsField}{hidden("subscriptionId", s.id)}
+                <Button type="submit" variant="ghost">Unwatch</Button>
+              </form>
+            </span>
+          ))}
+          <form action={subscribeFormAction} style={{ display: "inline-flex", gap: "var(--space-1)", alignItems: "center", marginLeft: "auto" }}>
+            {wsField}{hidden("targetType", "workspace")}{hidden("targetId", workspace.id)}
+            <Button type="submit" variant="ghost">{subscribedTargetIds.has(workspace.id) ? "Watching workspace" : "Watch workspace"}</Button>
+          </form>
+        </div>
+      </OperationalPanel>
+
+      <OperationalPanel>
+        <SectionRule index="08" label="Activity feed" meta="append-only · newest first" />
+        <ul style={{ listStyle: "none", padding: 0, margin: "var(--space-3) 0 0", display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
+          {feed.items.map((a) => (
+            <li key={a.id} style={{ display: "flex", gap: "var(--space-2)", alignItems: "baseline", fontSize: "0.85rem", flexWrap: "wrap" }}>
+              <Badge status="idle">{a.type}</Badge>
+              <span style={{ opacity: 0.85 }}>{renderMentions(a.summary)}</span>
+              <span style={{ marginLeft: "auto", fontSize: "0.72rem", opacity: 0.6 }}>{a.actorId ? `@${a.actorId}` : "system"} · {a.at.slice(0, 16).replace("T", " ")}</span>
+            </li>
+          ))}
+          {feed.items.length === 0 ? <li style={{ fontSize: "0.85rem", opacity: 0.7 }}>No activity yet.</li> : null}
+        </ul>
+        {feed.nextCursor ? <p style={{ fontSize: "0.72rem", opacity: 0.6, marginTop: "var(--space-2)" }}>More activity beyond this page.</p> : null}
+      </OperationalPanel>
     </div>
+  );
+}
+
+/** Render `@handle` tokens with emphasis; everything else is plain text. */
+function renderMentions(text: string): ReactNode {
+  const parts = text.split(/(@[A-Za-z0-9._-]+)/g);
+  return parts.map((part, idx) =>
+    part.startsWith("@") ? <strong key={idx} style={{ color: "var(--accent, inherit)" }}>{part}</strong> : <span key={idx}>{part}</span>,
   );
 }

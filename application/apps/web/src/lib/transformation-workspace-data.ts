@@ -4,8 +4,14 @@ import {
   getTransformationWorkspace,
   getWorkspaceExecution,
   getWorkspacePerformance,
+  listFeed,
+  listInbox,
+  listSubscriptions,
   listTransformationWorkspaces,
   isApplicationError,
+  type FeedPageDTO,
+  type InboxSummaryDTO,
+  type SubscriptionSummaryDTO,
   type WorkspaceDetailDTO,
   type WorkspaceExecutionDTO,
   type WorkspacePerformanceDTO,
@@ -18,6 +24,10 @@ export interface WorkspaceExecutionView {
   detail: WorkspaceDetailDTO;
   execution: WorkspaceExecutionDTO;
   performance: WorkspacePerformanceDTO;
+  /** D7 collaboration: the activity feed, the caller's inbox, and subscriptions. */
+  feed: FeedPageDTO;
+  inbox: InboxSummaryDTO;
+  subscriptions: SubscriptionSummaryDTO;
 }
 
 /**
@@ -53,8 +63,15 @@ export async function loadTransformationWorkspaceExecution(id: string): Promise<
   const ctx = await buildAppContext();
   if (ctx === null) return null;
   try {
-    const [detail, execution, performance] = await Promise.all([getTransformationWorkspace(ctx, id), getWorkspaceExecution(ctx, id), getWorkspacePerformance(ctx, id)]);
-    return { detail, execution, performance };
+    const [detail, execution, performance, feed, inbox, subscriptions] = await Promise.all([
+      getTransformationWorkspace(ctx, id),
+      getWorkspaceExecution(ctx, id),
+      getWorkspacePerformance(ctx, id),
+      listFeed(ctx, id, { limit: 30 }),
+      listInbox(ctx),
+      listSubscriptions(ctx),
+    ]);
+    return { detail, execution, performance, feed, inbox, subscriptions };
   } catch (error) {
     if (isApplicationError(error) && (error.status === 404 || error.status === 403)) return null;
     throw error;
