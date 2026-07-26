@@ -301,6 +301,17 @@ Shape to copy for the next transformation module:
      (ephemeral Supabase via Docker).
   3. `secret-scan` — gitleaks.
   Preview deploys: **Vercel** + **Netlify** on each PR.
+- **Production DB migrations** (`.github/workflows/db-migrate-prod.yml`): the
+  ONLY sanctioned path to change the production schema. Triggers on push to
+  `main` when `application/supabase/migrations/**` changes, plus manual
+  `workflow_dispatch` — **never on PRs**, so unreviewed migrations cannot reach
+  prod. Guarded by the `production` GitHub Environment (required reviewer +
+  secrets `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`).
+  Steps: link → `migration list --linked` (status, no secrets printed) →
+  `supabase db push` → verify remote history synchronized. **No destructive
+  flags, no `db reset`, no Management-API schema writes, no manual
+  `schema_migrations` edits.** (CI's `db-verify` runs migrations only against an
+  ephemeral Docker DB; it never touches prod — this workflow closes that gap.)
 - **Merge**: non-fast-forward **merge commit** (`gh pr merge <n> --merge`), matching
   Sprints 3–4.1. After merge: sync `main`, delete local + remote branch, prune.
 - **Merge log (chronological, all on `main`):**

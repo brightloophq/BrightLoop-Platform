@@ -1,0 +1,65 @@
+name: DB Migrate (production)
+
+# Applies committed Supabase migrations to the PRODUCTION database via the
+# official tracked CLI workflow (`supabase db push`). This is the ONLY sanctioned
+# path to change the production schema — no Management-API schema writes, no
+# manual edits to `supabase_migrations.schema_migrations`, no destructive flags.
+#
+# Runs post-merge only (never on pull requests), so unreviewed migrations can
+# never reach production. Guarded by the `production` GitHub Environment, whose
+# required reviewer / secrets are the human gate.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "application/supabase/migrations/**"
+  workflow_dispatch: {}
+
+# Never allow two production pushes to overlap.
+concurrency:
+  group: db-migrate-prod
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: link · push · verify
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: application
+    env:
+      # Consumed by the Supabase CLI directly; never echoed.
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link production project
+        run: supabase link --project-ref "$SUPABASE_PROJECT_REF"
+        env:
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+
+      # Show local-vs-remote history. Prints migration versions only — no secrets.
+      - name: Migration status (pre-push)
+        run: supabase migration list --linked
+
+      # Apply pending migrations. No destructive flags, no `db reset`.
+      - name: Push migrations
+        run: supabase db push
+
+      # Fail if any local migration is still unapplied on the remote after the push.
+      - name: Verify remote history synchronized
+        run: |
+          out="$(supabase db push --dry-run)"
+          echo "$out"
+          if echo "$out" | grep -q "Would push these migrations"; then
+            echo "::error::Remote migration history is NOT synchronized after push."
+            exit 1
+          fi
+          echo "Remote migration history is synchronized."
