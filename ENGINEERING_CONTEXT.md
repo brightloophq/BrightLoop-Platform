@@ -3,7 +3,9 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Phase C · Sprint C3 (Discovery/
+> convention that changed). Last updated: after **Phase D · Sprint D8 (Engineering
+> Certification)** — Phase D D1–D7 complete and merged; D8 certifies production
+> readiness. Previously: **Phase C · Sprint C3 (Discovery/
 > Crawler Runtime)** — the first real, SSRF-guarded website ingress into the pipeline.
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
@@ -120,6 +122,23 @@ there is **one** admin shell (`apps/web/src/app/admin/layout.tsx` +
 | **4** | **Dashboard foundation + GSAP motion system** — motion layer in `@brightloop/ui/motion`, typed dashboard read model + adapter, refined `/admin` shell (premium sidebar + mobile drawer), dashboard page, transformation section placeholders. |
 | **4.1** | **Dashboard refinement + shared primitives** — centralized motion **preset system**, "operational canvas" (3 zones: Executive Overview → Transformation Loop → Operational Feed), and reusable primitives: `SectionHeader`, `OperationalPanel`, `MetricCard`, `PipelineNode`, `AttentionRow`, `SkeletonBlock`. |
 | **5** | **Signals module** — first end-to-end vertical slice (list/create/detail, lifecycle, audit, dashboard reflection). See §10. **Merged to `main` via PR #4 (merge commit `bd20276`, 2026-07-18).** |
+
+### Phase D — Transformation Execution (all merged to `main`)
+
+| Sprint | Outcome | PR / merge |
+|---|---|---|
+| **D1** | Workspace foundation — seed a transformation workspace from a certified proposal; initiatives + activity; internal-only RLS. | ✅ complete |
+| **D2** | Initiative lifecycle — `seeded→planned→active→completed→archived`; optimistic concurrency. | PR #50 |
+| **D3+D4** | Execution management — reviews/approvals, tasks, assignments (append-only), dependency graph (cycle-safe). | PR #51 |
+| **D5+D6** | Planning & Performance — timelines, milestones, KPIs, DERIVED progress + workspace-health policies, append-only progress snapshots. | PR #52 (`b09b81e`) |
+| **D7** | Collaboration — activity feed, internal notifications, subscriptions, mentions, inbox lifecycle, read receipts, unread counts. | PR #53 (`497887c`) |
+| **D8** | **Engineering certification & hardening** — architecture/invariant/authorization/tenant/RLS/append-only/migration/concurrency/idempotency/read-model audits + certification test suites (authorization matrix, E2E flows A–E, tenant isolation, concurrency, performance benchmark) + production docs. No new product capability. See `engineering-blueprint/phase-d/CERTIFICATION.md`. | this PR |
+
+Phase D bounded contexts: transformation workspace, initiative lifecycle, execution
+management, planning & performance, collaboration. Layering is Schema → Domain
+(pure) → Repository Ports → Application Use-Cases → Read Models → Data Adapters →
+Database (RLS) → Web UI. Additive migrations only; append-only history via the
+`bl_txexec_append_only()` trigger; internal-only capabilities (no client access).
 
 (Prior product work — reputation CMS, leads/clients, delivery, sales, funnel,
 conversations, hardening, Auxion rebrand — predates these transformation sprints
