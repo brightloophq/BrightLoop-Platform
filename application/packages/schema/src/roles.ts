@@ -63,6 +63,8 @@ export const PERMISSIONS = {
     "knowledge.*",
     // E3 AI Strategist — full access.
     "strategy.*",
+    // E4 AI Project Manager — full access.
+    "planning.*",
   ],
   team_member: [
     "projects.read",
@@ -143,6 +145,13 @@ export const PERMISSIONS = {
     "strategy.run",
     "strategy.review",
     "strategy.feedback",
+    // E4 AI Project Manager — operators plan, review, and approve execution.
+    "planning.read",
+    "planning.write",
+    "planning.run",
+    "planning.review",
+    "planning.approve",
+    "planning.feedback",
   ],
   client_admin: [
     "own.project.read",
@@ -159,6 +168,9 @@ export const PERMISSIONS = {
     // but never run or edit it (RLS + ownership scope to the org).
     "strategy.read",
     "strategy.feedback",
+    // E4 AI Project Manager — clients may VIEW and give FEEDBACK on their own plan.
+    "planning.read",
+    "planning.feedback",
   ],
   client_member: [
     "own.project.read",
@@ -167,6 +179,8 @@ export const PERMISSIONS = {
     "own.transformation.read",
     "strategy.read",
     "strategy.feedback",
+    "planning.read",
+    "planning.feedback",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 

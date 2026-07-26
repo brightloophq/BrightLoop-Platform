@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AiFoundationRepositories, AiProviderRegistry, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
+import type { Actor, AiFoundationRepositories, AiProviderRegistry, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -78,6 +78,13 @@ export const STRATEGY_WRITE_CAP = "strategy.write";
 export const STRATEGY_RUN_CAP = "strategy.run";
 export const STRATEGY_REVIEW_CAP = "strategy.review";
 export const STRATEGY_FEEDBACK_CAP = "strategy.feedback";
+/** Phase E · AI Project Manager capabilities (E4). */
+export const PLANNING_READ_CAP = "planning.read";
+export const PLANNING_WRITE_CAP = "planning.write";
+export const PLANNING_RUN_CAP = "planning.run";
+export const PLANNING_REVIEW_CAP = "planning.review";
+export const PLANNING_APPROVE_CAP = "planning.approve";
+export const PLANNING_FEEDBACK_CAP = "planning.feedback";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the
@@ -121,6 +128,8 @@ export interface AppContext {
   vectorStore?: VectorStorePort;
   /** Phase E · AI Strategist repositories (E3). Required via `requireStrategist`. */
   strategist?: StrategistRepositories;
+  /** Phase E · AI Project Manager repositories (E4). Required via `requireProjectManager`. */
+  projectManager?: ProjectManagerRepositories;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -185,6 +194,14 @@ export function requireStrategist(ctx: AppContext): StrategistRepositories {
     throw new RuntimeUnavailableError("The strategist store is not available");
   }
   return ctx.strategist;
+}
+
+/** Assert the AI Project Manager repositories are wired, or fail with a clean 503. */
+export function requireProjectManager(ctx: AppContext): ProjectManagerRepositories {
+  if (ctx.projectManager === undefined) {
+    throw new RuntimeUnavailableError("The project manager store is not available");
+  }
+  return ctx.projectManager;
 }
 
 /**

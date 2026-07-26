@@ -99,6 +99,21 @@ export {
   SupabaseStrategyCitationRepository,
   SupabaseStrategyFeedbackRepository,
 } from "./strategist/adapter.js";
+// Phase E · AI Project Manager (E4) — twelve repository adapters.
+export {
+  SupabasePlanningSessionRepository,
+  SupabaseExecutionPlanRepository,
+  SupabaseInitiativePlanRepository,
+  SupabaseMilestonePlanRepository,
+  SupabaseTaskPlanRepository,
+  SupabaseDependencyPlanRepository,
+  SupabaseTimelinePlanRepository,
+  SupabaseReviewPlanRepository,
+  SupabaseKpiPlanRepository,
+  SupabaseResourceEstimateRepository,
+  SupabaseExecutionRiskRepository,
+  SupabasePlanningFeedbackRepository,
+} from "./project-manager/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

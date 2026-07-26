@@ -24,3 +24,4 @@ export * from "./collaboration/index.js";
 export * from "./ai-foundation/index.js";
 export * from "./knowledge/index.js";
 export * from "./strategist/index.js";
+export * from "./project-manager/index.js";
