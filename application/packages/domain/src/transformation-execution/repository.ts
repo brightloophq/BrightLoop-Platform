@@ -84,4 +84,41 @@ export interface TransformationExecutionRepositories {
   tasks: TaskRepository;
   assignments: AssignmentRepository;
   dependencies: DependencyRepository;
+  timelines: TimelineRepository;
+  milestones: MilestoneRepository;
+  kpis: KpiRepository;
+  progress: ProgressSnapshotRepository;
+}
+
+/* ---- D5/D6 planning & performance ports ------------------------------------ */
+import type { Kpi, ProgressSnapshot, Timeline, TxMilestone } from "@brightloop/schema";
+
+export interface TimelineRepository {
+  create(timeline: Timeline): Promise<RuntimeResult<Timeline>>;
+  getById(id: string): Promise<RuntimeResult<Timeline | null>>;
+  getByInitiative(initiativeId: string): Promise<RuntimeResult<Timeline | null>>;
+  listByWorkspace(workspaceId: string): Promise<RuntimeResult<Timeline[]>>;
+  save(next: Timeline, expectedVersion: number): Promise<RuntimeResult<Timeline>>;
+}
+
+export interface MilestoneRepository {
+  create(milestone: TxMilestone): Promise<RuntimeResult<TxMilestone>>;
+  getById(id: string): Promise<RuntimeResult<TxMilestone | null>>;
+  listByInitiative(initiativeId: string): Promise<RuntimeResult<TxMilestone[]>>;
+  listByWorkspace(workspaceId: string): Promise<RuntimeResult<TxMilestone[]>>;
+  save(next: TxMilestone, expectedVersion: number): Promise<RuntimeResult<TxMilestone>>;
+}
+
+export interface KpiRepository {
+  create(kpi: Kpi): Promise<RuntimeResult<Kpi>>;
+  getById(id: string): Promise<RuntimeResult<Kpi | null>>;
+  listByWorkspace(workspaceId: string): Promise<RuntimeResult<Kpi[]>>;
+  save(next: Kpi, expectedVersion: number): Promise<RuntimeResult<Kpi>>;
+}
+
+export interface ProgressSnapshotRepository {
+  /** Append one immutable snapshot (history is never edited). */
+  append(snapshot: ProgressSnapshot): Promise<RuntimeResult<ProgressSnapshot>>;
+  listByWorkspace(workspaceId: string): Promise<RuntimeResult<ProgressSnapshot[]>>;
+  listBySubject(subjectId: string): Promise<RuntimeResult<ProgressSnapshot[]>>;
 }

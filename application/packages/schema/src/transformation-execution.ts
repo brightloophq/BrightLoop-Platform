@@ -52,10 +52,20 @@ export const transformationActivityTypeSchema = z.enum([
   "task_unassigned",
   "dependency_linked",
   "dependency_removed",
+  // D5/D6 planning & performance
+  "timeline_started",
+  "timeline_completed",
+  "timeline_cancelled",
+  "milestone_created",
+  "milestone_completed",
+  "milestone_missed",
+  "kpi_updated",
+  "progress_calculated",
+  "workspace_health_calculated",
 ]);
 export type TransformationActivityType = z.infer<typeof transformationActivityTypeSchema>;
 
-export const activitySubjectTypeSchema = z.enum(["workspace", "initiative", "review", "task", "dependency"]);
+export const activitySubjectTypeSchema = z.enum(["workspace", "initiative", "review", "task", "dependency", "timeline", "milestone", "kpi", "progress"]);
 export type ActivitySubjectType = z.infer<typeof activitySubjectTypeSchema>;
 
 /**
@@ -219,3 +229,96 @@ export const dependencySchema = z.object({
   createdAt: z.string(),
 });
 export type Dependency = z.infer<typeof dependencySchema>;
+
+/* =============================================================================
+ * D5 / D6 — Planning & Performance: Timeline · Milestone · KPI · ProgressSnapshot.
+ * Progress and health are DERIVED (never manually edited); snapshots are
+ * append-only, point-in-time. All internal-only, client-scoped.
+ * ========================================================================== */
+
+/* ---- Timeline (D5) --------------------------------------------------------- */
+export const timelineStatusSchema = z.enum(["planned", "active", "completed", "cancelled"]);
+export type TimelineStatus = z.infer<typeof timelineStatusSchema>;
+
+/** The execution schedule for one initiative. Durations/variance are derived. */
+export const timelineSchema = z.object({
+  id: z.string(),
+  initiativeId: z.string(),
+  workspaceId: z.string(),
+  clientId: z.string().nullable(),
+  /** ISO dates. `targetEndDate` must not precede `startDate` (validated). */
+  startDate: z.string(),
+  targetEndDate: z.string(),
+  actualEndDate: z.string().nullable().default(null),
+  status: timelineStatusSchema,
+  version: z.number().int().positive().default(1),
+  createdAt: z.string(),
+});
+export type Timeline = z.infer<typeof timelineSchema>;
+
+/* ---- Milestone (D5) — `Tx`-prefixed to avoid the product `Milestone`. ------- */
+export const txMilestoneStatusSchema = z.enum(["pending", "completed", "missed"]);
+export type TxMilestoneStatus = z.infer<typeof txMilestoneStatusSchema>;
+
+export const txMilestoneSchema = z.object({
+  id: z.string(),
+  initiativeId: z.string(),
+  workspaceId: z.string(),
+  clientId: z.string().nullable(),
+  title: z.string().min(1).max(200),
+  description: z.string().max(2000).nullable().default(null),
+  plannedDate: z.string(),
+  completedDate: z.string().nullable().default(null),
+  status: txMilestoneStatusSchema,
+  order: z.number().int().nonnegative().default(0),
+  version: z.number().int().positive().default(1),
+  createdAt: z.string(),
+});
+export type TxMilestone = z.infer<typeof txMilestoneSchema>;
+
+/* ---- KPI (D6) -------------------------------------------------------------- */
+export const kpiStatusSchema = z.enum(["on_track", "at_risk", "off_track"]);
+export type KpiStatus = z.infer<typeof kpiStatusSchema>;
+
+/** A measurable indicator. `status` is DERIVED from target vs current. */
+export const kpiSchema = z.object({
+  id: z.string(),
+  workspaceId: z.string(),
+  clientId: z.string().nullable(),
+  name: z.string().min(1).max(160),
+  target: z.number(),
+  current: z.number(),
+  unit: z.string().max(40).default(""),
+  status: kpiStatusSchema,
+  lastUpdated: z.string(),
+  version: z.number().int().positive().default(1),
+  createdAt: z.string(),
+});
+export type Kpi = z.infer<typeof kpiSchema>;
+
+/* ---- Progress Snapshot (D6, append-only, point-in-time) -------------------- */
+export const progressScopeSchema = z.enum(["initiative", "workspace"]);
+export type ProgressScope = z.infer<typeof progressScopeSchema>;
+
+export const workspaceHealthSchema = z.enum(["healthy", "warning", "critical"]);
+export type WorkspaceHealth = z.infer<typeof workspaceHealthSchema>;
+
+/** An immutable point-in-time metrics snapshot. Percentages are 0–100 integers. */
+export const progressSnapshotSchema = z.object({
+  id: z.string(),
+  workspaceId: z.string(),
+  clientId: z.string().nullable(),
+  scope: progressScopeSchema,
+  /** The initiative id (scope=initiative) or the workspace id (scope=workspace). */
+  subjectId: z.string(),
+  progress: z.number().int().min(0).max(100),
+  taskCompletion: z.number().int().min(0).max(100),
+  reviewCompletion: z.number().int().min(0).max(100),
+  dependencyCompletion: z.number().int().min(0).max(100),
+  milestoneCompletion: z.number().int().min(0).max(100),
+  /** Timeline variance in whole days (negative = ahead, positive = late); null if none. */
+  timelineVariance: z.number().int().nullable().default(null),
+  health: workspaceHealthSchema.nullable().default(null),
+  at: z.string(),
+});
+export type ProgressSnapshot = z.infer<typeof progressSnapshotSchema>;

@@ -3,10 +3,12 @@ import "server-only";
 import {
   getTransformationWorkspace,
   getWorkspaceExecution,
+  getWorkspacePerformance,
   listTransformationWorkspaces,
   isApplicationError,
   type WorkspaceDetailDTO,
   type WorkspaceExecutionDTO,
+  type WorkspacePerformanceDTO,
   type WorkspaceSummaryDTO,
 } from "@brightloop/application";
 import { buildAppContext } from "./runtime-api";
@@ -15,6 +17,7 @@ import { buildAppContext } from "./runtime-api";
 export interface WorkspaceExecutionView {
   detail: WorkspaceDetailDTO;
   execution: WorkspaceExecutionDTO;
+  performance: WorkspacePerformanceDTO;
 }
 
 /**
@@ -50,8 +53,8 @@ export async function loadTransformationWorkspaceExecution(id: string): Promise<
   const ctx = await buildAppContext();
   if (ctx === null) return null;
   try {
-    const [detail, execution] = await Promise.all([getTransformationWorkspace(ctx, id), getWorkspaceExecution(ctx, id)]);
-    return { detail, execution };
+    const [detail, execution, performance] = await Promise.all([getTransformationWorkspace(ctx, id), getWorkspaceExecution(ctx, id), getWorkspacePerformance(ctx, id)]);
+    return { detail, execution, performance };
   } catch (error) {
     if (isApplicationError(error) && (error.status === 404 || error.status === 403)) return null;
     throw error;

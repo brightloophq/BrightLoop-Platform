@@ -44,6 +44,10 @@ export const PERMISSIONS = {
     "task.*",
     "assignment.*",
     "dependency.*",
+    "timeline.*",
+    "milestone.*",
+    "kpi.*",
+    "progress.*",
   ],
   team_member: [
     "projects.read",
@@ -85,6 +89,14 @@ export const PERMISSIONS = {
     "task.write",
     "assignment.write",
     "dependency.write",
+    // D5/D6 planning & performance.
+    "timeline.read",
+    "timeline.write",
+    "milestone.read",
+    "milestone.write",
+    "kpi.read",
+    "kpi.write",
+    "progress.read",
   ],
   client_admin: [
     "own.project.read",

@@ -43,6 +43,10 @@ export {
   SupabaseTaskRepository,
   SupabaseAssignmentRepository,
   SupabaseDependencyRepository,
+  SupabaseTimelineRepository,
+  SupabaseMilestoneRepository,
+  SupabaseKpiRepository,
+  SupabaseProgressSnapshotRepository,
 } from "./transformation-execution/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";

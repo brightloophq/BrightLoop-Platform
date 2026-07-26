@@ -15,6 +15,10 @@ import {
   SupabaseTaskRepository,
   SupabaseAssignmentRepository,
   SupabaseDependencyRepository,
+  SupabaseTimelineRepository,
+  SupabaseMilestoneRepository,
+  SupabaseKpiRepository,
+  SupabaseProgressSnapshotRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -183,6 +187,10 @@ export async function getExecutionRepositories(): Promise<TransformationExecutio
     tasks: new SupabaseTaskRepository(client),
     assignments: new SupabaseAssignmentRepository(client),
     dependencies: new SupabaseDependencyRepository(client),
+    timelines: new SupabaseTimelineRepository(client),
+    milestones: new SupabaseMilestoneRepository(client),
+    kpis: new SupabaseKpiRepository(client),
+    progress: new SupabaseProgressSnapshotRepository(client),
   };
 }
 

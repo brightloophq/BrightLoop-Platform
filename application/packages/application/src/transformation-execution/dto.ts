@@ -190,3 +190,101 @@ export interface WorkspaceExecutionDTO {
   tasks: TaskDTO[];
   executionReadyInitiativeIds: string[];
 }
+
+/* ---- D5/D6 planning & performance DTOs ------------------------------------- */
+import type { Kpi, ProgressSnapshot, Timeline, TxMilestone } from "@brightloop/schema";
+import { calculateVariance } from "@brightloop/domain";
+
+export interface TimelineDTO {
+  id: string;
+  initiativeId: string;
+  startDate: string;
+  targetEndDate: string;
+  actualEndDate: string | null;
+  status: Timeline["status"];
+  plannedDuration: number;
+  actualDuration: number | null;
+  variance: number | null;
+  version: number;
+}
+export function toInitiativeTimelineDTO(t: Timeline): TimelineDTO {
+  const v = calculateVariance(t);
+  return { id: t.id, initiativeId: t.initiativeId, startDate: t.startDate, targetEndDate: t.targetEndDate, actualEndDate: t.actualEndDate, status: t.status, plannedDuration: v.plannedDuration, actualDuration: v.actualDuration, variance: v.variance, version: t.version };
+}
+
+export interface MilestoneDTO {
+  id: string;
+  initiativeId: string;
+  title: string;
+  description: string | null;
+  plannedDate: string;
+  completedDate: string | null;
+  status: TxMilestone["status"];
+  order: number;
+  version: number;
+}
+export function toMilestoneDTO(m: TxMilestone): MilestoneDTO {
+  return { id: m.id, initiativeId: m.initiativeId, title: m.title, description: m.description, plannedDate: m.plannedDate, completedDate: m.completedDate, status: m.status, order: m.order, version: m.version };
+}
+
+export interface KpiDTO {
+  id: string;
+  name: string;
+  target: number;
+  current: number;
+  unit: string;
+  status: Kpi["status"];
+  lastUpdated: string;
+  version: number;
+}
+export function toKpiDTO(k: Kpi): KpiDTO {
+  return { id: k.id, name: k.name, target: k.target, current: k.current, unit: k.unit, status: k.status, lastUpdated: k.lastUpdated, version: k.version };
+}
+
+export interface ProgressSnapshotDTO {
+  id: string;
+  scope: ProgressSnapshot["scope"];
+  subjectId: string;
+  progress: number;
+  taskCompletion: number;
+  reviewCompletion: number;
+  dependencyCompletion: number;
+  milestoneCompletion: number;
+  timelineVariance: number | null;
+  health: ProgressSnapshot["health"];
+  at: string;
+}
+export function toProgressSnapshotDTO(s: ProgressSnapshot): ProgressSnapshotDTO {
+  return { id: s.id, scope: s.scope, subjectId: s.subjectId, progress: s.progress, taskCompletion: s.taskCompletion, reviewCompletion: s.reviewCompletion, dependencyCompletion: s.dependencyCompletion, milestoneCompletion: s.milestoneCompletion, timelineVariance: s.timelineVariance, health: s.health, at: s.at };
+}
+
+/** Per-initiative performance read model. */
+export interface InitiativePerformanceDTO {
+  initiativeId: string;
+  timeline: TimelineDTO | null;
+  milestones: MilestoneDTO[];
+  progress: number;
+  latestSnapshot: ProgressSnapshotDTO | null;
+}
+
+/** Workspace performance + health dashboard read model. */
+export interface WorkspacePerformanceDTO {
+  workspaceId: string;
+  workspaceProgress: number;
+  health: ProgressSnapshot["health"];
+  healthReasons: string[];
+  kpis: KpiDTO[];
+  timelines: TimelineDTO[];
+  milestones: MilestoneDTO[];
+  initiativeProgress: { initiativeId: string; progress: number }[];
+  latestSnapshots: ProgressSnapshotDTO[];
+}
+
+/** Result of a workspace-health calculation (derived, with reasons). */
+export interface WorkspaceHealthDTO {
+  workspaceId: string;
+  health: ProgressSnapshot["health"];
+  reasons: string[];
+  workspaceProgress: number;
+  snapshot: ProgressSnapshotDTO;
+}

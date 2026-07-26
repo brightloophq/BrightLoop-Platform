@@ -241,3 +241,120 @@ export class SupabaseDependencyRepository implements DependencyRepository {
     return ok("found", (data ?? []).map((r) => m.toDependency(r as Record<string, unknown>)));
   }
 }
+
+/* ---- D5/D6 planning & performance adapters --------------------------------- */
+import type { Kpi, ProgressSnapshot, Timeline, TxMilestone } from "@brightloop/schema";
+import type { KpiRepository, MilestoneRepository, ProgressSnapshotRepository, TimelineRepository } from "@brightloop/domain";
+
+const TL = "transformation_timeline";
+const MS = "transformation_milestone";
+const KPI = "transformation_kpi";
+const SNAP = "transformation_progress_snapshot";
+
+export class SupabaseTimelineRepository implements TimelineRepository {
+  private readonly db: SupabaseClient;
+  constructor(client: AuxionSupabaseClient) { this.db = client as unknown as SupabaseClient; }
+  async create(timeline: Timeline): Promise<RuntimeResult<Timeline>> {
+    const { data, error } = await this.db.from(TL).insert(m.timelineRow(timeline)).select("*").single();
+    if (error) return mapDatabaseError(error, "timeline.create");
+    return ok("created", m.toTimeline(data as Record<string, unknown>));
+  }
+  async getById(id: string): Promise<RuntimeResult<Timeline | null>> {
+    const { data, error } = await this.db.from(TL).select("*").eq("id", id).maybeSingle();
+    if (error) return mapDatabaseError(error, "timeline.getById");
+    return ok("found", data ? m.toTimeline(data as Record<string, unknown>) : null);
+  }
+  async getByInitiative(initiativeId: string): Promise<RuntimeResult<Timeline | null>> {
+    const { data, error } = await this.db.from(TL).select("*").eq("initiative_id", initiativeId).maybeSingle();
+    if (error) return mapDatabaseError(error, "timeline.getByInitiative");
+    return ok("found", data ? m.toTimeline(data as Record<string, unknown>) : null);
+  }
+  async listByWorkspace(workspaceId: string): Promise<RuntimeResult<Timeline[]>> {
+    const { data, error } = await this.db.from(TL).select("*").eq("workspace_id", workspaceId).order("created_at", { ascending: true });
+    if (error) return mapDatabaseError(error, "timeline.listByWorkspace");
+    return ok("found", (data ?? []).map((r) => m.toTimeline(r as Record<string, unknown>)));
+  }
+  async save(next: Timeline, expectedVersion: number): Promise<RuntimeResult<Timeline>> {
+    const { data, error } = await this.db.from(TL).update({ status: next.status, actual_end_date: next.actualEndDate, version: next.version }).eq("id", next.id).eq("version", expectedVersion).select("*").maybeSingle();
+    if (error) return mapDatabaseError(error, "timeline.save");
+    if (data === null) return err("conflict", "timeline.save: version mismatch");
+    return ok("updated", m.toTimeline(data as Record<string, unknown>));
+  }
+}
+
+export class SupabaseMilestoneRepository implements MilestoneRepository {
+  private readonly db: SupabaseClient;
+  constructor(client: AuxionSupabaseClient) { this.db = client as unknown as SupabaseClient; }
+  async create(milestone: TxMilestone): Promise<RuntimeResult<TxMilestone>> {
+    const { data, error } = await this.db.from(MS).insert(m.milestoneRow(milestone)).select("*").single();
+    if (error) return mapDatabaseError(error, "milestone.create");
+    return ok("created", m.toMilestone(data as Record<string, unknown>));
+  }
+  async getById(id: string): Promise<RuntimeResult<TxMilestone | null>> {
+    const { data, error } = await this.db.from(MS).select("*").eq("id", id).maybeSingle();
+    if (error) return mapDatabaseError(error, "milestone.getById");
+    return ok("found", data ? m.toMilestone(data as Record<string, unknown>) : null);
+  }
+  async listByInitiative(initiativeId: string): Promise<RuntimeResult<TxMilestone[]>> {
+    const { data, error } = await this.db.from(MS).select("*").eq("initiative_id", initiativeId).order("order_index", { ascending: true });
+    if (error) return mapDatabaseError(error, "milestone.listByInitiative");
+    return ok("found", (data ?? []).map((r) => m.toMilestone(r as Record<string, unknown>)));
+  }
+  async listByWorkspace(workspaceId: string): Promise<RuntimeResult<TxMilestone[]>> {
+    const { data, error } = await this.db.from(MS).select("*").eq("workspace_id", workspaceId).order("order_index", { ascending: true });
+    if (error) return mapDatabaseError(error, "milestone.listByWorkspace");
+    return ok("found", (data ?? []).map((r) => m.toMilestone(r as Record<string, unknown>)));
+  }
+  async save(next: TxMilestone, expectedVersion: number): Promise<RuntimeResult<TxMilestone>> {
+    const { data, error } = await this.db.from(MS).update({ status: next.status, completed_date: next.completedDate, title: next.title, description: next.description, planned_date: next.plannedDate, order_index: next.order, version: next.version }).eq("id", next.id).eq("version", expectedVersion).select("*").maybeSingle();
+    if (error) return mapDatabaseError(error, "milestone.save");
+    if (data === null) return err("conflict", "milestone.save: version mismatch");
+    return ok("updated", m.toMilestone(data as Record<string, unknown>));
+  }
+}
+
+export class SupabaseKpiRepository implements KpiRepository {
+  private readonly db: SupabaseClient;
+  constructor(client: AuxionSupabaseClient) { this.db = client as unknown as SupabaseClient; }
+  async create(kpi: Kpi): Promise<RuntimeResult<Kpi>> {
+    const { data, error } = await this.db.from(KPI).insert(m.kpiRow(kpi)).select("*").single();
+    if (error) return mapDatabaseError(error, "kpi.create");
+    return ok("created", m.toKpi(data as Record<string, unknown>));
+  }
+  async getById(id: string): Promise<RuntimeResult<Kpi | null>> {
+    const { data, error } = await this.db.from(KPI).select("*").eq("id", id).maybeSingle();
+    if (error) return mapDatabaseError(error, "kpi.getById");
+    return ok("found", data ? m.toKpi(data as Record<string, unknown>) : null);
+  }
+  async listByWorkspace(workspaceId: string): Promise<RuntimeResult<Kpi[]>> {
+    const { data, error } = await this.db.from(KPI).select("*").eq("workspace_id", workspaceId).order("name", { ascending: true });
+    if (error) return mapDatabaseError(error, "kpi.listByWorkspace");
+    return ok("found", (data ?? []).map((r) => m.toKpi(r as Record<string, unknown>)));
+  }
+  async save(next: Kpi, expectedVersion: number): Promise<RuntimeResult<Kpi>> {
+    const { data, error } = await this.db.from(KPI).update({ current: next.current, status: next.status, last_updated: next.lastUpdated, version: next.version }).eq("id", next.id).eq("version", expectedVersion).select("*").maybeSingle();
+    if (error) return mapDatabaseError(error, "kpi.save");
+    if (data === null) return err("conflict", "kpi.save: version mismatch");
+    return ok("updated", m.toKpi(data as Record<string, unknown>));
+  }
+}
+
+export class SupabaseProgressSnapshotRepository implements ProgressSnapshotRepository {
+  private readonly db: SupabaseClient;
+  constructor(client: AuxionSupabaseClient) { this.db = client as unknown as SupabaseClient; }
+  async append(snapshot: ProgressSnapshot): Promise<RuntimeResult<ProgressSnapshot>> {
+    const { data, error } = await this.db.from(SNAP).insert(m.progressSnapshotRow(snapshot)).select("*").single();
+    if (error) return mapDatabaseError(error, "progressSnapshot.append");
+    return ok("created", m.toProgressSnapshot(data as Record<string, unknown>));
+  }
+  async listByWorkspace(workspaceId: string): Promise<RuntimeResult<ProgressSnapshot[]>> {
+    const { data, error } = await this.db.from(SNAP).select("*").eq("workspace_id", workspaceId).order("at", { ascending: true });
+    if (error) return mapDatabaseError(error, "progressSnapshot.listByWorkspace");
+    return ok("found", (data ?? []).map((r) => m.toProgressSnapshot(r as Record<string, unknown>)));
+  }
+  async listBySubject(subjectId: string): Promise<RuntimeResult<ProgressSnapshot[]>> {
+    const { data, error } = await this.db.from(SNAP).select("*").eq("subject_id", subjectId).order("at", { ascending: true });
+    if (error) return mapDatabaseError(error, "progressSnapshot.listBySubject");
+    return ok("found", (data ?? []).map((r) => m.toProgressSnapshot(r as Record<string, unknown>)));
+  }
+}
