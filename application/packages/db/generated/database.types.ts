@@ -1024,6 +1024,66 @@ export type Database = {
           },
         ]
       }
+      citation: {
+        Row: {
+          chunk_id: string
+          client_id: string | null
+          collection_id: string
+          created_at: string
+          document_id: string
+          heading: string | null
+          id: string
+          page: number | null
+          score: number
+          session_id: string
+          source_type: string
+          workspace_id: string
+        }
+        Insert: {
+          chunk_id: string
+          client_id?: string | null
+          collection_id: string
+          created_at?: string
+          document_id: string
+          heading?: string | null
+          id: string
+          page?: number | null
+          score: number
+          session_id: string
+          source_type: string
+          workspace_id: string
+        }
+        Update: {
+          chunk_id?: string
+          client_id?: string | null
+          collection_id?: string
+          created_at?: string
+          document_id?: string
+          heading?: string | null
+          id?: string
+          page?: number | null
+          score?: number
+          session_id?: string
+          source_type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "citation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "citation_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "retrieval_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           account_manager_id: string | null
@@ -1704,6 +1764,301 @@ export type Database = {
             columns: ["project_id"]
             isOneToOne: false
             referencedRelation: "projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_chunk: {
+        Row: {
+          checksum: string
+          client_id: string | null
+          collection_id: string
+          content: string
+          created_at: string
+          document_id: string
+          document_version: number
+          heading: string | null
+          id: string
+          index: number
+          page: number | null
+          strategy: string
+          token_count: number
+          workspace_id: string
+        }
+        Insert: {
+          checksum: string
+          client_id?: string | null
+          collection_id: string
+          content: string
+          created_at?: string
+          document_id: string
+          document_version: number
+          heading?: string | null
+          id: string
+          index: number
+          page?: number | null
+          strategy: string
+          token_count?: number
+          workspace_id: string
+        }
+        Update: {
+          checksum?: string
+          client_id?: string | null
+          collection_id?: string
+          content?: string
+          created_at?: string
+          document_id?: string
+          document_version?: number
+          heading?: string | null
+          id?: string
+          index?: number
+          page?: number | null
+          strategy?: string
+          token_count?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_chunk_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_chunk_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_collection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_chunk_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_document"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_version: {
+        Row: {
+          checksum: string
+          client_id: string | null
+          created_at: string
+          created_by_user_id: string
+          document_id: string
+          id: string
+          mime_type: string
+          parse_metadata: Json
+          parse_status: string
+          size_bytes: number
+          storage_ref: string | null
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          checksum: string
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id: string
+          document_id: string
+          id: string
+          mime_type: string
+          parse_metadata?: Json
+          parse_status?: string
+          size_bytes?: number
+          storage_ref?: string | null
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          checksum?: string
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          document_id?: string
+          id?: string
+          mime_type?: string
+          parse_metadata?: Json
+          parse_status?: string
+          size_bytes?: number
+          storage_ref?: string | null
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_version_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_version_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_document"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      embedding_job: {
+        Row: {
+          chunk_count: number
+          client_id: string | null
+          collection_id: string
+          cost: number
+          created_at: string
+          currency: string
+          document_id: string
+          document_version: number
+          duration_ms: number
+          error: string | null
+          id: string
+          model: string
+          provider: string
+          retry_count: number
+          status: string
+          strategy: string
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          chunk_count?: number
+          client_id?: string | null
+          collection_id: string
+          cost?: number
+          created_at?: string
+          currency?: string
+          document_id: string
+          document_version: number
+          duration_ms?: number
+          error?: string | null
+          id: string
+          model: string
+          provider: string
+          retry_count?: number
+          status?: string
+          strategy?: string
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          chunk_count?: number
+          client_id?: string | null
+          collection_id?: string
+          cost?: number
+          created_at?: string
+          currency?: string
+          document_id?: string
+          document_version?: number
+          duration_ms?: number
+          error?: string | null
+          id?: string
+          model?: string
+          provider?: string
+          retry_count?: number
+          status?: string
+          strategy?: string
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embedding_job_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embedding_job_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_collection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embedding_job_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_document"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      embedding_vector: {
+        Row: {
+          chunk_id: string
+          client_id: string | null
+          collection_id: string
+          created_at: string
+          dimensions: number
+          document_id: string
+          embedding: Json
+          id: string
+          model: string
+          provider: string
+          workspace_id: string
+        }
+        Insert: {
+          chunk_id: string
+          client_id?: string | null
+          collection_id: string
+          created_at?: string
+          dimensions: number
+          document_id: string
+          embedding: Json
+          id: string
+          model: string
+          provider: string
+          workspace_id: string
+        }
+        Update: {
+          chunk_id?: string
+          client_id?: string | null
+          collection_id?: string
+          created_at?: string
+          dimensions?: number
+          document_id?: string
+          embedding?: Json
+          id?: string
+          model?: string
+          provider?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "embedding_vector_chunk_id_fkey"
+            columns: ["chunk_id"]
+            isOneToOne: false
+            referencedRelation: "document_chunk"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embedding_vector_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embedding_vector_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_collection"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "embedding_vector_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_document"
             referencedColumns: ["id"]
           },
         ]
@@ -2547,6 +2902,239 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_collection: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          description: string | null
+          document_count: number
+          id: string
+          kind: string
+          name: string
+          owner_user_id: string
+          status: string
+          updated_at: string
+          version: number
+          visibility: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          document_count?: number
+          id: string
+          kind: string
+          name: string
+          owner_user_id: string
+          status?: string
+          updated_at?: string
+          version?: number
+          visibility?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          document_count?: number
+          id?: string
+          kind?: string
+          name?: string
+          owner_user_id?: string
+          status?: string
+          updated_at?: string
+          version?: number
+          visibility?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_collection_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_document: {
+        Row: {
+          checksum: string
+          client_id: string | null
+          collection_id: string
+          created_at: string
+          current_version: number
+          id: string
+          language: string | null
+          metadata: Json
+          mime_type: string
+          owner_user_id: string
+          size_bytes: number
+          source_type: string
+          status: string
+          title: string
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          checksum: string
+          client_id?: string | null
+          collection_id: string
+          created_at?: string
+          current_version?: number
+          id: string
+          language?: string | null
+          metadata?: Json
+          mime_type: string
+          owner_user_id: string
+          size_bytes?: number
+          source_type: string
+          status?: string
+          title: string
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          checksum?: string
+          client_id?: string | null
+          collection_id?: string
+          created_at?: string
+          current_version?: number
+          id?: string
+          language?: string | null
+          metadata?: Json
+          mime_type?: string
+          owner_user_id?: string
+          size_bytes?: number
+          source_type?: string
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_document_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_document_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_collection"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_permission: {
+        Row: {
+          client_id: string | null
+          collection_id: string
+          created_at: string
+          id: string
+          level: string
+          subject_id: string
+          subject_type: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          collection_id: string
+          created_at?: string
+          id: string
+          level: string
+          subject_id: string
+          subject_type: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          collection_id?: string
+          created_at?: string
+          id?: string
+          level?: string
+          subject_id?: string
+          subject_type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_permission_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_permission_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_collection"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      knowledge_source: {
+        Row: {
+          client_id: string | null
+          collection_id: string
+          config: Json
+          created_at: string
+          enabled: boolean
+          id: string
+          label: string
+          source_type: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          collection_id: string
+          config?: Json
+          created_at?: string
+          enabled?: boolean
+          id: string
+          label: string
+          source_type: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          collection_id?: string
+          config?: Json
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          label?: string
+          source_type?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_source_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "knowledge_source_collection_id_fkey"
+            columns: ["collection_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_collection"
             referencedColumns: ["id"]
           },
         ]
@@ -4019,6 +4607,128 @@ export type Database = {
             columns: ["insight_id"]
             isOneToOne: false
             referencedRelation: "insights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retrieval_session: {
+        Row: {
+          cache_hit: boolean
+          client_id: string | null
+          collection_ids: Json
+          created_at: string
+          id: string
+          latency_ms: number
+          max_tokens: number
+          model: string
+          provider: string
+          query: string
+          requested_by_user_id: string
+          result_count: number
+          threshold: number
+          top_k: number
+          workspace_id: string
+        }
+        Insert: {
+          cache_hit?: boolean
+          client_id?: string | null
+          collection_ids?: Json
+          created_at?: string
+          id: string
+          latency_ms?: number
+          max_tokens?: number
+          model: string
+          provider: string
+          query: string
+          requested_by_user_id: string
+          result_count?: number
+          threshold?: number
+          top_k?: number
+          workspace_id: string
+        }
+        Update: {
+          cache_hit?: boolean
+          client_id?: string | null
+          collection_ids?: Json
+          created_at?: string
+          id?: string
+          latency_ms?: number
+          max_tokens?: number
+          model?: string
+          provider?: string
+          query?: string
+          requested_by_user_id?: string
+          result_count?: number
+          threshold?: number
+          top_k?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retrieval_session_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      retrieved_context: {
+        Row: {
+          chunk_id: string
+          client_id: string | null
+          collection_id: string
+          content: string
+          created_at: string
+          document_id: string
+          id: string
+          rank: number
+          score: number
+          session_id: string
+          token_count: number
+          workspace_id: string
+        }
+        Insert: {
+          chunk_id: string
+          client_id?: string | null
+          collection_id: string
+          content: string
+          created_at?: string
+          document_id: string
+          id: string
+          rank: number
+          score: number
+          session_id: string
+          token_count?: number
+          workspace_id: string
+        }
+        Update: {
+          chunk_id?: string
+          client_id?: string | null
+          collection_id?: string
+          content?: string
+          created_at?: string
+          document_id?: string
+          id?: string
+          rank?: number
+          score?: number
+          session_id?: string
+          token_count?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "retrieved_context_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "retrieved_context_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "retrieval_session"
             referencedColumns: ["id"]
           },
         ]
