@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AiFoundationRepositories, AiProviderRegistry, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, RuntimeIdGen, RuntimeServices, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
+import type { Actor, AiFoundationRepositories, AiProviderRegistry, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -72,6 +72,12 @@ export const KNOWLEDGE_EMBED_CAP = "knowledge.embed";
 export const KNOWLEDGE_RETRIEVE_CAP = "knowledge.retrieve";
 /** Collection administration (create collections, manage permissions). Not clients. */
 export const KNOWLEDGE_ADMIN_CAP = "knowledge.admin";
+/** Phase E · AI Strategist capabilities (E3). */
+export const STRATEGY_READ_CAP = "strategy.read";
+export const STRATEGY_WRITE_CAP = "strategy.write";
+export const STRATEGY_RUN_CAP = "strategy.run";
+export const STRATEGY_REVIEW_CAP = "strategy.review";
+export const STRATEGY_FEEDBACK_CAP = "strategy.feedback";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the
@@ -113,6 +119,8 @@ export interface AppContext {
   embeddingProviders?: EmbeddingProviderRegistry;
   /** The vector-store backend (pgvector/naive today). Business code never names it. */
   vectorStore?: VectorStorePort;
+  /** Phase E · AI Strategist repositories (E3). Required via `requireStrategist`. */
+  strategist?: StrategistRepositories;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -169,6 +177,14 @@ export function requireVectorStore(ctx: AppContext): VectorStorePort {
     throw new RuntimeUnavailableError("The vector store is not available");
   }
   return ctx.vectorStore;
+}
+
+/** Assert the AI Strategist repositories are wired, or fail with a clean 503. */
+export function requireStrategist(ctx: AppContext): StrategistRepositories {
+  if (ctx.strategist === undefined) {
+    throw new RuntimeUnavailableError("The strategist store is not available");
+  }
+  return ctx.strategist;
 }
 
 /**

@@ -27,6 +27,7 @@ export * from "./transformation-execution.js";
 export * from "./collaboration.js";
 export * from "./ai-foundation.js";
 export * from "./knowledge.js";
+export * from "./strategist.js";
 export * from "./narrative.js";
 export * from "./narrative-intelligence.js";
 export * from "./prospect-intelligence.js";

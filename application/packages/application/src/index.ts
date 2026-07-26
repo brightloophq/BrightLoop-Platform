@@ -23,3 +23,4 @@ export * from "./transformation-execution/index.js";
 export * from "./collaboration/index.js";
 export * from "./ai-foundation/index.js";
 export * from "./knowledge/index.js";
+export * from "./strategist/index.js";
