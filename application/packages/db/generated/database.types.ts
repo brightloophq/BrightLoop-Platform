@@ -34,6 +34,651 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_audit_event: {
+        Row: {
+          at: string
+          client_id: string | null
+          currency: string
+          duration_ms: number
+          execution_id: string
+          fallback_provider: string | null
+          id: string
+          model: string
+          prompt_version: number | null
+          provider: string
+          retry_count: number
+          status: string
+          total_cost: number
+          total_tokens: number
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          at?: string
+          client_id?: string | null
+          currency?: string
+          duration_ms?: number
+          execution_id: string
+          fallback_provider?: string | null
+          id: string
+          model: string
+          prompt_version?: number | null
+          provider: string
+          retry_count?: number
+          status: string
+          total_cost?: number
+          total_tokens?: number
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          at?: string
+          client_id?: string | null
+          currency?: string
+          duration_ms?: number
+          execution_id?: string
+          fallback_provider?: string | null
+          id?: string
+          model?: string
+          prompt_version?: number | null
+          provider?: string
+          retry_count?: number
+          status?: string
+          total_cost?: number
+          total_tokens?: number
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_audit_event_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_audit_event_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_execution"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_conversation: {
+        Row: {
+          client_id: string | null
+          completion_tokens_total: number
+          created_at: string
+          created_by_user_id: string
+          currency: string
+          id: string
+          message_count: number
+          model: string
+          participants: Json
+          prompt_tokens_total: number
+          provider: string
+          status: string
+          title: string
+          total_cost: number
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          completion_tokens_total?: number
+          created_at?: string
+          created_by_user_id: string
+          currency?: string
+          id: string
+          message_count?: number
+          model: string
+          participants?: Json
+          prompt_tokens_total?: number
+          provider: string
+          status?: string
+          title?: string
+          total_cost?: number
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          completion_tokens_total?: number
+          created_at?: string
+          created_by_user_id?: string
+          currency?: string
+          id?: string
+          message_count?: number
+          model?: string
+          participants?: Json
+          prompt_tokens_total?: number
+          provider?: string
+          status?: string
+          title?: string
+          total_cost?: number
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_conversation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_conversation_message: {
+        Row: {
+          at: string
+          client_id: string | null
+          completion_tokens: number
+          content: string
+          conversation_id: string
+          id: string
+          prompt_tokens: number
+          role: string
+          sequence: number
+          workspace_id: string
+        }
+        Insert: {
+          at?: string
+          client_id?: string | null
+          completion_tokens?: number
+          content: string
+          conversation_id: string
+          id: string
+          prompt_tokens?: number
+          role: string
+          sequence: number
+          workspace_id: string
+        }
+        Update: {
+          at?: string
+          client_id?: string | null
+          completion_tokens?: number
+          content?: string
+          conversation_id?: string
+          id?: string
+          prompt_tokens?: number
+          role?: string
+          sequence?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_conversation_message_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_conversation_message_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "ai_conversation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_cost_record: {
+        Row: {
+          at: string
+          client_id: string | null
+          currency: string
+          execution_id: string
+          id: string
+          input_cost: number
+          output_cost: number
+          pricing_version: string
+          total_cost: number
+          workspace_id: string
+        }
+        Insert: {
+          at?: string
+          client_id?: string | null
+          currency?: string
+          execution_id: string
+          id: string
+          input_cost?: number
+          output_cost?: number
+          pricing_version: string
+          total_cost?: number
+          workspace_id: string
+        }
+        Update: {
+          at?: string
+          client_id?: string | null
+          currency?: string
+          execution_id?: string
+          id?: string
+          input_cost?: number
+          output_cost?: number
+          pricing_version?: string
+          total_cost?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_cost_record_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_cost_record_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_execution"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_evaluation_result: {
+        Row: {
+          at: string
+          client_id: string | null
+          evaluator: string
+          execution_id: string
+          id: string
+          notes: string | null
+          outcome: string
+          score: number | null
+          workspace_id: string
+        }
+        Insert: {
+          at?: string
+          client_id?: string | null
+          evaluator: string
+          execution_id: string
+          id: string
+          notes?: string | null
+          outcome: string
+          score?: number | null
+          workspace_id: string
+        }
+        Update: {
+          at?: string
+          client_id?: string | null
+          evaluator?: string
+          execution_id?: string
+          id?: string
+          notes?: string | null
+          outcome?: string
+          score?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_evaluation_result_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_evaluation_result_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_execution"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_prompt: {
+        Row: {
+          active_version: number | null
+          client_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          owner_user_id: string
+          status: string
+          tags: Json
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          active_version?: number | null
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          id: string
+          name: string
+          owner_user_id: string
+          status?: string
+          tags?: Json
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          active_version?: number | null
+          client_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          owner_user_id?: string
+          status?: string
+          tags?: Json
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_prompt_execution: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          duration_ms: number
+          fallback_provider: string | null
+          id: string
+          mode: string
+          model: string
+          prompt_id: string | null
+          prompt_version: number | null
+          provider: string
+          requested_by_user_id: string
+          retry_count: number
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          duration_ms?: number
+          fallback_provider?: string | null
+          id: string
+          mode: string
+          model: string
+          prompt_id?: string | null
+          prompt_version?: number | null
+          provider: string
+          requested_by_user_id: string
+          retry_count?: number
+          status: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          duration_ms?: number
+          fallback_provider?: string | null
+          id?: string
+          mode?: string
+          model?: string
+          prompt_id?: string | null
+          prompt_version?: number | null
+          provider?: string
+          requested_by_user_id?: string
+          retry_count?: number
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_execution_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_prompt_execution_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_prompt_result: {
+        Row: {
+          client_id: string | null
+          content: string
+          created_at: string
+          execution_id: string
+          finish_reason: string
+          id: string
+          structured_valid: boolean | null
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          execution_id: string
+          finish_reason?: string
+          id: string
+          structured_valid?: boolean | null
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          content?: string
+          created_at?: string
+          execution_id?: string
+          finish_reason?: string
+          id?: string
+          structured_valid?: boolean | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_result_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_prompt_result_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_execution"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_prompt_version: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by_user_id: string
+          id: string
+          max_tokens: number
+          model: string | null
+          notes: string | null
+          prompt_id: string
+          provider_preference: string | null
+          status: string
+          system_prompt: string
+          temperature: number
+          user_template: string
+          variables: Json
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id: string
+          id: string
+          max_tokens?: number
+          model?: string | null
+          notes?: string | null
+          prompt_id: string
+          provider_preference?: string | null
+          status?: string
+          system_prompt?: string
+          temperature?: number
+          user_template?: string
+          variables?: Json
+          version: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          id?: string
+          max_tokens?: number
+          model?: string | null
+          notes?: string | null
+          prompt_id?: string
+          provider_preference?: string | null
+          status?: string
+          system_prompt?: string
+          temperature?: number
+          user_template?: string
+          variables?: Json
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_prompt_version_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_prompt_version_prompt_id_fkey"
+            columns: ["prompt_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_provider: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          default_model: string | null
+          enabled: boolean
+          id: string
+          kind: string
+          label: string
+          priority: number
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          default_model?: string | null
+          enabled?: boolean
+          id: string
+          kind: string
+          label: string
+          priority?: number
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          default_model?: string | null
+          enabled?: boolean
+          id?: string
+          kind?: string
+          label?: string
+          priority?: number
+          updated_at?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_provider_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_usage_record: {
+        Row: {
+          at: string
+          cached_tokens: number
+          client_id: string | null
+          completion_tokens: number
+          execution_id: string
+          id: string
+          model: string
+          prompt_tokens: number
+          provider: string
+          total_tokens: number
+          user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          at?: string
+          cached_tokens?: number
+          client_id?: string | null
+          completion_tokens?: number
+          execution_id: string
+          id: string
+          model: string
+          prompt_tokens?: number
+          provider: string
+          total_tokens?: number
+          user_id: string
+          workspace_id: string
+        }
+        Update: {
+          at?: string
+          cached_tokens?: number
+          client_id?: string | null
+          completion_tokens?: number
+          execution_id?: string
+          id?: string
+          model?: string
+          prompt_tokens?: number
+          provider?: string
+          total_tokens?: number
+          user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_usage_record_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_usage_record_execution_id_fkey"
+            columns: ["execution_id"]
+            isOneToOne: false
+            referencedRelation: "ai_prompt_execution"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       analytics_events: {
         Row: {
           actor_id: string | null
