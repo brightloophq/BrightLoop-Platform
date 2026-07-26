@@ -34,6 +34,67 @@ export type Database = {
   }
   public: {
     Tables: {
+      action_definition: {
+        Row: {
+          client_id: string | null
+          config: Json
+          created_at: string
+          execution_intent_id: string
+          id: string
+          integration_binding_id: string | null
+          kind: string
+          name: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          config?: Json
+          created_at?: string
+          execution_intent_id: string
+          id: string
+          integration_binding_id?: string | null
+          kind: string
+          name: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          config?: Json
+          created_at?: string
+          execution_intent_id?: string
+          id?: string
+          integration_binding_id?: string | null
+          kind?: string
+          name?: string
+          workflow_definition_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "action_definition_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_definition_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "action_definition_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_audit_event: {
         Row: {
           at: string
@@ -817,6 +878,181 @@ export type Database = {
           },
         ]
       }
+      automation_feedback: {
+        Row: {
+          client_id: string | null
+          comment: string | null
+          created_at: string
+          execution_intent_id: string
+          id: string
+          kind: string
+          rating: number | null
+          subject_user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          execution_intent_id: string
+          id: string
+          kind: string
+          rating?: number | null
+          subject_user_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          execution_intent_id?: string
+          id?: string
+          kind?: string
+          rating?: number | null
+          subject_user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_feedback_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_feedback_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_plan: {
+        Row: {
+          action_count: number
+          client_id: string | null
+          created_at: string
+          execution_intent_id: string
+          id: string
+          integration_count: number
+          status: string
+          step_count: number
+          summary: string
+          trigger_count: number
+          variable_count: number
+          workflow_count: number
+          workspace_id: string
+        }
+        Insert: {
+          action_count?: number
+          client_id?: string | null
+          created_at?: string
+          execution_intent_id: string
+          id: string
+          integration_count?: number
+          status?: string
+          step_count?: number
+          summary?: string
+          trigger_count?: number
+          variable_count?: number
+          workflow_count?: number
+          workspace_id: string
+        }
+        Update: {
+          action_count?: number
+          client_id?: string | null
+          created_at?: string
+          execution_intent_id?: string
+          id?: string
+          integration_count?: number
+          status?: string
+          step_count?: number
+          summary?: string
+          trigger_count?: number
+          variable_count?: number
+          workflow_count?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_plan_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_plan_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      automation_version: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          execution_intent_id: string
+          id: string
+          note: string
+          snapshot: Json
+          status: string
+          version: number
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          execution_intent_id: string
+          id: string
+          note?: string
+          snapshot?: Json
+          status?: string
+          version: number
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          execution_intent_id?: string
+          id?: string
+          note?: string
+          snapshot?: Json
+          status?: string
+          version?: number
+          workflow_definition_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "automation_version_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_version_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "automation_version_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       automations: {
         Row: {
           client_id: string | null
@@ -1497,6 +1733,67 @@ export type Database = {
           },
         ]
       }
+      condition_definition: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          execution_intent_id: string
+          expression: string
+          false_step_key: string | null
+          id: string
+          name: string
+          true_step_key: string | null
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          execution_intent_id: string
+          expression: string
+          false_step_key?: string | null
+          id: string
+          name: string
+          true_step_key?: string | null
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          execution_intent_id?: string
+          expression?: string
+          false_step_key?: string | null
+          id?: string
+          name?: string
+          true_step_key?: string | null
+          workflow_definition_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "condition_definition_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "condition_definition_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "condition_definition_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       configurations: {
         Row: {
           assessment_id: string | null
@@ -1876,6 +2173,70 @@ export type Database = {
           },
         ]
       }
+      deployment_package: {
+        Row: {
+          checksum: string
+          client_id: string | null
+          created_at: string
+          execution_intent_id: string
+          format: string
+          id: string
+          payload: Json
+          status: string
+          target: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Insert: {
+          checksum?: string
+          client_id?: string | null
+          created_at?: string
+          execution_intent_id: string
+          format?: string
+          id: string
+          payload?: Json
+          status?: string
+          target: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Update: {
+          checksum?: string
+          client_id?: string | null
+          created_at?: string
+          execution_intent_id?: string
+          format?: string
+          id?: string
+          payload?: Json
+          status?: string
+          target?: string
+          workflow_definition_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deployment_package_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deployment_package_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deployment_package_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_chunk: {
         Row: {
           checksum: string
@@ -2167,6 +2528,98 @@ export type Database = {
             columns: ["document_id"]
             isOneToOne: false
             referencedRelation: "knowledge_document"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      execution_intent: {
+        Row: {
+          branch_count: number
+          client_id: string | null
+          cost: number
+          created_at: string
+          currency: string
+          estimated_runtime_ms: number
+          execution_plan_id: string | null
+          generation_duration_ms: number
+          id: string
+          model: string | null
+          objective: string
+          planning_session_id: string
+          prompt_id: string | null
+          provider: string | null
+          requested_by_user_id: string
+          simulation_duration_ms: number
+          status: string
+          step_count: number
+          title: string
+          token_total: number
+          updated_at: string
+          validation_duration_ms: number
+          variable_count: number
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          branch_count?: number
+          client_id?: string | null
+          cost?: number
+          created_at?: string
+          currency?: string
+          estimated_runtime_ms?: number
+          execution_plan_id?: string | null
+          generation_duration_ms?: number
+          id: string
+          model?: string | null
+          objective?: string
+          planning_session_id: string
+          prompt_id?: string | null
+          provider?: string | null
+          requested_by_user_id: string
+          simulation_duration_ms?: number
+          status?: string
+          step_count?: number
+          title: string
+          token_total?: number
+          updated_at?: string
+          validation_duration_ms?: number
+          variable_count?: number
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          branch_count?: number
+          client_id?: string | null
+          cost?: number
+          created_at?: string
+          currency?: string
+          estimated_runtime_ms?: number
+          execution_plan_id?: string | null
+          generation_duration_ms?: number
+          id?: string
+          model?: string | null
+          objective?: string
+          planning_session_id?: string
+          prompt_id?: string | null
+          provider?: string | null
+          requested_by_user_id?: string
+          simulation_duration_ms?: number
+          status?: string
+          step_count?: number
+          title?: string
+          token_total?: number
+          updated_at?: string
+          validation_duration_ms?: number
+          variable_count?: number
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "execution_intent_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
@@ -2544,6 +2997,70 @@ export type Database = {
             columns: ["signal_id"]
             isOneToOne: false
             referencedRelation: "signals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_binding: {
+        Row: {
+          bound: boolean
+          capability: string
+          client_id: string | null
+          config: Json
+          created_at: string
+          execution_intent_id: string
+          id: string
+          name: string
+          provider: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Insert: {
+          bound?: boolean
+          capability?: string
+          client_id?: string | null
+          config?: Json
+          created_at?: string
+          execution_intent_id: string
+          id: string
+          name: string
+          provider: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Update: {
+          bound?: boolean
+          capability?: string
+          client_id?: string | null
+          config?: Json
+          created_at?: string
+          execution_intent_id?: string
+          id?: string
+          name?: string
+          provider?: string
+          workflow_definition_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_binding_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_binding_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_binding_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition"
             referencedColumns: ["id"]
           },
         ]
@@ -7080,6 +7597,64 @@ export type Database = {
         }
         Relationships: []
       }
+      trigger_definition: {
+        Row: {
+          client_id: string | null
+          config: Json
+          created_at: string
+          execution_intent_id: string
+          id: string
+          kind: string
+          name: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          config?: Json
+          created_at?: string
+          execution_intent_id: string
+          id: string
+          kind: string
+          name: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          config?: Json
+          created_at?: string
+          execution_intent_id?: string
+          id?: string
+          kind?: string
+          name?: string
+          workflow_definition_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trigger_definition_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trigger_definition_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trigger_definition_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users: {
         Row: {
           accepted_at: string | null
@@ -7126,6 +7701,216 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      variable_definition: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          default_value: string | null
+          execution_intent_id: string
+          id: string
+          key: string
+          required: boolean
+          scope: string
+          type: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          default_value?: string | null
+          execution_intent_id: string
+          id: string
+          key: string
+          required?: boolean
+          scope: string
+          type: string
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          default_value?: string | null
+          execution_intent_id?: string
+          id?: string
+          key?: string
+          required?: boolean
+          scope?: string
+          type?: string
+          workflow_definition_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "variable_definition_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "variable_definition_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "variable_definition_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_definition: {
+        Row: {
+          automation_plan_id: string
+          client_id: string | null
+          created_at: string
+          description: string
+          entry_step_key: string | null
+          execution_intent_id: string
+          id: string
+          name: string
+          status: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          automation_plan_id: string
+          client_id?: string | null
+          created_at?: string
+          description?: string
+          entry_step_key?: string | null
+          execution_intent_id: string
+          id: string
+          name: string
+          status?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          automation_plan_id?: string
+          client_id?: string | null
+          created_at?: string
+          description?: string
+          entry_step_key?: string | null
+          execution_intent_id?: string
+          id?: string
+          name?: string
+          status?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_definition_automation_plan_id_fkey"
+            columns: ["automation_plan_id"]
+            isOneToOne: false
+            referencedRelation: "automation_plan"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_definition_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_definition_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_step: {
+        Row: {
+          client_id: string | null
+          condition_expression: string | null
+          created_at: string
+          estimated_runtime_ms: number
+          execution_intent_id: string
+          id: string
+          key: string
+          kind: string
+          name: string
+          next_step_keys: Json
+          on_error_step_key: string | null
+          order_index: number
+          ref_id: string | null
+          retry_max: number
+          timeout_ms: number
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          condition_expression?: string | null
+          created_at?: string
+          estimated_runtime_ms?: number
+          execution_intent_id: string
+          id: string
+          key: string
+          kind: string
+          name: string
+          next_step_keys?: Json
+          on_error_step_key?: string | null
+          order_index?: number
+          ref_id?: string | null
+          retry_max?: number
+          timeout_ms?: number
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          condition_expression?: string | null
+          created_at?: string
+          estimated_runtime_ms?: number
+          execution_intent_id?: string
+          id?: string
+          key?: string
+          kind?: string
+          name?: string
+          next_step_keys?: Json
+          on_error_step_key?: string | null
+          order_index?: number
+          ref_id?: string | null
+          retry_max?: number
+          timeout_ms?: number
+          workflow_definition_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_step_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_step_execution_intent_id_fkey"
+            columns: ["execution_intent_id"]
+            isOneToOne: false
+            referencedRelation: "execution_intent"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_step_workflow_definition_id_fkey"
+            columns: ["workflow_definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definition"
             referencedColumns: ["id"]
           },
         ]
