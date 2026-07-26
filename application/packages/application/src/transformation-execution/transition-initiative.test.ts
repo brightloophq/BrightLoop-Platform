@@ -62,6 +62,10 @@ function makeExecutionRepos(): TransformationExecutionRepositories {
     tasks: { create: async (t) => ok("created", t), getById: async () => ok("found", null), listByInitiative: async () => ok("found", []), listByWorkspace: async () => ok("found", []), save: async (next) => ok("updated", next) },
     assignments: { append: async (a) => ok("created", a), listByTask: async () => ok("found", []) },
     dependencies: { create: async (d) => ok("created", d), remove: async () => ok("updated", null), getById: async () => ok("found", null), listByWorkspace: async () => ok("found", []) },
+    timelines: { create: async (t) => ok("created", t), getById: async () => ok("found", null), getByInitiative: async () => ok("found", null), listByWorkspace: async () => ok("found", []), save: async (next) => ok("updated", next) },
+    milestones: { create: async (m) => ok("created", m), getById: async () => ok("found", null), listByInitiative: async () => ok("found", []), listByWorkspace: async () => ok("found", []), save: async (next) => ok("updated", next) },
+    kpis: { create: async (k) => ok("created", k), getById: async () => ok("found", null), listByWorkspace: async () => ok("found", []), save: async (next) => ok("updated", next) },
+    progress: { append: async (s) => ok("created", s), listByWorkspace: async () => ok("found", []), listBySubject: async () => ok("found", []) },
   };
 }
 

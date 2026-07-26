@@ -3665,6 +3665,193 @@ export type Database = {
           },
         ]
       }
+      transformation_kpi: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          current: number
+          id: string
+          last_updated: string
+          name: string
+          status: string
+          target: number
+          unit: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          current?: number
+          id: string
+          last_updated?: string
+          name: string
+          status?: string
+          target: number
+          unit?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          current?: number
+          id?: string
+          last_updated?: string
+          name?: string
+          status?: string
+          target?: number
+          unit?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_kpi_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_kpi_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transformation_milestone: {
+        Row: {
+          client_id: string | null
+          completed_date: string | null
+          created_at: string
+          description: string | null
+          id: string
+          initiative_id: string
+          order_index: number
+          planned_date: string
+          status: string
+          title: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          id: string
+          initiative_id: string
+          order_index?: number
+          planned_date: string
+          status?: string
+          title: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          completed_date?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          initiative_id?: string
+          order_index?: number
+          planned_date?: string
+          status?: string
+          title?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_milestone_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_milestone_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_initiative"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_milestone_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transformation_progress_snapshot: {
+        Row: {
+          at: string
+          client_id: string | null
+          dependency_completion: number
+          health: string | null
+          id: string
+          milestone_completion: number
+          progress: number
+          review_completion: number
+          scope: string
+          subject_id: string
+          task_completion: number
+          timeline_variance: number | null
+          workspace_id: string
+        }
+        Insert: {
+          at?: string
+          client_id?: string | null
+          dependency_completion: number
+          health?: string | null
+          id: string
+          milestone_completion: number
+          progress: number
+          review_completion: number
+          scope: string
+          subject_id: string
+          task_completion: number
+          timeline_variance?: number | null
+          workspace_id: string
+        }
+        Update: {
+          at?: string
+          client_id?: string | null
+          dependency_completion?: number
+          health?: string | null
+          id?: string
+          milestone_completion?: number
+          progress?: number
+          review_completion?: number
+          scope?: string
+          subject_id?: string
+          task_completion?: number
+          timeline_variance?: number | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_progress_snapshot_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_progress_snapshot_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transformation_review: {
         Row: {
           client_id: string | null
@@ -3792,6 +3979,67 @@ export type Database = {
           },
           {
             foreignKeyName: "transformation_task_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "transformation_workspace"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transformation_timeline: {
+        Row: {
+          actual_end_date: string | null
+          client_id: string | null
+          created_at: string
+          id: string
+          initiative_id: string
+          start_date: string
+          status: string
+          target_end_date: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          actual_end_date?: string | null
+          client_id?: string | null
+          created_at?: string
+          id: string
+          initiative_id: string
+          start_date: string
+          status?: string
+          target_end_date: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          actual_end_date?: string | null
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          initiative_id?: string
+          start_date?: string
+          status?: string
+          target_end_date?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transformation_timeline_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_timeline_initiative_id_fkey"
+            columns: ["initiative_id"]
+            isOneToOne: true
+            referencedRelation: "transformation_initiative"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transformation_timeline_workspace_id_fkey"
             columns: ["workspace_id"]
             isOneToOne: false
             referencedRelation: "transformation_workspace"

@@ -37,6 +37,14 @@ export const TASK_READ_CAP = "task.read";
 export const TASK_WRITE_CAP = "task.write";
 export const ASSIGNMENT_WRITE_CAP = "assignment.write";
 export const DEPENDENCY_WRITE_CAP = "dependency.write";
+/** Phase D · planning & performance capabilities (internal, D5/D6). */
+export const TIMELINE_READ_CAP = "timeline.read";
+export const TIMELINE_WRITE_CAP = "timeline.write";
+export const MILESTONE_READ_CAP = "milestone.read";
+export const MILESTONE_WRITE_CAP = "milestone.write";
+export const KPI_READ_CAP = "kpi.read";
+export const KPI_WRITE_CAP = "kpi.write";
+export const PROGRESS_READ_CAP = "progress.read";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the

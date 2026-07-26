@@ -7,11 +7,19 @@ import { loadTransformationWorkspaceExecution } from "@/lib/transformation-works
 import {
   dependencyLinkFormAction,
   dependencyUnlinkFormAction,
+  kpiCreateFormAction,
+  kpiUpdateFormAction,
+  milestoneCreateFormAction,
+  milestoneTransitionFormAction,
+  progressCalculateFormAction,
   reviewFormAction,
   taskAssignFormAction,
   taskCreateFormAction,
   taskTransitionFormAction,
+  timelineCreateFormAction,
+  timelineTransitionFormAction,
   transitionInitiativeFormAction,
+  workspaceHealthFormAction,
 } from "../transformation-actions";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +40,16 @@ const TASK_NEXT: Record<string, { action: string; label: string } | null> = {
   blocked: { action: "start", label: "Resume" },
   completed: null,
 };
+/** The single legal next timeline action per status (D5). */
+const TIMELINE_NEXT: Record<string, { action: string; label: string } | null> = {
+  planned: { action: "start", label: "Start" },
+  active: { action: "complete", label: "Complete" },
+  completed: null,
+  cancelled: null,
+};
+/** Health / KPI status → Badge tone. */
+const HEALTH_TONE: Record<string, "active" | "pending" | "idle"> = { healthy: "active", on_track: "active", warning: "pending", at_risk: "pending", critical: "idle", off_track: "idle" };
+const healthTone = (s: string | null): "active" | "pending" | "idle" => (s ? HEALTH_TONE[s] ?? "idle" : "idle");
 
 const hidden = (name: string, value: string) => <input key={name} type="hidden" name={name} value={value} />;
 
@@ -50,11 +68,15 @@ export default async function TransformationWorkspacePage({ params, searchParams
   const data = await loadTransformationWorkspaceExecution(id);
   if (data === null) notFound();
 
-  const { detail, execution } = data;
+  const { detail, execution, performance } = data;
   const { workspace, initiatives, activities } = detail;
   const readySet = new Set(execution.executionReadyInitiativeIds);
   const wsField = hidden("workspaceId", workspace.id);
   const initiativeTitle = (iid: string) => initiatives.find((i) => i.id === iid)?.title ?? iid;
+  const timelineOf = (iid: string) => performance.timelines.find((t) => t.initiativeId === iid) ?? null;
+  const milestonesOf = (iid: string) => performance.milestones.filter((m) => m.initiativeId === iid);
+  const progressOf = (iid: string) => performance.initiativeProgress.find((p) => p.initiativeId === iid)?.progress ?? null;
+  const inputStyle = { padding: "2px 6px", border: "1px solid var(--line)", borderRadius: "var(--radius-sm)", background: "var(--surface)", color: "var(--ink)", fontSize: "0.75rem" } as const;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-4)", padding: "var(--space-4)" }}>
@@ -154,6 +176,78 @@ export default async function TransformationWorkspacePage({ params, searchParams
                 <Button type="submit" variant="secondary">Add task</Button>
               </form>
             </div>
+
+            {(() => {
+              const timeline = timelineOf(i.id);
+              const milestones = milestonesOf(i.id);
+              const progress = progressOf(i.id);
+              const tn = timeline ? TIMELINE_NEXT[timeline.status] ?? null : null;
+              return (
+                <div style={{ marginTop: "var(--space-3)", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+                  <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>Timeline</span>
+                    {timeline ? (
+                      <>
+                        <Badge status={timeline.status === "completed" ? "active" : timeline.status === "cancelled" ? "idle" : "pending"}>{timeline.status}</Badge>
+                        <span style={{ fontSize: "0.8rem" }}>{timeline.startDate} → {timeline.targetEndDate}{timeline.actualEndDate ? ` (ended ${timeline.actualEndDate.slice(0, 10)})` : ""}</span>
+                        {timeline.variance !== null ? <Badge status={timeline.variance > 0 ? "idle" : "active"}>{timeline.variance > 0 ? `+${timeline.variance}d late` : `${timeline.variance}d`}</Badge> : null}
+                        {tn ? (
+                          <form action={timelineTransitionFormAction} style={{ display: "inline" }}>
+                            {wsField}{hidden("timelineId", timeline.id)}{hidden("action", tn.action)}
+                            <Button type="submit" variant="ghost">{tn.label}</Button>
+                          </form>
+                        ) : null}
+                        {timeline.status === "planned" || timeline.status === "active" ? (
+                          <form action={timelineTransitionFormAction} style={{ display: "inline" }}>
+                            {wsField}{hidden("timelineId", timeline.id)}{hidden("action", "cancel")}
+                            <Button type="submit" variant="ghost">Cancel</Button>
+                          </form>
+                        ) : null}
+                      </>
+                    ) : (
+                      <form action={timelineCreateFormAction} style={{ display: "flex", gap: "var(--space-1)", alignItems: "center", flexWrap: "wrap" }}>
+                        {wsField}{hidden("initiativeId", i.id)}
+                        <input type="date" name="startDate" aria-label="start date" style={inputStyle} />
+                        <input type="date" name="targetEndDate" aria-label="target end date" style={inputStyle} />
+                        <Button type="submit" variant="ghost">Add timeline</Button>
+                      </form>
+                    )}
+                  </div>
+
+                  <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>Milestones ({milestones.length})</span>
+                    {milestones.map((mst) => (
+                      <span key={mst.id} style={{ display: "inline-flex", gap: "var(--space-1)", alignItems: "center", fontSize: "0.8rem" }}>
+                        <Badge status={mst.status === "completed" ? "active" : mst.status === "missed" ? "idle" : "pending"}>{mst.title}</Badge>
+                        {mst.status === "pending" ? (
+                          (["complete", "miss"] as const).map((act) => (
+                            <form key={act} action={milestoneTransitionFormAction} style={{ display: "inline" }}>
+                              {wsField}{hidden("milestoneId", mst.id)}{hidden("action", act)}
+                              <Button type="submit" variant="ghost">{act}</Button>
+                            </form>
+                          ))
+                        ) : null}
+                      </span>
+                    ))}
+                    <form action={milestoneCreateFormAction} style={{ display: "flex", gap: "var(--space-1)", alignItems: "center", flexWrap: "wrap" }}>
+                      {wsField}{hidden("initiativeId", i.id)}
+                      <input type="text" name="title" placeholder="milestone" aria-label="milestone title" style={inputStyle} />
+                      <input type="date" name="plannedDate" aria-label="planned date" style={inputStyle} />
+                      <Button type="submit" variant="ghost">Add</Button>
+                    </form>
+                  </div>
+
+                  <div style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>Progress</span>
+                    <Badge status={progress !== null && progress >= 100 ? "active" : "pending"}>{progress === null ? "not calculated" : `${progress}%`}</Badge>
+                    <form action={progressCalculateFormAction} style={{ display: "inline" }}>
+                      {wsField}{hidden("initiativeId", i.id)}
+                      <Button type="submit" variant="ghost">Recalculate</Button>
+                    </form>
+                  </div>
+                </div>
+              );
+            })()}
           </OperationalPanel>
         );
       })}
@@ -187,8 +281,46 @@ export default async function TransformationWorkspacePage({ params, searchParams
         </form>
       </OperationalPanel>
 
+      <OperationalPanel tone="anchor">
+        <SectionRule index="04" label="Workspace performance" meta={performance.health ? `health: ${performance.health}` : "not calculated"} />
+        <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)", flexWrap: "wrap", alignItems: "center" }}>
+          <Badge status={healthTone(performance.health)}>{performance.health ? `health: ${performance.health}` : "health: —"}</Badge>
+          <Badge status="idle">{performance.workspaceProgress}% overall</Badge>
+          <form action={workspaceHealthFormAction} style={{ display: "inline" }}>
+            {wsField}
+            <Button type="submit" variant="secondary">Recalculate health</Button>
+          </form>
+        </div>
+      </OperationalPanel>
+
       <OperationalPanel>
-        <SectionRule index="04" label="Activity" meta="append-only audit" />
+        <SectionRule index="05" label="KPIs" meta={`${performance.kpis.length}`} />
+        <ul style={{ listStyle: "none", padding: 0, margin: "var(--space-3) 0 0", display: "flex", flexDirection: "column", gap: "var(--space-2)" }}>
+          {performance.kpis.map((kpi) => (
+            <li key={kpi.id} style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", flexWrap: "wrap", fontSize: "0.85rem" }}>
+              <strong>{kpi.name}</strong>
+              <Badge status={healthTone(kpi.status)}>{kpi.status.replace("_", " ")}</Badge>
+              <span style={{ opacity: 0.8 }}>{kpi.current} / {kpi.target}{kpi.unit ? ` ${kpi.unit}` : ""}</span>
+              <form action={kpiUpdateFormAction} style={{ display: "inline", marginLeft: "auto" }}>
+                {wsField}{hidden("kpiId", kpi.id)}
+                <input type="number" name="current" step="any" placeholder="new value" aria-label="new KPI value" style={inputStyle} />
+                <Button type="submit" variant="ghost">Update</Button>
+              </form>
+            </li>
+          ))}
+        </ul>
+        <form action={kpiCreateFormAction} style={{ display: "flex", gap: "var(--space-2)", alignItems: "center", marginTop: "var(--space-3)", flexWrap: "wrap" }}>
+          {wsField}
+          <input type="text" name="name" placeholder="KPI name" aria-label="KPI name" style={{ flex: "1 1 160px", padding: "var(--space-2)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", background: "var(--surface)", color: "var(--ink)" }} />
+          <input type="number" name="target" step="any" placeholder="target" aria-label="target" style={{ width: "6rem", padding: "var(--space-2)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", background: "var(--surface)", color: "var(--ink)" }} />
+          <input type="number" name="current" step="any" placeholder="current" aria-label="current" style={{ width: "6rem", padding: "var(--space-2)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", background: "var(--surface)", color: "var(--ink)" }} />
+          <input type="text" name="unit" placeholder="unit" aria-label="unit" style={{ width: "6rem", padding: "var(--space-2)", border: "1px solid var(--line)", borderRadius: "var(--radius-md)", background: "var(--surface)", color: "var(--ink)" }} />
+          <Button type="submit" variant="secondary">Add KPI</Button>
+        </form>
+      </OperationalPanel>
+
+      <OperationalPanel>
+        <SectionRule index="06" label="Activity" meta="append-only audit" />
         <ul style={{ listStyle: "none", padding: 0, margin: "var(--space-3) 0 0", display: "flex", flexDirection: "column", gap: "var(--space-1)" }}>
           {activities.map((a) => (
             <li key={a.id} style={{ display: "flex", gap: "var(--space-2)", fontSize: "0.85rem" }}>

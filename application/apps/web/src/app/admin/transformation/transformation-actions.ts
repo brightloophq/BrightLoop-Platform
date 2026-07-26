@@ -18,11 +18,20 @@ import {
   archiveInitiative,
   assignTask,
   blockTask,
+  calculateProgress,
+  calculateWorkspaceHealth,
+  cancelTimeline,
   completeInitiative,
+  completeMilestone,
   completeTask,
+  completeTimeline,
+  createKpi,
+  createMilestone,
   createTask,
+  createTimeline,
   isApplicationError,
   linkDependency,
+  missMilestone,
   openReview,
   planInitiative,
   rejectReview,
@@ -30,7 +39,9 @@ import {
   requestChanges,
   seedTransformation,
   startTask,
+  startTimeline,
   unlinkDependency,
+  updateKpi,
 } from "@brightloop/application";
 import type { DependencyType } from "@brightloop/schema";
 import { buildAppContext } from "@/lib/runtime-api";
@@ -193,6 +204,130 @@ export async function dependencyUnlinkFormAction(formData: FormData): Promise<vo
     if (ctx === null) redirect("/admin");
     await unlinkDependency(ctx!, dependencyId);
   } catch (error) { backTo(workspaceId, msg(error, "Couldn't remove the dependency.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/* ---- D5/D6 planning & performance actions ---------------------------------- */
+
+/** Create a timeline for an initiative. */
+export async function timelineCreateFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const initiativeId = String(formData.get("initiativeId") ?? "");
+  const startDate = String(formData.get("startDate") ?? "").trim();
+  const targetEndDate = String(formData.get("targetEndDate") ?? "").trim();
+  if (startDate === "" || targetEndDate === "") backTo(workspaceId, "Enter a start and target end date.");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    await createTimeline(ctx!, initiativeId, { startDate, targetEndDate });
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't create the timeline.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Transition a timeline (start · complete · cancel). */
+export async function timelineTransitionFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const timelineId = String(formData.get("timelineId") ?? "");
+  const action = String(formData.get("action") ?? "");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    if (action === "start") await startTimeline(ctx!, timelineId);
+    else if (action === "complete") await completeTimeline(ctx!, timelineId);
+    else if (action === "cancel") await cancelTimeline(ctx!, timelineId);
+    else backTo(workspaceId, "Unknown timeline action.");
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't move the timeline.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Create a milestone under an initiative. */
+export async function milestoneCreateFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const initiativeId = String(formData.get("initiativeId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const plannedDate = String(formData.get("plannedDate") ?? "").trim();
+  if (title === "" || plannedDate === "") backTo(workspaceId, "Enter a milestone title and planned date.");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    await createMilestone(ctx!, initiativeId, { title, plannedDate });
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't create the milestone.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Transition a milestone (complete · miss). */
+export async function milestoneTransitionFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const milestoneId = String(formData.get("milestoneId") ?? "");
+  const action = String(formData.get("action") ?? "");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    if (action === "complete") await completeMilestone(ctx!, milestoneId);
+    else if (action === "miss") await missMilestone(ctx!, milestoneId);
+    else backTo(workspaceId, "Unknown milestone action.");
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't move the milestone.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Create a workspace KPI. */
+export async function kpiCreateFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const target = Number(formData.get("target") ?? "");
+  const current = Number(formData.get("current") ?? "0");
+  const unit = String(formData.get("unit") ?? "").trim();
+  if (name === "" || !Number.isFinite(target)) backTo(workspaceId, "Enter a KPI name and numeric target.");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    await createKpi(ctx!, workspaceId, { name, target, current: Number.isFinite(current) ? current : 0, unit });
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't create the KPI.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Record a new KPI measurement (status is re-derived). */
+export async function kpiUpdateFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const kpiId = String(formData.get("kpiId") ?? "");
+  const current = Number(formData.get("current") ?? "");
+  if (!Number.isFinite(current)) backTo(workspaceId, "Enter a numeric KPI value.");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    await updateKpi(ctx!, kpiId, current);
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't update the KPI.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Recompute an initiative's derived progress snapshot. */
+export async function progressCalculateFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const initiativeId = String(formData.get("initiativeId") ?? "");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    await calculateProgress(ctx!, initiativeId);
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't recalculate progress.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Recompute the workspace's derived health + progress snapshot. */
+export async function workspaceHealthFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    await calculateWorkspaceHealth(ctx!, workspaceId);
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't recalculate workspace health.")); }
   revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
   backTo(workspaceId);
 }

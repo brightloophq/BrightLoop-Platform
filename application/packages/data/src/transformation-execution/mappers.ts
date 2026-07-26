@@ -168,3 +168,56 @@ export function toDependency(row: Record<string, unknown>): Dependency {
     fromInitiativeId: String(row["from_initiative_id"]), toInitiativeId: String(row["to_initiative_id"]), type: row["type"] as Dependency["type"], createdAt: String(row["created_at"]),
   };
 }
+
+/* ---- D5/D6 planning & performance mappers ---------------------------------- */
+import type { Kpi, ProgressSnapshot, Timeline, TxMilestone } from "@brightloop/schema";
+
+export function timelineRow(t: Timeline): Record<string, unknown> {
+  return { id: t.id, initiative_id: t.initiativeId, workspace_id: t.workspaceId, client_id: t.clientId, start_date: t.startDate, target_end_date: t.targetEndDate, actual_end_date: t.actualEndDate, status: t.status, version: t.version, created_at: t.createdAt };
+}
+export function toTimeline(row: Record<string, unknown>): Timeline {
+  return {
+    id: String(row["id"]), initiativeId: String(row["initiative_id"]), workspaceId: String(row["workspace_id"]),
+    clientId: (row["client_id"] as string | null) ?? null, startDate: String(row["start_date"]), targetEndDate: String(row["target_end_date"]),
+    actualEndDate: (row["actual_end_date"] as string | null) ?? null, status: row["status"] as Timeline["status"],
+    version: typeof row["version"] === "number" ? (row["version"] as number) : 1, createdAt: String(row["created_at"]),
+  };
+}
+
+export function milestoneRow(m: TxMilestone): Record<string, unknown> {
+  return { id: m.id, initiative_id: m.initiativeId, workspace_id: m.workspaceId, client_id: m.clientId, title: m.title, description: m.description, planned_date: m.plannedDate, completed_date: m.completedDate, status: m.status, order_index: m.order, version: m.version, created_at: m.createdAt };
+}
+export function toMilestone(row: Record<string, unknown>): TxMilestone {
+  return {
+    id: String(row["id"]), initiativeId: String(row["initiative_id"]), workspaceId: String(row["workspace_id"]),
+    clientId: (row["client_id"] as string | null) ?? null, title: String(row["title"]), description: (row["description"] as string | null) ?? null,
+    plannedDate: String(row["planned_date"]), completedDate: (row["completed_date"] as string | null) ?? null, status: row["status"] as TxMilestone["status"],
+    order: typeof row["order_index"] === "number" ? (row["order_index"] as number) : 0,
+    version: typeof row["version"] === "number" ? (row["version"] as number) : 1, createdAt: String(row["created_at"]),
+  };
+}
+
+export function kpiRow(k: Kpi): Record<string, unknown> {
+  return { id: k.id, workspace_id: k.workspaceId, client_id: k.clientId, name: k.name, target: k.target, current: k.current, unit: k.unit, status: k.status, last_updated: k.lastUpdated, version: k.version, created_at: k.createdAt };
+}
+export function toKpi(row: Record<string, unknown>): Kpi {
+  return {
+    id: String(row["id"]), workspaceId: String(row["workspace_id"]), clientId: (row["client_id"] as string | null) ?? null,
+    name: String(row["name"]), target: Number(row["target"]), current: Number(row["current"]), unit: String(row["unit"] ?? ""),
+    status: row["status"] as Kpi["status"], lastUpdated: String(row["last_updated"]),
+    version: typeof row["version"] === "number" ? (row["version"] as number) : 1, createdAt: String(row["created_at"]),
+  };
+}
+
+export function progressSnapshotRow(s: ProgressSnapshot): Record<string, unknown> {
+  return { id: s.id, workspace_id: s.workspaceId, client_id: s.clientId, scope: s.scope, subject_id: s.subjectId, progress: s.progress, task_completion: s.taskCompletion, review_completion: s.reviewCompletion, dependency_completion: s.dependencyCompletion, milestone_completion: s.milestoneCompletion, timeline_variance: s.timelineVariance, health: s.health, at: s.at };
+}
+export function toProgressSnapshot(row: Record<string, unknown>): ProgressSnapshot {
+  return {
+    id: String(row["id"]), workspaceId: String(row["workspace_id"]), clientId: (row["client_id"] as string | null) ?? null,
+    scope: row["scope"] as ProgressSnapshot["scope"], subjectId: String(row["subject_id"]), progress: Number(row["progress"]),
+    taskCompletion: Number(row["task_completion"]), reviewCompletion: Number(row["review_completion"]), dependencyCompletion: Number(row["dependency_completion"]),
+    milestoneCompletion: Number(row["milestone_completion"]), timelineVariance: row["timeline_variance"] === null || row["timeline_variance"] === undefined ? null : Number(row["timeline_variance"]),
+    health: (row["health"] as ProgressSnapshot["health"]) ?? null, at: String(row["at"]),
+  };
+}

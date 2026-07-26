@@ -28,5 +28,15 @@ export const TRANSFORMATION_WORKSPACE_EVENTS = [
   "task.unassigned",
   "dependency.linked",
   "dependency.removed",
+  // D5/D6 · planning & performance
+  "timeline.started",
+  "timeline.completed",
+  "timeline.cancelled",
+  "milestone.created",
+  "milestone.completed",
+  "milestone.missed",
+  "kpi.updated",
+  "progress.calculated",
+  "workspace.health_calculated",
 ] as const;
 export type TransformationWorkspaceEventName = (typeof TRANSFORMATION_WORKSPACE_EVENTS)[number];
