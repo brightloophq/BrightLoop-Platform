@@ -48,6 +48,10 @@ export const PERMISSIONS = {
     "milestone.*",
     "kpi.*",
     "progress.*",
+    // D7 collaboration & operational awareness.
+    "notification.*",
+    "subscription.*",
+    "mention.*",
   ],
   team_member: [
     "projects.read",
@@ -97,6 +101,13 @@ export const PERMISSIONS = {
     "kpi.read",
     "kpi.write",
     "progress.read",
+    // D7 collaboration & operational awareness (internal operators).
+    "notification.read",
+    "notification.write",
+    "subscription.read",
+    "subscription.write",
+    "mention.read",
+    "mention.write",
   ],
   client_admin: [
     "own.project.read",

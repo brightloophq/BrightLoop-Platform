@@ -62,10 +62,15 @@ export const transformationActivityTypeSchema = z.enum([
   "kpi_updated",
   "progress_calculated",
   "workspace_health_calculated",
+  // D7 collaboration
+  "note_added",
+  "user_mentioned",
+  "user_subscribed",
+  "user_unsubscribed",
 ]);
 export type TransformationActivityType = z.infer<typeof transformationActivityTypeSchema>;
 
-export const activitySubjectTypeSchema = z.enum(["workspace", "initiative", "review", "task", "dependency", "timeline", "milestone", "kpi", "progress"]);
+export const activitySubjectTypeSchema = z.enum(["workspace", "initiative", "review", "task", "dependency", "timeline", "milestone", "kpi", "progress", "note", "mention", "notification", "subscription"]);
 export type ActivitySubjectType = z.infer<typeof activitySubjectTypeSchema>;
 
 /**
@@ -129,6 +134,9 @@ export const transformationActivitySchema = z.object({
   summary: z.string().max(400),
   /** Idempotency key — re-applying the same command is a no-op. */
   commandId: z.string(),
+  /** The user who caused the activity (D7). Optional/nullable — pre-D7 activities
+   * and callers that don't record an actor leave it absent. */
+  actorId: z.string().nullable().optional(),
   at: z.string(),
 });
 export type TransformationActivity = z.infer<typeof transformationActivitySchema>;

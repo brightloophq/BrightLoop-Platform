@@ -16,11 +16,13 @@ import {
   activateInitiative,
   approveReview,
   archiveInitiative,
+  archiveNotification,
   assignTask,
   blockTask,
   calculateProgress,
   calculateWorkspaceHealth,
   cancelTimeline,
+  createMention,
   completeInitiative,
   completeMilestone,
   completeTask,
@@ -29,8 +31,11 @@ import {
   createMilestone,
   createTask,
   createTimeline,
+  dismissNotification,
   isApplicationError,
   linkDependency,
+  markRead,
+  markUnread,
   missMilestone,
   openReview,
   planInitiative,
@@ -40,10 +45,12 @@ import {
   seedTransformation,
   startTask,
   startTimeline,
+  subscribe,
   unlinkDependency,
+  unsubscribe,
   updateKpi,
 } from "@brightloop/application";
-import type { DependencyType } from "@brightloop/schema";
+import type { ActivitySubjectType, DependencyType, SubscriptionTargetType } from "@brightloop/schema";
 import { buildAppContext } from "@/lib/runtime-api";
 
 const TRANSFORMATION_PATH = "/admin/transformation";
@@ -328,6 +335,74 @@ export async function workspaceHealthFormAction(formData: FormData): Promise<voi
     if (ctx === null) redirect("/admin");
     await calculateWorkspaceHealth(ctx!, workspaceId);
   } catch (error) { backTo(workspaceId, msg(error, "Couldn't recalculate workspace health.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/* ---- D7 collaboration actions ---------------------------------------------- */
+
+const SUBSCRIPTION_TARGETS = ["workspace", "initiative", "task", "review", "timeline", "kpi"] as const;
+
+/** Subscribe the caller to a target within the workspace. */
+export async function subscribeFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const targetTypeRaw = String(formData.get("targetType") ?? "");
+  const targetId = String(formData.get("targetId") ?? "");
+  const targetType = (SUBSCRIPTION_TARGETS as readonly string[]).includes(targetTypeRaw) ? (targetTypeRaw as SubscriptionTargetType) : null;
+  if (targetType === null) backTo(workspaceId, "Unknown subscription target.");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    await subscribe(ctx!, workspaceId, targetType!, targetId);
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't subscribe.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Remove one of the caller's subscriptions. */
+export async function unsubscribeFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const subscriptionId = String(formData.get("subscriptionId") ?? "");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    await unsubscribe(ctx!, subscriptionId);
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't unsubscribe.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Add an internal note on a subject, with optional space-separated @mention user ids. */
+export async function noteFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const subjectTypeRaw = String(formData.get("subjectType") ?? "initiative");
+  const subjectId = String(formData.get("subjectId") ?? "");
+  const text = String(formData.get("text") ?? "").trim();
+  const mentions = String(formData.get("mentions") ?? "").split(/[\s,]+/).map((s) => s.trim()).filter((s) => s !== "");
+  if (text === "") backTo(workspaceId, "Enter a note.");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    await createMention(ctx!, workspaceId, subjectTypeRaw as ActivitySubjectType, subjectId, text, mentions);
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't add the note.")); }
+  revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
+  backTo(workspaceId);
+}
+
+/** Inbox lifecycle (read · unread · archive · dismiss). */
+export async function inboxFormAction(formData: FormData): Promise<void> {
+  const workspaceId = String(formData.get("workspaceId") ?? "");
+  const inboxItemId = String(formData.get("inboxItemId") ?? "");
+  const action = String(formData.get("action") ?? "");
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) redirect("/admin");
+    if (action === "read") await markRead(ctx!, inboxItemId);
+    else if (action === "unread") await markUnread(ctx!, inboxItemId);
+    else if (action === "archive") await archiveNotification(ctx!, inboxItemId);
+    else if (action === "dismiss") await dismissNotification(ctx!, inboxItemId);
+    else backTo(workspaceId, "Unknown inbox action.");
+  } catch (error) { backTo(workspaceId, msg(error, "Couldn't update the inbox item.")); }
   revalidatePath(`${TRANSFORMATION_PATH}/${workspaceId}`);
   backTo(workspaceId);
 }
