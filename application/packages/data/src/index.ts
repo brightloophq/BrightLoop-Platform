@@ -71,6 +71,22 @@ export {
   SupabaseEvaluationResultRepository,
 } from "./ai-foundation/adapter.js";
 export { createDeterministicAiProvider } from "./ai-foundation/deterministic-provider.js";
+// Phase E · Knowledge Base (E2) — eleven repositories + vector store + embedding provider.
+export {
+  SupabaseKnowledgeCollectionRepository,
+  SupabaseKnowledgeDocumentRepository,
+  SupabaseDocumentVersionRepository,
+  SupabaseDocumentChunkRepository,
+  SupabaseEmbeddingVectorRepository,
+  SupabaseEmbeddingJobRepository,
+  SupabaseRetrievalSessionRepository,
+  SupabaseRetrievedContextRepository,
+  SupabaseKnowledgeCitationRepository,
+  SupabaseKnowledgePermissionRepository,
+  SupabaseKnowledgeSourceRepository,
+  SupabaseVectorStore,
+  createDeterministicEmbeddingProvider,
+} from "./knowledge/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

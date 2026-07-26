@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AiFoundationRepositories, AiProviderRegistry, Clock, CollaborationRepositories, RuntimeIdGen, RuntimeServices, TransformationExecutionRepositories } from "@brightloop/domain";
+import type { Actor, AiFoundationRepositories, AiProviderRegistry, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, RuntimeIdGen, RuntimeServices, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -64,6 +64,14 @@ export const CONVERSATION_WRITE_CAP = "conversation.write";
 export const EVALUATION_READ_CAP = "evaluation.read";
 /** Capability to manage provider configuration (owner/admin only). */
 export const AI_PROVIDER_WRITE_CAP = "ai.provider.write";
+/** Phase E · Knowledge Base / RAG capabilities (internal, E2). */
+export const KNOWLEDGE_READ_CAP = "knowledge.read";
+export const KNOWLEDGE_WRITE_CAP = "knowledge.write";
+export const KNOWLEDGE_DELETE_CAP = "knowledge.delete";
+export const KNOWLEDGE_EMBED_CAP = "knowledge.embed";
+export const KNOWLEDGE_RETRIEVE_CAP = "knowledge.retrieve";
+/** Collection administration (create collections, manage permissions). Not clients. */
+export const KNOWLEDGE_ADMIN_CAP = "knowledge.admin";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the
@@ -99,6 +107,12 @@ export interface AppContext {
    * code never names one. Optional; required by the execution engine.
    */
   aiProviders?: AiProviderRegistry;
+  /** Phase E · Knowledge Base repositories (E2). Required via `requireKnowledge`. */
+  knowledge?: KnowledgeRepositories;
+  /** Embedding provider adapters keyed by kind (separate from LLM providers). */
+  embeddingProviders?: EmbeddingProviderRegistry;
+  /** The vector-store backend (pgvector/naive today). Business code never names it. */
+  vectorStore?: VectorStorePort;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -131,6 +145,30 @@ export function requireAiProviders(ctx: AppContext): AiProviderRegistry {
     throw new RuntimeUnavailableError("No AI provider is configured");
   }
   return ctx.aiProviders;
+}
+
+/** Assert the Knowledge Base repositories are wired, or fail with a clean 503. */
+export function requireKnowledge(ctx: AppContext): KnowledgeRepositories {
+  if (ctx.knowledge === undefined) {
+    throw new RuntimeUnavailableError("The knowledge store is not available");
+  }
+  return ctx.knowledge;
+}
+
+/** Assert an embedding provider is wired, or fail with a clean 503. */
+export function requireEmbeddingProviders(ctx: AppContext): EmbeddingProviderRegistry {
+  if (ctx.embeddingProviders === undefined || Object.keys(ctx.embeddingProviders).length === 0) {
+    throw new RuntimeUnavailableError("No embedding provider is configured");
+  }
+  return ctx.embeddingProviders;
+}
+
+/** Assert the vector store is wired, or fail with a clean 503. */
+export function requireVectorStore(ctx: AppContext): VectorStorePort {
+  if (ctx.vectorStore === undefined) {
+    throw new RuntimeUnavailableError("The vector store is not available");
+  }
+  return ctx.vectorStore;
 }
 
 /**

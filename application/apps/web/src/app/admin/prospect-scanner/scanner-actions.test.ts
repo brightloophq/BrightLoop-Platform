@@ -17,7 +17,7 @@ const redirects = vi.hoisted(() => ({ calls: [] as string[] }));
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/auth", () => ({ getActor: async () => session.actor }));
-vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services, getExecutionRepositories: async () => ({ workspaces: {}, initiatives: {}, activities: {} }), getCollaborationRepositories: async () => ({ subscriptions: {}, mentions: {}, notifications: {}, inbox: {}, readReceipts: {} }), getAiFoundationRepositories: async () => ({ providers: {}, prompts: {}, promptVersions: {}, executions: {}, results: {}, usage: {}, costs: {}, audit: {}, conversations: {}, messages: {}, evaluations: {} }), getAiProviderRegistry: () => ({}) }));
+vi.mock("@/lib/repositories", () => ({ getRuntimeServices: async () => session.services, getExecutionRepositories: async () => ({ workspaces: {}, initiatives: {}, activities: {} }), getCollaborationRepositories: async () => ({ subscriptions: {}, mentions: {}, notifications: {}, inbox: {}, readReceipts: {} }), getAiFoundationRepositories: async () => ({ providers: {}, prompts: {}, promptVersions: {}, executions: {}, results: {}, usage: {}, costs: {}, audit: {}, conversations: {}, messages: {}, evaluations: {} }), getAiProviderRegistry: () => ({}), getKnowledgeRepositories: async () => ({ collections: {}, documents: {}, versions: {}, chunks: {}, vectors: {}, jobs: {}, sessions: {}, contexts: {}, citations: {}, permissions: {}, sources: {} }), getEmbeddingProviderRegistry: () => ({}), getVectorStore: async () => ({}) }));
 vi.mock("next/cache", () => ({ revalidatePath: () => undefined }));
 vi.mock("next/navigation", () => ({
   redirect: (url: string) => {

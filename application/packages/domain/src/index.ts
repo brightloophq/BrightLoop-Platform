@@ -53,5 +53,7 @@ export * from "./transformation-execution/index.js";
 export * from "./collaboration/index.js";
 // AI Foundation (Phase E · E1) — provider-agnostic AI substrate.
 export * from "./ai-foundation/index.js";
+// Knowledge Base / RAG (Phase E · E2) — workspace-scoped retrieval substrate.
+export * from "./knowledge/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";
