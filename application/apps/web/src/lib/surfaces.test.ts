@@ -33,6 +33,8 @@ describe("surfaceFromPath()", () => {
     expect(surfaceFromPath("/portal/invoices")).toBe("portal");
     expect(surfaceFromPath("/admin")).toBe("admin");
     expect(surfaceFromPath("/admin/leads")).toBe("admin");
+    expect(surfaceFromPath("/workspace")).toBe("workspace");
+    expect(surfaceFromPath("/workspace/reports")).toBe("workspace");
     expect(surfaceFromPath("/")).toBe("public");
     expect(surfaceFromPath("/portfolio")).toBe("public");
   });
@@ -40,6 +42,7 @@ describe("surfaceFromPath()", () => {
   it("does not match prefixes that merely start with the segment", () => {
     expect(surfaceFromPath("/portals")).toBe("public");
     expect(surfaceFromPath("/administrator")).toBe("public");
+    expect(surfaceFromPath("/workspaces")).toBe("public");
   });
 });
 
@@ -81,5 +84,12 @@ describe("roleAllowedOn()", () => {
     expect(roleAllowedOn("admin", "team_member")).toBe(true);
     expect(roleAllowedOn("portal", "client_admin")).toBe(true);
     expect(roleAllowedOn("portal", "client_member")).toBe(true);
+  });
+
+  it("admits client roles to the workspace product surface, keeps internal out", () => {
+    expect(roleAllowedOn("workspace", "client_admin")).toBe(true);
+    expect(roleAllowedOn("workspace", "client_member")).toBe(true);
+    expect(roleAllowedOn("workspace", "owner")).toBe(false);
+    expect(roleAllowedOn("workspace", "team_member")).toBe(false);
   });
 });

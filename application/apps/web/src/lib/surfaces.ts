@@ -6,18 +6,24 @@ import { env } from "./env";
  * auth + role, not the host (handoff §01.1) — hosts are just how we route to
  * the right route group.
  */
-export type Surface = "public" | "portal" | "admin";
+export type Surface = "public" | "portal" | "admin" | "workspace";
 
 /** Internal path prefix each surface's routes live under. */
 export const SURFACE_PREFIX: Record<Exclude<Surface, "public">, string> = {
   portal: "/portal",
   admin: "/admin",
+  workspace: "/workspace",
 };
 
-/** Roles permitted on each protected surface. */
+/**
+ * Roles permitted on each protected surface. `workspace` is the Phase F client
+ * product experience — the same client roles as the legacy portal (RLS scopes it
+ * to the caller's own org exactly as everywhere else).
+ */
 export const SURFACE_ROLES: Record<Exclude<Surface, "public">, readonly Role[]> = {
   portal: ["client_admin", "client_member"],
   admin: ["owner", "admin", "team_member"],
+  workspace: ["client_admin", "client_member"],
 };
 
 /** Resolve a surface from the request host. Unknown hosts (incl. localhost) are public. */
@@ -33,6 +39,7 @@ export function surfaceFromHost(host: string | null): Surface {
 export function surfaceFromPath(pathname: string): Surface {
   if (pathname === "/portal" || pathname.startsWith("/portal/")) return "portal";
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return "admin";
+  if (pathname === "/workspace" || pathname.startsWith("/workspace/")) return "workspace";
   return "public";
 }
 

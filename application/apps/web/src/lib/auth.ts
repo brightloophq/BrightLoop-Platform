@@ -3,7 +3,7 @@ import type { Actor } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { createClient } from "./supabase/server";
 import { isSupabaseConfigured } from "./env";
-import { roleFromClaims, clientIdFromClaims, roleAllowedOn, type Surface } from "./surfaces";
+import { roleFromClaims, clientIdFromClaims, roleAllowedOn, SURFACE_PREFIX, type Surface } from "./surfaces";
 
 /**
  * Resolve the current Actor from the session's JWT CLAIMS.
@@ -63,12 +63,13 @@ export async function requireSurface(surface: Exclude<Surface, "public">): Promi
   const actor = await getActor();
 
   if (!actor) {
-    redirect(`/login?next=${encodeURIComponent(surface === "admin" ? "/admin" : "/portal")}`);
+    redirect(`/login?next=${encodeURIComponent(SURFACE_PREFIX[surface])}`);
   }
 
   if (!roleAllowedOn(surface, actor.role)) {
-    // Do not reveal whether the surface exists — send them to their own surface.
-    redirect(isClientRole(actor.role) ? "/portal" : "/admin");
+    // Do not reveal whether the surface exists — send them to their own home
+    // surface (the client product experience for client roles, admin otherwise).
+    redirect(isClientRole(actor.role) ? "/workspace" : "/admin");
   }
 
   return actor;
