@@ -15,7 +15,8 @@ import {
   type DeploymentMeta, type PolicyContext, type RuntimeAdapter,
 } from "@brightloop/domain";
 import type {
-  DeploymentOperation, RuntimeDeployment, RuntimeDeploymentStatus, RuntimeEnvironment, RuntimePolicy, RuntimeProvider,
+  DeploymentOperation, RollbackStatus, RuntimeDeployment, RuntimeDeploymentStatus, RuntimeEnvironment, RuntimePolicy,
+  RuntimeProvider, RuntimeRollbackRequest,
 } from "@brightloop/schema";
 import { getDeploymentQueue } from "../automation-builder/builder-read.js";
 import type { DeploymentPackageDTO } from "../automation-builder/dto.js";
@@ -383,7 +384,7 @@ export async function executeRollback(ctx: AppContext, rawRollbackId: unknown): 
   return toRollbackDTO(saved);
 }
 
-function advanceRollback(req: import("@brightloop/schema").RuntimeRollbackRequest, to: import("@brightloop/schema").RollbackStatus): import("@brightloop/schema").RuntimeRollbackRequest {
+function advanceRollback(req: RuntimeRollbackRequest, to: RollbackStatus): RuntimeRollbackRequest {
   if (req.status !== to && !canTransitionRollback(req.status, to)) throw new ConflictError(`Illegal rollback transition ${req.status} → ${to}`);
   return { ...req, status: to };
 }

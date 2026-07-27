@@ -215,7 +215,7 @@ describe("validation + failure paths", () => {
     await approveDeployment(ctx, { deploymentId: dep.id });
     fake.scenario = "timeout";
     await expect(deployPackage(ctx, dep.id)).rejects.toBeInstanceOf(ValidationError);
-    let d = (await getDeploymentDetail(ctx, dep.id)).deployment;
+    const d = (await getDeploymentDetail(ctx, dep.id)).deployment;
     expect(d.status).toBe("failed");
     fake.scenario = "healthy";
     const retried = await retryDeployment(ctx, dep.id); // timeout is retryable

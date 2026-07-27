@@ -178,6 +178,10 @@ export {
   SupabaseCopilotCitationRepository,
   SupabaseCopilotActionRepository,
 } from "./copilot/adapter.js";
+// Phase F · Execution Runtime (F3) — fifteen repository adapters + n8n provider.
+export { createExecutionRuntimeRepositories } from "./execution-runtime/adapter.js";
+export { createN8nRuntimeAdapter, translateToN8n } from "./execution-runtime/n8n-adapter.js";
+export { createEnvRuntimeSecretStore } from "./execution-runtime/env-secret-store.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

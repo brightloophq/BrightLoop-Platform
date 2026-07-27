@@ -189,7 +189,11 @@ describe("authorization + isolation", () => {
   it("exposes the capability registry", async () => {
     const caps = await listCapabilityRegistry(ctx);
     expect(caps.length).toBeGreaterThan(10);
-    expect(caps.every((c) => c.sideEffect !== "external")).toBe(true);
+    // F3: governed external side effects now exist (runtime deployment); their full
+    // governance is certified by the platform-certification suite. Every cap still
+    // declares a required permission + a public service.
+    expect(caps.some((c) => c.sideEffect === "external")).toBe(true);
+    expect(caps.every((c) => c.requiredPermission.length > 0 && c.service.length > 0)).toBe(true);
   });
 
   it("supports mission cancellation + feedback", async () => {

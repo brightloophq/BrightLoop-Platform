@@ -1,0 +1,15 @@
+/* Execution Runtime action controls (Phase F · Sprint F3). */
+.bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); margin: var(--space-4) 0; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: inherit; font-size: var(--fs-sm); font-weight: var(--fw-medium);
+  border: 1px solid var(--line); border-radius: var(--radius-md);
+  padding: 7px 13px; background: var(--surface); color: var(--ink); cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out);
+}
+.btn:hover:not(:disabled) { border-color: var(--signal); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btnPrimary { background: var(--signal); color: var(--on-signal, #fff); border-color: transparent; }
+.btnDanger { border-color: var(--critical, #c0392b); color: var(--critical, #c0392b); }
+.ok { font-size: var(--fs-xs); color: var(--positive, #2e7d32); }
+.err { font-size: var(--fs-xs); color: var(--critical, #c0392b); }

@@ -15,8 +15,8 @@ import {
 import type {
   RuntimeCapabilitySnapshot, RuntimeCredentialReference, RuntimeDeployment, RuntimeDeploymentAttempt,
   RuntimeDeploymentEvent, RuntimeDeploymentLog, RuntimeExecution, RuntimeExecutionAttempt, RuntimeExecutionFailure,
-  RuntimeHealthSnapshot, RuntimePolicy, RuntimeReconciliation, RuntimeRegistration, RuntimeRollbackRequest,
-  RuntimeWebhookReceipt,
+  RuntimeFailureCategory, RuntimeHealthSnapshot, RuntimePolicy, RuntimeReconciliation, RuntimeRegistration,
+  RuntimeRollbackRequest, RuntimeWebhookReceipt,
 } from "@brightloop/schema";
 
 const conflict = (): RuntimeResult<never> => ({ ok: false, code: "conflict", message: "version mismatch", detail: null });
@@ -109,7 +109,7 @@ export interface FakeAdapterState {
   externalNodeCount: number;
   externalConnectionCount: number;
   /** Execution the fake surfaces from listExecutions/getExecution. */
-  execution: { id: string; status: "succeeded" | "failed" | "running"; failure: import("@brightloop/schema").RuntimeFailureCategory | null } | null;
+  execution: { id: string; status: "succeeded" | "failed" | "running"; failure: RuntimeFailureCategory | null } | null;
 }
 
 const N8N_SUPPORT = {
