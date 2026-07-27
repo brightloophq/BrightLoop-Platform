@@ -42,7 +42,7 @@ export default async function AiTeamPage() {
               <div className={styles.agentTop}>
                 <span className={styles.agentAvatar} aria-hidden>{a.name.charAt(0)}</span>
                 <span><span className={styles.agentName}>{a.name}</span><br /><span className={styles.agentRole}>{a.role.replace(/_/g, " ")}</span></span>
-                <span style={{ marginLeft: "auto" }}><Badge status={status}>{status}</Badge></span>
+                <span style={{ marginLeft: "auto" }}><Badge status={status} dot>{status}</Badge></span>
               </div>
               <p style={{ fontSize: "var(--fs-sm)", color: "var(--ink-2)", margin: 0 }}>{a.blurb}</p>
               <div className={styles.rowMeta}>{active && a.role !== "coordinator" ? `On: ${active.title}` : "Awaiting delegation"}</div>
@@ -58,7 +58,7 @@ export default async function AiTeamPage() {
             {data.missions.slice(0, 6).map((m) => (
               <Link key={m.id} href={`/workspace/missions/${m.id}`} className={styles.row}>
                 <div className={styles.rowMain}><div className={styles.rowTitle}>{m.title}</div><div className={styles.rowMeta}>{m.status.replace(/_/g, " ")} · {m.taskCount} tasks</div></div>
-                <div className={styles.rowRight}><Badge status={m.status}>{m.progress}%</Badge></div>
+                <div className={styles.rowRight}><Badge status={m.status} dot>{m.progress}%</Badge></div>
               </Link>
             ))}
           </div>

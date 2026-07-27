@@ -24,6 +24,7 @@ export const WORKSPACE_NAV: readonly WorkspaceNavItem[] = [
   { key: "ai-team", label: "AI Team", href: "/workspace/ai-team", icon: "users" },
   { key: "copilot", label: "Copilot", href: "/workspace/copilot", icon: "sparkles" },
   { key: "automations", label: "Automations", href: "/workspace/automations", icon: "workflow" },
+  { key: "runtime", label: "Runtime Center", href: "/workspace/runtime", icon: "target" },
   { key: "deployments", label: "Deployments", href: "/workspace/deployments", icon: "rocket" },
   { key: "runtimes", label: "Runtimes", href: "/workspace/runtimes", icon: "git-branch" },
   { key: "executions", label: "Executions", href: "/workspace/executions", icon: "gauge" },

@@ -36,10 +36,23 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
   const [notifOpen, setNotifOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [cursor, setCursor] = useState(0);
+  // Dark-first product theme, scoped to the workspace subtree (never leaks to the
+  // public site). Persisted per browser; defaults to dark.
+  const [theme, setTheme] = useState<"dark" | "light">("dark");
   const results = useMemo(() => filterCommands(query), [query]);
   const badges: Record<string, number> = { approvals: approvalsCount, notifications: notifications.length };
 
   const closePalette = useCallback(() => { setPaletteOpen(false); setQuery(""); setCursor(0); }, []);
+
+  useEffect(() => {
+    const stored = typeof window !== "undefined" ? window.localStorage.getItem("auxion-theme") : null;
+    if (stored === "light" || stored === "dark") setTheme(stored);
+  }, []);
+  const toggleTheme = useCallback(() => setTheme((t) => {
+    const next = t === "dark" ? "light" : "dark";
+    try { window.localStorage.setItem("auxion-theme", next); } catch { /* private mode */ }
+    return next;
+  }), []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -63,7 +76,7 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
   let lastGroup = "";
 
   return (
-    <div className={styles.shell}>
+    <div className={styles.shell} data-theme={theme} suppressHydrationWarning>
       <aside className={styles.sidebar} data-open={drawer} aria-label="Workspace navigation">
         <div className={styles.brand}><Logo variant="mark" /><strong style={{ fontFamily: "var(--font-display)", fontSize: "var(--fs-lg)" }}>Auxion</strong></div>
         <div className={styles.workspacePicker}>
@@ -100,8 +113,14 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
           </nav>
           <span className={styles.topSpacer} />
           <button className={styles.topAction} onClick={() => setPaletteOpen(true)} aria-label="Search and commands"><Icon name="search" size={14} /> Search<kbd>⌘K</kbd></button>
-          <button className={styles.iconBtn} aria-label={`Notifications (${notifications.length})`} onClick={() => setNotifOpen((v) => !v)}>
+          <button className={styles.iconBtn} aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} onClick={toggleTheme}>
+            <Icon name={theme === "dark" ? "lightbulb" : "palette"} size={18} />
+          </button>
+          <Link className={styles.iconBtn} href="/workspace/notifications" aria-label={`Notifications (${notifications.length})`} onMouseEnter={() => setNotifOpen(false)}>
             <Icon name="bell" size={18} />{notifications.length > 0 && <span className={styles.dot} />}
+          </Link>
+          <button className={styles.iconBtn} aria-label="Notification preview" onClick={() => setNotifOpen((v) => !v)}>
+            <Icon name="chevron-down" size={16} />
           </button>
         </header>
 

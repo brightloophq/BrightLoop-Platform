@@ -18,7 +18,7 @@ export default async function ReportsPage() {
         : <div className={styles.list}>{data.reports.map((r) => (
             <div key={r.id} className={styles.row}>
               <div className={styles.rowMain}><div className={styles.rowTitle}>{r.title}</div><div className={styles.rowMeta}>{r.kind.replace(/_/g, " ")} · {r.period || "—"} · {r.metricCount} metrics · {r.insightCount} insights · {r.forecastCount} forecasts</div></div>
-              <div className={styles.rowRight}><Badge tone="neutral">{r.confidence}%</Badge><Badge status={r.status}>{r.status}</Badge></div>
+              <div className={styles.rowRight}><Badge tone="neutral">{r.confidence}%</Badge><Badge status={r.status} dot>{r.status}</Badge></div>
             </div>))}</div>}
     </>
   );
