@@ -8,7 +8,10 @@ useDefault = true
 description = "Env template placeholders + test fixtures — not real secrets"
 paths = [
   '''application/\.env\.example''',
-  # F3 Execution Runtime tests register a runtime with a placeholder API key
-  # fixture (never a real secret); the suite also asserts the value never leaks.
-  '''application/packages/application/src/execution-runtime/execution-runtime\.test\.ts''',
+  # F3 Execution Runtime tests use placeholder secret fixtures (never real): the
+  # application suite registers a runtime with a placeholder API key + asserts it
+  # never leaks; the domain suite feeds fake secret-shaped values (sk_live_…,
+  # Bearer …, api_key=…) purely to prove the redaction/sanitization helpers strip
+  # them. Both are self-contained test doubles, not credentials.
+  '''application/packages/(application|domain)/src/execution-runtime/execution-runtime\.test\.ts''',
 ]
