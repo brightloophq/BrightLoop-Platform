@@ -1,0 +1,45 @@
+/* Workspace Experience page primitives (Phase F · F1). Canon tokens only. */
+
+.pageHead { display: flex; align-items: flex-end; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-5); flex-wrap: wrap; }
+.pageTitle { font-family: var(--font-display); font-size: var(--fs-h2); font-weight: var(--fw-semibold); letter-spacing: var(--ls-tight); color: var(--ink); margin: 0; }
+.pageSub { color: var(--ink-3); font-size: var(--fs-sm); margin-top: 4px; }
+
+.metricGrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-4); margin-bottom: var(--space-6); }
+.metric { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.metricLabel { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--ls-eyebrow); color: var(--ink-3); }
+.metricValue { font-family: var(--font-display); font-size: var(--fs-h2); font-weight: var(--fw-semibold); color: var(--ink); font-variant-numeric: tabular-nums; }
+.metricValue small { font-size: var(--fs-sm); color: var(--ink-3); font-weight: 400; }
+
+.grid2 { display: grid; grid-template-columns: 2fr 1fr; gap: var(--space-5); align-items: start; }
+@media (max-width: 900px) { .grid2 { grid-template-columns: 1fr; } }
+
+.section { margin-bottom: var(--space-6); }
+.sectionHead { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--space-3); }
+.sectionTitle { font-family: var(--font-display); font-size: var(--fs-lg); font-weight: var(--fw-semibold); color: var(--ink); }
+.sectionLink { font-size: var(--fs-sm); color: var(--signal); text-decoration: none; }
+.sectionLink:hover { text-decoration: underline; }
+
+.list { display: flex; flex-direction: column; gap: var(--space-2); }
+.row { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); text-decoration: none; color: var(--ink); transition: border-color var(--dur-fast) var(--ease-out); }
+.row:hover { border-color: var(--line-strong); }
+.rowMain { flex: 1; min-width: 0; }
+.rowTitle { font-weight: var(--fw-medium); font-size: var(--fs-sm); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rowMeta { font-size: var(--fs-xs); color: var(--ink-3); }
+.rowRight { display: flex; align-items: center; gap: var(--space-2); flex: none; }
+
+.progressTrack { height: 6px; border-radius: var(--radius-pill); background: var(--surface-2); overflow: hidden; width: 120px; }
+.progressFill { height: 100%; background: var(--signal); border-radius: var(--radius-pill); }
+
+.teamGrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--space-4); }
+.agentCard { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); }
+.agentTop { display: flex; align-items: center; gap: var(--space-3); }
+.agentAvatar { width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--signal-tint); color: var(--signal); display: grid; place-items: center; flex: none; }
+.agentName { font-family: var(--font-display); font-weight: var(--fw-semibold); font-size: var(--fs-sm); }
+.agentRole { font-size: var(--fs-xs); color: var(--ink-3); text-transform: capitalize; }
+
+.timeline { display: flex; flex-direction: column; }
+.tlRow { display: flex; gap: var(--space-3); padding: var(--space-3) 0; border-bottom: 1px solid var(--line); }
+.tlDot { width: 8px; height: 8px; border-radius: 50%; background: var(--signal); margin-top: 6px; flex: none; }
+.tlBody { flex: 1; }
+.tlType { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--ls-eyebrow); color: var(--ink-3); }
+.tlText { font-size: var(--fs-sm); color: var(--ink); }
