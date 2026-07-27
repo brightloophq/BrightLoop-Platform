@@ -144,6 +144,26 @@ export {
   SupabaseReportScheduleRepository,
   SupabaseReportFeedbackRepository,
 } from "./reporting/adapter.js";
+// Phase E · AI Agents (E7) — seventeen repository adapters.
+export {
+  SupabaseAgentProfileRepository,
+  SupabaseAgentMissionRepository,
+  SupabaseAgentRunRepository,
+  SupabaseAgentTaskRepository,
+  SupabaseAgentDelegationRepository,
+  SupabaseAgentMessageRepository,
+  SupabaseAgentObservationRepository,
+  SupabaseAgentDecisionRepository,
+  SupabaseAgentToolCallRepository,
+  SupabaseAgentCheckpointRepository,
+  SupabaseAgentApprovalRepository,
+  SupabaseAgentEvaluationRepository,
+  SupabaseAgentMemoryRepository,
+  SupabaseAgentArtifactRepository,
+  SupabaseAgentFailureRepository,
+  SupabaseAgentFeedbackRepository,
+  SupabaseCapabilityDefinitionRepository,
+} from "./agents/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

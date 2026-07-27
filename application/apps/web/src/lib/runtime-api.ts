@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { systemClock, type Actor } from "@brightloop/domain";
 import { ApplicationError, ForbiddenError, isApplicationError, type AppContext } from "@brightloop/application";
 import { getActor } from "./auth";
-import { getRuntimeServices, getExecutionRepositories, getCollaborationRepositories, getAiFoundationRepositories, getAiProviderRegistry, getKnowledgeRepositories, getEmbeddingProviderRegistry, getVectorStore, getStrategistRepositories, getProjectManagerRepositories, getAutomationBuilderRepositories, getReportingRepositories } from "./repositories";
+import { getRuntimeServices, getExecutionRepositories, getCollaborationRepositories, getAiFoundationRepositories, getAiProviderRegistry, getKnowledgeRepositories, getEmbeddingProviderRegistry, getVectorStore, getStrategistRepositories, getProjectManagerRepositories, getAutomationBuilderRepositories, getReportingRepositories, getAgentRepositories } from "./repositories";
 
 /**
  * The HTTP ↔ application seam for the intelligence runtime.
@@ -29,8 +29,8 @@ function newId(prefix: string): string {
 export async function buildAppContext(): Promise<AppContext | null> {
   const actor: Actor | null = await getActor();
   if (actor === null) return null;
-  const [services, execution, collaboration, ai, knowledge, vectorStore, strategist, projectManager, automationBuilder, reporting] = await Promise.all([getRuntimeServices(), getExecutionRepositories(), getCollaborationRepositories(), getAiFoundationRepositories(), getKnowledgeRepositories(), getVectorStore(), getStrategistRepositories(), getProjectManagerRepositories(), getAutomationBuilderRepositories(), getReportingRepositories()]);
-  return { services, actor, ids: newId, clock: systemClock, execution, collaboration, ai, aiProviders: getAiProviderRegistry(), knowledge, embeddingProviders: getEmbeddingProviderRegistry(), vectorStore, strategist, projectManager, automationBuilder, reporting };
+  const [services, execution, collaboration, ai, knowledge, vectorStore, strategist, projectManager, automationBuilder, reporting, agents] = await Promise.all([getRuntimeServices(), getExecutionRepositories(), getCollaborationRepositories(), getAiFoundationRepositories(), getKnowledgeRepositories(), getVectorStore(), getStrategistRepositories(), getProjectManagerRepositories(), getAutomationBuilderRepositories(), getReportingRepositories(), getAgentRepositories()]);
+  return { services, actor, ids: newId, clock: systemClock, execution, collaboration, ai, aiProviders: getAiProviderRegistry(), knowledge, embeddingProviders: getEmbeddingProviderRegistry(), vectorStore, strategist, projectManager, automationBuilder, reporting, agents };
 }
 
 /** JSON body from the request, or `undefined` when the body is absent/unparseable. */

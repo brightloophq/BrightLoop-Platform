@@ -94,6 +94,23 @@ import {
   SupabaseReportNarrativeRepository,
   SupabaseReportScheduleRepository,
   SupabaseReportFeedbackRepository,
+  SupabaseAgentProfileRepository,
+  SupabaseAgentMissionRepository,
+  SupabaseAgentRunRepository,
+  SupabaseAgentTaskRepository,
+  SupabaseAgentDelegationRepository,
+  SupabaseAgentMessageRepository,
+  SupabaseAgentObservationRepository,
+  SupabaseAgentDecisionRepository,
+  SupabaseAgentToolCallRepository,
+  SupabaseAgentCheckpointRepository,
+  SupabaseAgentApprovalRepository,
+  SupabaseAgentEvaluationRepository,
+  SupabaseAgentMemoryRepository,
+  SupabaseAgentArtifactRepository,
+  SupabaseAgentFailureRepository,
+  SupabaseAgentFeedbackRepository,
+  SupabaseCapabilityDefinitionRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -116,6 +133,7 @@ import {
   type ProjectManagerRepositories,
   type AutomationBuilderRepositories,
   type ReportingRepositories,
+  type AgentRepositories,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -420,6 +438,30 @@ export async function getReportingRepositories(): Promise<ReportingRepositories>
     narratives: new SupabaseReportNarrativeRepository(client),
     schedules: new SupabaseReportScheduleRepository(client),
     feedback: new SupabaseReportFeedbackRepository(client),
+  };
+}
+
+/** Phase E · AI Agents repositories (E7), bound to the caller's RLS session. */
+export async function getAgentRepositories(): Promise<AgentRepositories> {
+  const client = await createClient();
+  return {
+    profiles: new SupabaseAgentProfileRepository(client),
+    missions: new SupabaseAgentMissionRepository(client),
+    runs: new SupabaseAgentRunRepository(client),
+    tasks: new SupabaseAgentTaskRepository(client),
+    delegations: new SupabaseAgentDelegationRepository(client),
+    messages: new SupabaseAgentMessageRepository(client),
+    observations: new SupabaseAgentObservationRepository(client),
+    decisions: new SupabaseAgentDecisionRepository(client),
+    toolCalls: new SupabaseAgentToolCallRepository(client),
+    checkpoints: new SupabaseAgentCheckpointRepository(client),
+    approvals: new SupabaseAgentApprovalRepository(client),
+    evaluations: new SupabaseAgentEvaluationRepository(client),
+    memories: new SupabaseAgentMemoryRepository(client),
+    artifacts: new SupabaseAgentArtifactRepository(client),
+    failures: new SupabaseAgentFailureRepository(client),
+    feedback: new SupabaseAgentFeedbackRepository(client),
+    capabilities: new SupabaseCapabilityDefinitionRepository(client),
   };
 }
 
