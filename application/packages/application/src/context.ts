@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AgentRepositories, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
+import type { Actor, AgentRepositories, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, CertificationRepositories, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -110,6 +110,11 @@ export const AGENT_CANCEL_CAP = "agent.cancel";
 export const AGENT_REVIEW_CAP = "agent.review";
 export const AGENT_FEEDBACK_CAP = "agent.feedback";
 export const AGENT_ADMIN_CAP = "agent.admin";
+/** Phase E · Platform Certification capabilities (E8; owner/admin only). */
+export const CERTIFICATION_READ_CAP = "certification.read";
+export const CERTIFICATION_RUN_CAP = "certification.run";
+export const CERTIFICATION_PUBLISH_CAP = "certification.publish";
+export const CERTIFICATION_ADMIN_CAP = "certification.admin";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the
@@ -161,6 +166,8 @@ export interface AppContext {
   reporting?: ReportingRepositories;
   /** Phase E · AI Agents repositories (E7). Required via `requireAgents`. */
   agents?: AgentRepositories;
+  /** Phase E · Platform Certification repositories (E8). Required via `requireCertification`. */
+  certification?: CertificationRepositories;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -257,6 +264,14 @@ export function requireAgents(ctx: AppContext): AgentRepositories {
     throw new RuntimeUnavailableError("The agents store is not available");
   }
   return ctx.agents;
+}
+
+/** Assert the Platform Certification repositories are wired, or fail with a clean 503. */
+export function requireCertification(ctx: AppContext): CertificationRepositories {
+  if (ctx.certification === undefined) {
+    throw new RuntimeUnavailableError("The certification store is not available");
+  }
+  return ctx.certification;
 }
 
 /**

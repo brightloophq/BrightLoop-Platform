@@ -32,6 +32,7 @@ export * from "./project-manager.js";
 export * from "./automation-builder.js";
 export * from "./reporting.js";
 export * from "./agents.js";
+export * from "./platform-certification.js";
 export * from "./narrative.js";
 export * from "./narrative-intelligence.js";
 export * from "./prospect-intelligence.js";

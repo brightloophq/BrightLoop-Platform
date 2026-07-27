@@ -111,6 +111,10 @@ import {
   SupabaseAgentFailureRepository,
   SupabaseAgentFeedbackRepository,
   SupabaseCapabilityDefinitionRepository,
+  SupabaseCertificationRunRepository,
+  SupabaseCertificationResultRepository,
+  SupabaseCertificationIssueRepository,
+  SupabaseCertificationExceptionRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -134,6 +138,7 @@ import {
   type AutomationBuilderRepositories,
   type ReportingRepositories,
   type AgentRepositories,
+  type CertificationRepositories,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -462,6 +467,17 @@ export async function getAgentRepositories(): Promise<AgentRepositories> {
     failures: new SupabaseAgentFailureRepository(client),
     feedback: new SupabaseAgentFeedbackRepository(client),
     capabilities: new SupabaseCapabilityDefinitionRepository(client),
+  };
+}
+
+/** Phase E · Platform Certification repositories (E8), bound to the caller's RLS session. */
+export async function getCertificationRepositories(): Promise<CertificationRepositories> {
+  const client = await createClient();
+  return {
+    runs: new SupabaseCertificationRunRepository(client),
+    results: new SupabaseCertificationResultRepository(client),
+    issues: new SupabaseCertificationIssueRepository(client),
+    exceptions: new SupabaseCertificationExceptionRepository(client),
   };
 }
 

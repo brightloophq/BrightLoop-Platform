@@ -69,6 +69,8 @@ export const PERMISSIONS = {
     "report.*",
     // E7 AI Agents & Orchestration — full access.
     "agent.*",
+    // E8 Platform Certification — only owners/admins may run certification.
+    "certification.*",
   ],
   team_member: [
     "projects.read",
