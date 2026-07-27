@@ -5,7 +5,10 @@
 useDefault = true
 
 [allowlist]
-description = "Env template placeholders — not real secrets"
+description = "Env template placeholders + test fixtures — not real secrets"
 paths = [
   '''application/\.env\.example''',
+  # F3 Execution Runtime tests register a runtime with a placeholder API key
+  # fixture (never a real secret); the suite also asserts the value never leaks.
+  '''application/packages/application/src/execution-runtime/execution-runtime\.test\.ts''',
 ]

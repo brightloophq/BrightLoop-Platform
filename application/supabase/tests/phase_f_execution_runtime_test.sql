@@ -42,13 +42,14 @@ select lives_ok($$ update public.runtime_deployment set status='validating', ver
 select lives_ok($$ insert into public.runtime_deployment_event (id, deployment_id, workspace_id, client_id, to_status, reason, correlation_id) values ('ev_1','dep_1','ws_rt','cli_rt','validating','v','c') $$, 'insert deployment event');
 select lives_ok($$ insert into public.runtime_deployment_attempt (id, deployment_id, workspace_id, client_id, operation, idempotency_key, started_at) values ('at_1','dep_1','ws_rt','cli_rt','deploy','deploy:ws_rt:pkg_1:rt_1:h1', now()) $$, 'insert deployment attempt');
 select lives_ok($$ insert into public.runtime_execution (id, workspace_id, client_id, deployment_id, runtime_registration_id, external_execution_id, correlation_id, trace_id) values ('ex_1','ws_rt','cli_rt','dep_1','rt_1','n8n_exec_1','c','t') $$, 'insert execution');
+select lives_ok($$ insert into public.runtime_execution_failure (id, runtime_execution_id, deployment_id, workspace_id, client_id, category, message) values ('ef_1','ex_1','dep_1','ws_rt','cli_rt','execution_failed','failed') $$, 'insert execution failure');
 select throws_ok($$ insert into public.runtime_execution (id, workspace_id, client_id, deployment_id, runtime_registration_id, external_execution_id, correlation_id, trace_id) values ('ex_dup','ws_rt','cli_rt','dep_1','rt_1','n8n_exec_1','c','t') $$, '23505', null, 'duplicate external execution id rejected');
 select lives_ok($$ insert into public.runtime_webhook_receipt (id, workspace_id, client_id, runtime_registration_id, provider, external_event_id, idempotency_key, received_at) values ('wh_1','ws_rt','cli_rt','rt_1','n8n','evt_1','webhook:n8n:rt_1:evt_1', now()) $$, 'insert webhook receipt');
 
 -- append-only: exercise the triggers as table owner
 reset role;
 select throws_ok($$ update public.runtime_deployment_event set reason='x' where id='ev_1' $$, 'P0001', 'transformation_activity is append-only', 'deployment event UPDATE blocked');
-select throws_ok($$ delete from public.runtime_execution_failure where id='nope' $$, 'P0001', 'transformation_activity is append-only', 'execution failure DELETE blocked (trigger fires before row check)');
+select throws_ok($$ delete from public.runtime_execution_failure where id='ef_1' $$, 'P0001', 'transformation_activity is append-only', 'execution failure DELETE blocked');
 select throws_ok($$ update public.runtime_webhook_receipt set status='processed' where id='wh_1' $$, 'P0001', 'transformation_activity is append-only', 'webhook receipt UPDATE blocked');
 
 -- tenant isolation: another-org client sees nothing
