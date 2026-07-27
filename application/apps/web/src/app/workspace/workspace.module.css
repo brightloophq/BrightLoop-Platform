@@ -136,6 +136,26 @@
 .notifTitle { font-size: var(--fs-sm); font-weight: var(--fw-medium); }
 .notifDetail { font-size: var(--fs-xs); color: var(--ink-3); }
 
+/* ---- copilot launcher ------------------------------------------------------ */
+.copilotFab {
+  position: fixed;
+  right: var(--space-5);
+  bottom: var(--space-5);
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-pill);
+  background: var(--signal);
+  color: var(--on-signal, #fff);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+  transition: transform var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out);
+}
+.copilotFab:hover { filter: brightness(1.06); transform: translateY(-1px); }
+.copilotFab:focus-visible { outline: 2px solid var(--signal); outline-offset: 3px; }
+
 /* ---- mobile ---------------------------------------------------------------- */
 .menuBtn { display: none; }
 @media (max-width: 900px) {

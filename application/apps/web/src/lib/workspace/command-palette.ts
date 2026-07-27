@@ -19,6 +19,7 @@ export const WORKSPACE_COMMANDS: readonly WorkspaceCommand[] = [
   { id: "go-dashboard", label: "Go to Dashboard", hint: "Overview", group: "Navigate", href: "/workspace", keywords: ["home", "overview", "workspace"] },
   { id: "go-projects", label: "Go to Projects", hint: "All projects", group: "Navigate", href: "/workspace/projects", keywords: ["project", "initiatives"] },
   { id: "go-ai-team", label: "Open AI Team", hint: "Specialist agents", group: "Navigate", href: "/workspace/ai-team", keywords: ["agents", "coordinator", "strategist", "team"] },
+  { id: "go-copilot", label: "Ask the Copilot", hint: "Conversational assistant", group: "Navigate", href: "/workspace/copilot", keywords: ["copilot", "ask", "assistant", "chat", "help"] },
   { id: "go-automations", label: "View Automations", hint: "Workflows", group: "Navigate", href: "/workspace/automations", keywords: ["workflow", "automation", "intent"] },
   { id: "go-reports", label: "Open Reports", hint: "Executive reporting", group: "Navigate", href: "/workspace/reports", keywords: ["report", "kpi", "insight", "forecast"] },
   { id: "go-approvals", label: "View Approvals", hint: "Pending decisions", group: "Navigate", href: "/workspace/approvals", keywords: ["approval", "review", "decision", "sign off"] },

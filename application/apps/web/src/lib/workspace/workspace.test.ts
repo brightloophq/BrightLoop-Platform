@@ -6,7 +6,7 @@ import { deriveNotifications, actionableCount } from "./notifications";
 
 describe("workspace navigation", () => {
   it("exposes the primary product sections", () => {
-    expect(WORKSPACE_NAV.map((n) => n.key)).toEqual(["dashboard", "projects", "ai-team", "automations", "reports", "approvals", "activity", "settings"]);
+    expect(WORKSPACE_NAV.map((n) => n.key)).toEqual(["dashboard", "projects", "ai-team", "copilot", "automations", "reports", "approvals", "activity", "settings"]);
   });
   it("resolves the active section by longest-prefix match", () => {
     expect(activeNavKey("/workspace")).toBe("dashboard");
