@@ -3656,6 +3656,271 @@ export type Database = {
           },
         ]
       }
+      copilot_action: {
+        Row: {
+          capability_key: string | null
+          client_id: string | null
+          conversation_id: string
+          created_at: string
+          enabled: boolean
+          href: string
+          id: string
+          kind: string
+          label: string
+          message_id: string | null
+          required_permission: string | null
+          requires_approval: boolean
+          workspace_id: string
+        }
+        Insert: {
+          capability_key?: string | null
+          client_id?: string | null
+          conversation_id: string
+          created_at?: string
+          enabled?: boolean
+          href?: string
+          id: string
+          kind: string
+          label: string
+          message_id?: string | null
+          required_permission?: string | null
+          requires_approval?: boolean
+          workspace_id: string
+        }
+        Update: {
+          capability_key?: string | null
+          client_id?: string | null
+          conversation_id?: string
+          created_at?: string
+          enabled?: boolean
+          href?: string
+          id?: string
+          kind?: string
+          label?: string
+          message_id?: string | null
+          required_permission?: string | null
+          requires_approval?: boolean
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_action_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copilot_action_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_conversation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copilot_action_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_message"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_citation: {
+        Row: {
+          client_id: string | null
+          conversation_id: string
+          created_at: string
+          href: string
+          id: string
+          kind: string
+          message_id: string
+          ref_id: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          conversation_id: string
+          created_at?: string
+          href?: string
+          id: string
+          kind: string
+          message_id: string
+          ref_id: string
+          title?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          conversation_id?: string
+          created_at?: string
+          href?: string
+          id?: string
+          kind?: string
+          message_id?: string
+          ref_id?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_citation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copilot_citation_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_conversation"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copilot_citation_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_message"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_conversation: {
+        Row: {
+          client_id: string | null
+          correlation_id: string
+          cost: number
+          created_at: string
+          id: string
+          last_intent: string | null
+          last_references: Json
+          message_count: number
+          panel: string
+          pinned: boolean
+          requested_by_user_id: string
+          status: string
+          title: string
+          token_total: number
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          correlation_id: string
+          cost?: number
+          created_at?: string
+          id: string
+          last_intent?: string | null
+          last_references?: Json
+          message_count?: number
+          panel?: string
+          pinned?: boolean
+          requested_by_user_id: string
+          status?: string
+          title: string
+          token_total?: number
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          correlation_id?: string
+          cost?: number
+          created_at?: string
+          id?: string
+          last_intent?: string | null
+          last_references?: Json
+          message_count?: number
+          panel?: string
+          pinned?: boolean
+          requested_by_user_id?: string
+          status?: string
+          title?: string
+          token_total?: number
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_conversation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copilot_message: {
+        Row: {
+          capability_key: string | null
+          client_id: string | null
+          content: string
+          conversation_id: string
+          cost: number
+          created_at: string
+          id: string
+          intent: string | null
+          ok: boolean
+          order_index: number
+          role: string
+          state: string
+          token_total: number
+          workspace_id: string
+        }
+        Insert: {
+          capability_key?: string | null
+          client_id?: string | null
+          content?: string
+          conversation_id: string
+          cost?: number
+          created_at?: string
+          id: string
+          intent?: string | null
+          ok?: boolean
+          order_index?: number
+          role: string
+          state?: string
+          token_total?: number
+          workspace_id: string
+        }
+        Update: {
+          capability_key?: string | null
+          client_id?: string | null
+          content?: string
+          conversation_id?: string
+          cost?: number
+          created_at?: string
+          id?: string
+          intent?: string | null
+          ok?: boolean
+          order_index?: number
+          role?: string
+          state?: string
+          token_total?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copilot_message_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copilot_message_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "copilot_conversation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deliverables: {
         Row: {
           feedback: string | null

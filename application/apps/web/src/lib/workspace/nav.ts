@@ -22,6 +22,7 @@ export const WORKSPACE_NAV: readonly WorkspaceNavItem[] = [
   { key: "dashboard", label: "Dashboard", href: "/workspace", icon: "layout-grid" },
   { key: "projects", label: "Projects", href: "/workspace/projects", icon: "route" },
   { key: "ai-team", label: "AI Team", href: "/workspace/ai-team", icon: "users" },
+  { key: "copilot", label: "Copilot", href: "/workspace/copilot", icon: "sparkles" },
   { key: "automations", label: "Automations", href: "/workspace/automations", icon: "workflow" },
   { key: "reports", label: "Reports", href: "/workspace/reports", icon: "line-chart" },
   { key: "approvals", label: "Approvals", href: "/workspace/approvals", icon: "check-circle", badgeKey: "approvals" },

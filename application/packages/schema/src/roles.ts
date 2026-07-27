@@ -71,6 +71,8 @@ export const PERMISSIONS = {
     "agent.*",
     // E8 Platform Certification — only owners/admins may run certification.
     "certification.*",
+    // F2 AI Copilot — full access.
+    "copilot.*",
   ],
   team_member: [
     "projects.read",
@@ -183,6 +185,9 @@ export const PERMISSIONS = {
     "agent.cancel",
     "agent.review",
     "agent.feedback",
+    // F2 AI Copilot — operators use the assistant.
+    "copilot.read",
+    "copilot.use",
   ],
   client_admin: [
     "own.project.read",
@@ -214,6 +219,9 @@ export const PERMISSIONS = {
     "agent.read",
     "agent.feedback",
     "agent.approve",
+    // F2 AI Copilot — clients may use the assistant (permission-scoped).
+    "copilot.read",
+    "copilot.use",
   ],
   client_member: [
     "own.project.read",
@@ -231,6 +239,8 @@ export const PERMISSIONS = {
     "agent.read",
     "agent.feedback",
     "agent.approve",
+    "copilot.read",
+    "copilot.use",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 

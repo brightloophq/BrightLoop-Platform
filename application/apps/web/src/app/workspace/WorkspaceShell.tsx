@@ -44,11 +44,12 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen((v) => !v); setNotifOpen(false); }
+      else if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "j") { e.preventDefault(); router.push("/workspace/copilot"); }
       else if (e.key === "Escape") { closePalette(); setNotifOpen(false); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [closePalette]);
+  }, [closePalette, router]);
 
   useEffect(() => { setDrawer(false); setNotifOpen(false); closePalette(); }, [pathname, closePalette]);
 
@@ -128,6 +129,10 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
           </div>
         </div>
       )}
+
+      <Link href="/workspace/copilot" className={styles.copilotFab} aria-label="Ask the Copilot (⌘J)" title="Ask the Copilot (⌘J)">
+        <Icon name="sparkles" size={20} />
+      </Link>
 
       {notifOpen && (
         <div className={styles.notifPanel} role="dialog" aria-label="Notifications">

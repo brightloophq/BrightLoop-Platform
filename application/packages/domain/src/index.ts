@@ -67,5 +67,7 @@ export * from "./reporting/index.js";
 export * from "./agents/index.js";
 // Platform Certification (Phase E · E8) — audit E1–E7 for production readiness.
 export * from "./platform-certification/index.js";
+// AI Copilot (Phase F · F2) — conversational presentation layer over D+E.
+export * from "./copilot/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";

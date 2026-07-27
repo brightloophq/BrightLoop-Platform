@@ -171,6 +171,13 @@ export {
   SupabaseCertificationIssueRepository,
   SupabaseCertificationExceptionRepository,
 } from "./platform-certification/adapter.js";
+// Phase F · AI Copilot (F2) — four repository adapters.
+export {
+  SupabaseCopilotConversationRepository,
+  SupabaseCopilotMessageRepository,
+  SupabaseCopilotCitationRepository,
+  SupabaseCopilotActionRepository,
+} from "./copilot/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

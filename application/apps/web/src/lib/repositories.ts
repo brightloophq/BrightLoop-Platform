@@ -115,6 +115,10 @@ import {
   SupabaseCertificationResultRepository,
   SupabaseCertificationIssueRepository,
   SupabaseCertificationExceptionRepository,
+  SupabaseCopilotConversationRepository,
+  SupabaseCopilotMessageRepository,
+  SupabaseCopilotCitationRepository,
+  SupabaseCopilotActionRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -139,6 +143,7 @@ import {
   type ReportingRepositories,
   type AgentRepositories,
   type CertificationRepositories,
+  type CopilotRepositories,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -478,6 +483,17 @@ export async function getCertificationRepositories(): Promise<CertificationRepos
     results: new SupabaseCertificationResultRepository(client),
     issues: new SupabaseCertificationIssueRepository(client),
     exceptions: new SupabaseCertificationExceptionRepository(client),
+  };
+}
+
+/** Phase F · AI Copilot repositories (F2), bound to the caller's RLS session. */
+export async function getCopilotRepositories(): Promise<CopilotRepositories> {
+  const client = await createClient();
+  return {
+    conversations: new SupabaseCopilotConversationRepository(client),
+    messages: new SupabaseCopilotMessageRepository(client),
+    citations: new SupabaseCopilotCitationRepository(client),
+    actions: new SupabaseCopilotActionRepository(client),
   };
 }
 
