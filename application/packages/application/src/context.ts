@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
+import type { Actor, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -92,6 +92,13 @@ export const AUTOMATION_GENERATE_CAP = "automation.generate";
 export const AUTOMATION_PUBLISH_CAP = "automation.publish";
 export const AUTOMATION_DEPLOY_CAP = "automation.deploy";
 export const AUTOMATION_FEEDBACK_CAP = "automation.feedback";
+/** Phase E · AI Reporting & BI capabilities (E6). */
+export const REPORT_READ_CAP = "report.read";
+export const REPORT_WRITE_CAP = "report.write";
+export const REPORT_GENERATE_CAP = "report.generate";
+export const REPORT_PUBLISH_CAP = "report.publish";
+export const REPORT_SCHEDULE_CAP = "report.schedule";
+export const REPORT_FEEDBACK_CAP = "report.feedback";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the
@@ -139,6 +146,8 @@ export interface AppContext {
   projectManager?: ProjectManagerRepositories;
   /** Phase E · AI Automation Builder repositories (E5). Required via `requireAutomationBuilder`. */
   automationBuilder?: AutomationBuilderRepositories;
+  /** Phase E · AI Reporting repositories (E6). Required via `requireReporting`. */
+  reporting?: ReportingRepositories;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -219,6 +228,14 @@ export function requireAutomationBuilder(ctx: AppContext): AutomationBuilderRepo
     throw new RuntimeUnavailableError("The automation builder store is not available");
   }
   return ctx.automationBuilder;
+}
+
+/** Assert the AI Reporting repositories are wired, or fail with a clean 503. */
+export function requireReporting(ctx: AppContext): ReportingRepositories {
+  if (ctx.reporting === undefined) {
+    throw new RuntimeUnavailableError("The reporting store is not available");
+  }
+  return ctx.reporting;
 }
 
 /**

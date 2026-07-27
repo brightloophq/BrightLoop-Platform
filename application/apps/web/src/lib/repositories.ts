@@ -82,6 +82,18 @@ import {
   SupabaseDeploymentPackageRepository,
   SupabaseAutomationVersionRepository,
   SupabaseAutomationFeedbackRepository,
+  SupabaseExecutiveReportRepository,
+  SupabaseObservationSnapshotRepository,
+  SupabaseBusinessMetricRepository,
+  SupabaseKpiResultRepository,
+  SupabaseTrendAnalysisRepository,
+  SupabaseForecastRepository,
+  SupabaseBusinessInsightRepository,
+  SupabaseReportExecutiveSummaryRepository,
+  SupabaseReportSectionRepository,
+  SupabaseReportNarrativeRepository,
+  SupabaseReportScheduleRepository,
+  SupabaseReportFeedbackRepository,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -103,6 +115,7 @@ import {
   type StrategistRepositories,
   type ProjectManagerRepositories,
   type AutomationBuilderRepositories,
+  type ReportingRepositories,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -388,6 +401,25 @@ export async function getAutomationBuilderRepositories(): Promise<AutomationBuil
     deployments: new SupabaseDeploymentPackageRepository(client),
     versions: new SupabaseAutomationVersionRepository(client),
     feedback: new SupabaseAutomationFeedbackRepository(client),
+  };
+}
+
+/** Phase E · AI Reporting repositories (E6), bound to the caller's RLS session. */
+export async function getReportingRepositories(): Promise<ReportingRepositories> {
+  const client = await createClient();
+  return {
+    reports: new SupabaseExecutiveReportRepository(client),
+    observations: new SupabaseObservationSnapshotRepository(client),
+    metrics: new SupabaseBusinessMetricRepository(client),
+    kpis: new SupabaseKpiResultRepository(client),
+    trends: new SupabaseTrendAnalysisRepository(client),
+    forecasts: new SupabaseForecastRepository(client),
+    insights: new SupabaseBusinessInsightRepository(client),
+    summaries: new SupabaseReportExecutiveSummaryRepository(client),
+    sections: new SupabaseReportSectionRepository(client),
+    narratives: new SupabaseReportNarrativeRepository(client),
+    schedules: new SupabaseReportScheduleRepository(client),
+    feedback: new SupabaseReportFeedbackRepository(client),
   };
 }
 

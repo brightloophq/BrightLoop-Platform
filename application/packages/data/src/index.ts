@@ -129,6 +129,21 @@ export {
   SupabaseAutomationVersionRepository,
   SupabaseAutomationFeedbackRepository,
 } from "./automation-builder/adapter.js";
+// Phase E · AI Reporting & BI (E6) — twelve repository adapters.
+export {
+  SupabaseExecutiveReportRepository,
+  SupabaseObservationSnapshotRepository,
+  SupabaseBusinessMetricRepository,
+  SupabaseKpiResultRepository,
+  SupabaseTrendAnalysisRepository,
+  SupabaseForecastRepository,
+  SupabaseBusinessInsightRepository,
+  SupabaseReportExecutiveSummaryRepository,
+  SupabaseReportSectionRepository,
+  SupabaseReportNarrativeRepository,
+  SupabaseReportScheduleRepository,
+  SupabaseReportFeedbackRepository,
+} from "./reporting/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.
