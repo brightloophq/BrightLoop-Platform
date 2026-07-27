@@ -145,7 +145,12 @@ export async function generateCopilotResponse(ctx: AppContext, rawConversationId
       `${context.activeMissions} active mission(s), ${context.waitingApprovals} awaiting approval.`,
       `${context.reportCount} report(s), ${context.automationCount} automation(s).`,
     ];
+    // F3: surface live runtime state so the Copilot can answer deployment/runtime questions.
+    if (context.activeDeployments > 0 || context.failedDeployments > 0 || context.awaitingDeploymentApproval > 0) {
+      bullets.push(`${context.activeDeployments} active deployment(s), ${context.failedDeployments} failed, ${context.awaitingDeploymentApproval} awaiting approval — runtimes ${context.runtimesHealthy ? "healthy" : "need attention"}.`);
+    }
     content = renderAnswer({ headline: headlineFor(intentR.intent), bullets, note: "Composed from your live workspace read models." });
+    if (context.failedDeployments > 0 || context.activeDeployments > 0) citations.push({ kind: "automation", refId: "deployments", title: "Deployment Center", href: "/workspace/deployments" });
     const latestReport = reports[0];
     if (latestReport) citations.push({ kind: "report", refId: latestReport.id, title: latestReport.title, href: "/workspace/reports" });
     const activeMission = missions.find((m) => m.status === "waiting_for_approval") ?? missions[0];

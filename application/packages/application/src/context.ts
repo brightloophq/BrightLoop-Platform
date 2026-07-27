@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AgentRepositories, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, CertificationRepositories, Clock, CollaborationRepositories, CopilotRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
+import type { Actor, AgentRepositories, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, CertificationRepositories, Clock, CollaborationRepositories, CopilotRepositories, EmbeddingProviderRegistry, ExecutionRuntimeRepositories, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeAdapterRegistry, RuntimeIdGen, RuntimeSecretStore, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -173,6 +173,16 @@ export interface AppContext {
   certification?: CertificationRepositories;
   /** Phase F · AI Copilot repositories (F2). Required via `requireCopilot`. */
   copilot?: CopilotRepositories;
+  /** Phase F · Execution Runtime repositories (F3). Required via `requireExecutionRuntime`. */
+  executionRuntime?: ExecutionRuntimeRepositories;
+  /**
+   * Concrete runtime provider adapters keyed by provider (fake in tests; real n8n
+   * adapter in production). The runtime layer selects from these — business code
+   * never names one. Required by deployment/execution use-cases.
+   */
+  runtimeAdapters?: RuntimeAdapterRegistry;
+  /** The secret store backing runtime credential references. Never returns values upward. */
+  runtimeSecrets?: RuntimeSecretStore;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -285,6 +295,45 @@ export function requireCopilot(ctx: AppContext): CopilotRepositories {
     throw new RuntimeUnavailableError("The copilot store is not available");
   }
   return ctx.copilot;
+}
+
+/** Phase F · Execution Runtime (F3) capabilities + require helpers. */
+export const RUNTIME_READ_CAP = "runtime.read";
+export const RUNTIME_MANAGE_CAP = "runtime.manage";
+export const RUNTIME_HEALTH_CAP = "runtime.health.check";
+export const RUNTIME_CRED_CAP = "runtime.credentials.manage";
+export const DEPLOYMENT_READ_CAP = "deployment.read";
+export const DEPLOYMENT_CREATE_CAP = "deployment.create";
+export const DEPLOYMENT_APPROVE_CAP = "deployment.approve";
+export const DEPLOYMENT_DEPLOY_CAP = "deployment.deploy";
+export const DEPLOYMENT_ACTIVATE_CAP = "deployment.activate";
+export const DEPLOYMENT_PAUSE_CAP = "deployment.pause";
+export const DEPLOYMENT_RETRY_CAP = "deployment.retry";
+export const DEPLOYMENT_ROLLBACK_CAP = "deployment.rollback";
+export const DEPLOYMENT_CANCEL_CAP = "deployment.cancel";
+export const DEPLOYMENT_RECONCILE_CAP = "deployment.reconcile";
+export const EXECUTION_READ_CAP = "execution.read";
+export const EXECUTION_RETRY_CAP = "execution.retry";
+export const EXECUTION_STOP_CAP = "execution.stop";
+export const EXECUTION_LOGS_CAP = "execution.logs.read";
+
+export function requireExecutionRuntime(ctx: AppContext): ExecutionRuntimeRepositories {
+  if (ctx.executionRuntime === undefined) {
+    throw new RuntimeUnavailableError("The execution runtime store is not available");
+  }
+  return ctx.executionRuntime;
+}
+export function requireRuntimeAdapters(ctx: AppContext): RuntimeAdapterRegistry {
+  if (ctx.runtimeAdapters === undefined) {
+    throw new RuntimeUnavailableError("No runtime adapters are configured");
+  }
+  return ctx.runtimeAdapters;
+}
+export function requireRuntimeSecrets(ctx: AppContext): RuntimeSecretStore {
+  if (ctx.runtimeSecrets === undefined) {
+    throw new RuntimeUnavailableError("The runtime secret store is not available");
+  }
+  return ctx.runtimeSecrets;
 }
 
 /**

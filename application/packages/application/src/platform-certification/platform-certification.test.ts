@@ -117,7 +117,7 @@ describe("full enterprise workflow E1→E7 + certification", () => {
     const cert = await runPlatformCertification(ctx, workspaceId, { title: "E8 certification" });
     expect(cert.status).toBe("completed");
     expect(cert.outcome).not.toBe("failed");
-    expect(cert.categoriesCovered).toBe(16);
+    expect(cert.categoriesCovered).toBe(17); // + runtime governance (F3)
     expect(cert.score).toBeGreaterThanOrEqual(90);
 
     const readiness = await getProductionReadiness(ctx, cert.id);

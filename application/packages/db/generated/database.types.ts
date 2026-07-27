@@ -8516,6 +8516,403 @@ export type Database = {
           },
         ]
       }
+      runtime_capability_snapshot: {
+        Row: {
+          capabilities: Json
+          client_id: string | null
+          created_at: string
+          discovered_at: string
+          id: string
+          provider: string
+          provider_version: string | null
+          runtime_registration_id: string
+          workspace_id: string
+        }
+        Insert: {
+          capabilities?: Json
+          client_id?: string | null
+          created_at?: string
+          discovered_at: string
+          id: string
+          provider: string
+          provider_version?: string | null
+          runtime_registration_id: string
+          workspace_id: string
+        }
+        Update: {
+          capabilities?: Json
+          client_id?: string | null
+          created_at?: string
+          discovered_at?: string
+          id?: string
+          provider?: string
+          provider_version?: string | null
+          runtime_registration_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_capability_snapshot_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_capability_snapshot_runtime_registration_id_fkey"
+            columns: ["runtime_registration_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_registration"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_credential_reference: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by_user_id: string
+          expires_at: string | null
+          id: string
+          metadata: Json
+          provider: string
+          rotated_at: string | null
+          runtime_registration_id: string | null
+          secret_ref: string
+          secret_version: string
+          updated_at: string
+          validation_state: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id: string
+          expires_at?: string | null
+          id: string
+          metadata?: Json
+          provider: string
+          rotated_at?: string | null
+          runtime_registration_id?: string | null
+          secret_ref: string
+          secret_version?: string
+          updated_at?: string
+          validation_state?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          provider?: string
+          rotated_at?: string | null
+          runtime_registration_id?: string | null
+          secret_ref?: string
+          secret_version?: string
+          updated_at?: string
+          validation_state?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_credential_reference_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_deployment: {
+        Row: {
+          activation_state: string
+          approval_expires_at: string | null
+          approval_reference_id: string | null
+          approved_by_user_id: string | null
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          deployed_at: string | null
+          deployed_by_user_id: string | null
+          deployment_package_id: string
+          deployment_version: number
+          external_workflow_id: string | null
+          external_workflow_version: string | null
+          id: string
+          package_hash: string
+          previous_deployment_id: string | null
+          provider: string
+          requested_by_user_id: string
+          rollback_source_deployment_id: string | null
+          runtime_registration_id: string
+          status: string
+          target_environment: string
+          trace_id: string
+          translated_workflow_hash: string
+          updated_at: string
+          version: number
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Insert: {
+          activation_state?: string
+          approval_expires_at?: string | null
+          approval_reference_id?: string | null
+          approved_by_user_id?: string | null
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          deployed_at?: string | null
+          deployed_by_user_id?: string | null
+          deployment_package_id: string
+          deployment_version?: number
+          external_workflow_id?: string | null
+          external_workflow_version?: string | null
+          id: string
+          package_hash: string
+          previous_deployment_id?: string | null
+          provider: string
+          requested_by_user_id: string
+          rollback_source_deployment_id?: string | null
+          runtime_registration_id: string
+          status?: string
+          target_environment: string
+          trace_id: string
+          translated_workflow_hash?: string
+          updated_at?: string
+          version?: number
+          workflow_definition_id: string
+          workspace_id: string
+        }
+        Update: {
+          activation_state?: string
+          approval_expires_at?: string | null
+          approval_reference_id?: string | null
+          approved_by_user_id?: string | null
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          deployed_at?: string | null
+          deployed_by_user_id?: string | null
+          deployment_package_id?: string
+          deployment_version?: number
+          external_workflow_id?: string | null
+          external_workflow_version?: string | null
+          id?: string
+          package_hash?: string
+          previous_deployment_id?: string | null
+          provider?: string
+          requested_by_user_id?: string
+          rollback_source_deployment_id?: string | null
+          runtime_registration_id?: string
+          status?: string
+          target_environment?: string
+          trace_id?: string
+          translated_workflow_hash?: string
+          updated_at?: string
+          version?: number
+          workflow_definition_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_deployment_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_deployment_runtime_registration_id_fkey"
+            columns: ["runtime_registration_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_registration"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_deployment_attempt: {
+        Row: {
+          attempt_number: number
+          client_id: string | null
+          created_at: string
+          deployment_id: string
+          failure_category: string | null
+          finished_at: string | null
+          id: string
+          idempotency_key: string
+          operation: string
+          provider_code: string | null
+          started_at: string
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          attempt_number?: number
+          client_id?: string | null
+          created_at?: string
+          deployment_id: string
+          failure_category?: string | null
+          finished_at?: string | null
+          id: string
+          idempotency_key: string
+          operation: string
+          provider_code?: string | null
+          started_at: string
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          attempt_number?: number
+          client_id?: string | null
+          created_at?: string
+          deployment_id?: string
+          failure_category?: string | null
+          finished_at?: string | null
+          id?: string
+          idempotency_key?: string
+          operation?: string
+          provider_code?: string | null
+          started_at?: string
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_deployment_attempt_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_deployment_attempt_deployment_id_fkey"
+            columns: ["deployment_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_deployment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_deployment_event: {
+        Row: {
+          actor_user_id: string | null
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          deployment_id: string
+          from_status: string | null
+          id: string
+          operation: string | null
+          reason: string
+          to_status: string | null
+          workspace_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          deployment_id: string
+          from_status?: string | null
+          id: string
+          operation?: string | null
+          reason?: string
+          to_status?: string | null
+          workspace_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          deployment_id?: string
+          from_status?: string | null
+          id?: string
+          operation?: string | null
+          reason?: string
+          to_status?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_deployment_event_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_deployment_event_deployment_id_fkey"
+            columns: ["deployment_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_deployment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_deployment_log: {
+        Row: {
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          deployment_id: string | null
+          execution_id: string | null
+          id: string
+          message: string
+          metadata: Json
+          operation: string
+          provider: string
+          runtime_registration_id: string | null
+          severity: string
+          trace_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          deployment_id?: string | null
+          execution_id?: string | null
+          id: string
+          message?: string
+          metadata?: Json
+          operation: string
+          provider: string
+          runtime_registration_id?: string | null
+          severity?: string
+          trace_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          deployment_id?: string | null
+          execution_id?: string | null
+          id?: string
+          message?: string
+          metadata?: Json
+          operation?: string
+          provider?: string
+          runtime_registration_id?: string | null
+          severity?: string
+          trace_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_deployment_log_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       runtime_events: {
         Row: {
           actor: string | null
@@ -8581,6 +8978,597 @@ export type Database = {
             columns: ["run_id"]
             isOneToOne: false
             referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_execution: {
+        Row: {
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          deployment_id: string
+          duration_ms: number
+          error_summary: string
+          external_execution_id: string
+          external_workflow_id: string | null
+          failure_category: string | null
+          id: string
+          last_node: string | null
+          retry_number: number
+          runtime_registration_id: string
+          started_at: string | null
+          status: string
+          stopped_at: string | null
+          trace_id: string
+          trigger_type: string | null
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          deployment_id: string
+          duration_ms?: number
+          error_summary?: string
+          external_execution_id: string
+          external_workflow_id?: string | null
+          failure_category?: string | null
+          id: string
+          last_node?: string | null
+          retry_number?: number
+          runtime_registration_id: string
+          started_at?: string | null
+          status?: string
+          stopped_at?: string | null
+          trace_id: string
+          trigger_type?: string | null
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          deployment_id?: string
+          duration_ms?: number
+          error_summary?: string
+          external_execution_id?: string
+          external_workflow_id?: string | null
+          failure_category?: string | null
+          id?: string
+          last_node?: string | null
+          retry_number?: number
+          runtime_registration_id?: string
+          started_at?: string | null
+          status?: string
+          stopped_at?: string | null
+          trace_id?: string
+          trigger_type?: string | null
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_execution_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_execution_deployment_id_fkey"
+            columns: ["deployment_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_deployment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_execution_runtime_registration_id_fkey"
+            columns: ["runtime_registration_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_registration"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_execution_attempt: {
+        Row: {
+          attempt_number: number
+          client_id: string | null
+          created_at: string
+          deployment_id: string
+          failure_category: string | null
+          finished_at: string | null
+          id: string
+          runtime_execution_id: string
+          started_at: string | null
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          attempt_number?: number
+          client_id?: string | null
+          created_at?: string
+          deployment_id: string
+          failure_category?: string | null
+          finished_at?: string | null
+          id: string
+          runtime_execution_id: string
+          started_at?: string | null
+          status: string
+          workspace_id: string
+        }
+        Update: {
+          attempt_number?: number
+          client_id?: string | null
+          created_at?: string
+          deployment_id?: string
+          failure_category?: string | null
+          finished_at?: string | null
+          id?: string
+          runtime_execution_id?: string
+          started_at?: string | null
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_execution_attempt_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_execution_attempt_runtime_execution_id_fkey"
+            columns: ["runtime_execution_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_execution"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_execution_failure: {
+        Row: {
+          category: string
+          client_id: string | null
+          created_at: string
+          deployment_id: string
+          id: string
+          last_node: string | null
+          message: string
+          provider_code: string | null
+          retryable: boolean
+          runtime_execution_id: string
+          workspace_id: string
+        }
+        Insert: {
+          category: string
+          client_id?: string | null
+          created_at?: string
+          deployment_id: string
+          id: string
+          last_node?: string | null
+          message?: string
+          provider_code?: string | null
+          retryable?: boolean
+          runtime_execution_id: string
+          workspace_id: string
+        }
+        Update: {
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          deployment_id?: string
+          id?: string
+          last_node?: string | null
+          message?: string
+          provider_code?: string | null
+          retryable?: boolean
+          runtime_execution_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_execution_failure_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_execution_failure_runtime_execution_id_fkey"
+            columns: ["runtime_execution_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_execution"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_health_snapshot: {
+        Row: {
+          checked_at: string
+          client_id: string | null
+          created_at: string
+          detail: Json
+          id: string
+          latency_ms: number
+          level: string
+          provider_version: string | null
+          runtime_registration_id: string
+          workspace_id: string
+        }
+        Insert: {
+          checked_at: string
+          client_id?: string | null
+          created_at?: string
+          detail?: Json
+          id: string
+          latency_ms?: number
+          level: string
+          provider_version?: string | null
+          runtime_registration_id: string
+          workspace_id: string
+        }
+        Update: {
+          checked_at?: string
+          client_id?: string | null
+          created_at?: string
+          detail?: Json
+          id?: string
+          latency_ms?: number
+          level?: string
+          provider_version?: string | null
+          runtime_registration_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_health_snapshot_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_health_snapshot_runtime_registration_id_fkey"
+            columns: ["runtime_registration_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_registration"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_policy: {
+        Row: {
+          allowed_deployer_roles: Json
+          auto_activate: boolean
+          client_id: string | null
+          created_at: string
+          created_by_user_id: string
+          environment: string
+          exact_hash_approval: boolean
+          health_check_required: boolean
+          id: string
+          max_execution_ms: number
+          max_retries: number
+          provider: string
+          requires_approval: boolean
+          rollback_required: boolean
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          allowed_deployer_roles?: Json
+          auto_activate?: boolean
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id: string
+          environment: string
+          exact_hash_approval?: boolean
+          health_check_required?: boolean
+          id: string
+          max_execution_ms?: number
+          max_retries?: number
+          provider: string
+          requires_approval?: boolean
+          rollback_required?: boolean
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          allowed_deployer_roles?: Json
+          auto_activate?: boolean
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          environment?: string
+          exact_hash_approval?: boolean
+          health_check_required?: boolean
+          id?: string
+          max_execution_ms?: number
+          max_retries?: number
+          provider?: string
+          requires_approval?: boolean
+          rollback_required?: boolean
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_policy_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_reconciliation: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          deployment_id: string | null
+          detail: string
+          drift_class: string
+          expected_hash: string
+          id: string
+          kind: string
+          provider_hash: string
+          runtime_registration_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          deployment_id?: string | null
+          detail?: string
+          drift_class?: string
+          expected_hash?: string
+          id: string
+          kind: string
+          provider_hash?: string
+          runtime_registration_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          deployment_id?: string | null
+          detail?: string
+          drift_class?: string
+          expected_hash?: string
+          id?: string
+          kind?: string
+          provider_hash?: string
+          runtime_registration_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_reconciliation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_reconciliation_runtime_registration_id_fkey"
+            columns: ["runtime_registration_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_registration"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_registration: {
+        Row: {
+          base_url_ref: string
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          created_by_user_id: string
+          credential_reference_id: string | null
+          display_name: string
+          environment: string
+          health_state: string
+          id: string
+          last_health_check_at: string | null
+          provider: string
+          provider_version: string | null
+          status: string
+          supported_capabilities: Json
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          base_url_ref: string
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          created_by_user_id: string
+          credential_reference_id?: string | null
+          display_name: string
+          environment: string
+          health_state?: string
+          id: string
+          last_health_check_at?: string | null
+          provider: string
+          provider_version?: string | null
+          status?: string
+          supported_capabilities?: Json
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          base_url_ref?: string
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          created_by_user_id?: string
+          credential_reference_id?: string | null
+          display_name?: string
+          environment?: string
+          health_state?: string
+          id?: string
+          last_health_check_at?: string | null
+          provider?: string
+          provider_version?: string | null
+          status?: string
+          supported_capabilities?: Json
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_registration_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_rollback_request: {
+        Row: {
+          approval_reference_id: string | null
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          id: string
+          reason: string
+          requested_by_user_id: string
+          result_deployment_id: string | null
+          source_deployment_id: string
+          status: string
+          target_deployment_id: string
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          approval_reference_id?: string | null
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          id: string
+          reason: string
+          requested_by_user_id: string
+          result_deployment_id?: string | null
+          source_deployment_id: string
+          status?: string
+          target_deployment_id: string
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          approval_reference_id?: string | null
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          requested_by_user_id?: string
+          result_deployment_id?: string | null
+          source_deployment_id?: string
+          status?: string
+          target_deployment_id?: string
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_rollback_request_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_rollback_request_source_deployment_id_fkey"
+            columns: ["source_deployment_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_deployment"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_rollback_request_target_deployment_id_fkey"
+            columns: ["target_deployment_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_deployment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      runtime_webhook_receipt: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          external_event_id: string
+          id: string
+          idempotency_key: string
+          processed_at: string | null
+          provider: string
+          received_at: string
+          runtime_registration_id: string
+          signature_valid: boolean
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          external_event_id: string
+          id: string
+          idempotency_key: string
+          processed_at?: string | null
+          provider: string
+          received_at: string
+          runtime_registration_id: string
+          signature_valid?: boolean
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          external_event_id?: string
+          id?: string
+          idempotency_key?: string
+          processed_at?: string | null
+          provider?: string
+          received_at?: string
+          runtime_registration_id?: string
+          signature_valid?: boolean
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "runtime_webhook_receipt_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "runtime_webhook_receipt_runtime_registration_id_fkey"
+            columns: ["runtime_registration_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_registration"
             referencedColumns: ["id"]
           },
         ]

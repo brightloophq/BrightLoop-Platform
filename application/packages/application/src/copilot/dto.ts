@@ -31,6 +31,11 @@ export interface ConversationContextDTO {
   hasAutomation: boolean;
   activeMissionId: string | null;
   permissions: string[];
+  /** F3 runtime awareness — so the Copilot can answer deployment/runtime questions. */
+  activeDeployments: number;
+  failedDeployments: number;
+  awaitingDeploymentApproval: number;
+  runtimesHealthy: boolean;
 }
 
 /** The complete result of one assistant turn. */

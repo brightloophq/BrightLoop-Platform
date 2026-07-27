@@ -119,6 +119,9 @@ import {
   SupabaseCopilotMessageRepository,
   SupabaseCopilotCitationRepository,
   SupabaseCopilotActionRepository,
+  createExecutionRuntimeRepositories,
+  createN8nRuntimeAdapter,
+  createEnvRuntimeSecretStore,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -144,6 +147,9 @@ import {
   type AgentRepositories,
   type CertificationRepositories,
   type CopilotRepositories,
+  type ExecutionRuntimeRepositories,
+  type RuntimeAdapterRegistry,
+  type RuntimeSecretStore,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -495,6 +501,20 @@ export async function getCopilotRepositories(): Promise<CopilotRepositories> {
     citations: new SupabaseCopilotCitationRepository(client),
     actions: new SupabaseCopilotActionRepository(client),
   };
+}
+
+/** Phase F · Execution Runtime repositories (F3), bound to the caller's RLS session. */
+export async function getExecutionRuntimeRepositories(): Promise<ExecutionRuntimeRepositories> {
+  const client = await createClient();
+  return createExecutionRuntimeRepositories(client);
+}
+/** The runtime provider adapters (n8n is the first real provider). Stateless. */
+export function getRuntimeAdapterRegistry(): RuntimeAdapterRegistry {
+  return { n8n: createN8nRuntimeAdapter() };
+}
+/** The env-backed runtime secret store (resolves references; never exposes values). */
+export function getRuntimeSecretStore(): RuntimeSecretStore {
+  return createEnvRuntimeSecretStore();
 }
 
 /** The core-surfaces domain service for WRITES (scan/finding/domain/activation). */

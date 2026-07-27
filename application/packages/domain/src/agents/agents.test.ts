@@ -10,7 +10,8 @@ import { describe, it, expect } from "vitest";
 import {
   CAPABILITY_REGISTRY, canClaimTask, canDelegate, canTransitionMission, canTransitionRun, canTransitionAgentTask,
   capabilityApprovalClass, capabilityRequiresApproval, claimStamp, computeEvaluationScore, getCapability,
-  guardCapabilitySelection, guardrailViolations, idempotencyKeyFor, isKnownCapability, planMission, scanForInjection,
+  guardCapabilitySelection, guardrailViolations, idempotencyKeyFor, isGovernedExternalCapability, isInvocableCapability,
+  isKnownCapability, planMission, scanForInjection,
   stableHash, terminationReason, topologicalTaskOrder, validateMissionPlan, validateTaskGraph, outranks,
   type MissionUsage, type TaskNode,
 } from "./index.js";
@@ -29,10 +30,15 @@ describe("lifecycle guards", () => {
 });
 
 describe("capability registry", () => {
-  it("only exposes known, non-external capabilities mapped to services", () => {
+  it("only exposes known capabilities mapped to services; external caps are GOVERNED (F3)", () => {
     expect(isKnownCapability("strategy.get_result")).toBe(true);
     expect(isKnownCapability("evil.exfiltrate")).toBe(false);
-    expect(CAPABILITY_REGISTRY.every((c) => c.sideEffect !== "external")).toBe(true);
+    // F3: external side effects exist but every one must be fully governed + invocable.
+    const external = CAPABILITY_REGISTRY.filter((c) => c.sideEffect === "external");
+    expect(external.length).toBeGreaterThan(0);
+    expect(external.every((c) => isGovernedExternalCapability(c) && isInvocableCapability(c.key))).toBe(true);
+    // an ungoverned external key is never invocable.
+    expect(isInvocableCapability("nope.external")).toBe(false);
     expect(CAPABILITY_REGISTRY.every((c) => c.service.length > 0 && c.requiredPermission.length > 0)).toBe(true);
   });
   it("marks the mandatory-approval capabilities", () => {
