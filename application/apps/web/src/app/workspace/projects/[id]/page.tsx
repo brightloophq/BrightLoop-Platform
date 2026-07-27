@@ -31,7 +31,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
     <>
       <div className={styles.pageHead}>
         <div><h1 className={styles.pageTitle}>{workspace.title}</h1><p className={styles.pageSub}>Project workspace</p></div>
-        <Badge status={workspace.status}>{workspace.status}</Badge>
+        <Badge status={workspace.status} dot>{workspace.status}</Badge>
       </div>
       <div className={styles.teamGrid}>
         {FACETS.map((f) => (

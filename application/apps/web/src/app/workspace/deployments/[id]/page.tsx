@@ -33,7 +33,7 @@ export default async function DeploymentDetailPage({ params }: { params: Promise
         </div>
         <div className={styles.rowRight}>
           {d.activationState === "active" && <Badge tone="success">active</Badge>}
-          <Badge status={d.status}>{d.status.replace(/_/g, " ")}</Badge>
+          <Badge status={d.status} dot>{d.status.replace(/_/g, " ")}</Badge>
         </div>
       </div>
 

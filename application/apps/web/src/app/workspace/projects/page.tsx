@@ -19,7 +19,7 @@ export default async function ProjectsPage() {
         : <div className={styles.list}>{data.workspaces.map((w) => (
             <Link key={w.id} href={`/workspace/projects/${w.id}`} className={styles.row}>
               <div className={styles.rowMain}><div className={styles.rowTitle}>{w.title}</div><div className={styles.rowMeta}>Transformation workspace</div></div>
-              <div className={styles.rowRight}><Badge status={w.status}>{w.status}</Badge></div>
+              <div className={styles.rowRight}><Badge status={w.status} dot>{w.status}</Badge></div>
             </Link>))}</div>}
     </>
   );

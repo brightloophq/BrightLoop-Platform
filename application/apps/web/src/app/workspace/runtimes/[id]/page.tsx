@@ -25,7 +25,7 @@ export default async function RuntimeDetailPage({ params }: { params: Promise<{ 
           <h1 className={styles.pageTitle}>{runtime.displayName}</h1>
           <p className={styles.pageSub}>{runtime.provider} · {runtime.environment} · last checked {runtime.lastHealthCheckAt ?? "never"}</p>
         </div>
-        <div className={styles.rowRight}><Badge status={runtime.status}>{runtime.status.replace(/_/g, " ")}</Badge></div>
+        <div className={styles.rowRight}><Badge status={runtime.status} dot>{runtime.status.replace(/_/g, " ")}</Badge></div>
       </div>
 
       <RuntimeControls runtimeId={runtime.id} />

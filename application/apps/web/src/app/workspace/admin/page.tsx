@@ -51,7 +51,7 @@ export default async function WorkspaceAdminPage() {
           : <div className={styles.list}>{aiTeam.profiles.slice(0, 8).map((p) => (
               <div key={p.id} className={styles.row}>
                 <div className={styles.rowMain}><div className={styles.rowTitle}><Icon name="users" size={15} /> {p.name}</div><div className={styles.rowMeta}>{p.role}{p.purpose ? ` · ${p.purpose}` : ""}</div></div>
-                <div className={styles.rowRight}><Badge status={p.status}>{p.status}</Badge></div>
+                <div className={styles.rowRight}><Badge status={p.status} dot>{p.status}</Badge></div>
               </div>))}</div>}
       </div>
 

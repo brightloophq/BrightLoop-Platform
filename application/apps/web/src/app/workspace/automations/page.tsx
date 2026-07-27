@@ -18,7 +18,7 @@ export default async function AutomationsPage() {
         : <div className={styles.list}>{data.intents.map((i) => (
             <div key={i.id} className={styles.row}>
               <div className={styles.rowMain}><div className={styles.rowTitle}>{i.title}</div><div className={styles.rowMeta}>{i.stepCount} steps · {i.branchCount} branches · {i.variableCount} variables</div></div>
-              <div className={styles.rowRight}><Badge status={i.status}>{i.status.replace(/_/g, " ")}</Badge></div>
+              <div className={styles.rowRight}><Badge status={i.status} dot>{i.status.replace(/_/g, " ")}</Badge></div>
             </div>))}</div>}
     </>
   );

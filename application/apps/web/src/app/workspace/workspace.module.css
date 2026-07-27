@@ -112,6 +112,13 @@
   border-radius: 50%; background: var(--signal); border: 2px solid var(--surface);
 }
 
+/* Blueprint dot-grid backdrop (design §06: scrolling main on the blueprint grid). */
+.main {
+  background-color: var(--bg);
+  background-image: radial-gradient(color-mix(in oklab, var(--ink) 8%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}
 .content { padding: var(--space-6); max-width: var(--container-wide); width: 100%; margin: 0 auto; }
 
 /* ---- popovers (command palette / notifications) ---------------------------- */

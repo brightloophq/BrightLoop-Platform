@@ -19,7 +19,7 @@ export default async function MissionPage({ params }: { params: Promise<{ id: st
       <div className={styles.pageHead}>
         <div><h1 className={styles.pageTitle}>{mission.title}</h1><p className={styles.pageSub}>{mission.goal}</p></div>
         <span style={{ display: "flex", gap: "var(--space-2)", alignItems: "center" }}>
-          <Badge status={mission.status}>{mission.status.replace(/_/g, " ")}</Badge>
+          <Badge status={mission.status} dot>{mission.status.replace(/_/g, " ")}</Badge>
           <div className={styles.progressTrack}><div className={styles.progressFill} style={{ width: `${mission.progress}%` }} /></div>
         </span>
       </div>
@@ -40,7 +40,7 @@ export default async function MissionPage({ params }: { params: Promise<{ id: st
               : <div className={styles.list}>{tasks.map((t) => (
                   <div key={t.id} className={styles.row}>
                     <div className={styles.rowMain}><div className={styles.rowTitle}>{t.title}</div><div className={styles.rowMeta}>{t.assignedRole.replace(/_/g, " ")}{t.dependsOn.length > 0 ? ` · depends on ${t.dependsOn.length}` : ""}{t.approvalGated ? " · approval gate" : ""}</div></div>
-                    <div className={styles.rowRight}><Badge status={t.status}>{t.status.replace(/_/g, " ")}</Badge></div>
+                    <div className={styles.rowRight}><Badge status={t.status} dot>{t.status.replace(/_/g, " ")}</Badge></div>
                   </div>))}</div>}
           </section>
 
@@ -58,13 +58,13 @@ export default async function MissionPage({ params }: { params: Promise<{ id: st
             <div className={styles.sectionHead}><span className={styles.sectionTitle}>Approvals</span></div>
             {approvals.length === 0 ? <EmptyState icon="check-circle" title="No approvals" body="No approval gates on this mission." />
               : <div className={styles.list}>{approvals.map((a) => (
-                  <div key={a.id} className={styles.row}><div className={styles.rowMain}><div className={styles.rowTitle}>{a.approvalClass.replace(/_/g, " ")}</div><div className={styles.rowMeta}>task {a.taskKey}</div></div><Badge status={a.status}>{a.status}</Badge></div>))}</div>}
+                  <div key={a.id} className={styles.row}><div className={styles.rowMain}><div className={styles.rowTitle}>{a.approvalClass.replace(/_/g, " ")}</div><div className={styles.rowMeta}>task {a.taskKey}</div></div><Badge status={a.status} dot>{a.status}</Badge></div>))}</div>}
           </section>
 
           <section className={styles.section}>
             <div className={styles.sectionHead}><span className={styles.sectionTitle}>Delegations</span></div>
             <div className={styles.list}>{delegations.slice(0, 8).map((d) => (
-              <div key={d.id} className={styles.row}><div className={styles.rowMain}><div className={styles.rowTitle}>{d.delegatingRole.replace(/_/g, " ")} → {d.receivingRole.replace(/_/g, " ")}</div><div className={styles.rowMeta}>{d.taskKey}</div></div><Badge status={d.status}>{d.status}</Badge></div>))}
+              <div key={d.id} className={styles.row}><div className={styles.rowMain}><div className={styles.rowTitle}>{d.delegatingRole.replace(/_/g, " ")} → {d.receivingRole.replace(/_/g, " ")}</div><div className={styles.rowMeta}>{d.taskKey}</div></div><Badge status={d.status} dot>{d.status}</Badge></div>))}
               {delegations.length === 0 && <div className={styles.rowMeta}>No delegations recorded.</div>}
             </div>
           </section>

@@ -94,3 +94,28 @@
   .detailRow { flex-direction: column; align-items: flex-start; gap: var(--space-1); }
   .detailValue { text-align: left; }
 }
+
+/* ---- F3.5 Command Center dashboard (aligned to 03 + 07 + 14) --------------- */
+.stateLine { display: inline-flex; align-items: center; gap: var(--space-2); font-family: var(--font-mono); font-size: var(--fs-xs); letter-spacing: var(--ls-eyebrow); text-transform: uppercase; color: var(--ink-3); margin-bottom: var(--space-2); }
+.stateDot { width: 8px; height: 8px; border-radius: 50%; background: var(--positive); box-shadow: 0 0 0 3px color-mix(in srgb, var(--positive) 22%, transparent); }
+.stateDot[data-state="warn"] { background: var(--caution); box-shadow: 0 0 0 3px color-mix(in srgb, var(--caution) 22%, transparent); }
+
+.commandHero { display: grid; grid-template-columns: minmax(280px, 340px) 1fr; gap: var(--space-4); align-items: stretch; margin-bottom: var(--space-6); }
+.gaugeWrap { display: flex; }
+.heroMetrics { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+
+/* Move row: a decision-brief hint — left amber signal edge (Move = needs your okay). */
+.moveRow { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); background: var(--surface); border: 1px solid var(--line); border-left: 2px solid var(--signal); border-radius: var(--radius-lg); text-decoration: none; color: var(--ink); transition: border-color var(--dur-fast) var(--ease-out), transform var(--dur-fast) var(--ease-out); }
+.moveRow:hover { border-color: var(--line-strong); border-left-color: var(--signal); transform: translateY(-1px); }
+
+.teamBanner { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); text-decoration: none; color: var(--ink); transition: border-color var(--dur-fast) var(--ease-out); }
+.teamBanner:hover { border-color: var(--line-strong); }
+.teamBannerMain { flex: 1; min-width: 0; }
+
+@media (max-width: 740px) {
+  .commandHero { grid-template-columns: 1fr; }
+  .heroMetrics { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Decision-brief footer note (design 12 footer). */
+.decisionFoot { display: inline-flex; align-items: center; gap: var(--space-2); margin-top: var(--space-4); font-size: var(--fs-xs); color: var(--ink-3); }

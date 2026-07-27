@@ -32,7 +32,7 @@ export default async function RuntimesPage() {
               </div>
               <div className={styles.rowRight}>
                 <Badge tone={healthTone(r.healthState)}>{r.healthState}</Badge>
-                <Badge status={r.status}>{r.status.replace(/_/g, " ")}</Badge>
+                <Badge status={r.status} dot>{r.status.replace(/_/g, " ")}</Badge>
               </div>
             </Link>))}</div>}
     </>
