@@ -77,7 +77,7 @@ const seed = { initA: "", initB: "" };
 
 /** Register a validated, healthy production runtime + a production policy. */
 async function readyProdRuntime(): Promise<string> {
-  const rt = await registerRuntime(ctx, { workspaceId, provider: "n8n", displayName: "Prod n8n", environment: "production", baseUrl: "https://n8n.internal", secret: "n8n_api_key_SECRET" });
+  const rt = await registerRuntime(ctx, { workspaceId, provider: "n8n", displayName: "Prod n8n", environment: "production", baseUrl: "https://n8n.internal", secret: "n8n-dev-placeholder" });
   await validateRuntimeConnection(ctx, rt.id);
   await discoverRuntimeCapabilities(ctx, rt.id);
   await upsertRuntimePolicy(ctx, { workspaceId, environment: "production", requiresApproval: true, exactHashApproval: true, rollbackRequired: false, healthCheckRequired: true, autoActivate: false });
@@ -128,9 +128,9 @@ beforeEach(async () => {
 
 describe("runtime registration + health", () => {
   it("registers a runtime, validates it, and never exposes the secret", async () => {
-    const rt = await registerRuntime(ctx, { workspaceId, provider: "n8n", displayName: "n8n", environment: "staging", baseUrl: "https://n8n", secret: "super_secret_key" });
+    const rt = await registerRuntime(ctx, { workspaceId, provider: "n8n", displayName: "n8n", environment: "staging", baseUrl: "https://n8n", secret: "n8n-dev-placeholder" });
     expect(rt.status).toBe("pending_configuration");
-    expect(JSON.stringify(rt)).not.toContain("super_secret_key");
+    expect(JSON.stringify(rt)).not.toContain("n8n-dev-placeholder");
     const v = await validateRuntimeConnection(ctx, rt.id);
     expect(v.ok).toBe(true);
     const health = await checkRuntimeHealth(ctx, rt.id);
