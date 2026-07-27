@@ -2618,6 +2618,251 @@ export type Database = {
         }
         Relationships: []
       }
+      certification_exception: {
+        Row: {
+          approved_by_user_id: string
+          client_id: string | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          issue_code: string
+          reason: string
+          run_id: string
+          workspace_id: string
+        }
+        Insert: {
+          approved_by_user_id: string
+          client_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id: string
+          issue_code: string
+          reason: string
+          run_id: string
+          workspace_id: string
+        }
+        Update: {
+          approved_by_user_id?: string
+          client_id?: string | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          issue_code?: string
+          reason?: string
+          run_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certification_exception_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certification_exception_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "certification_run"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certification_issue: {
+        Row: {
+          bounded_context: string
+          category: string
+          client_id: string | null
+          code: string
+          created_at: string
+          detail: string
+          id: string
+          result_id: string | null
+          run_id: string
+          severity: string
+          status: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          bounded_context?: string
+          category: string
+          client_id?: string | null
+          code: string
+          created_at?: string
+          detail?: string
+          id: string
+          result_id?: string | null
+          run_id: string
+          severity: string
+          status?: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          bounded_context?: string
+          category?: string
+          client_id?: string | null
+          code?: string
+          created_at?: string
+          detail?: string
+          id?: string
+          result_id?: string | null
+          run_id?: string
+          severity?: string
+          status?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certification_issue_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certification_issue_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "certification_run"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certification_result: {
+        Row: {
+          category: string
+          checks_passed: number
+          checks_total: number
+          client_id: string | null
+          created_at: string
+          id: string
+          outcome: string
+          run_id: string
+          score: number
+          summary: string
+          workspace_id: string
+        }
+        Insert: {
+          category: string
+          checks_passed?: number
+          checks_total?: number
+          client_id?: string | null
+          created_at?: string
+          id: string
+          outcome: string
+          run_id: string
+          score?: number
+          summary?: string
+          workspace_id: string
+        }
+        Update: {
+          category?: string
+          checks_passed?: number
+          checks_total?: number
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          outcome?: string
+          run_id?: string
+          score?: number
+          summary?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certification_result_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "certification_result_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "certification_run"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certification_run: {
+        Row: {
+          categories_covered: number
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          duration_ms: number
+          failed_checks: number
+          id: string
+          outcome: string
+          passed_checks: number
+          published: boolean
+          requested_by_user_id: string
+          score: number
+          status: string
+          title: string
+          total_checks: number
+          updated_at: string
+          version: number
+          warning_count: number
+          workspace_id: string
+        }
+        Insert: {
+          categories_covered?: number
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          duration_ms?: number
+          failed_checks?: number
+          id: string
+          outcome?: string
+          passed_checks?: number
+          published?: boolean
+          requested_by_user_id: string
+          score?: number
+          status?: string
+          title: string
+          total_checks?: number
+          updated_at?: string
+          version?: number
+          warning_count?: number
+          workspace_id: string
+        }
+        Update: {
+          categories_covered?: number
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          duration_ms?: number
+          failed_checks?: number
+          id?: string
+          outcome?: string
+          passed_checks?: number
+          published?: boolean
+          requested_by_user_id?: string
+          score?: number
+          status?: string
+          title?: string
+          total_checks?: number
+          updated_at?: string
+          version?: number
+          warning_count?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certification_run_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           author_id: string
