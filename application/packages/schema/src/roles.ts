@@ -152,6 +152,14 @@ export const PERMISSIONS = {
     "planning.review",
     "planning.approve",
     "planning.feedback",
+    // E5 AI Automation Builder — operators generate/validate/publish automation
+    // definitions and prepare deployment packages (never execute or deploy them).
+    "automation.read",
+    "automation.write",
+    "automation.generate",
+    "automation.publish",
+    "automation.deploy",
+    "automation.feedback",
   ],
   client_admin: [
     "own.project.read",
@@ -171,6 +179,9 @@ export const PERMISSIONS = {
     // E4 AI Project Manager — clients may VIEW and give FEEDBACK on their own plan.
     "planning.read",
     "planning.feedback",
+    // E5 AI Automation Builder — clients may VIEW and give FEEDBACK on automation.
+    "automation.read",
+    "automation.feedback",
   ],
   client_member: [
     "own.project.read",
@@ -181,6 +192,8 @@ export const PERMISSIONS = {
     "strategy.feedback",
     "planning.read",
     "planning.feedback",
+    "automation.read",
+    "automation.feedback",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 

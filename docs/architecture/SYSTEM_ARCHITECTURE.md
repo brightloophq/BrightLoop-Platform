@@ -901,7 +901,6 @@ flowchart LR
   push --> dbv["db-verify\nsupabase start → db reset →\npgTAP → integration → type-drift"]
   push --> gl["gitleaks\nsecret scan (full history)"]
   verify --> vercel["Vercel preview"]
-  verify --> netlify["Netlify deploy-preview"]
 ```
 
 - **verify** job: `pnpm typecheck · lint · test · build` against
@@ -912,7 +911,8 @@ flowchart LR
   integration run needs, runs the adapter + coordinator integration tests,
   regenerates generated types, and **fails on type drift**.
 - **gitleaks** job: fails on any secret finding.
-- **Preview deploys**: Vercel and Netlify build deploy previews per PR.
+- **Deploys**: **Vercel** is the sole deploy provider — production from `main`,
+  a deploy preview per PR.
 
 The web app is a Next.js 15 application with three host surfaces (admin, portal,
 public) selected by `NEXT_PUBLIC_*_HOST`. Data access is `server-only`; the
