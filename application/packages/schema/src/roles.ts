@@ -73,6 +73,10 @@ export const PERMISSIONS = {
     "certification.*",
     // F2 AI Copilot — full access.
     "copilot.*",
+    // F3 Execution Runtime — full runtime + deployment + execution authority.
+    "runtime.*",
+    "deployment.*",
+    "execution.*",
   ],
   team_member: [
     "projects.read",
@@ -188,6 +192,23 @@ export const PERMISSIONS = {
     // F2 AI Copilot — operators use the assistant.
     "copilot.read",
     "copilot.use",
+    // F3 Execution Runtime — operators register/monitor runtimes, deploy, retry,
+    // reconcile. Production deploy/rollback are further gated by runtime POLICY
+    // (allowedDeployerRoles + mandatory approval), not permission alone. Rollback,
+    // cancel, credential + runtime administration remain owner/admin authorities.
+    "runtime.read",
+    "runtime.health.check",
+    "deployment.read",
+    "deployment.create",
+    "deployment.deploy",
+    "deployment.activate",
+    "deployment.pause",
+    "deployment.retry",
+    "deployment.reconcile",
+    "execution.read",
+    "execution.retry",
+    "execution.stop",
+    "execution.logs.read",
   ],
   client_admin: [
     "own.project.read",
@@ -222,6 +243,14 @@ export const PERMISSIONS = {
     // F2 AI Copilot — clients may use the assistant (permission-scoped).
     "copilot.read",
     "copilot.use",
+    // F3 Execution Runtime — clients VIEW their org's runtime/deployment/execution
+    // state and may APPROVE deployments assigned to them (via the existing approval
+    // system). Clients never deploy, roll back, or touch credential references.
+    "runtime.read",
+    "deployment.read",
+    "deployment.approve",
+    "execution.read",
+    "execution.logs.read",
   ],
   client_member: [
     "own.project.read",
@@ -241,6 +270,10 @@ export const PERMISSIONS = {
     "agent.approve",
     "copilot.read",
     "copilot.use",
+    // F3 Execution Runtime — read-only visibility into their org's runtime state.
+    "runtime.read",
+    "deployment.read",
+    "execution.read",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 

@@ -11,7 +11,7 @@
 
 import type { CertAuditCategory, CertOutcome, CertSeverity } from "@brightloop/schema";
 import { PERMISSIONS, ROLE_NAMES, hasCapability, isClientRole } from "@brightloop/schema";
-import { CAPABILITY_REGISTRY, INSTRUCTION_PRECEDENCE, isKnownCapability, isUntrusted } from "../agents/index.js";
+import { CAPABILITY_REGISTRY, INSTRUCTION_PRECEDENCE, externalGovernanceIssues, isGovernedExternalCapability, isKnownCapability, isUntrusted } from "../agents/index.js";
 import { MANDATORY_APPROVAL_CLASSES, PLATFORM_CONTEXTS, PLATFORM_TABLES, READ_MODEL_MANIFEST } from "./manifest.js";
 
 export interface AuditCheck { name: string; ok: boolean; severity: CertSeverity; detail: string }
@@ -59,7 +59,11 @@ export function auditCapabilities(): AuditReport {
     checks.push(chk(`${c.key}.service`, c.service.length > 0, "high", "maps to an application service"));
     checks.push(chk(`${c.key}.permission`, c.requiredPermission.length > 0, "critical", "declares a required permission"));
     checks.push(chk(`${c.key}.timeout`, c.timeoutMs > 0, "medium", "declares a timeout"));
-    checks.push(chk(`${c.key}.no_external`, c.sideEffect !== "external", "critical", "no external side effect"));
+    // F3: external side effects are GOVERNED, not forbidden — an external capability
+    // must declare its full safeguard set (provider/audit/observable/timeout/retry,
+    // plus approval + rollback when it promotes state). Non-external caps trivially pass.
+    const govIssues = externalGovernanceIssues(c);
+    checks.push(chk(`${c.key}.external_governed`, govIssues.length === 0, "critical", c.sideEffect === "external" ? (govIssues.length === 0 ? `governed external side effect (${c.provider})` : `ungoverned external: ${govIssues.join("; ")}`) : "no external side effect"));
     if (c.approval === "required") checks.push(chk(`${c.key}.approval_class`, c.approvalClass !== null, "high", "approval-required ⇒ approval class set"));
     checks.push(chk(`${c.key}.idempotency_consistent`, !(c.idempotency === "non_idempotent" && c.retry !== "none"), "medium", "non-idempotent capabilities are not auto-retried"));
   }
@@ -85,10 +89,10 @@ export function auditAuthorization(): AuditReport {
   for (const c of CAPABILITY_REGISTRY) {
     checks.push(chk(`${c.key}.owner`, hasCapability("owner", c.requiredPermission), "critical", "owner holds the permission"));
     checks.push(chk(`${c.key}.admin`, hasCapability("admin", c.requiredPermission), "high", "admin holds the permission"));
-    // Least privilege: clients must NOT hold write/run capabilities.
-    if (c.sideEffect === "write") {
+    // Least privilege: clients must NOT hold write OR external (deploy) capabilities.
+    if (c.sideEffect === "write" || c.sideEffect === "external") {
       for (const role of ROLE_NAMES.filter((r) => isClientRole(r))) {
-        checks.push(chk(`${c.key}.client_denied:${role}`, !hasCapability(role, c.requiredPermission), "critical", `${role} must not hold write capability ${c.requiredPermission}`));
+        checks.push(chk(`${c.key}.client_denied:${role}`, !hasCapability(role, c.requiredPermission), "critical", `${role} must not hold ${c.sideEffect} capability ${c.requiredPermission}`));
       }
     }
   }
@@ -140,7 +144,9 @@ export function auditIdempotency(): AuditReport {
 
 export function auditSecurity(): AuditReport {
   const checks: AuditCheck[] = [];
-  checks.push(chk("no_external_capabilities", CAPABILITY_REGISTRY.every((c) => c.sideEffect !== "external"), "critical", "no capability performs an external side effect"));
+  // F3: external side effects are permitted ONLY when fully governed (never ungoverned).
+  const external = CAPABILITY_REGISTRY.filter((c) => c.sideEffect === "external");
+  checks.push(chk("external_side_effects_governed", external.every(isGovernedExternalCapability), "critical", `${external.length} external capabilities, all governed`));
   checks.push(chk("closed_capability_set", !isKnownCapability("evil.exfiltrate") && isKnownCapability(CAPABILITY_REGISTRY[0]!.key), "critical", "capability keys are a closed registry set"));
   // Instruction precedence: policy first; evidence/external strictly lower trust.
   checks.push(chk("policy_first", INSTRUCTION_PRECEDENCE[0] === "system_policy", "critical", "system policy is the highest-trust class"));
@@ -217,6 +223,36 @@ export function auditPerformance(): AuditReport {
   return report("performance", checks);
 }
 
+/* ---- runtime side-effect governance (F3) ----------------------------------- */
+
+/**
+ * Certify that every controlled external side effect is fully governed. This is the
+ * evolution the runtime layer demanded: external capabilities are no longer
+ * forbidden — they must instead declare provider boundary, audit, observable
+ * operation, timeout, retry, and (when promoting state) mandatory approval + a
+ * rollback/compensation policy. Anything less FAILS certification.
+ */
+export function auditRuntime(): AuditReport {
+  const checks: AuditCheck[] = [];
+  const external = CAPABILITY_REGISTRY.filter((c) => c.sideEffect === "external");
+  checks.push(chk("external_present", external.length > 0, "info", `${external.length} governed external capabilities`));
+  for (const c of external) {
+    const issues = externalGovernanceIssues(c);
+    checks.push(chk(`${c.key}.governed`, issues.length === 0, "critical", issues.length === 0 ? `governed (${c.provider})` : `ungoverned: ${issues.join("; ")}`));
+    checks.push(chk(`${c.key}.provider_boundary`, c.provider !== null, "critical", `provider ${c.provider}`));
+    checks.push(chk(`${c.key}.audited`, c.audited, "critical", "declares an audit policy"));
+    checks.push(chk(`${c.key}.observable`, c.observableOperation !== null, "high", "declares an observable operation"));
+    checks.push(chk(`${c.key}.timeout`, c.timeoutMs > 0, "high", "declares a timeout"));
+    checks.push(chk(`${c.key}.tenant_scoped`, c.owningContext.length > 0, "high", "tenant-scoped owning context"));
+    if (c.promotion) {
+      checks.push(chk(`${c.key}.approval`, c.approval === "required" && c.approvalClass !== null, "critical", "promoting side effect ⇒ mandatory approval"));
+      checks.push(chk(`${c.key}.rollback`, c.rollback !== "none", "critical", "promoting side effect ⇒ rollback/compensation policy"));
+      checks.push(chk(`${c.key}.idempotency`, !(c.idempotency === "non_idempotent" && c.retry !== "none"), "high", "retryable ⇒ idempotent"));
+    }
+  }
+  return report("runtime", checks);
+}
+
 /* ---- the full sweep -------------------------------------------------------- */
 
 export type AuditFn = () => AuditReport;
@@ -237,6 +273,7 @@ export const ALL_AUDITS: Readonly<Record<CertAuditCategory, AuditFn>> = {
   api_contract: auditApiContract,
   read_model: auditReadModel,
   audit_trail: auditAuditTrail,
+  runtime: auditRuntime,
 };
 
 /** Run every audit (one report per category, deterministic order). */

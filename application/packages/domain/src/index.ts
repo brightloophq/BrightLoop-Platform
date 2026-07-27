@@ -69,5 +69,7 @@ export * from "./agents/index.js";
 export * from "./platform-certification/index.js";
 // AI Copilot (Phase F · F2) — conversational presentation layer over D+E.
 export * from "./copilot/index.js";
+// Execution Runtime (Phase F · F3) — governed deployment to external runtimes (n8n).
+export * from "./execution-runtime/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";

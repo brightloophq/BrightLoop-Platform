@@ -16,6 +16,8 @@ import { z } from "zod";
 export const certAuditCategorySchema = z.enum([
   "architecture", "capability", "boundary", "authorization", "rls", "approval", "idempotency", "checkpoint",
   "recovery", "performance", "security", "observability", "database", "api_contract", "read_model", "audit_trail",
+  // F3 — governed external side effects (runtime deployment).
+  "runtime",
 ]);
 export type CertAuditCategory = z.infer<typeof certAuditCategorySchema>;
 

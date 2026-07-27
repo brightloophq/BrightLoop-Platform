@@ -32,6 +32,7 @@ export const PLATFORM_CONTEXTS: readonly ContextManifest[] = [
   { key: "reporting", label: "E6 · AI Reporting", dependsOn: ["transformation-execution", "ai-foundation", "knowledge", "strategist", "project-manager", "automation-builder"], tableCount: 12, tenantIsolated: true, observability: ["workspace", "provider", "model", "tokens", "cost", "duration"] },
   { key: "agents", label: "E7 · AI Agents", dependsOn: ["transformation-execution", "ai-foundation", "knowledge", "strategist", "project-manager", "automation-builder", "reporting"], tableCount: 17, tenantIsolated: true, observability: ["workspace", "mission", "task", "approval", "checkpoint", "correlation", "trace", "provider", "model", "tokens", "cost", "duration"] },
   { key: "platform-certification", label: "E8 · Certification", dependsOn: ["transformation-execution", "ai-foundation", "knowledge", "strategist", "project-manager", "automation-builder", "reporting", "agents"], tableCount: 4, tenantIsolated: true, observability: ["workspace", "correlation", "duration"] },
+  { key: "execution-runtime", label: "F3 · Execution Runtime", dependsOn: ["automation-builder", "agents"], tableCount: 15, tenantIsolated: true, observability: ["workspace", "runtime", "deployment", "execution", "provider", "operation", "correlation", "trace", "duration"] },
 ];
 
 export type TableMode = "versioned" | "append_only" | "mutable" | "global";
@@ -79,10 +80,26 @@ export const PLATFORM_TABLES: readonly TableManifest[] = [
   { name: "certification_result", context: "platform-certification", mode: "append_only", tenant: true },
   { name: "certification_issue", context: "platform-certification", mode: "append_only", tenant: true },
   { name: "certification_exception", context: "platform-certification", mode: "append_only", tenant: true },
+  // F3 execution runtime (roots + append-only history/logs; credential ref is internal-only)
+  { name: "runtime_registration", context: "execution-runtime", mode: "versioned", tenant: true },
+  { name: "runtime_policy", context: "execution-runtime", mode: "versioned", tenant: true },
+  { name: "runtime_credential_reference", context: "execution-runtime", mode: "mutable", tenant: true },
+  { name: "runtime_capability_snapshot", context: "execution-runtime", mode: "append_only", tenant: true },
+  { name: "runtime_health_snapshot", context: "execution-runtime", mode: "append_only", tenant: true },
+  { name: "runtime_deployment", context: "execution-runtime", mode: "versioned", tenant: true },
+  { name: "runtime_deployment_attempt", context: "execution-runtime", mode: "append_only", tenant: true },
+  { name: "runtime_deployment_event", context: "execution-runtime", mode: "append_only", tenant: true },
+  { name: "runtime_deployment_log", context: "execution-runtime", mode: "append_only", tenant: true },
+  { name: "runtime_execution", context: "execution-runtime", mode: "versioned", tenant: true },
+  { name: "runtime_execution_attempt", context: "execution-runtime", mode: "append_only", tenant: true },
+  { name: "runtime_execution_failure", context: "execution-runtime", mode: "append_only", tenant: true },
+  { name: "runtime_rollback_request", context: "execution-runtime", mode: "versioned", tenant: true },
+  { name: "runtime_webhook_receipt", context: "execution-runtime", mode: "append_only", tenant: true },
+  { name: "runtime_reconciliation", context: "execution-runtime", mode: "append_only", tenant: true },
 ];
 
 /** The mandatory human-approval classes the platform enforces. */
-export const MANDATORY_APPROVAL_CLASSES: readonly string[] = ["plan_approval", "workflow_publish", "deployment_package"];
+export const MANDATORY_APPROVAL_CLASSES: readonly string[] = ["plan_approval", "workflow_publish", "deployment_package", "external_side_effect"];
 
 /** Public read models each context exposes (for the read-model audit). */
 export const READ_MODEL_MANIFEST: readonly { context: string; models: readonly string[] }[] = [
@@ -91,4 +108,5 @@ export const READ_MODEL_MANIFEST: readonly { context: string; models: readonly s
   { context: "automation-builder", models: ["Automation Dashboard", "Workflow Library", "Deployment Queue", "Version History"] },
   { context: "project-manager", models: ["Execution Dashboard", "Timeline View", "Dependency Graph", "Risk Register", "KPI Dashboard"] },
   { context: "platform-certification", models: ["Certification Dashboard", "Architecture Report", "Security Report", "RLS Report", "Production Readiness"] },
+  { context: "execution-runtime", models: ["Runtime Registry", "Runtime Detail", "Runtime Health", "Deployment List", "Deployment Detail", "Deployment Timeline", "Execution List", "Execution Detail", "Drift Report", "Rollback History", "Runtime Ops Dashboard", "Production Deployment Queue"] },
 ];
