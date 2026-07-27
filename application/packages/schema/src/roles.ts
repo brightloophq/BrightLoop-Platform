@@ -65,6 +65,8 @@ export const PERMISSIONS = {
     "strategy.*",
     // E4 AI Project Manager — full access.
     "planning.*",
+    // E6 AI Reporting & BI — full access.
+    "report.*",
   ],
   team_member: [
     "projects.read",
@@ -160,6 +162,13 @@ export const PERMISSIONS = {
     "automation.publish",
     "automation.deploy",
     "automation.feedback",
+    // E6 AI Reporting & BI — operators collect/generate/publish/schedule reports.
+    "report.read",
+    "report.write",
+    "report.generate",
+    "report.publish",
+    "report.schedule",
+    "report.feedback",
   ],
   client_admin: [
     "own.project.read",
@@ -182,6 +191,9 @@ export const PERMISSIONS = {
     // E5 AI Automation Builder — clients may VIEW and give FEEDBACK on automation.
     "automation.read",
     "automation.feedback",
+    // E6 AI Reporting — clients may VIEW reports and give FEEDBACK.
+    "report.read",
+    "report.feedback",
   ],
   client_member: [
     "own.project.read",
@@ -194,6 +206,8 @@ export const PERMISSIONS = {
     "planning.feedback",
     "automation.read",
     "automation.feedback",
+    "report.read",
+    "report.feedback",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 

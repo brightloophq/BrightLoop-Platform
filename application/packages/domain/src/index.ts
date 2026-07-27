@@ -61,5 +61,7 @@ export * from "./strategist/index.js";
 export * from "./project-manager/index.js";
 // AI Automation Builder (Phase E · E5) — approved plan → automation workflows.
 export * from "./automation-builder/index.js";
+// AI Reporting & BI (Phase E · E6) — observe upstream outputs → executive reports.
+export * from "./reporting/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";

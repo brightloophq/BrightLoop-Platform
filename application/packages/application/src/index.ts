@@ -26,3 +26,4 @@ export * from "./knowledge/index.js";
 export * from "./strategist/index.js";
 export * from "./project-manager/index.js";
 export * from "./automation-builder/index.js";
+export * from "./reporting/index.js";
