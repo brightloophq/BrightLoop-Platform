@@ -65,5 +65,7 @@ export * from "./automation-builder/index.js";
 export * from "./reporting/index.js";
 // AI Agents (Phase E · E7) — orchestrate E1–E6 + Phase D via capability registry.
 export * from "./agents/index.js";
+// Platform Certification (Phase E · E8) — audit E1–E7 for production readiness.
+export * from "./platform-certification/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";

@@ -164,6 +164,13 @@ export {
   SupabaseAgentFeedbackRepository,
   SupabaseCapabilityDefinitionRepository,
 } from "./agents/adapter.js";
+// Phase E · Platform Certification (E8) — four repository adapters.
+export {
+  SupabaseCertificationRunRepository,
+  SupabaseCertificationResultRepository,
+  SupabaseCertificationIssueRepository,
+  SupabaseCertificationExceptionRepository,
+} from "./platform-certification/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

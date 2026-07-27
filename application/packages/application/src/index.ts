@@ -28,3 +28,4 @@ export * from "./project-manager/index.js";
 export * from "./automation-builder/index.js";
 export * from "./reporting/index.js";
 export * from "./agents/index.js";
+export * from "./platform-certification/index.js";
