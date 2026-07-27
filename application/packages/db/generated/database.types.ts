@@ -1233,6 +1233,126 @@ export type Database = {
           },
         ]
       }
+      business_insight: {
+        Row: {
+          affected_metrics: Json
+          client_id: string | null
+          confidence: number
+          created_at: string
+          id: string
+          recommended_actions: Json
+          report_id: string
+          severity: string
+          summary: string
+          supporting_evidence: Json
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          affected_metrics?: Json
+          client_id?: string | null
+          confidence: number
+          created_at?: string
+          id: string
+          recommended_actions?: Json
+          report_id: string
+          severity: string
+          summary?: string
+          supporting_evidence?: Json
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          affected_metrics?: Json
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          id?: string
+          recommended_actions?: Json
+          report_id?: string
+          severity?: string
+          summary?: string
+          supporting_evidence?: Json
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_insight_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_insight_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_metric: {
+        Row: {
+          category: string
+          client_id: string | null
+          created_at: string
+          id: string
+          key: string
+          name: string
+          report_id: string
+          sample_size: number
+          source: string
+          unit: string
+          value: number
+          workspace_id: string
+        }
+        Insert: {
+          category: string
+          client_id?: string | null
+          created_at?: string
+          id: string
+          key: string
+          name: string
+          report_id: string
+          sample_size?: number
+          source: string
+          unit?: string
+          value?: number
+          workspace_id: string
+        }
+        Update: {
+          category?: string
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          key?: string
+          name?: string
+          report_id?: string
+          sample_size?: number
+          source?: string
+          unit?: string
+          value?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_metric_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_metric_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_scans: {
         Row: {
           baseline_index: number
@@ -2814,6 +2934,152 @@ export type Database = {
           },
         ]
       }
+      executive_report: {
+        Row: {
+          ai_duration_ms: number
+          analysis_duration_ms: number
+          client_id: string | null
+          collection_duration_ms: number
+          confidence: number
+          cost: number
+          created_at: string
+          currency: string
+          forecast_count: number
+          generation_duration_ms: number
+          id: string
+          insight_count: number
+          kind: string
+          metric_count: number
+          model: string | null
+          period: string
+          prompt_id: string | null
+          provider: string | null
+          report_size: number
+          requested_by_user_id: string
+          status: string
+          title: string
+          token_total: number
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          ai_duration_ms?: number
+          analysis_duration_ms?: number
+          client_id?: string | null
+          collection_duration_ms?: number
+          confidence?: number
+          cost?: number
+          created_at?: string
+          currency?: string
+          forecast_count?: number
+          generation_duration_ms?: number
+          id: string
+          insight_count?: number
+          kind: string
+          metric_count?: number
+          model?: string | null
+          period?: string
+          prompt_id?: string | null
+          provider?: string | null
+          report_size?: number
+          requested_by_user_id: string
+          status?: string
+          title: string
+          token_total?: number
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          ai_duration_ms?: number
+          analysis_duration_ms?: number
+          client_id?: string | null
+          collection_duration_ms?: number
+          confidence?: number
+          cost?: number
+          created_at?: string
+          currency?: string
+          forecast_count?: number
+          generation_duration_ms?: number
+          id?: string
+          insight_count?: number
+          kind?: string
+          metric_count?: number
+          model?: string | null
+          period?: string
+          prompt_id?: string | null
+          provider?: string | null
+          report_size?: number
+          requested_by_user_id?: string
+          status?: string
+          title?: string
+          token_total?: number
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_report_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      executive_summary: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          headline: string
+          highlights: Json
+          id: string
+          key_metrics: Json
+          overall_confidence: number
+          report_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          headline?: string
+          highlights?: Json
+          id: string
+          key_metrics?: Json
+          overall_confidence?: number
+          report_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          headline?: string
+          highlights?: Json
+          id?: string
+          key_metrics?: Json
+          overall_confidence?: number
+          report_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "executive_summary_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "executive_summary_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       file_uploads: {
         Row: {
           deliverable_id: string | null
@@ -2864,6 +3130,63 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      forecast: {
+        Row: {
+          basis: string
+          client_id: string | null
+          confidence: number
+          created_at: string
+          horizon_days: number
+          id: string
+          kind: string
+          metric_key: string
+          projected_value: number
+          report_id: string
+          workspace_id: string
+        }
+        Insert: {
+          basis?: string
+          client_id?: string | null
+          confidence: number
+          created_at?: string
+          horizon_days?: number
+          id: string
+          kind: string
+          metric_key: string
+          projected_value?: number
+          report_id: string
+          workspace_id: string
+        }
+        Update: {
+          basis?: string
+          client_id?: string | null
+          confidence?: number
+          created_at?: string
+          horizon_days?: number
+          id?: string
+          kind?: string
+          metric_key?: string
+          projected_value?: number
+          report_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "forecast_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "forecast_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
             referencedColumns: ["id"]
           },
         ]
@@ -4019,6 +4342,72 @@ export type Database = {
           },
         ]
       }
+      kpi_result: {
+        Row: {
+          baseline: number
+          client_id: string | null
+          created_at: string
+          current: number
+          id: string
+          measurement_frequency: string
+          name: string
+          owner: string | null
+          report_id: string
+          status: string
+          target: number
+          trend: string
+          variance: number
+          workspace_id: string
+        }
+        Insert: {
+          baseline?: number
+          client_id?: string | null
+          created_at?: string
+          current?: number
+          id: string
+          measurement_frequency?: string
+          name: string
+          owner?: string | null
+          report_id: string
+          status: string
+          target?: number
+          trend: string
+          variance?: number
+          workspace_id: string
+        }
+        Update: {
+          baseline?: number
+          client_id?: string | null
+          created_at?: string
+          current?: number
+          id?: string
+          measurement_frequency?: string
+          name?: string
+          owner?: string | null
+          report_id?: string
+          status?: string
+          target?: number
+          trend?: string
+          variance?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpi_result_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kpi_result_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leads: {
         Row: {
           company: string | null
@@ -4642,6 +5031,60 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      observation_snapshot: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          data: Json
+          id: string
+          label: string
+          observed_at: string
+          provenance: Json
+          report_id: string
+          source: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          data?: Json
+          id: string
+          label?: string
+          observed_at: string
+          provenance?: Json
+          report_id: string
+          source: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          label?: string
+          observed_at?: string
+          provenance?: Json
+          report_id?: string
+          source?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "observation_snapshot_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "observation_snapshot_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
             referencedColumns: ["id"]
           },
         ]
@@ -5833,6 +6276,215 @@ export type Database = {
             columns: ["insight_id"]
             isOneToOne: false
             referencedRelation: "insights"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_feedback: {
+        Row: {
+          client_id: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          kind: string
+          rating: number | null
+          report_id: string
+          subject_user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id: string
+          kind: string
+          rating?: number | null
+          report_id: string
+          subject_user_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          rating?: number | null
+          report_id?: string
+          subject_user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_feedback_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_feedback_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_narrative: {
+        Row: {
+          client_id: string | null
+          content: string
+          cost: number
+          created_at: string
+          generated_by_ai: boolean
+          id: string
+          model: string | null
+          provider: string | null
+          report_id: string
+          token_total: number
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          content?: string
+          cost?: number
+          created_at?: string
+          generated_by_ai?: boolean
+          id: string
+          model?: string | null
+          provider?: string | null
+          report_id: string
+          token_total?: number
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          content?: string
+          cost?: number
+          created_at?: string
+          generated_by_ai?: boolean
+          id?: string
+          model?: string | null
+          provider?: string | null
+          report_id?: string
+          token_total?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_narrative_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_narrative_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_schedule: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by_user_id: string
+          enabled: boolean
+          frequency: string
+          id: string
+          kind: string
+          next_run_at: string | null
+          recipients_note: string
+          updated_at: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id: string
+          enabled?: boolean
+          frequency: string
+          id: string
+          kind: string
+          next_run_at?: string | null
+          recipients_note?: string
+          updated_at?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by_user_id?: string
+          enabled?: boolean
+          frequency?: string
+          id?: string
+          kind?: string
+          next_run_at?: string | null
+          recipients_note?: string
+          updated_at?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_schedule_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      report_section: {
+        Row: {
+          body: string
+          client_id: string | null
+          created_at: string
+          id: string
+          key: string
+          order_index: number
+          report_id: string
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          body?: string
+          client_id?: string | null
+          created_at?: string
+          id: string
+          key: string
+          order_index?: number
+          report_id: string
+          title: string
+          workspace_id: string
+        }
+        Update: {
+          body?: string
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          key?: string
+          order_index?: number
+          report_id?: string
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_section_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_section_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
             referencedColumns: ["id"]
           },
         ]
@@ -7596,6 +8248,63 @@ export type Database = {
           to_state?: string
         }
         Relationships: []
+      }
+      trend_analysis: {
+        Row: {
+          change_percent: number
+          client_id: string | null
+          created_at: string
+          direction: string
+          id: string
+          metric_key: string
+          period_count: number
+          report_id: string
+          significant: boolean
+          summary: string
+          workspace_id: string
+        }
+        Insert: {
+          change_percent?: number
+          client_id?: string | null
+          created_at?: string
+          direction: string
+          id: string
+          metric_key: string
+          period_count?: number
+          report_id: string
+          significant?: boolean
+          summary?: string
+          workspace_id: string
+        }
+        Update: {
+          change_percent?: number
+          client_id?: string | null
+          created_at?: string
+          direction?: string
+          id?: string
+          metric_key?: string
+          period_count?: number
+          report_id?: string
+          significant?: boolean
+          summary?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trend_analysis_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trend_analysis_report_id_fkey"
+            columns: ["report_id"]
+            isOneToOne: false
+            referencedRelation: "executive_report"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trigger_definition: {
         Row: {
