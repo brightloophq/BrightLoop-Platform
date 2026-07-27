@@ -67,6 +67,8 @@ export const PERMISSIONS = {
     "planning.*",
     // E6 AI Reporting & BI — full access.
     "report.*",
+    // E7 AI Agents & Orchestration — full access.
+    "agent.*",
   ],
   team_member: [
     "projects.read",
@@ -169,6 +171,16 @@ export const PERMISSIONS = {
     "report.publish",
     "report.schedule",
     "report.feedback",
+    // E7 AI Agents — operators read/write/run/delegate/review, but do NOT
+    // configure profiles (no `agent.configure`) or hold `agent.admin`.
+    "agent.read",
+    "agent.write",
+    "agent.run",
+    "agent.delegate",
+    "agent.approve",
+    "agent.cancel",
+    "agent.review",
+    "agent.feedback",
   ],
   client_admin: [
     "own.project.read",
@@ -194,6 +206,12 @@ export const PERMISSIONS = {
     // E6 AI Reporting — clients may VIEW reports and give FEEDBACK.
     "report.read",
     "report.feedback",
+    // E7 AI Agents — clients may VIEW their org's missions, give FEEDBACK, and
+    // respond to approvals ASSIGNED to them (assignment enforced in the use-case +
+    // RLS). Clients may NOT configure agents or run missions.
+    "agent.read",
+    "agent.feedback",
+    "agent.approve",
   ],
   client_member: [
     "own.project.read",
@@ -208,6 +226,9 @@ export const PERMISSIONS = {
     "automation.feedback",
     "report.read",
     "report.feedback",
+    "agent.read",
+    "agent.feedback",
+    "agent.approve",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 

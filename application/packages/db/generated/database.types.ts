@@ -95,6 +95,1181 @@ export type Database = {
           },
         ]
       }
+      agent_approval: {
+        Row: {
+          approval_class: string
+          assigned_approver_user_id: string | null
+          client_id: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by_user_id: string | null
+          decision_reason: string | null
+          expires_at: string | null
+          id: string
+          mission_id: string
+          payload: Json
+          payload_hash: string
+          requested_at: string
+          requested_by_role: string
+          status: string
+          task_key: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          approval_class: string
+          assigned_approver_user_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by_user_id?: string | null
+          decision_reason?: string | null
+          expires_at?: string | null
+          id: string
+          mission_id: string
+          payload?: Json
+          payload_hash: string
+          requested_at: string
+          requested_by_role: string
+          status?: string
+          task_key: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          approval_class?: string
+          assigned_approver_user_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by_user_id?: string | null
+          decision_reason?: string | null
+          expires_at?: string | null
+          id?: string
+          mission_id?: string
+          payload?: Json
+          payload_hash?: string
+          requested_at?: string
+          requested_by_role?: string
+          status?: string
+          task_key?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_approval_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_approval_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_artifact: {
+        Row: {
+          citations: Json
+          client_id: string | null
+          created_at: string
+          id: string
+          kind: string
+          mission_id: string
+          produced_by_role: string
+          ref_context: string
+          ref_id: string
+          snapshot: Json
+          task_key: string | null
+          title: string
+          workspace_id: string
+        }
+        Insert: {
+          citations?: Json
+          client_id?: string | null
+          created_at?: string
+          id: string
+          kind: string
+          mission_id: string
+          produced_by_role: string
+          ref_context: string
+          ref_id: string
+          snapshot?: Json
+          task_key?: string | null
+          title?: string
+          workspace_id: string
+        }
+        Update: {
+          citations?: Json
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          mission_id?: string
+          produced_by_role?: string
+          ref_context?: string
+          ref_id?: string
+          snapshot?: Json
+          task_key?: string | null
+          title?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_artifact_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_artifact_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_checkpoint: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          label: string
+          mission_id: string
+          mission_status: string
+          sequence: number
+          snapshot: Json
+          state_hash: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id: string
+          label?: string
+          mission_id: string
+          mission_status: string
+          sequence?: number
+          snapshot?: Json
+          state_hash: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          mission_id?: string
+          mission_status?: string
+          sequence?: number
+          snapshot?: Json
+          state_hash?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_checkpoint_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_checkpoint_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_decision: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          data: Json
+          id: string
+          kind: string
+          mission_id: string
+          rationale: string
+          run_id: string | null
+          task_key: string | null
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          data?: Json
+          id: string
+          kind: string
+          mission_id: string
+          rationale?: string
+          run_id?: string | null
+          task_key?: string | null
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          kind?: string
+          mission_id?: string
+          rationale?: string
+          run_id?: string | null
+          task_key?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_decision_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_decision_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_delegation: {
+        Row: {
+          client_id: string | null
+          constraints: string
+          created_at: string
+          deadline: string | null
+          delegating_role: string
+          depth: number
+          expected_output: string
+          failure_reason: string | null
+          id: string
+          mission_id: string
+          parent_run_id: string
+          receiving_role: string
+          result_artifact_id: string | null
+          status: string
+          task_key: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          constraints?: string
+          created_at?: string
+          deadline?: string | null
+          delegating_role: string
+          depth?: number
+          expected_output?: string
+          failure_reason?: string | null
+          id: string
+          mission_id: string
+          parent_run_id: string
+          receiving_role: string
+          result_artifact_id?: string | null
+          status?: string
+          task_key: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          constraints?: string
+          created_at?: string
+          deadline?: string | null
+          delegating_role?: string
+          depth?: number
+          expected_output?: string
+          failure_reason?: string | null
+          id?: string
+          mission_id?: string
+          parent_run_id?: string
+          receiving_role?: string
+          result_artifact_id?: string | null
+          status?: string
+          task_key?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_delegation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_delegation_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_evaluation: {
+        Row: {
+          client_id: string | null
+          completeness: number
+          confidence: number
+          correctness: number
+          cost_efficiency: number
+          created_at: string
+          evaluator_role: string
+          evidence: Json
+          evidence_quality: number
+          execution_efficiency: number
+          goal_alignment: number
+          human_accepted: boolean | null
+          id: string
+          mission_id: string
+          policy_compliance: number
+          rationale: string
+          required_remediation: string
+          score: number
+          target_key: string
+          target_kind: string
+          verdict: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          completeness?: number
+          confidence?: number
+          correctness?: number
+          cost_efficiency?: number
+          created_at?: string
+          evaluator_role: string
+          evidence?: Json
+          evidence_quality?: number
+          execution_efficiency?: number
+          goal_alignment?: number
+          human_accepted?: boolean | null
+          id: string
+          mission_id: string
+          policy_compliance?: number
+          rationale?: string
+          required_remediation?: string
+          score?: number
+          target_key: string
+          target_kind: string
+          verdict: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          completeness?: number
+          confidence?: number
+          correctness?: number
+          cost_efficiency?: number
+          created_at?: string
+          evaluator_role?: string
+          evidence?: Json
+          evidence_quality?: number
+          execution_efficiency?: number
+          goal_alignment?: number
+          human_accepted?: boolean | null
+          id?: string
+          mission_id?: string
+          policy_compliance?: number
+          rationale?: string
+          required_remediation?: string
+          score?: number
+          target_key?: string
+          target_kind?: string
+          verdict?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_evaluation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_evaluation_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_failure: {
+        Row: {
+          affected_capability: string | null
+          affected_task_key: string | null
+          category: string
+          cause: string
+          client_id: string | null
+          created_at: string
+          id: string
+          mission_id: string
+          resolution: string
+          retry_count: number
+          retryable: boolean
+          run_id: string | null
+          stage: string
+          workspace_id: string
+        }
+        Insert: {
+          affected_capability?: string | null
+          affected_task_key?: string | null
+          category: string
+          cause?: string
+          client_id?: string | null
+          created_at?: string
+          id: string
+          mission_id: string
+          resolution?: string
+          retry_count?: number
+          retryable?: boolean
+          run_id?: string | null
+          stage?: string
+          workspace_id: string
+        }
+        Update: {
+          affected_capability?: string | null
+          affected_task_key?: string | null
+          category?: string
+          cause?: string
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          mission_id?: string
+          resolution?: string
+          retry_count?: number
+          retryable?: boolean
+          run_id?: string | null
+          stage?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_failure_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_failure_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_feedback: {
+        Row: {
+          client_id: string | null
+          comment: string | null
+          created_at: string
+          id: string
+          kind: string
+          mission_id: string
+          rating: number | null
+          subject_user_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id: string
+          kind: string
+          mission_id: string
+          rating?: number | null
+          subject_user_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          comment?: string | null
+          created_at?: string
+          id?: string
+          kind?: string
+          mission_id?: string
+          rating?: number | null
+          subject_user_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_feedback_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_feedback_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_memory: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          key: string
+          mission_id: string
+          redacted: boolean
+          sensitivity: string
+          source_ref: string | null
+          ttl_seconds: number | null
+          type: string
+          value: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id: string
+          key: string
+          mission_id: string
+          redacted?: boolean
+          sensitivity?: string
+          source_ref?: string | null
+          ttl_seconds?: number | null
+          type: string
+          value?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          key?: string
+          mission_id?: string
+          redacted?: boolean
+          sensitivity?: string
+          source_ref?: string | null
+          ttl_seconds?: number | null
+          type?: string
+          value?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_memory_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_memory_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_message: {
+        Row: {
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          id: string
+          kind: string
+          mission_id: string
+          parent_message_id: string | null
+          payload: Json
+          receiver_role: string | null
+          receiver_user_id: string | null
+          run_id: string | null
+          sender_role: string | null
+          sender_user_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          id: string
+          kind: string
+          mission_id: string
+          parent_message_id?: string | null
+          payload?: Json
+          receiver_role?: string | null
+          receiver_user_id?: string | null
+          run_id?: string | null
+          sender_role?: string | null
+          sender_user_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          mission_id?: string
+          parent_message_id?: string | null
+          payload?: Json
+          receiver_role?: string | null
+          receiver_user_id?: string | null
+          run_id?: string | null
+          sender_role?: string | null
+          sender_user_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_message_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_message_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_mission: {
+        Row: {
+          approval_wait_ms: number
+          automation_intent_id: string | null
+          capability_calls: number
+          checkpoint_count: number
+          client_id: string | null
+          coordinator_profile_id: string
+          correlation_id: string
+          cost: number
+          created_at: string
+          delegation_count: number
+          duration_ms: number
+          failed_capability_calls: number
+          goal: string
+          id: string
+          limits: Json
+          model: string | null
+          plan_hash: string
+          plan_locked: boolean
+          planning_duration_ms: number
+          planning_session_id: string | null
+          progress: number
+          provider: string | null
+          requested_by_user_id: string
+          resumable_checkpoint_id: string | null
+          retry_count: number
+          run_count: number
+          status: string
+          strategy_session_id: string | null
+          task_count: number
+          termination_reason: string
+          title: string
+          token_total: number
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          approval_wait_ms?: number
+          automation_intent_id?: string | null
+          capability_calls?: number
+          checkpoint_count?: number
+          client_id?: string | null
+          coordinator_profile_id: string
+          correlation_id: string
+          cost?: number
+          created_at?: string
+          delegation_count?: number
+          duration_ms?: number
+          failed_capability_calls?: number
+          goal?: string
+          id: string
+          limits?: Json
+          model?: string | null
+          plan_hash?: string
+          plan_locked?: boolean
+          planning_duration_ms?: number
+          planning_session_id?: string | null
+          progress?: number
+          provider?: string | null
+          requested_by_user_id: string
+          resumable_checkpoint_id?: string | null
+          retry_count?: number
+          run_count?: number
+          status?: string
+          strategy_session_id?: string | null
+          task_count?: number
+          termination_reason?: string
+          title: string
+          token_total?: number
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          approval_wait_ms?: number
+          automation_intent_id?: string | null
+          capability_calls?: number
+          checkpoint_count?: number
+          client_id?: string | null
+          coordinator_profile_id?: string
+          correlation_id?: string
+          cost?: number
+          created_at?: string
+          delegation_count?: number
+          duration_ms?: number
+          failed_capability_calls?: number
+          goal?: string
+          id?: string
+          limits?: Json
+          model?: string | null
+          plan_hash?: string
+          plan_locked?: boolean
+          planning_duration_ms?: number
+          planning_session_id?: string | null
+          progress?: number
+          provider?: string | null
+          requested_by_user_id?: string
+          resumable_checkpoint_id?: string | null
+          retry_count?: number
+          run_count?: number
+          status?: string
+          strategy_session_id?: string | null
+          task_count?: number
+          termination_reason?: string
+          title?: string
+          token_total?: number
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_mission_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_mission_coordinator_profile_id_fkey"
+            columns: ["coordinator_profile_id"]
+            isOneToOne: false
+            referencedRelation: "agent_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_observation: {
+        Row: {
+          capability_key: string | null
+          client_id: string | null
+          created_at: string
+          data: Json
+          id: string
+          mission_id: string
+          provenance: Json
+          run_id: string | null
+          summary: string
+          task_key: string | null
+          workspace_id: string
+        }
+        Insert: {
+          capability_key?: string | null
+          client_id?: string | null
+          created_at?: string
+          data?: Json
+          id: string
+          mission_id: string
+          provenance?: Json
+          run_id?: string | null
+          summary?: string
+          task_key?: string | null
+          workspace_id: string
+        }
+        Update: {
+          capability_key?: string | null
+          client_id?: string | null
+          created_at?: string
+          data?: Json
+          id?: string
+          mission_id?: string
+          provenance?: Json
+          run_id?: string | null
+          summary?: string
+          task_key?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_observation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_observation_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_profile: {
+        Row: {
+          allowed_capabilities: Json
+          approval_requirements: Json
+          client_id: string | null
+          created_at: string
+          escalation_policy: string
+          id: string
+          input_contract: Json
+          max_delegation_depth: number
+          max_retries: number
+          name: string
+          output_contract: Json
+          prohibited_capabilities: Json
+          purpose: string
+          role: string
+          status: string
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          allowed_capabilities?: Json
+          approval_requirements?: Json
+          client_id?: string | null
+          created_at?: string
+          escalation_policy?: string
+          id: string
+          input_contract?: Json
+          max_delegation_depth?: number
+          max_retries?: number
+          name: string
+          output_contract?: Json
+          prohibited_capabilities?: Json
+          purpose?: string
+          role: string
+          status?: string
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          allowed_capabilities?: Json
+          approval_requirements?: Json
+          client_id?: string | null
+          created_at?: string
+          escalation_policy?: string
+          id?: string
+          input_contract?: Json
+          max_delegation_depth?: number
+          max_retries?: number
+          name?: string
+          output_contract?: Json
+          prohibited_capabilities?: Json
+          purpose?: string
+          role?: string
+          status?: string
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_profile_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_run: {
+        Row: {
+          agent_profile_id: string
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          delegation_depth: number
+          ended_at: string | null
+          id: string
+          mission_id: string
+          parent_run_id: string | null
+          role: string
+          started_at: string | null
+          status: string
+          trace_id: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          agent_profile_id: string
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          delegation_depth?: number
+          ended_at?: string | null
+          id: string
+          mission_id: string
+          parent_run_id?: string | null
+          role: string
+          started_at?: string | null
+          status?: string
+          trace_id: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          agent_profile_id?: string
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          delegation_depth?: number
+          ended_at?: string | null
+          id?: string
+          mission_id?: string
+          parent_run_id?: string | null
+          role?: string
+          started_at?: string | null
+          status?: string
+          trace_id?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_run_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_run_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_task: {
+        Row: {
+          approval_class: string | null
+          approval_gated: boolean
+          assigned_role: string
+          capability_input: Json
+          capability_key: string | null
+          claimed_at: string | null
+          claimed_by: string | null
+          client_id: string | null
+          compensates_task_key: string | null
+          completion_criteria: string
+          created_at: string
+          depends_on: Json
+          expected_output: string
+          heartbeat_at: string | null
+          id: string
+          key: string
+          kind: string
+          lease_expires_at: string | null
+          mission_id: string
+          optional: boolean
+          order_index: number
+          parallelizable: boolean
+          result_artifact_id: string | null
+          retry_count: number
+          retryable: boolean
+          status: string
+          title: string
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          approval_class?: string | null
+          approval_gated?: boolean
+          assigned_role: string
+          capability_input?: Json
+          capability_key?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          client_id?: string | null
+          compensates_task_key?: string | null
+          completion_criteria?: string
+          created_at?: string
+          depends_on?: Json
+          expected_output?: string
+          heartbeat_at?: string | null
+          id: string
+          key: string
+          kind: string
+          lease_expires_at?: string | null
+          mission_id: string
+          optional?: boolean
+          order_index?: number
+          parallelizable?: boolean
+          result_artifact_id?: string | null
+          retry_count?: number
+          retryable?: boolean
+          status?: string
+          title: string
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          approval_class?: string | null
+          approval_gated?: boolean
+          assigned_role?: string
+          capability_input?: Json
+          capability_key?: string | null
+          claimed_at?: string | null
+          claimed_by?: string | null
+          client_id?: string | null
+          compensates_task_key?: string | null
+          completion_criteria?: string
+          created_at?: string
+          depends_on?: Json
+          expected_output?: string
+          heartbeat_at?: string | null
+          id?: string
+          key?: string
+          kind?: string
+          lease_expires_at?: string | null
+          mission_id?: string
+          optional?: boolean
+          order_index?: number
+          parallelizable?: boolean
+          result_artifact_id?: string | null
+          retry_count?: number
+          retryable?: boolean
+          status?: string
+          title?: string
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_task_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_task_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_tool_call: {
+        Row: {
+          capability_key: string
+          client_id: string | null
+          correlation_id: string
+          cost: number
+          created_at: string
+          duration_ms: number
+          error_code: string | null
+          id: string
+          idempotency_key: string
+          input: Json
+          mission_id: string
+          ok: boolean
+          output_ref: string | null
+          required_permission: string
+          run_id: string | null
+          side_effect: string
+          task_key: string | null
+          token_total: number
+          workspace_id: string
+        }
+        Insert: {
+          capability_key: string
+          client_id?: string | null
+          correlation_id: string
+          cost?: number
+          created_at?: string
+          duration_ms?: number
+          error_code?: string | null
+          id: string
+          idempotency_key: string
+          input?: Json
+          mission_id: string
+          ok: boolean
+          output_ref?: string | null
+          required_permission: string
+          run_id?: string | null
+          side_effect: string
+          task_key?: string | null
+          token_total?: number
+          workspace_id: string
+        }
+        Update: {
+          capability_key?: string
+          client_id?: string | null
+          correlation_id?: string
+          cost?: number
+          created_at?: string
+          duration_ms?: number
+          error_code?: string | null
+          id?: string
+          idempotency_key?: string
+          input?: Json
+          mission_id?: string
+          ok?: boolean
+          output_ref?: string | null
+          required_permission?: string
+          run_id?: string | null
+          side_effect?: string
+          task_key?: string | null
+          token_total?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_tool_call_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_tool_call_mission_id_fkey"
+            columns: ["mission_id"]
+            isOneToOne: false
+            referencedRelation: "agent_mission"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_audit_event: {
         Row: {
           at: string
@@ -1397,6 +2572,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      capability_definition: {
+        Row: {
+          approval: string
+          cost_category: string
+          created_at: string
+          description: string
+          idempotency: string
+          key: string
+          owning_context: string
+          required_permission: string
+          retry: string
+          service: string
+          side_effect: string
+          timeout_ms: number
+        }
+        Insert: {
+          approval?: string
+          cost_category?: string
+          created_at?: string
+          description?: string
+          idempotency?: string
+          key: string
+          owning_context: string
+          required_permission: string
+          retry?: string
+          service: string
+          side_effect: string
+          timeout_ms?: number
+        }
+        Update: {
+          approval?: string
+          cost_category?: string
+          created_at?: string
+          description?: string
+          idempotency?: string
+          key?: string
+          owning_context?: string
+          required_permission?: string
+          retry?: string
+          service?: string
+          side_effect?: string
+          timeout_ms?: number
+        }
+        Relationships: []
       }
       chat_messages: {
         Row: {

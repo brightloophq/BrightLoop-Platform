@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
+import type { Actor, AgentRepositories, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, Clock, CollaborationRepositories, EmbeddingProviderRegistry, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeIdGen, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -99,6 +99,17 @@ export const REPORT_GENERATE_CAP = "report.generate";
 export const REPORT_PUBLISH_CAP = "report.publish";
 export const REPORT_SCHEDULE_CAP = "report.schedule";
 export const REPORT_FEEDBACK_CAP = "report.feedback";
+/** Phase E · AI Agents & Orchestration capabilities (E7). */
+export const AGENT_READ_CAP = "agent.read";
+export const AGENT_WRITE_CAP = "agent.write";
+export const AGENT_CONFIGURE_CAP = "agent.configure";
+export const AGENT_RUN_CAP = "agent.run";
+export const AGENT_DELEGATE_CAP = "agent.delegate";
+export const AGENT_APPROVE_CAP = "agent.approve";
+export const AGENT_CANCEL_CAP = "agent.cancel";
+export const AGENT_REVIEW_CAP = "agent.review";
+export const AGENT_FEEDBACK_CAP = "agent.feedback";
+export const AGENT_ADMIN_CAP = "agent.admin";
 
 /**
  * Everything a use-case needs. The runtime `services` are already bound to the
@@ -148,6 +159,8 @@ export interface AppContext {
   automationBuilder?: AutomationBuilderRepositories;
   /** Phase E · AI Reporting repositories (E6). Required via `requireReporting`. */
   reporting?: ReportingRepositories;
+  /** Phase E · AI Agents repositories (E7). Required via `requireAgents`. */
+  agents?: AgentRepositories;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -236,6 +249,14 @@ export function requireReporting(ctx: AppContext): ReportingRepositories {
     throw new RuntimeUnavailableError("The reporting store is not available");
   }
   return ctx.reporting;
+}
+
+/** Assert the AI Agents repositories are wired, or fail with a clean 503. */
+export function requireAgents(ctx: AppContext): AgentRepositories {
+  if (ctx.agents === undefined) {
+    throw new RuntimeUnavailableError("The agents store is not available");
+  }
+  return ctx.agents;
 }
 
 /**
