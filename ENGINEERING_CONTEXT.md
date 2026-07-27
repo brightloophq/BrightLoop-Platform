@@ -300,7 +300,8 @@ Shape to copy for the next transformation module:
   2. `db-verify` — migrate · pgTAP · RLS · adapter integration · type-drift
      (ephemeral Supabase via Docker).
   3. `secret-scan` — gitleaks.
-  Preview deploys: **Vercel** + **Netlify** on each PR.
+  Preview deploys: **Vercel** on each PR (sole deploy provider — production from
+  `main`, previews per PR).
 - **Merge**: non-fast-forward **merge commit** (`gh pr merge <n> --merge`), matching
   Sprints 3–4.1. After merge: sync `main`, delete local + remote branch, prune.
 - **Merge log (chronological, all on `main`):**
