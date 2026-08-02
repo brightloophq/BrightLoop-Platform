@@ -182,6 +182,11 @@ export {
 export { createExecutionRuntimeRepositories } from "./execution-runtime/adapter.js";
 export { createN8nRuntimeAdapter, translateToN8n } from "./execution-runtime/n8n-adapter.js";
 export { createEnvRuntimeSecretStore } from "./execution-runtime/env-secret-store.js";
+// Phase F · Integration Platform (F4.1) — eight connector repository adapters,
+// the env-backed connector secret store, and the deterministic Fake connector.
+export { createIntegrationRepositories } from "./integration/adapter.js";
+export { createEnvConnectorSecretStore } from "./integration/env-secret-store.js";
+export { createFakeConnectorAdapter, createDefaultConnectorAdapters } from "./integration/fake-connector-adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

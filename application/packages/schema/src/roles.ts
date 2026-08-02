@@ -77,6 +77,9 @@ export const PERMISSIONS = {
     "runtime.*",
     "deployment.*",
     "execution.*",
+    // F4.1 Integration Platform — full connector authority (install, configure,
+    // enable/disable, revoke, health, credentials, oauth, ingest).
+    "integration.*",
   ],
   team_member: [
     "projects.read",
@@ -209,6 +212,17 @@ export const PERMISSIONS = {
     "execution.retry",
     "execution.stop",
     "execution.logs.read",
+    // F4.1 Integration Platform — operators browse the marketplace, install and
+    // configure connectors, enable/disable, run health checks, drive OAuth, and
+    // ingest events. Revocation + credential administration remain owner/admin.
+    "integration.read",
+    "integration.install",
+    "integration.configure",
+    "integration.enable",
+    "integration.disable",
+    "integration.health.check",
+    "integration.oauth.authorize",
+    "integration.ingest",
   ],
   client_admin: [
     "own.project.read",
@@ -251,6 +265,9 @@ export const PERMISSIONS = {
     "deployment.approve",
     "execution.read",
     "execution.logs.read",
+    // F4.1 Integration Platform — clients VIEW their org's connectors + event
+    // stream. They never install, configure, or touch credentials/tokens.
+    "integration.read",
   ],
   client_member: [
     "own.project.read",
@@ -274,6 +291,8 @@ export const PERMISSIONS = {
     "runtime.read",
     "deployment.read",
     "execution.read",
+    // F4.1 Integration Platform — read-only visibility into their org's connectors.
+    "integration.read",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 
