@@ -12,12 +12,23 @@
  * ========================================================================== */
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import {
-  checkConnectorHealth, configureConnector, disableConnector, enableConnector, installConnector,
-  isApplicationError, revokeConnector, validateConnectorConnection, type InstallationDTO,
+  beginConnectorOAuth, checkConnectorHealth, configureConnector, disableConnector, enableConnector, installConnector,
+  invokeConnectorCapability, isApplicationError, revokeConnector, validateConnectorConnection, type InstallationDTO,
 } from "@brightloop/application";
 import { buildAppContext } from "@/lib/runtime-api";
 import { resolveWorkspaces } from "@/lib/workspace-data";
+
+/** The OAuth callback URL for connector reconnection (registered with the provider). */
+async function oauthRedirectUri(): Promise<string> {
+  const configured = process.env.GOOGLE_OAUTH_REDIRECT_URI;
+  if (configured && configured.length > 0) return configured;
+  const h = await headers();
+  const host = h.get("host") ?? "localhost:3000";
+  const proto = host.startsWith("localhost") || host.startsWith("127.") ? "http" : "https";
+  return `${proto}://${host}/workspace/integrations/oauth/callback`;
+}
 
 export interface ActionResult { ok: boolean; error?: string }
 export interface InstallActionResult extends ActionResult { installationId?: string }
@@ -71,4 +82,29 @@ export async function disableConnectorAction(installationId: string): Promise<Ac
 }
 export async function revokeConnectorAction(installationId: string): Promise<ActionResult> {
   return run((ctx) => revokeConnector(ctx, installationId), "The connector could not be revoked.");
+}
+
+/** Begin (or re-begin) the OAuth flow; returns the provider consent URL to redirect to. */
+export async function connectConnectorAction(installationId: string): Promise<ActionResult & { authorizationUrl?: string }> {
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) return { ok: false, error: "Your session has expired. Please sign in again." };
+    const begin = await beginConnectorOAuth(ctx, { installationId, redirectUri: await oauthRedirectUri() });
+    return { ok: true, authorizationUrl: begin.authorizationUrl };
+  } catch (err) {
+    return fail(err, "The connector could not start authorization.");
+  }
+}
+
+/** Invoke one enabled connector capability. Returns the safe operation result. */
+export async function invokeCapabilityAction(installationId: string, capabilityKey: string, input: Record<string, unknown>): Promise<ActionResult & { data?: Record<string, unknown> }> {
+  try {
+    const ctx = await buildAppContext();
+    if (ctx === null) return { ok: false, error: "Your session has expired. Please sign in again." };
+    const res = await invokeConnectorCapability(ctx, { installationId, capabilityKey, input });
+    revalidate();
+    return { ok: true, data: res.data };
+  } catch (err) {
+    return fail(err, "The connector operation failed.");
+  }
 }

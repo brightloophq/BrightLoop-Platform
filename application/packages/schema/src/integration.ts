@@ -91,7 +91,7 @@ export type OAuthGrantStatus = z.infer<typeof oauthGrantStatusSchema>;
 export const connectorOperationSchema = z.enum([
   "install", "configure", "enable", "disable", "revoke", "validate",
   "health_check", "rotate_secret", "oauth_begin", "oauth_complete",
-  "webhook_ingest", "poll",
+  "webhook_ingest", "poll", "invoke",
 ]);
 export type ConnectorOperation = z.infer<typeof connectorOperationSchema>;
 

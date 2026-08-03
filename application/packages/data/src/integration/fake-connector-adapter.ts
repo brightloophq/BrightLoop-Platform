@@ -130,6 +130,13 @@ export function createFakeConnectorAdapter(connectorId: string): ConnectorAdapte
       const nextCursor = String(start + count);
       return connectorOk({ events, nextCursor });
     },
+
+    /* -- capability execution -- */
+    async execute(input) {
+      if (input.authMethod !== "none" && !authed(input.secret)) return connectorErr("authentication", "missing credential", "no_secret");
+      // Deterministic echo — the Fake connector performs no real side effect.
+      return connectorOk({ data: { operation: input.operation, ok: true, echoed: input.input } });
+    },
   };
 }
 

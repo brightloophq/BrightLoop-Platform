@@ -11,5 +11,6 @@ export * from "./installation-usecases.js";
 export * from "./secret-usecases.js";
 export * from "./oauth-usecases.js";
 export * from "./ingestion-usecases.js";
+export * from "./invoke-usecases.js";
 export * from "./integration-read.js";
 export * from "./testing.js";

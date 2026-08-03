@@ -23,7 +23,7 @@ import { ConflictError, ValidationError } from "../errors.js";
 import { unwrap } from "../runtime-result.js";
 import { requireId, requireString, requireObject } from "../validate.js";
 import {
-  adapterFor, auditInstallation, descriptorFor, loadInstallation, resolveInstallationSecret, transitionInstallation,
+  adapterFor, auditInstallation, descriptorFor, loadInstallation, resolveConnectorSecret, transitionInstallation,
 } from "./shared.js";
 import { toConnectorHealthDTO, toInstallationDTO, type ConnectorHealthDTO, type InstallationDTO } from "./dto.js";
 
@@ -130,9 +130,10 @@ export async function configureConnector(ctx: AppContext, input: ConfigureConnec
 /** Validate connectivity + auth against the provider (external read). */
 export async function validateConnectorConnection(ctx: AppContext, rawId: unknown): Promise<{ ok: boolean; providerVersion: string | null; message: string }> {
   const inst = await loadInstallation(ctx, requireId(rawId, "installationId"), INTEGRATION_HEALTH_CAP);
-  const secret = await resolveInstallationSecret(ctx, inst);
+  const adapter = adapterFor(ctx, inst.connectorId);
+  const secret = await resolveConnectorSecret(ctx, inst, adapter);
   const validating = await transitionInstallation(ctx, inst, "validating", {}, "validate", "Validating connection");
-  const res = await adapterFor(ctx, inst.connectorId).validateConnection({ connectorId: inst.connectorId, authMethod: inst.authMethod, config: inst.config, secret });
+  const res = await adapter.validateConnection({ connectorId: inst.connectorId, authMethod: inst.authMethod, config: inst.config, secret });
   if (!res.ok) {
     const level = healthFromFailure(res.category);
     await transitionInstallation(ctx, validating, statusFromHealth(level), { healthLevel: level, lastHealthCheckAt: ctx.clock() }, "validate", "Validation failed");
@@ -146,8 +147,9 @@ export async function validateConnectorConnection(ctx: AppContext, rawId: unknow
 export async function checkConnectorHealth(ctx: AppContext, rawId: unknown): Promise<ConnectorHealthDTO> {
   const inst = await loadInstallation(ctx, requireId(rawId, "installationId"), INTEGRATION_HEALTH_CAP);
   const repo = requireIntegration(ctx);
-  const secret = await resolveInstallationSecret(ctx, inst);
-  const res = await adapterFor(ctx, inst.connectorId).healthCheck({ connectorId: inst.connectorId, authMethod: inst.authMethod, config: inst.config, secret });
+  const adapter = adapterFor(ctx, inst.connectorId);
+  const secret = await resolveConnectorSecret(ctx, inst, adapter);
+  const res = await adapter.healthCheck({ connectorId: inst.connectorId, authMethod: inst.authMethod, config: inst.config, secret });
   const level: ConnectorHealthLevel = res.ok ? res.value.level : healthFromFailure(res.category);
   const snap = buildConnectorHealthSnapshot(ctx.ids("chlth"), inst.id, inst.workspaceId, inst.clientId, level, res.ok ? res.value.latencyMs : 0, sanitizeConnectorMetadata(res.ok ? res.value.detail : { error: res.category }), ctx.clock());
   unwrap(await repo.health.append(snap));

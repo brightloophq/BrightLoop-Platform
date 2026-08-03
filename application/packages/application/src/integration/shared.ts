@@ -7,7 +7,7 @@
  * ========================================================================== */
 
 import {
-  buildAuditEvent, canTransitionInstallation, findConnector, sanitizeConnectorMetadata,
+  buildAuditEvent, canTransitionInstallation, findConnector, isTokenExpired, sanitizeConnectorMetadata,
   type ConnectorAdapter,
 } from "@brightloop/domain";
 import type { ConnectorDescriptor, ConnectorInstallation, ConnectorOperation } from "@brightloop/schema";
@@ -52,6 +52,49 @@ export async function resolveInstallationSecret(ctx: AppContext, inst: Connector
   const ref = unwrap(await repo.secrets.getById(inst.secretReferenceId));
   if (ref === null) return null;
   return secrets.getSecret(ref.secretRef);
+}
+
+/**
+ * Resolve the secret an adapter call expects, honouring OAuth. For `oauth2`
+ * connectors this returns a FRESH access token: it reads the stored token bundle,
+ * and if the reference is expired it refreshes via the adapter, ROTATES the stored
+ * secret (new version + new expiry), and returns the new access token. For other
+ * auth methods it returns the raw credential. The value is boundary-only — it
+ * never enters a DTO, row, or log. Returns null when unavailable (caller treats as
+ * unauthorized). This completes F4.1's OAuth model (token expiry + rotation).
+ */
+export async function resolveConnectorSecret(ctx: AppContext, inst: ConnectorInstallation, adapter: ConnectorAdapter): Promise<string | null> {
+  if (inst.authMethod !== "oauth2") return resolveInstallationSecret(ctx, inst);
+  const repo = requireIntegration(ctx);
+  const store = requireConnectorSecrets(ctx);
+  const refs = unwrap(await repo.secrets.listByInstallation(inst.id));
+  const ref = refs.find((r) => r.purpose === "oauth_token" && r.validationState !== "revoked");
+  if (ref === undefined) return null;
+  const raw = await store.getSecret(ref.secretRef);
+  if (raw === null) return null;
+
+  let accessToken: string | null = null;
+  let refreshToken: string | null = null;
+  try {
+    const parsed = JSON.parse(raw) as { accessToken?: unknown; refreshToken?: unknown };
+    accessToken = typeof parsed.accessToken === "string" ? parsed.accessToken : null;
+    refreshToken = typeof parsed.refreshToken === "string" ? parsed.refreshToken : null;
+  } catch {
+    accessToken = raw; // tolerate a bare-token secret
+  }
+
+  if (isTokenExpired(ref.expiresAt, ctx.clock()) && refreshToken !== null && adapter.refreshAccessToken !== undefined) {
+    const res = await adapter.refreshAccessToken({ connectorId: inst.connectorId, refreshToken, config: inst.config });
+    if (res.ok) {
+      const nextRefresh = res.value.refreshToken ?? refreshToken;
+      const version = await store.rotateSecret(ref.secretRef, JSON.stringify({ accessToken: res.value.accessToken, refreshToken: nextRefresh }));
+      unwrap(await repo.secrets.save({ ...ref, secretVersion: version, expiresAt: res.value.expiresAt, validationState: "valid", rotatedAt: ctx.clock(), updatedAt: ctx.clock() }));
+      return res.value.accessToken;
+    }
+    unwrap(await repo.secrets.save({ ...ref, validationState: res.category === "authorization" ? "invalid" : "expired", updatedAt: ctx.clock() }));
+    return null;
+  }
+  return accessToken;
 }
 
 /** Resolve the webhook-signing secret for an installation (purpose scoped), or null. */

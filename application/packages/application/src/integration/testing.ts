@@ -128,6 +128,7 @@ export function createTestConnectorAdapter(connectorId: string): ConnectorAdapte
     verifyWebhook(input) { if (input.signingSecret === null) return connectorErr("secret_unavailable", "no signing secret"); const valid = input.signature === fakeSig(input.signingSecret, input.rawBody); if (!valid) return connectorErr("signature_invalid", "bad signature"); const ev = parseEvents(input.rawBody); return connectorOk({ valid: true, externalEventId: ev[0]?.externalId ?? "evt" }); },
     translateWebhook(input) { return connectorOk(parseEvents(input.rawBody)); },
     async poll(input) { const start = input.cursor === null ? 0 : Number.parseInt(input.cursor, 10) || 0; const count = Math.min(input.limit, 2); const events: CanonicalConnectorEvent[] = Array.from({ length: count }, (_v, i) => ({ type: "record.changed", externalId: `poll-${start + i}`, occurredAt: "1970-01-01T00:00:00.000Z", payload: { index: start + i }, provenance: "fake" })); return connectorOk({ events, nextCursor: String(start + count) }); },
+    async execute(input) { if (input.authMethod !== "none" && (input.secret === null || input.secret.length === 0)) return connectorErr("authentication", "no secret"); return connectorOk({ data: { operation: input.operation, echoed: input.input } }); },
   };
 }
 

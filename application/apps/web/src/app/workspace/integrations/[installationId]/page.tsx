@@ -38,7 +38,7 @@ export default async function InstallationDetailPage({ params }: { params: Promi
         </span>
       </div>
 
-      <ConnectorControls installationId={i.id} status={i.status} />
+      <ConnectorControls installationId={i.id} status={i.status} authMethod={i.authMethod} hasCredential={i.hasCredential} />
 
       <section className={styles.section}>
         <div className={styles.sectionHead}><span className={styles.sectionTitle}>Enabled capabilities</span></div>

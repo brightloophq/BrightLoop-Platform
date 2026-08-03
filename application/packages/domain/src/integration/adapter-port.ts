@@ -126,13 +126,40 @@ export interface TranslateWebhookInput {
   source: ConnectorEventSource;
 }
 
+/* ---- capability execution -------------------------------------------------- */
+
+/**
+ * Invoke ONE declared connector capability (e.g. "gmail.send", "calendar.create").
+ * The secret is the resolved access token / api key at the boundary; `input` is the
+ * already-validated operation parameters. Provider-neutral: the adapter maps the
+ * `operation` (from the capability descriptor) onto the vendor API and normalizes
+ * the response. This is the F4.2 additive completion of the F4.1 capability model
+ * (F4.1 declared capabilities; this makes them executable). Optional — present only
+ * on connectors that expose invocable capabilities.
+ */
+export interface ExecuteOperationInput {
+  connectorId: string;
+  /** The capability descriptor's `operation` name. */
+  operation: string;
+  authMethod: ConnectorAuthMethod;
+  config: Record<string, unknown>;
+  /** Resolved access token / api key (never persisted; boundary-only). */
+  secret: string | null;
+  /** Validated operation parameters (provider-neutral). */
+  input: Record<string, unknown>;
+}
+export interface OperationOutput {
+  /** Bounded, sanitized result — never raw provider body or secret material. */
+  data: Record<string, unknown>;
+}
+
 /* ---- the port -------------------------------------------------------------- */
 
 /**
  * The contract every connector implements. Provider-neutral in/out. Optional
- * capabilities (OAuth, webhook, polling) are present only when the connector's
- * descriptor declares the corresponding auth method / trigger kind; the platform
- * checks the descriptor before invoking them.
+ * capabilities (OAuth, webhook, polling, execute) are present only when the
+ * connector's descriptor declares the corresponding auth method / trigger kind /
+ * capabilities; the platform checks the descriptor before invoking them.
  */
 export interface ConnectorAdapter {
   readonly connectorId: string;
@@ -158,6 +185,9 @@ export interface ConnectorAdapter {
 
   /* -- polling (trigger kind "polling") -- */
   poll?(input: PollInput): Promise<ConnectorResult<PollResult>>;
+
+  /* -- capability execution (connectors with invocable capabilities) -- */
+  execute?(input: ExecuteOperationInput): Promise<ConnectorResult<OperationOutput>>;
 }
 
 /** A registry of adapters keyed by connector id, injected at the application layer. */
