@@ -2272,6 +2272,463 @@ export type Database = {
           },
         ]
       }
+      billing_account: {
+        Row: {
+          billing_email: string | null
+          client_id: string | null
+          created_at: string
+          currency: string
+          id: string
+          metadata: Json
+          provider_customer_ref: string | null
+          status: string
+          tax_id: string | null
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          billing_email?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          id: string
+          metadata?: Json
+          provider_customer_ref?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          billing_email?: string | null
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          id?: string
+          metadata?: Json
+          provider_customer_ref?: string | null
+          status?: string
+          tax_id?: string | null
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_account_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_event: {
+        Row: {
+          actor_id: string | null
+          client_id: string | null
+          correlation_id: string
+          created_at: string
+          detail: Json
+          id: string
+          idempotency_key: string | null
+          invoice_id: string | null
+          subscription_id: string | null
+          summary: string
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          client_id?: string | null
+          correlation_id: string
+          created_at?: string
+          detail?: Json
+          id: string
+          idempotency_key?: string | null
+          invoice_id?: string | null
+          subscription_id?: string | null
+          summary: string
+          type: string
+          workspace_id: string
+        }
+        Update: {
+          actor_id?: string | null
+          client_id?: string | null
+          correlation_id?: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          idempotency_key?: string | null
+          invoice_id?: string | null
+          subscription_id?: string | null
+          summary?: string
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_event_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_event_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "billing_invoice"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_event_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "billing_subscription"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_invoice: {
+        Row: {
+          amount_due_cents: number
+          amount_paid_cents: number
+          attempt_count: number
+          billing_account_id: string
+          checksum: string
+          client_id: string | null
+          created_at: string
+          currency: string
+          discount_cents: number
+          due_at: string | null
+          id: string
+          idempotency_key: string
+          issued_at: string | null
+          lines: Json
+          metadata: Json
+          number: string
+          paid_at: string | null
+          period_end_at: string | null
+          period_start_at: string | null
+          provider_invoice_ref: string | null
+          status: string
+          subscription_id: string | null
+          subtotal_cents: number
+          tax_cents: number
+          total_cents: number
+          updated_at: string
+          version: number
+          voided_at: string | null
+          workspace_id: string
+        }
+        Insert: {
+          amount_due_cents?: number
+          amount_paid_cents?: number
+          attempt_count?: number
+          billing_account_id: string
+          checksum: string
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_cents?: number
+          due_at?: string | null
+          id: string
+          idempotency_key: string
+          issued_at?: string | null
+          lines?: Json
+          metadata?: Json
+          number: string
+          paid_at?: string | null
+          period_end_at?: string | null
+          period_start_at?: string | null
+          provider_invoice_ref?: string | null
+          status?: string
+          subscription_id?: string | null
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          updated_at?: string
+          version?: number
+          voided_at?: string | null
+          workspace_id: string
+        }
+        Update: {
+          amount_due_cents?: number
+          amount_paid_cents?: number
+          attempt_count?: number
+          billing_account_id?: string
+          checksum?: string
+          client_id?: string | null
+          created_at?: string
+          currency?: string
+          discount_cents?: number
+          due_at?: string | null
+          id?: string
+          idempotency_key?: string
+          issued_at?: string | null
+          lines?: Json
+          metadata?: Json
+          number?: string
+          paid_at?: string | null
+          period_end_at?: string | null
+          period_start_at?: string | null
+          provider_invoice_ref?: string | null
+          status?: string
+          subscription_id?: string | null
+          subtotal_cents?: number
+          tax_cents?: number
+          total_cents?: number
+          updated_at?: string
+          version?: number
+          voided_at?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_invoice_billing_account_id_fkey"
+            columns: ["billing_account_id"]
+            isOneToOne: false
+            referencedRelation: "billing_account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_invoice_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_invoice_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "billing_subscription"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_payment_method: {
+        Row: {
+          billing_account_id: string
+          brand: string
+          client_id: string | null
+          created_at: string
+          exp_month: number | null
+          exp_year: number | null
+          id: string
+          is_default: boolean
+          last4: string
+          provider_method_ref: string | null
+          status: string
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          billing_account_id: string
+          brand: string
+          client_id?: string | null
+          created_at?: string
+          exp_month?: number | null
+          exp_year?: number | null
+          id: string
+          is_default?: boolean
+          last4: string
+          provider_method_ref?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          billing_account_id?: string
+          brand?: string
+          client_id?: string | null
+          created_at?: string
+          exp_month?: number | null
+          exp_year?: number | null
+          id?: string
+          is_default?: boolean
+          last4?: string
+          provider_method_ref?: string | null
+          status?: string
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_payment_method_billing_account_id_fkey"
+            columns: ["billing_account_id"]
+            isOneToOne: false
+            referencedRelation: "billing_account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_payment_method_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_subscription: {
+        Row: {
+          addons: Json
+          billing_account_id: string
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          client_id: string | null
+          created_at: string
+          current_period_end_at: string | null
+          current_period_start_at: string | null
+          discount: Json | null
+          grace_period_end_at: string | null
+          id: string
+          interval: string
+          metadata: Json
+          plan_id: string
+          provider_subscription_ref: string | null
+          quantity: number
+          seats: number
+          status: string
+          tier: string
+          trial_end_at: string | null
+          trial_start_at: string | null
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          addons?: Json
+          billing_account_id: string
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          current_period_end_at?: string | null
+          current_period_start_at?: string | null
+          discount?: Json | null
+          grace_period_end_at?: string | null
+          id: string
+          interval: string
+          metadata?: Json
+          plan_id: string
+          provider_subscription_ref?: string | null
+          quantity?: number
+          seats?: number
+          status?: string
+          tier: string
+          trial_end_at?: string | null
+          trial_start_at?: string | null
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          addons?: Json
+          billing_account_id?: string
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          client_id?: string | null
+          created_at?: string
+          current_period_end_at?: string | null
+          current_period_start_at?: string | null
+          discount?: Json | null
+          grace_period_end_at?: string | null
+          id?: string
+          interval?: string
+          metadata?: Json
+          plan_id?: string
+          provider_subscription_ref?: string | null
+          quantity?: number
+          seats?: number
+          status?: string
+          tier?: string
+          trial_end_at?: string | null
+          trial_start_at?: string | null
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_subscription_billing_account_id_fkey"
+            columns: ["billing_account_id"]
+            isOneToOne: false
+            referencedRelation: "billing_account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_subscription_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      billing_usage_event: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          idempotency_key: string
+          metadata: Json
+          meter: string
+          occurred_at: string
+          quantity: number
+          source: string
+          subscription_id: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id: string
+          idempotency_key: string
+          metadata?: Json
+          meter: string
+          occurred_at: string
+          quantity?: number
+          source?: string
+          subscription_id: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          idempotency_key?: string
+          metadata?: Json
+          meter?: string
+          occurred_at?: string
+          quantity?: number
+          source?: string
+          subscription_id?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_usage_event_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "billing_usage_event_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "billing_subscription"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_domains: {
         Row: {
           baseline_score: number | null
