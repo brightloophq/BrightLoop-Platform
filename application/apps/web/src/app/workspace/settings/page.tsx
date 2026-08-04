@@ -4,7 +4,7 @@
  * they are intentionally absent here, honoring the existing capability model.
  */
 
-import { EmptyState } from "@brightloop/ui";
+import { EmptyState, ThemeToggle } from "@brightloop/ui";
 import { resolveWorkspaces } from "@/lib/workspace-data";
 import { getActor } from "@/lib/auth";
 import styles from "../pages.module.css";
@@ -17,6 +17,16 @@ export default async function SettingsPage() {
   return (
     <>
       <div className={styles.pageHead}><div><h1 className={styles.pageTitle}>Settings</h1><p className={styles.pageSub}>Your profile and workspace preferences.</p></div></div>
+      <section className={styles.section} style={{ marginBottom: "var(--space-4)" }}>
+        <div className={styles.sectionHead}><span className={styles.sectionTitle}>Appearance</span></div>
+        <div className={styles.row}>
+          <div className={styles.rowMain}>
+            <div className={styles.rowTitle}>Theme</div>
+            <div className={styles.rowMeta}>Choose Light, Dark, or match your device. Applies instantly across the workspace.</div>
+          </div>
+          <ThemeToggle />
+        </div>
+      </section>
       <div className={styles.grid2}>
         <section className={styles.section}>
           <div className={styles.sectionHead}><span className={styles.sectionTitle}>Profile</span></div>

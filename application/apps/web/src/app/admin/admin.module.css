@@ -135,6 +135,26 @@
   gap: var(--space-2);
 }
 
+/* Appearance (theme) row in the sidebar foot — the "user profile" theme control. */
+.appearanceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3) var(--space-2);
+}
+.appearanceLabel {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+}
+
+/* Pushes the compact theme toggle to the right edge of the mobile bar. */
+.mobileBarSpacer {
+  flex: 1 1 auto;
+}
+
 .who {
   padding: var(--space-2) var(--space-3);
   font-size: var(--fs-xs);

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { Logo } from "@brightloop/ui";
+import { Logo, ThemeToggle } from "@brightloop/ui";
 import { requireSurface } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "../(auth)/actions";
@@ -77,6 +77,10 @@ export default async function PortalLayout({ children }: { children: ReactNode }
         <PortalNav items={items} />
 
         <div className={styles.sidebarFoot}>
+          <div className={styles.appearanceRow}>
+            <span className={styles.appearanceLabel}>Appearance</span>
+            <ThemeToggle />
+          </div>
           <span className={styles.who}>
             <span className={styles.whoName}>{actor.role.replace("_", " ")}</span>
             signed in
