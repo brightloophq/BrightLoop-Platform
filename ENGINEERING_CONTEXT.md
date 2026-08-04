@@ -1249,3 +1249,69 @@ vectors + QBO query allowlist/injection), application +11 (integration-finance.t
 OAuth connect + refresh/rotation + webhook replay + poll replay + client/scope denial),
 domain +1. Gate `pnpm -w typecheck lint test build` **green**; **ZERO live QuickBooks/Xero
 calls** in CI (fake transports).
+
+---
+
+## 20. Phase F · Sprint F4.7 — Social connectors (branch `feat/f4-social-connectors`, PR open)
+
+The Social connector family on the [§14] F4.1 platform: **Meta (Facebook + Instagram),
+LinkedIn, X (Twitter), TikTok** (connector ids `meta`/`linkedin`/`x`/`tiktok`, all
+`oauth2`, `available:true`, `category:social`). Branched off `main` AFTER F4.6 `#72`
+(Finance) was merged. Full report: `engineering-blueprint/phase-f4.7/` (report only —
+no blueprint edit).
+
+**PURE additive connector family — reuses the F4.1 ports + F4.2 `execute()`/`invoke` +
+F4.1 webhook/polling ingestion + `resolveConnectorSecret` OAuth refresh/rotation, all
+unchanged.** The ONE additive schema touch: `connectorCategorySchema` gained a new
+`"social"` member (Zod enum only — connector `category` is NOT persisted in the DB, so
+no migration / pgTAP / RLS / type-drift impact).
+
+- **Domain:** `registry.ts` +4 descriptors declaring a **NORMALIZED `social.*`
+  capability vocabulary** — each provider exposes a SUBSET sharing identical `operation`
+  names (Meta 13, LinkedIn 11, X 10, TikTok 8). No provider-specific capability exposed.
+  `integration.test.ts` +1 block.
+- **Data** `packages/data/src/integration/social/` — the F4.3–F4.6 binding pattern:
+  `transport.ts` (`SocialHttpTransport` seam + `createFetchSocialTransport` — the ONLY
+  fetch site); `client.ts` (`callSocial` engine + `SocialProviderBinding` — the one
+  provider-specific surface — with `authorize(secret,config)→{baseUrl,headers}` +
+  `callTokenEndpoint`; the OAuth descriptor adds `clientIdParam`/`clientSecretParam`
+  (TikTok's `client_key`) + `scopeSeparator` (Meta/TikTok comma-join) knobs the finance
+  family didn't need); `oauth.ts` (GENERIC authorization-code exchange/refresh, body OR
+  Basic client-auth); `errors.ts` (HTTP status → 7 health states, pure, Meta
+  `error.code` / X `errors[]` / LinkedIn `serviceErrorCode` safe-code extraction);
+  `normalize.ts` (canonical `social.*` event vocabulary); `contracts.ts`
+  (provider-neutral `SocialProfile/Account/Page/Post/Comment/Media/Analytics/Health/
+  SearchResult`); `helpers.ts`; `meta.ts`/`linkedin.ts`/`x.ts`/`tiktok.ts` (op maps +
+  poll + Meta webhook); `webhook.ts` (Meta `X-Hub-Signature-256` HMAC-SHA256 **hex**
+  verify, `sha256=` prefix, constant-time); `adapter.ts` (`createSocialConnectorAdapters(cfg)`
+  + `loadSocialConfig`). Barrel-exported.
+- **Auth (all OAuth 2.0 authorization-code):** Meta (Facebook Graph, body client-auth,
+  comma scopes, Bearer); LinkedIn (`api.linkedin.com`, body client-auth, fixed
+  `LinkedIn-Version` + `X-Restli-Protocol-Version` headers, org URN as install config);
+  X (`api.twitter.com/2`, **HTTP Basic** client-auth, PKCE **code_verifier deferred** —
+  the sync OAuth port doesn't thread it); TikTok (`open.tiktokapis.com/v2`, **`client_key`**
+  credential param, comma scopes, HTTP-200 `error.code` envelope classified like Slack).
+  App-level client creds via env `META_/LINKEDIN_/X_CLIENT_ID|SECRET` +
+  `TIKTOK_CLIENT_KEY|SECRET`; tokens are per-install secrets stored ONLY by reference;
+  optional Meta `webhookSigningSecret` (app secret) via the F4.1 `webhook_signing` purpose.
+- **Web:** `getConnectorAdapterRegistry` merges Fakes + Google + Communication + Commerce
+  + CRM + Finance + Social (real fetch transport). Marketplace/detail are registry-driven
+  → Social appears automatically. **NO web/DB/migration/pgTAP change.**
+
+Event translation (provider shapes stay inside adapters): Meta `entry[].changes[]`
+(`field`+`verb` → `social.post.published`/`.deleted`/`social.comment.created`/…); LinkedIn
+polled org posts → `social.post.created`; X polled tweets → `social.post.published`; TikTok
+polled videos → `social.post.published`. Webhook verify→translate→persist runs through F4.1
+`ingestConnectorWebhook` (idempotent; replay=duplicate). **Known limits / normalized-subset
+asymmetry:** only Meta lists Pages (`social.pages.list`) + reads insights
+(`social.insights.read`); only X exposes search (`social.search.read`); Meta + TikTok
+publish (`social.posts.publish`) where LinkedIn + X create (`social.posts.create`) — mirrors
+the F4.5/F4.6 subset-asymmetry pattern. Only Meta has a body-signed webhook the sync port
+can verify; LinkedIn/X/TikTok are polling-only. Media upload is metadata/handle-only
+(binary chunk transfer deferred); X PKCE code_verifier + Meta long-lived-token exchange are
+documented OAuth limitations. Tests: data +33 (social.test.ts — real X-Hub-Signature-256
+hex vector + comma/space scope + body/Basic/client_key exchange + TikTok 200-error
+envelope), application +11 (integration-social.test.ts — OAuth connect + refresh/rotation +
+webhook replay + poll replay + client/scope denial), domain +1. Gate
+`pnpm -w typecheck lint test build` **green**; **ZERO live Meta/LinkedIn/X/TikTok calls** in
+CI (fake transports).

@@ -132,6 +132,36 @@ describe("connector registry", () => {
     // Finance is its own marketplace category, distinct from commerce/payments.
     expect(listConnectors("finance").map((c) => c.id).sort()).toEqual(["quickbooks", "xero"]);
   });
+  it("registers the four social connectors with normalized capabilities (F4.7)", () => {
+    for (const id of ["meta", "linkedin", "x", "tiktok"]) {
+      const c = findConnector(id);
+      expect(c, id).not.toBeNull();
+      expect(c!.available).toBe(true);
+      expect(c!.authMethod).toBe("oauth2");
+      expect(c!.category).toBe("social");
+      expect(c!.scopes.length).toBeGreaterThan(0);
+      // NORMALIZED: every social provider shares the same core operation naming.
+      expect(findConnectorCapability(id, "social.health")?.operation).toBe("social.health");
+      expect(findConnectorCapability(id, "social.profile.read")?.sideEffect).toBe("read");
+    }
+    // Provider-specific normalized subsets: only Meta lists Pages + reads insights;
+    // only X exposes search; Meta + TikTok publish where LinkedIn + X create.
+    expect(findConnectorCapability("meta", "social.pages.list")).not.toBeNull();
+    expect(findConnectorCapability("linkedin", "social.pages.list")).toBeNull();
+    expect(findConnectorCapability("meta", "social.insights.read")).not.toBeNull();
+    expect(findConnectorCapability("linkedin", "social.insights.read")).toBeNull();
+    expect(findConnectorCapability("x", "social.search.read")).not.toBeNull();
+    expect(findConnectorCapability("tiktok", "social.search.read")).toBeNull();
+    expect(findConnectorCapability("tiktok", "social.posts.publish")).not.toBeNull();
+    expect(findConnectorCapability("linkedin", "social.posts.create")).not.toBeNull();
+    // Meta is webhook-driven; LinkedIn/X/TikTok are polling-only.
+    expect(findConnector("meta")!.triggerKinds).toContain("webhook");
+    expect(findConnector("linkedin")!.triggerKinds).toEqual(["polling"]);
+    expect(findConnector("x")!.triggerKinds).toEqual(["polling"]);
+    expect(findConnector("tiktok")!.triggerKinds).toEqual(["polling"]);
+    // Social is its own marketplace category.
+    expect(listConnectors("social").map((c) => c.id).sort()).toEqual(["linkedin", "meta", "tiktok", "x"]);
+  });
 });
 
 describe("installation lifecycle", () => {
