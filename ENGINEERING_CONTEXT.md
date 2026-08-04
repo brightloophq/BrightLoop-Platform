@@ -1371,3 +1371,58 @@ polling-only, Xero-no-refund, X PKCE deferred) are approved design decisions, no
 Health vocabulary verified uniform across all 6 families; `fetch` confined to the six
 `transport.ts` seams. Tests: data +7, application +15. Gate `pnpm -w typecheck lint test
 build` **green**; **ZERO live provider calls** in CI (offline harness + fake transports).
+
+---
+
+## 22. PX.1 — Product Experience (Theme Runtime + Demo Mode)
+
+A presentation-layer sprint on the completed platform (F1–F5). **No backend, domain,
+RLS, migration, or schema change** — it makes the product feel alive without touching
+how it works. The 11 PDFs in `docs/design/source/` remain the visual source of truth.
+Full plan + audit: `engineering-blueprint/px-1/` (`00-product-experience-audit.md`).
+Sliced into independently-shippable sub-sprints, each its own branch + PR off `main`.
+
+**PX.1a — Theme Runtime (branch `feat/px1a-theme-runtime`, PR #76 open).** The runtime
+layer over the pre-existing dual-theme token set (`packages/ui/src/tokens/colors.css`
+already defined both palettes under `[data-theme]`): new `@brightloop/ui/theme` — pure
+tested core (`theme.ts`: resolution + persistence + anti-FOUC script), `ThemeProvider`
+(persistence, live OS tracking, instant switch), `ThemeScript` (pre-paint, in `<body>`),
+accessible `ThemeToggle` (radiogroup, segmented/compact). Wired in the root layout
+(default **System**), `color-scheme` added to the token blocks, `sun`/`moon`/`monitor`
+icons, toggle in admin/portal/workspace shells + login + workspace settings. Additive;
+gate green; `@brightloop/ui` +15 tests.
+
+**PX.1b — Demo Mode + Realistic Dataset (branch `feat/px1b-demo-mode`, this PR).** Solves
+the audit's core finding — the platform looks empty because every reader correctly
+reflects an empty DB — WITHOUT compromising production integrity. Demo Mode is a **read
+data-source swap** through the existing repository abstraction, centrally managed in
+`apps/web/src/lib/repositories.ts`; components stay unaware (no `if (demoMode)` in any
+page).
+
+- **Gate:** `isDemoMode()` — resolves Vercel `production` → OFF (hard); then the
+  `auxion_demo` **developer-toggle cookie** (`on`/`off`); then the `AUXION_DEMO_MODE=true`
+  env default. Async (reads the request cookie). `demoToggleAvailable()` gates the
+  dev-only toggle UI. **Never on in real production.**
+- **Dataset** (`@brightloop/data/demo/`, pure + deterministic, server-only, `now`
+  injected): five believable orgs (Onixus, The New Greenhouse, Acme Construction,
+  Kingston Logistics, Green Horizon) with domains, scans, findings, pipeline counts,
+  risks, activity, ~14 signals (executive detail within the existing schema), and
+  analytics. Ships nothing to the browser.
+- **Same-port demo readers:** `DemoTransformationDashboardRepository`
+  (`TransformationDashboardReader`), `DemoCoreSurfaceRepository` (`CoreSurfaceRepository`;
+  writes throw `DemoModeError`), `DemoSignalsRepository` (`SignalsReadRepository`), and the
+  `getAnalyticsData()` seam (`lib/analytics-data.ts`). Two new domain read ports added
+  (`TransformationDashboardReader`, `SignalsReadRepository`).
+- **Alive surfaces:** Console (metrics · pipeline · attention · activity · lit System
+  Map), Business Scan, Activation, **Signals** (list/detail/summary/transitions), and
+  **Analytics** (funnel · KPIs · event stream). Honest `DemoModeBanner` + dev toggle in
+  the admin shell.
+- **Security:** auth, capabilities and RLS still run; demo is read-only; writes disabled;
+  demo data never leaks to production or the browser. Additive only — no schema/RLS/
+  migration/business-logic change.
+- **Tests:** `@brightloop/data` +25 (`demo.test.ts`), incl. a keystone test rendering demo
+  data through the REAL `buildDashboardView` to a non-empty Console. Gate
+  `pnpm turbo run typecheck lint test build` **green (36/36)**; **ZERO live provider/DB
+  calls**. Report: `engineering-blueprint/px-1/PX.1b-demo-mode-report.md`.
+- **Follow-ons:** workspace/portal surfaces, agency back-office, net-new trend-chart
+  components (PX.1c), System Map hover/detail panels (PX.1d).

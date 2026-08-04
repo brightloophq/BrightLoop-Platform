@@ -313,6 +313,18 @@ export interface SignalDetailData {
   transitions: readonly SignalTransition[];
 }
 
+/**
+ * The Signals read port. Implemented by the Supabase adapter (live) and the demo
+ * adapter (Demo Mode); the page depends on this shape, never on a data source.
+ */
+export interface SignalsReadRepository {
+  summary(clientId: string | null): Promise<SignalSummary>;
+  list(query: SignalListQuery): Promise<SignalListData>;
+  getById(id: string): Promise<SignalDetailData | null>;
+  listTransitions(signalId: string): Promise<SignalTransition[]>;
+  listOrganizations(): Promise<{ id: string; name: string }[]>;
+}
+
 export interface SignalTimelineEntry {
   kind: "created" | "transition";
   from: string | null;

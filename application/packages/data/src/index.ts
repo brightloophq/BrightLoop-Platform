@@ -240,6 +240,32 @@ export { SupabaseTransformationDashboardRepository } from "./transformation/dash
 export { SupabaseSignalsRepository } from "./transformation/signals.read.js";
 // Core surfaces (Phase 1B) — fully typed Business Scan / Domains / Findings adapter.
 export { SupabaseCoreSurfaceRepository } from "./core-surfaces/adapter.js";
+// Demo Mode (PX.1b) — believable, deterministic data behind the same ports.
+export {
+  DemoTransformationDashboardRepository,
+  DemoCoreSurfaceRepository,
+  DemoSignalsRepository,
+  DemoModeError,
+} from "./demo/demo.repositories.js";
+export {
+  DEMO_ORGS,
+  DEMO_ACTORS,
+  demoAllDomains,
+  demoDomainsFor,
+  demoOrg,
+  demoScanFor,
+  demoFindingsForScan,
+  demoPortfolioSnapshot,
+  demoOrgSnapshot,
+  demoOrgOptions,
+  demoAnalytics,
+  demoSignalRows,
+  demoSignalList,
+  demoSignalSummary,
+  demoSignalDetail,
+  demoSignalTransitions,
+} from "./demo/demo.dataset.js";
+export type { DemoOrg } from "./demo/demo.dataset.js";
 // Runtime persistence (Phase B) — fully typed runtime repository adapter.
 export { SupabaseRuntimeRepository } from "./runtime/adapter.js";
 export {

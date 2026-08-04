@@ -1,0 +1,73 @@
+.banner,
+.bannerOff {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--gutter);
+  font-size: var(--fs-xs);
+  line-height: var(--lh-snug);
+  color: var(--text-primary);
+}
+
+.banner {
+  background: var(--signal-tint);
+  border-bottom: 1px solid color-mix(in srgb, var(--signal) 30%, transparent);
+}
+
+/* OFF state — muted, unobtrusive (dev/preview only). */
+.bannerOff {
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--line);
+  color: var(--text-muted);
+}
+
+.dot,
+.dotOff {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-pill);
+}
+.dot {
+  background: var(--signal);
+  box-shadow: 0 0 0 3px var(--signal-tint);
+}
+.dotOff {
+  background: var(--ink-3);
+}
+
+.text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.text strong {
+  color: var(--text-accent);
+  font-weight: var(--fw-semibold);
+}
+.bannerOff .text strong {
+  color: var(--text-secondary);
+}
+
+.form {
+  flex: none;
+}
+
+.toggle {
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--text-primary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-medium);
+  padding: 2px var(--space-3);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.toggle:hover {
+  border-color: var(--signal);
+  color: var(--text-accent);
+}
+.toggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

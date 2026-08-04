@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
-import { acquisitionFunnel, countByName, formatRate } from "@brightloop/domain";
+import { formatRate } from "@brightloop/domain";
 import { Alert, Card, Progress, Stat } from "@brightloop/ui";
-import { createClient } from "@/lib/supabase/server";
+import { getAnalyticsData } from "@/lib/analytics-data";
 import styles from "../cms.module.css";
 import shell from "../admin.module.css";
 
@@ -11,45 +11,14 @@ export const dynamic = "force-dynamic";
 /**
  * Admin Analytics (handoff §08 · §25).
  *
- * INTEGRITY: "real data only; no placeholder KPIs shipped as if real." Every
- * figure here is computed from analytics_events (server-emitted, so real not
- * client-inferred) plus live entity counts. There is no hardcoded number. When
- * the database is empty the page says so rather than showing zeros dressed as
- * insight.
+ * INTEGRITY: in normal mode every figure is computed from analytics_events
+ * (server-emitted, so real not client-inferred) plus live entity counts — no
+ * hardcoded number, and an empty database says so. The data is read via
+ * `getAnalyticsData()` so the page is unaware of the source; in Demo Mode that
+ * seam returns the deterministic demo dataset instead.
  */
-async function count(supabase: Awaited<ReturnType<typeof createClient>>, table: string, filter?: [string, string]) {
-  let q = supabase.from(table).select("id", { count: "exact", head: true });
-  if (filter) q = q.eq(filter[0], filter[1]);
-  const { count } = await q;
-  return count ?? 0;
-}
-
 export default async function AdminAnalyticsPage() {
-  const supabase = await createClient();
-
-  const { data: events, error } = await supabase
-    .from("analytics_events")
-    .select("name, at")
-    .order("at", { ascending: false })
-    .limit(5000);
-
-  const rows = events ?? [];
-  const byName = countByName(rows);
-
-  const [assessments, proposalsAccepted, contractsSigned, activations, leads, projects] =
-    await Promise.all([
-      count(supabase, "assessments", ["status", "completed"]),
-      count(supabase, "proposals", ["status", "accepted"]),
-      count(supabase, "contracts", ["status", "active"]),
-      count(supabase, "clients", ["lifecycle", "client_active"]),
-      count(supabase, "leads"),
-      count(supabase, "projects"),
-    ]);
-
-  const funnel = acquisitionFunnel({ assessments, proposalsAccepted, contractsSigned, activations });
-
-  const denied = error?.message?.toLowerCase().includes("permission");
-  const totalEvents = rows.length;
+  const { funnel, byName, leads, activations, projects, totalEvents, denied } = await getAnalyticsData();
 
   return (
     <>

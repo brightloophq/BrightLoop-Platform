@@ -5,6 +5,7 @@ import { requireSurface } from "@/lib/auth";
 import { transformationNavGroup } from "@/lib/transformation-nav";
 import { AppSidebar } from "./AppSidebar";
 import type { AdminNavGroup } from "./AdminNav";
+import { DemoModeBanner } from "../_components/DemoModeBanner";
 import styles from "./admin.module.css";
 
 /**
@@ -90,6 +91,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     <div className={styles.shell}>
       <AppSidebar groups={groups} roleLabel={actor.role} />
       <main id="main-content" tabIndex={-1} className={styles.main}>
+        <DemoModeBanner />
         <ToastProvider>{children}</ToastProvider>
       </main>
     </div>
