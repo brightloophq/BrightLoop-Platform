@@ -627,6 +627,133 @@ export const CONNECTOR_REGISTRY: readonly ConnectorDescriptor[] = Object.freeze(
       { key: "finance.health", label: "Health", sideEffect: "read", operation: "finance.health" },
     ],
   }),
+
+  /* ---- Social family (F4.7) — NORMALIZED capabilities ----------------------
+   * Meta (Facebook + Instagram) / LinkedIn / X (Twitter) / TikTok each expose a
+   * SUBSET of the shared `social.*` capability keys + `operation` names; each adapter
+   * maps the normalized operation onto its own API. No provider-specific capability,
+   * query, or payload is exposed. All four use OAuth 2.0 authorization-code auth
+   * (app-level client creds injected from the environment — TikTok's credential is a
+   * `client_key`; access/refresh tokens stored ONLY by reference). Meta is the only
+   * provider with a body-signed webhook (X-Hub-Signature-256) the sync port can verify;
+   * LinkedIn/X/TikTok are polling-only. Provider-specific normalized subsets are
+   * documented asymmetries: only Meta lists Pages + reads insights; only X exposes
+   * search; Meta + TikTok publish, others create. The optional `webhookSigningSecret`
+   * (Meta) verifies the inbound HMAC-SHA256 (hex) webhook signature. */
+  d({
+    id: "meta",
+    name: "Meta (Facebook + Instagram)",
+    category: "social",
+    summary: "Read the connected profile, Facebook Pages, and linked Instagram Business accounts; list, read, create, publish (immediate or scheduled), and delete posts; list + reply to comments; upload media; read post insights. Webhooks translate page/Instagram changes into normalized Auxion social events.",
+    vendor: "Meta",
+    authMethod: "oauth2",
+    triggerKinds: ["webhook", "polling"],
+    available: true,
+    version: 1,
+    scopes: ["pages_show_list", "pages_read_engagement", "pages_manage_posts", "instagram_basic", "instagram_content_publish", "read_insights", "business_management"],
+    configFields: [
+      { key: "pageId", label: "Default Facebook Page ID", type: "string", required: false, helpText: "Page id used as the default target for posts + polling." },
+      { key: "instagramBusinessId", label: "Instagram Business account ID", type: "string", required: false, helpText: "Linked Instagram Business account id." },
+      { key: "apiVersion", label: "Graph API version", type: "string", required: false, helpText: "Defaults to v21.0." },
+      { key: "webhookSigningSecret", label: "App secret (webhook)", type: "secret", required: false, secret: true, helpText: "Meta app secret used to verify X-Hub-Signature-256 webhook signatures (stored only by reference)." },
+    ],
+    capabilities: [
+      { key: "social.profile.read", label: "Read profile", sideEffect: "read", operation: "social.profile.read" },
+      { key: "social.pages.list", label: "List Pages", sideEffect: "read", operation: "social.pages.list" },
+      { key: "social.accounts.list", label: "List Instagram accounts", sideEffect: "read", operation: "social.accounts.list" },
+      { key: "social.posts.list", label: "List posts", sideEffect: "read", operation: "social.posts.list" },
+      { key: "social.posts.read", label: "Read post", sideEffect: "read", operation: "social.posts.read" },
+      { key: "social.posts.create", label: "Create post", sideEffect: "write", operation: "social.posts.create" },
+      { key: "social.posts.publish", label: "Publish post", sideEffect: "external", operation: "social.posts.publish" },
+      { key: "social.posts.delete", label: "Delete post", sideEffect: "write", operation: "social.posts.delete" },
+      { key: "social.comments.list", label: "List comments", sideEffect: "read", operation: "social.comments.list" },
+      { key: "social.comments.reply", label: "Reply to comment", sideEffect: "external", operation: "social.comments.reply" },
+      { key: "social.media.upload", label: "Upload media", sideEffect: "external", operation: "social.media.upload" },
+      { key: "social.insights.read", label: "Read insights", sideEffect: "read", operation: "social.insights.read" },
+      { key: "social.health", label: "Health", sideEffect: "read", operation: "social.health" },
+    ],
+  }),
+  d({
+    id: "linkedin",
+    name: "LinkedIn",
+    category: "social",
+    summary: "Read the member profile + administered Organizations; list, read, create, and delete organization posts; list + reply to comments; initialize media uploads; read organization share analytics. Polling translates new organization posts into normalized Auxion social events.",
+    vendor: "LinkedIn",
+    authMethod: "oauth2",
+    triggerKinds: ["polling"],
+    available: true,
+    version: 1,
+    scopes: ["openid", "profile", "email", "w_member_social", "r_organization_social", "w_organization_social", "rw_organization_admin"],
+    configFields: [
+      { key: "organizationId", label: "Organization URN", type: "string", required: false, helpText: "e.g. urn:li:organization:12345 — the default author for posts + polling." },
+      { key: "apiVersion", label: "LinkedIn-Version", type: "string", required: false, helpText: "Versioned API date; defaults to 202401." },
+    ],
+    capabilities: [
+      { key: "social.profile.read", label: "Read profile", sideEffect: "read", operation: "social.profile.read" },
+      { key: "social.accounts.list", label: "List organizations", sideEffect: "read", operation: "social.accounts.list" },
+      { key: "social.posts.list", label: "List posts", sideEffect: "read", operation: "social.posts.list" },
+      { key: "social.posts.read", label: "Read post", sideEffect: "read", operation: "social.posts.read" },
+      { key: "social.posts.create", label: "Create post", sideEffect: "write", operation: "social.posts.create" },
+      { key: "social.posts.delete", label: "Delete post", sideEffect: "write", operation: "social.posts.delete" },
+      { key: "social.comments.list", label: "List comments", sideEffect: "read", operation: "social.comments.list" },
+      { key: "social.comments.reply", label: "Reply to comment", sideEffect: "external", operation: "social.comments.reply" },
+      { key: "social.media.upload", label: "Upload media", sideEffect: "external", operation: "social.media.upload" },
+      { key: "social.analytics.read", label: "Read analytics", sideEffect: "read", operation: "social.analytics.read" },
+      { key: "social.health", label: "Health", sideEffect: "read", operation: "social.health" },
+    ],
+  }),
+  d({
+    id: "x",
+    name: "X (Twitter)",
+    category: "social",
+    summary: "Read the authenticated profile; list, read, create, and delete tweets; reply to tweets; upload media; search recent tweets; read public tweet metrics. Polling translates new tweets into normalized Auxion social events.",
+    vendor: "X",
+    authMethod: "oauth2",
+    triggerKinds: ["polling"],
+    available: true,
+    version: 1,
+    scopes: ["tweet.read", "tweet.write", "users.read", "offline.access"],
+    configFields: [
+      { key: "userId", label: "Default author user ID", type: "string", required: false, helpText: "X user id used as the default author for listing + polling." },
+    ],
+    capabilities: [
+      { key: "social.profile.read", label: "Read profile", sideEffect: "read", operation: "social.profile.read" },
+      { key: "social.posts.list", label: "List tweets", sideEffect: "read", operation: "social.posts.list" },
+      { key: "social.posts.read", label: "Read tweet", sideEffect: "read", operation: "social.posts.read" },
+      { key: "social.posts.create", label: "Create tweet", sideEffect: "external", operation: "social.posts.create" },
+      { key: "social.posts.delete", label: "Delete tweet", sideEffect: "write", operation: "social.posts.delete" },
+      { key: "social.comments.reply", label: "Reply to tweet", sideEffect: "external", operation: "social.comments.reply" },
+      { key: "social.media.upload", label: "Upload media", sideEffect: "external", operation: "social.media.upload" },
+      { key: "social.search.read", label: "Search tweets", sideEffect: "read", operation: "social.search.read" },
+      { key: "social.analytics.read", label: "Read analytics", sideEffect: "read", operation: "social.analytics.read" },
+      { key: "social.health", label: "Health", sideEffect: "read", operation: "social.health" },
+    ],
+  }),
+  d({
+    id: "tiktok",
+    name: "TikTok",
+    category: "social",
+    summary: "Read the connected business account profile; list + read videos; publish videos through the Content Posting API; initialize media uploads; read per-video analytics. Polling translates new videos into normalized Auxion social events.",
+    vendor: "TikTok",
+    authMethod: "oauth2",
+    triggerKinds: ["polling"],
+    available: true,
+    version: 1,
+    scopes: ["user.info.basic", "user.info.profile", "user.info.stats", "video.list", "video.publish", "video.upload"],
+    configFields: [
+      { key: "businessId", label: "Business account ID", type: "string", required: false, helpText: "TikTok business account id (optional; defaults to the authorized account)." },
+    ],
+    capabilities: [
+      { key: "social.profile.read", label: "Read profile", sideEffect: "read", operation: "social.profile.read" },
+      { key: "social.accounts.list", label: "List accounts", sideEffect: "read", operation: "social.accounts.list" },
+      { key: "social.posts.list", label: "List videos", sideEffect: "read", operation: "social.posts.list" },
+      { key: "social.posts.read", label: "Read video", sideEffect: "read", operation: "social.posts.read" },
+      { key: "social.posts.publish", label: "Publish video", sideEffect: "external", operation: "social.posts.publish" },
+      { key: "social.media.upload", label: "Upload media", sideEffect: "external", operation: "social.media.upload" },
+      { key: "social.analytics.read", label: "Read analytics", sideEffect: "read", operation: "social.analytics.read" },
+      { key: "social.health", label: "Health", sideEffect: "read", operation: "social.health" },
+    ],
+  }),
 ]);
 
 const BY_ID: ReadonlyMap<string, ConnectorDescriptor> = new Map(CONNECTOR_REGISTRY.map((c) => [c.id, c]));

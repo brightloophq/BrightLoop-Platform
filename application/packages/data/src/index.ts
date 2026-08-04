@@ -212,6 +212,11 @@ export { createFinanceConnectorAdapters, loadFinanceConfig } from "./integration
 export type { FinanceConnectorConfig } from "./integration/finance/adapter.js";
 export { createFetchFinanceTransport } from "./integration/finance/transport.js";
 export type { FinanceHttpTransport, FinanceHttpRequest, FinanceHttpResponse } from "./integration/finance/transport.js";
+// Phase F · F4.7 — Social production connectors (Meta/LinkedIn/X/TikTok).
+export { createSocialConnectorAdapters, loadSocialConfig } from "./integration/social/adapter.js";
+export type { SocialConnectorConfig } from "./integration/social/adapter.js";
+export { createFetchSocialTransport } from "./integration/social/transport.js";
+export type { SocialHttpTransport, SocialHttpRequest, SocialHttpResponse } from "./integration/social/transport.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.
