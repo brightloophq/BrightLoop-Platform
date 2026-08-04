@@ -202,6 +202,11 @@ export { createCommerceConnectorAdapters, loadCommerceConfig } from "./integrati
 export type { CommerceConnectorConfig } from "./integration/commerce/adapter.js";
 export { createFetchCommerceTransport } from "./integration/commerce/transport.js";
 export type { CommerceHttpTransport, CommerceHttpRequest, CommerceHttpResponse } from "./integration/commerce/transport.js";
+// Phase F · F4.5 — CRM production connectors (HubSpot/Salesforce/Pipedrive).
+export { createCrmConnectorAdapters, loadCrmConfig } from "./integration/crm/adapter.js";
+export type { CrmConnectorConfig } from "./integration/crm/adapter.js";
+export { createFetchCrmTransport } from "./integration/crm/transport.js";
+export type { CrmHttpTransport, CrmHttpRequest, CrmHttpResponse } from "./integration/crm/transport.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.
