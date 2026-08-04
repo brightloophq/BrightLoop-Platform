@@ -541,6 +541,92 @@ export const CONNECTOR_REGISTRY: readonly ConnectorDescriptor[] = Object.freeze(
       { key: "crm.health", label: "Health", sideEffect: "read", operation: "crm.health" },
     ],
   }),
+  /* Finance connectors (F4.6). QuickBooks Online + Xero expose a NORMALIZED finance.*
+   * capability vocabulary over the F4.1 platform. Both are OAuth 2.0 authorization-code
+   * connectors that carry their tenancy as install config (QuickBooks realmId +
+   * environment; Xero tenantId — the API tenancy is provider-specific and only known
+   * post-authorization). The optional `webhookSigningSecret` secret field verifies the
+   * inbound HMAC-SHA256 (base64) webhook signature. No provider query language is ever
+   * exposed: QuickBooks reads go through an allowlisted internal query builder; Xero uses
+   * fixed REST endpoints. */
+  d({
+    id: "quickbooks",
+    name: "QuickBooks Online",
+    category: "finance",
+    summary: "Read company info, chart of accounts, customers, invoices, payments, expenses, items, and tax rates; create customers, invoices, payments, expenses, and items; refund a payment. Webhooks translate accounting changes into normalized Auxion finance events. No raw QuickBooks query is ever accepted.",
+    vendor: "Intuit",
+    authMethod: "oauth2",
+    triggerKinds: ["webhook", "polling"],
+    available: true,
+    version: 1,
+    scopes: ["com.intuit.quickbooks.accounting", "openid", "offline_access"],
+    configFields: [
+      { key: "realmId", label: "Company ID (realmId)", type: "string", required: true, helpText: "The QuickBooks company id returned on the authorization redirect." },
+      { key: "environment", label: "Environment", type: "enum", options: ["production", "sandbox"], required: false, helpText: "Defaults to production." },
+      { key: "webhookSigningSecret", label: "Webhook verifier token", type: "secret", required: false, secret: true, helpText: "Intuit webhook verifier token used to verify inbound signatures (stored only by reference)." },
+    ],
+    capabilities: [
+      { key: "finance.company.read", label: "Company information", sideEffect: "read", operation: "finance.company.read" },
+      { key: "finance.accounts.list", label: "List accounts", sideEffect: "read", operation: "finance.accounts.list" },
+      { key: "finance.customers.list", label: "List customers", sideEffect: "read", operation: "finance.customers.list" },
+      { key: "finance.customers.read", label: "Read customer", sideEffect: "read", operation: "finance.customers.read" },
+      { key: "finance.customers.create", label: "Create customer", sideEffect: "write", operation: "finance.customers.create" },
+      { key: "finance.invoices.list", label: "List invoices", sideEffect: "read", operation: "finance.invoices.list" },
+      { key: "finance.invoices.read", label: "Read invoice", sideEffect: "read", operation: "finance.invoices.read" },
+      { key: "finance.invoices.create", label: "Create invoice", sideEffect: "write", operation: "finance.invoices.create" },
+      { key: "finance.invoices.update", label: "Update invoice", sideEffect: "write", operation: "finance.invoices.update" },
+      { key: "finance.payments.list", label: "List payments", sideEffect: "read", operation: "finance.payments.list" },
+      { key: "finance.payments.read", label: "Read payment", sideEffect: "read", operation: "finance.payments.read" },
+      { key: "finance.payments.create", label: "Create payment", sideEffect: "write", operation: "finance.payments.create" },
+      { key: "finance.payments.refund", label: "Refund payment", sideEffect: "write", operation: "finance.payments.refund" },
+      { key: "finance.expenses.list", label: "List expenses", sideEffect: "read", operation: "finance.expenses.list" },
+      { key: "finance.expenses.read", label: "Read expense", sideEffect: "read", operation: "finance.expenses.read" },
+      { key: "finance.expenses.create", label: "Create expense", sideEffect: "write", operation: "finance.expenses.create" },
+      { key: "finance.items.list", label: "List items", sideEffect: "read", operation: "finance.items.list" },
+      { key: "finance.items.read", label: "Read item", sideEffect: "read", operation: "finance.items.read" },
+      { key: "finance.items.create", label: "Create item", sideEffect: "write", operation: "finance.items.create" },
+      { key: "finance.taxes.list", label: "List tax rates", sideEffect: "read", operation: "finance.taxes.list" },
+      { key: "finance.health", label: "Health", sideEffect: "read", operation: "finance.health" },
+    ],
+  }),
+  d({
+    id: "xero",
+    name: "Xero",
+    category: "finance",
+    summary: "Read organisation info, accounts, contacts, invoices, payments, bank-transaction expenses, items, and tax rates; create contacts, invoices, payments, expenses, and items. Multi-tenant: the selected organisation is carried as install config. Webhooks translate accounting changes into normalized Auxion finance events.",
+    vendor: "Xero",
+    authMethod: "oauth2",
+    triggerKinds: ["webhook", "polling"],
+    available: true,
+    version: 1,
+    scopes: ["offline_access", "accounting.transactions", "accounting.contacts", "accounting.settings"],
+    configFields: [
+      { key: "tenantId", label: "Organisation (tenant) ID", type: "string", required: true, helpText: "The Xero tenant id selected after authorization (from /connections)." },
+      { key: "webhookSigningSecret", label: "Webhook signing key", type: "secret", required: false, secret: true, helpText: "Xero webhook signing key used to verify inbound signatures (stored only by reference)." },
+    ],
+    capabilities: [
+      { key: "finance.company.read", label: "Organisation information", sideEffect: "read", operation: "finance.company.read" },
+      { key: "finance.accounts.list", label: "List accounts", sideEffect: "read", operation: "finance.accounts.list" },
+      { key: "finance.customers.list", label: "List contacts", sideEffect: "read", operation: "finance.customers.list" },
+      { key: "finance.customers.read", label: "Read contact", sideEffect: "read", operation: "finance.customers.read" },
+      { key: "finance.customers.create", label: "Create contact", sideEffect: "write", operation: "finance.customers.create" },
+      { key: "finance.invoices.list", label: "List invoices", sideEffect: "read", operation: "finance.invoices.list" },
+      { key: "finance.invoices.read", label: "Read invoice", sideEffect: "read", operation: "finance.invoices.read" },
+      { key: "finance.invoices.create", label: "Create invoice", sideEffect: "write", operation: "finance.invoices.create" },
+      { key: "finance.invoices.update", label: "Update invoice", sideEffect: "write", operation: "finance.invoices.update" },
+      { key: "finance.payments.list", label: "List payments", sideEffect: "read", operation: "finance.payments.list" },
+      { key: "finance.payments.read", label: "Read payment", sideEffect: "read", operation: "finance.payments.read" },
+      { key: "finance.payments.create", label: "Create payment", sideEffect: "write", operation: "finance.payments.create" },
+      { key: "finance.expenses.list", label: "List expenses", sideEffect: "read", operation: "finance.expenses.list" },
+      { key: "finance.expenses.read", label: "Read expense", sideEffect: "read", operation: "finance.expenses.read" },
+      { key: "finance.expenses.create", label: "Create expense", sideEffect: "write", operation: "finance.expenses.create" },
+      { key: "finance.items.list", label: "List items", sideEffect: "read", operation: "finance.items.list" },
+      { key: "finance.items.read", label: "Read item", sideEffect: "read", operation: "finance.items.read" },
+      { key: "finance.items.create", label: "Create item", sideEffect: "write", operation: "finance.items.create" },
+      { key: "finance.taxes.list", label: "List tax rates", sideEffect: "read", operation: "finance.taxes.list" },
+      { key: "finance.health", label: "Health", sideEffect: "read", operation: "finance.health" },
+    ],
+  }),
 ]);
 
 const BY_ID: ReadonlyMap<string, ConnectorDescriptor> = new Map(CONNECTOR_REGISTRY.map((c) => [c.id, c]));
