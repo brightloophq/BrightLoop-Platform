@@ -904,3 +904,61 @@ merge/close it; the canonical Insights rebuild is a later phase.
 The earlier code-grounded design notes on the `docs/design-documentation` branch
 (unmerged) describe the *pre-migration* implementation; treat them as
 implementation history and reconcile to these PDFs, do not delete.
+
+---
+
+## 14. Phase F · Sprint F4.1 — Integration Platform Foundation (branch `feat/f4-integration-core`, PR open)
+
+The **connector framework every external service plugs into** — NOT a vendor
+integration. No Gmail/Slack/Shopify/Stripe/HubSpot/QuickBooks/Meta/LinkedIn is
+implemented; the only live connectors are two deterministic **Fake** connectors
+(`fake-connector` api_key+webhook+polling, `fake-oauth` oauth2+polling) plus three
+vendor-neutral **example** descriptors (unavailable, no adapter). Full blueprint:
+`engineering-blueprint/phase-f4/`.
+
+New `integration` bounded context that **extends** F3, never duplicates it:
+- **Schema** `packages/schema/src/integration.ts` — connector descriptor +
+  capability + config-field contracts; 8 persisted entities.
+- **Domain** `packages/domain/src/integration/` — `CONNECTOR_REGISTRY` (pure
+  additive catalogue like `MODEL_REGISTRY`); lifecycle machines
+  (`canTransitionInstallation` / `canTransitionOAuthGrant`); `validateConnectorConfig`
+  (splits secret vs non-secret); pure OAuth state/scope/expiry; `normalizeTranslatedEvents`
+  (validate+sanitize+dedupe); `sanitizeConnectorMetadata`/`hasNoConnectorSecrets`;
+  idempotency keys; **`ConnectorAdapter`** (generalizes F3 `RuntimeAdapter`, adds
+  OAuth/webhook/polling/translate) + **`ConnectorSecretStore`** ports; repository ports.
+  Node-free, deterministic. **Barrel-collision renames vs execution-runtime:**
+  `sanitizeConnectorMetadata`, `hasNoConnectorSecrets`, `connectorWebhookKey`,
+  `buildConnectorHealthSnapshot`, `buildConnectorWebhookReceipt`,
+  `ConnectorConnectionValidationResult` (schema: `connectorWebhookReceiptStatusSchema`).
+- **Data** `packages/data/src/integration/` — 8 Supabase adapters
+  (`createIntegrationRepositories`), mappers, `createEnvConnectorSecretStore`
+  (`CONNECTOR_SECRET__` prefix), `createFakeConnectorAdapter` /
+  `createDefaultConnectorAdapters`.
+- **Migration** `supabase/migrations/20260806000100_phase_f_integration_platform.sql`
+  — 8 tables (`connector_installation` versioned root + `unique(workspace_id,connector_id)`;
+  `connector_secret_reference` + `connector_oauth_grant` INTERNAL-ONLY;
+  health/event/webhook_receipt/polling_cursor/audit append-only via
+  `bl_txexec_append_only`). RLS: internal-write / client-read-own; secrets+oauth
+  internal-only. pgTAP `supabase/tests/phase_f_integration_platform_test.sql`.
+- **Application** `packages/application/src/integration/` — install/configure/
+  enable/disable/revoke/validate/health, secret rotation, OAuth begin/complete,
+  webhook + polling ingestion (idempotent), read models, DTOs (no secret/ref/key
+  leaks), in-memory testing doubles. `context.ts` gains `integration` /
+  `connectorAdapters` / `connectorSecrets` + `INTEGRATION_*` caps. Application DTO
+  renames vs other contexts: `Connector{Event,Health,AuditEvent}DTO`,
+  `IngestConnectorWebhookInput`.
+- **Web** `/workspace/integrations` (installed), `/marketplace` (grid),
+  `/marketplace/[connectorId]` (details+install), `/[installationId]` (detail+controls);
+  `lib/integration-data.ts`, `actions.ts`; nav item `integrations` (icon `plug`).
+- **Authorization** — new `integration.*` namespace in `roles.ts`: admin `integration.*`;
+  team_member read/install/configure/enable/disable/health.check/oauth.authorize/ingest;
+  clients `integration.read` only (revoke + credentials.manage owner/admin).
+
+Gate green (`typecheck lint test build`, 36/36); ~51 new unit tests + pgTAP.
+**Known follow-up:** `packages/db/generated/database.types.ts` must be regenerated
+from the CI `generated-db-types` artifact and committed (`chore(db)`) so the
+`db-verify` drift check is zero — the Docker-less flow every phase uses; the data
+adapter compiles meanwhile via the one documented `as unknown as SupabaseClient` cast.
+**Adding a real connector later:** implement `ConnectorAdapter` in `@brightloop/data`
++ register in `createDefaultConnectorAdapters` + append a `CONNECTOR_REGISTRY`
+descriptor — no framework change.

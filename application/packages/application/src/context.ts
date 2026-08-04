@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AgentRepositories, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, CertificationRepositories, Clock, CollaborationRepositories, CopilotRepositories, EmbeddingProviderRegistry, ExecutionRuntimeRepositories, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeAdapterRegistry, RuntimeIdGen, RuntimeSecretStore, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
+import type { Actor, AgentRepositories, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, CertificationRepositories, Clock, CollaborationRepositories, ConnectorAdapterRegistry, ConnectorSecretStore, CopilotRepositories, EmbeddingProviderRegistry, ExecutionRuntimeRepositories, IntegrationRepositories, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeAdapterRegistry, RuntimeIdGen, RuntimeSecretStore, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -183,6 +183,16 @@ export interface AppContext {
   runtimeAdapters?: RuntimeAdapterRegistry;
   /** The secret store backing runtime credential references. Never returns values upward. */
   runtimeSecrets?: RuntimeSecretStore;
+  /** Phase F · Integration Platform repositories (F4.1). Required via `requireIntegration`. */
+  integration?: IntegrationRepositories;
+  /**
+   * Concrete connector adapters keyed by connector id (the Fake connector in
+   * tests + dev; real integrations later). The platform selects from these —
+   * business code never names one. Required by connector operation use-cases.
+   */
+  connectorAdapters?: ConnectorAdapterRegistry;
+  /** The secret store backing connector secret references. Never returns values upward. */
+  connectorSecrets?: ConnectorSecretStore;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -334,6 +344,37 @@ export function requireRuntimeSecrets(ctx: AppContext): RuntimeSecretStore {
     throw new RuntimeUnavailableError("The runtime secret store is not available");
   }
   return ctx.runtimeSecrets;
+}
+
+/** Phase F · Integration Platform (F4.1) capabilities + require helpers. */
+export const INTEGRATION_READ_CAP = "integration.read";
+export const INTEGRATION_INSTALL_CAP = "integration.install";
+export const INTEGRATION_CONFIGURE_CAP = "integration.configure";
+export const INTEGRATION_ENABLE_CAP = "integration.enable";
+export const INTEGRATION_DISABLE_CAP = "integration.disable";
+export const INTEGRATION_REVOKE_CAP = "integration.revoke";
+export const INTEGRATION_HEALTH_CAP = "integration.health.check";
+export const INTEGRATION_CRED_CAP = "integration.credentials.manage";
+export const INTEGRATION_OAUTH_CAP = "integration.oauth.authorize";
+export const INTEGRATION_INGEST_CAP = "integration.ingest";
+
+export function requireIntegration(ctx: AppContext): IntegrationRepositories {
+  if (ctx.integration === undefined) {
+    throw new RuntimeUnavailableError("The integration store is not available");
+  }
+  return ctx.integration;
+}
+export function requireConnectorAdapters(ctx: AppContext): ConnectorAdapterRegistry {
+  if (ctx.connectorAdapters === undefined) {
+    throw new RuntimeUnavailableError("No connector adapters are configured");
+  }
+  return ctx.connectorAdapters;
+}
+export function requireConnectorSecrets(ctx: AppContext): ConnectorSecretStore {
+  if (ctx.connectorSecrets === undefined) {
+    throw new RuntimeUnavailableError("The connector secret store is not available");
+  }
+  return ctx.connectorSecrets;
 }
 
 /**

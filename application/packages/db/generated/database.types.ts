@@ -3436,6 +3436,524 @@ export type Database = {
           },
         ]
       }
+      connector_audit_event: {
+        Row: {
+          actor_user_id: string | null
+          client_id: string | null
+          connector_installation_id: string
+          correlation_id: string
+          created_at: string
+          from_status: string | null
+          id: string
+          operation: string
+          summary: string
+          to_status: string | null
+          workspace_id: string
+        }
+        Insert: {
+          actor_user_id?: string | null
+          client_id?: string | null
+          connector_installation_id: string
+          correlation_id: string
+          created_at?: string
+          from_status?: string | null
+          id: string
+          operation: string
+          summary?: string
+          to_status?: string | null
+          workspace_id: string
+        }
+        Update: {
+          actor_user_id?: string | null
+          client_id?: string | null
+          connector_installation_id?: string
+          correlation_id?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          operation?: string
+          summary?: string
+          to_status?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_audit_event_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_audit_event_connector_installation_id_fkey"
+            columns: ["connector_installation_id"]
+            isOneToOne: false
+            referencedRelation: "connector_installation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_event: {
+        Row: {
+          client_id: string | null
+          connector_id: string
+          connector_installation_id: string
+          created_at: string
+          external_id: string
+          id: string
+          idempotency_key: string
+          ingested_at: string
+          occurred_at: string
+          payload: Json
+          provenance: string
+          source: string
+          status: string
+          type: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          connector_id: string
+          connector_installation_id: string
+          created_at?: string
+          external_id: string
+          id: string
+          idempotency_key: string
+          ingested_at: string
+          occurred_at: string
+          payload?: Json
+          provenance?: string
+          source: string
+          status?: string
+          type: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          connector_id?: string
+          connector_installation_id?: string
+          created_at?: string
+          external_id?: string
+          id?: string
+          idempotency_key?: string
+          ingested_at?: string
+          occurred_at?: string
+          payload?: Json
+          provenance?: string
+          source?: string
+          status?: string
+          type?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_event_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_event_connector_installation_id_fkey"
+            columns: ["connector_installation_id"]
+            isOneToOne: false
+            referencedRelation: "connector_installation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_health_snapshot: {
+        Row: {
+          checked_at: string
+          client_id: string | null
+          connector_installation_id: string
+          created_at: string
+          detail: Json
+          id: string
+          latency_ms: number
+          level: string
+          workspace_id: string
+        }
+        Insert: {
+          checked_at: string
+          client_id?: string | null
+          connector_installation_id: string
+          created_at?: string
+          detail?: Json
+          id: string
+          latency_ms?: number
+          level: string
+          workspace_id: string
+        }
+        Update: {
+          checked_at?: string
+          client_id?: string | null
+          connector_installation_id?: string
+          created_at?: string
+          detail?: Json
+          id?: string
+          latency_ms?: number
+          level?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_health_snapshot_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_health_snapshot_connector_installation_id_fkey"
+            columns: ["connector_installation_id"]
+            isOneToOne: false
+            referencedRelation: "connector_installation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_installation: {
+        Row: {
+          auth_method: string
+          client_id: string | null
+          config: Json
+          connector_id: string
+          correlation_id: string
+          created_at: string
+          created_by_user_id: string
+          display_name: string
+          enabled_capabilities: Json
+          health_level: string
+          id: string
+          idempotency_key: string
+          last_health_check_at: string | null
+          polling_cursor: string | null
+          secret_reference_id: string | null
+          status: string
+          trigger_kind: string
+          updated_at: string
+          version: number
+          webhook_endpoint_id: string | null
+          workspace_id: string
+        }
+        Insert: {
+          auth_method: string
+          client_id?: string | null
+          config?: Json
+          connector_id: string
+          correlation_id: string
+          created_at?: string
+          created_by_user_id: string
+          display_name: string
+          enabled_capabilities?: Json
+          health_level?: string
+          id: string
+          idempotency_key: string
+          last_health_check_at?: string | null
+          polling_cursor?: string | null
+          secret_reference_id?: string | null
+          status?: string
+          trigger_kind?: string
+          updated_at?: string
+          version?: number
+          webhook_endpoint_id?: string | null
+          workspace_id: string
+        }
+        Update: {
+          auth_method?: string
+          client_id?: string | null
+          config?: Json
+          connector_id?: string
+          correlation_id?: string
+          created_at?: string
+          created_by_user_id?: string
+          display_name?: string
+          enabled_capabilities?: Json
+          health_level?: string
+          id?: string
+          idempotency_key?: string
+          last_health_check_at?: string | null
+          polling_cursor?: string | null
+          secret_reference_id?: string | null
+          status?: string
+          trigger_kind?: string
+          updated_at?: string
+          version?: number
+          webhook_endpoint_id?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_installation_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_oauth_grant: {
+        Row: {
+          authorization_url: string
+          client_id: string | null
+          connector_id: string
+          connector_installation_id: string
+          created_at: string
+          created_by_user_id: string
+          expires_at: string | null
+          id: string
+          redirect_uri: string
+          scopes: Json
+          secret_reference_id: string | null
+          state_token: string
+          status: string
+          updated_at: string
+          version: number
+          workspace_id: string
+        }
+        Insert: {
+          authorization_url?: string
+          client_id?: string | null
+          connector_id: string
+          connector_installation_id: string
+          created_at?: string
+          created_by_user_id: string
+          expires_at?: string | null
+          id: string
+          redirect_uri: string
+          scopes?: Json
+          secret_reference_id?: string | null
+          state_token: string
+          status?: string
+          updated_at?: string
+          version?: number
+          workspace_id: string
+        }
+        Update: {
+          authorization_url?: string
+          client_id?: string | null
+          connector_id?: string
+          connector_installation_id?: string
+          created_at?: string
+          created_by_user_id?: string
+          expires_at?: string | null
+          id?: string
+          redirect_uri?: string
+          scopes?: Json
+          secret_reference_id?: string | null
+          state_token?: string
+          status?: string
+          updated_at?: string
+          version?: number
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_oauth_grant_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_oauth_grant_connector_installation_id_fkey"
+            columns: ["connector_installation_id"]
+            isOneToOne: false
+            referencedRelation: "connector_installation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_polling_cursor: {
+        Row: {
+          client_id: string | null
+          connector_installation_id: string
+          created_at: string
+          event_count: number
+          from_cursor: string | null
+          id: string
+          idempotency_key: string
+          polled_at: string
+          sequence: number
+          to_cursor: string | null
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          connector_installation_id: string
+          created_at?: string
+          event_count?: number
+          from_cursor?: string | null
+          id: string
+          idempotency_key: string
+          polled_at: string
+          sequence?: number
+          to_cursor?: string | null
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          connector_installation_id?: string
+          created_at?: string
+          event_count?: number
+          from_cursor?: string | null
+          id?: string
+          idempotency_key?: string
+          polled_at?: string
+          sequence?: number
+          to_cursor?: string | null
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_polling_cursor_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_polling_cursor_connector_installation_id_fkey"
+            columns: ["connector_installation_id"]
+            isOneToOne: false
+            referencedRelation: "connector_installation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_secret_reference: {
+        Row: {
+          client_id: string | null
+          connector_id: string
+          connector_installation_id: string
+          created_at: string
+          created_by_user_id: string
+          expires_at: string | null
+          id: string
+          metadata: Json
+          purpose: string
+          rotated_at: string | null
+          secret_ref: string
+          secret_version: string
+          updated_at: string
+          validation_state: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          connector_id: string
+          connector_installation_id: string
+          created_at?: string
+          created_by_user_id: string
+          expires_at?: string | null
+          id: string
+          metadata?: Json
+          purpose: string
+          rotated_at?: string | null
+          secret_ref: string
+          secret_version?: string
+          updated_at?: string
+          validation_state?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          connector_id?: string
+          connector_installation_id?: string
+          created_at?: string
+          created_by_user_id?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          purpose?: string
+          rotated_at?: string | null
+          secret_ref?: string
+          secret_version?: string
+          updated_at?: string
+          validation_state?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_secret_reference_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_secret_reference_connector_installation_id_fkey"
+            columns: ["connector_installation_id"]
+            isOneToOne: false
+            referencedRelation: "connector_installation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      connector_webhook_receipt: {
+        Row: {
+          client_id: string | null
+          connector_id: string
+          connector_installation_id: string
+          created_at: string
+          event_count: number
+          external_event_id: string
+          id: string
+          idempotency_key: string
+          processed_at: string | null
+          received_at: string
+          signature_valid: boolean
+          status: string
+          workspace_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          connector_id: string
+          connector_installation_id: string
+          created_at?: string
+          event_count?: number
+          external_event_id: string
+          id: string
+          idempotency_key: string
+          processed_at?: string | null
+          received_at: string
+          signature_valid?: boolean
+          status?: string
+          workspace_id: string
+        }
+        Update: {
+          client_id?: string | null
+          connector_id?: string
+          connector_installation_id?: string
+          created_at?: string
+          event_count?: number
+          external_event_id?: string
+          id?: string
+          idempotency_key?: string
+          processed_at?: string | null
+          received_at?: string
+          signature_valid?: boolean
+          status?: string
+          workspace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "connector_webhook_receipt_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "connector_webhook_receipt_connector_installation_id_fkey"
+            columns: ["connector_installation_id"]
+            isOneToOne: false
+            referencedRelation: "connector_installation"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consents: {
         Row: {
           granted: boolean

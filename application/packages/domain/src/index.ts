@@ -71,5 +71,7 @@ export * from "./platform-certification/index.js";
 export * from "./copilot/index.js";
 // Execution Runtime (Phase F · F3) — governed deployment to external runtimes (n8n).
 export * from "./execution-runtime/index.js";
+// Integration Platform (Phase F · F4.1) — the connector framework every external service plugs into.
+export * from "./integration/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";

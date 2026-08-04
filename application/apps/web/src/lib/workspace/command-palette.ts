@@ -23,6 +23,7 @@ export const WORKSPACE_COMMANDS: readonly WorkspaceCommand[] = [
   { id: "go-automations", label: "View Automations", hint: "Workflows", group: "Navigate", href: "/workspace/automations", keywords: ["workflow", "automation", "intent"] },
   { id: "go-deployments", label: "Open Deployment Center", hint: "Runtime deployments", group: "Navigate", href: "/workspace/deployments", keywords: ["deploy", "deployment", "runtime", "release", "rollback"] },
   { id: "go-runtimes", label: "View Runtimes", hint: "n8n + health", group: "Navigate", href: "/workspace/runtimes", keywords: ["runtime", "n8n", "health", "provider"] },
+  { id: "go-integrations", label: "Open Integrations", hint: "Connectors + marketplace", group: "Navigate", href: "/workspace/integrations", keywords: ["integration", "connector", "marketplace", "oauth", "webhook", "install"] },
   { id: "go-executions", label: "Open Execution Monitor", hint: "Runtime runs", group: "Navigate", href: "/workspace/executions", keywords: ["execution", "run", "monitor", "failure"] },
   { id: "go-reports", label: "Open Reports", hint: "Executive reporting", group: "Navigate", href: "/workspace/reports", keywords: ["report", "kpi", "insight", "forecast"] },
   { id: "go-approvals", label: "View Approvals", hint: "Pending decisions", group: "Navigate", href: "/workspace/approvals", keywords: ["approval", "review", "decision", "sign off"] },

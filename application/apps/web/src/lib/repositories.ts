@@ -122,6 +122,9 @@ import {
   createExecutionRuntimeRepositories,
   createN8nRuntimeAdapter,
   createEnvRuntimeSecretStore,
+  createIntegrationRepositories,
+  createDefaultConnectorAdapters,
+  createEnvConnectorSecretStore,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -150,6 +153,9 @@ import {
   type ExecutionRuntimeRepositories,
   type RuntimeAdapterRegistry,
   type RuntimeSecretStore,
+  type IntegrationRepositories,
+  type ConnectorAdapterRegistry,
+  type ConnectorSecretStore,
 } from "@brightloop/domain";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
@@ -515,6 +521,20 @@ export function getRuntimeAdapterRegistry(): RuntimeAdapterRegistry {
 /** The env-backed runtime secret store (resolves references; never exposes values). */
 export function getRuntimeSecretStore(): RuntimeSecretStore {
   return createEnvRuntimeSecretStore();
+}
+
+/** Phase F · Integration Platform repositories (F4.1), bound to the caller's RLS session. */
+export async function getIntegrationRepositories(): Promise<IntegrationRepositories> {
+  const client = await createClient();
+  return createIntegrationRepositories(client);
+}
+/** The connector adapters (the deterministic Fake connectors ship today). Stateless. */
+export function getConnectorAdapterRegistry(): ConnectorAdapterRegistry {
+  return createDefaultConnectorAdapters();
+}
+/** The env-backed connector secret store (resolves references; never exposes values). */
+export function getConnectorSecretStore(): ConnectorSecretStore {
+  return createEnvConnectorSecretStore();
 }
 
 /** The core-surfaces domain service for WRITES (scan/finding/domain/activation). */

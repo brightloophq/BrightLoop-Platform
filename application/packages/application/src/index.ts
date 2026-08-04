@@ -31,3 +31,4 @@ export * from "./agents/index.js";
 export * from "./platform-certification/index.js";
 export * from "./copilot/index.js";
 export * from "./execution-runtime/index.js";
+export * from "./integration/index.js";

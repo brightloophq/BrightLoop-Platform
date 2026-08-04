@@ -26,6 +26,7 @@ export const WORKSPACE_NAV: readonly WorkspaceNavItem[] = [
   { key: "automations", label: "Automations", href: "/workspace/automations", icon: "workflow" },
   { key: "deployments", label: "Deployments", href: "/workspace/deployments", icon: "rocket" },
   { key: "runtimes", label: "Runtimes", href: "/workspace/runtimes", icon: "git-branch" },
+  { key: "integrations", label: "Integrations", href: "/workspace/integrations", icon: "plug" },
   { key: "executions", label: "Executions", href: "/workspace/executions", icon: "gauge" },
   { key: "reports", label: "Reports", href: "/workspace/reports", icon: "line-chart" },
   { key: "approvals", label: "Approvals", href: "/workspace/approvals", icon: "check-circle", badgeKey: "approvals" },
