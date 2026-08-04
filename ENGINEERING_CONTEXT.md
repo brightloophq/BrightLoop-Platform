@@ -1027,3 +1027,58 @@ download/upload + Gmail attachments are metadata-only (binary streaming deferred
 polling not push. Tests: data +23 (google.test.ts), application +10
 (integration-google.test.ts), domain +2, pgTAP. Gate `typecheck lint test build`
 36/36 green; ZERO live Google calls in CI (fake transport).
+
+---
+
+## 16. Phase F · Sprint F4.4 — Commerce connectors (branch `feat/f4-commerce-connectors`, PR open)
+
+The commerce connector family on the [§14] F4.1 platform: **Shopify, Stripe,
+PayPal** (connector ids `shopify`/`stripe`/`paypal`, all `api_key`,
+`available:true`, `category:commerce`). Branched off `origin/main` (F4.1 `#67` +
+F4.2 `#68`); F4.3 `#69` was still open at branch time — F4.4 is an independent
+sibling family with **no code dependency** on F4.3. Full report:
+`engineering-blueprint/phase-f4.4/`.
+
+**PURE additive connector family — NO framework/DB/RLS/roles/DTO change** (like
+F4.3). Reuses the F4.1 ports + F4.2 `execute()`/`invoke` + the F4.1
+webhook/polling ingestion use-cases unchanged.
+
+- **Domain:** `registry.ts` +3 descriptors declaring a **NORMALIZED `commerce.*`
+  capability vocabulary** — each provider exposes a SUBSET sharing identical
+  `operation` names (Shopify 16, Stripe 15, PayPal 9). No provider-specific
+  capability exposed. `integration.test.ts` +1.
+- **Data** `packages/data/src/integration/commerce/` — the **F4.3 "binding" pattern**
+  generalized for commerce heterogeneity: `transport.ts` (`CommerceHttpTransport`
+  seam + `createFetchCommerceTransport` — the ONLY fetch site); `client.ts`
+  (`callCommerce` engine + `CommerceProviderBinding` — the one provider-specific
+  surface — with per-call `authorize` returning `{baseUrl,headers}`); `errors.ts`
+  (HTTP status → 7 health states, pure); `webhook.ts` (base64 HMAC-SHA256 Shopify +
+  `t=…,v1=…` hex HMAC-SHA256 Stripe, constant-time, node:crypto); `normalize.ts`
+  (canonical `commerce.*` event vocabulary); `helpers.ts`; `shopify.ts`/`stripe.ts`/
+  `paypal.ts` (op maps + poll + webhook verify/translate); `adapter.ts`
+  (`createCommerceConnectorAdapters(cfg)` + `loadCommerceConfig`). Barrel-exported.
+- **Auth (all api-key style; no user-redirect OAuth):** Shopify Admin API token via
+  `X-Shopify-Access-Token`; Stripe secret key via `Bearer`; PayPal **client-
+  credentials** — `authorize` mints a bearer token via `/v1/oauth2/token` (Basic
+  auth) per call. Credentials are per-installation secrets stored ONLY by reference;
+  webhook signing secret is a `webhookSigningSecret` field (`/sign/i` →
+  `webhook_signing` purpose). Config orders the credential secret field BEFORE the
+  signing secret so it becomes the primary reference.
+- **Web:** `getConnectorAdapterRegistry` merges Fakes + Google + Commerce (real fetch
+  transport). Marketplace/detail render the registry → commerce appears automatically.
+- **Migration:** NONE. No tables/columns/enums/RLS/triggers/generated-types; the
+  `invoke` audit op already exists (F4.2 migration). No pgTAP change.
+
+Event translation (provider shapes stay inside adapters): Shopify order body →
+`commerce.order.{paid,fulfilled,cancelled,updated}` (topic inferred from body — the
+`X-Shopify-Topic` header isn't in the sync webhook port); Stripe `event.type` →
+`commerce.payment.completed`/`.refunded`/`checkout.completed`/`dispute.created`;
+PayPal `event_type` → same canonical set. Webhook verify → translate → persist runs
+through F4.1 `ingestConnectorWebhook` (idempotent; replay=duplicate). **Known
+limits:** PayPal webhook verification is STRUCTURAL (its cryptographic verify is an
+online API call the sync port can't make); Shopify topic is body-inferred; polling
+implemented at adapter layer but installations default to the `webhook` trigger.
+Tests: data +35 (commerce.test.ts, real HMAC vectors), application +8
+(integration-commerce.test.ts — full webhook pipeline + replay + authz), domain +1.
+Gate `typecheck lint test build` **36/36 green**; **ZERO live Shopify/Stripe/PayPal
+calls** in CI (fake transports).

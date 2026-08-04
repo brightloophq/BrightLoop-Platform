@@ -192,6 +192,11 @@ export { createGoogleConnectorAdapters, loadGoogleAdapterConfig } from "./integr
 export { createFetchGoogleHttpTransport } from "./integration/google/transport.js";
 export type { GoogleAdapterConfig } from "./integration/google/client.js";
 export type { GoogleHttpTransport, GoogleHttpRequest, GoogleHttpResponse } from "./integration/google/transport.js";
+// Phase F · F4.4 — Commerce production connectors (Shopify/Stripe/PayPal).
+export { createCommerceConnectorAdapters, loadCommerceConfig } from "./integration/commerce/adapter.js";
+export type { CommerceConnectorConfig } from "./integration/commerce/adapter.js";
+export { createFetchCommerceTransport } from "./integration/commerce/transport.js";
+export type { CommerceHttpTransport, CommerceHttpRequest, CommerceHttpResponse } from "./integration/commerce/transport.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

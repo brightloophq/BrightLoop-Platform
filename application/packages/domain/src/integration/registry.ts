@@ -213,6 +213,113 @@ export const CONNECTOR_REGISTRY: readonly ConnectorDescriptor[] = Object.freeze(
       { key: "contacts.organizations", label: "Organizations", sideEffect: "read", operation: "contacts.organizations" },
     ],
   }),
+
+  /* ---- Commerce family (F4.4) — NORMALIZED capabilities --------------------
+   * Shopify / Stripe / PayPal each expose a SUBSET of the shared `commerce.*`
+   * capability keys + `operation` names; each adapter maps the normalized operation
+   * onto its own API. No provider-specific capability is exposed. All three use
+   * per-installation API-key credentials (Shopify Admin token, Stripe secret key,
+   * PayPal client-credentials) — no user-redirect OAuth. Webhooks translate provider
+   * events into normalized `commerce.*` events. Config orders the primary credential
+   * secret field BEFORE the (optional) webhook signing secret so it is the primary
+   * reference (see application persistSecrets). */
+  d({
+    id: "shopify",
+    name: "Shopify",
+    category: "commerce",
+    summary: "Read store info, products, collections, inventory, locations, customers, and orders; create/update products, orders, draft orders, fulfillments, checkouts, and refunds; read price rules + discount codes. Webhooks translate store events into normalized Auxion commerce events.",
+    vendor: "Shopify",
+    authMethod: "api_key",
+    triggerKinds: ["webhook", "polling"],
+    available: true,
+    version: 1,
+    configFields: [
+      { key: "shopDomain", label: "Shop domain", type: "string", required: true, helpText: "e.g. my-store.myshopify.com" },
+      { key: "apiVersion", label: "Admin API version", type: "string", required: false, helpText: "Defaults to 2024-01." },
+      { key: "accessToken", label: "Admin API access token", type: "secret", required: true, secret: true, helpText: "Custom-app Admin API token (stored only by reference)." },
+      { key: "webhookSigningSecret", label: "Webhook signing secret", type: "secret", required: false, secret: true, helpText: "App secret used to verify webhook HMAC (stored only by reference)." },
+    ],
+    capabilities: [
+      { key: "commerce.store.read", label: "Store information", sideEffect: "read", operation: "commerce.store.read" },
+      { key: "commerce.products.read", label: "Read products", sideEffect: "read", operation: "commerce.products.read" },
+      { key: "commerce.products.write", label: "Write products", sideEffect: "write", operation: "commerce.products.write" },
+      { key: "commerce.collections.read", label: "Read collections", sideEffect: "read", operation: "commerce.collections.read" },
+      { key: "commerce.inventory.read", label: "Read inventory", sideEffect: "read", operation: "commerce.inventory.read" },
+      { key: "commerce.locations.read", label: "Read locations", sideEffect: "read", operation: "commerce.locations.read" },
+      { key: "commerce.customers.read", label: "Read customers", sideEffect: "read", operation: "commerce.customers.read" },
+      { key: "commerce.orders.read", label: "Read orders", sideEffect: "read", operation: "commerce.orders.read" },
+      { key: "commerce.orders.write", label: "Create orders", sideEffect: "external", operation: "commerce.orders.write" },
+      { key: "commerce.draft_orders.write", label: "Create draft orders", sideEffect: "external", operation: "commerce.draft_orders.write" },
+      { key: "commerce.fulfillments.write", label: "Create fulfillments", sideEffect: "external", operation: "commerce.fulfillments.write" },
+      { key: "commerce.price_rules.read", label: "Read price rules", sideEffect: "read", operation: "commerce.price_rules.read" },
+      { key: "commerce.discounts.read", label: "Read discount codes", sideEffect: "read", operation: "commerce.discounts.read" },
+      { key: "commerce.checkout.create", label: "Create checkout", sideEffect: "external", operation: "commerce.checkout.create" },
+      { key: "commerce.payments.refund", label: "Refund order", sideEffect: "external", operation: "commerce.payments.refund" },
+      { key: "commerce.health", label: "Health", sideEffect: "read", operation: "commerce.health" },
+    ],
+  }),
+  d({
+    id: "stripe",
+    name: "Stripe",
+    category: "commerce",
+    summary: "Read account, customers, products, prices, payment intents, invoices, subscriptions, disputes, balance, and events; capture and refund payments; create checkout sessions. Webhooks translate Stripe events into normalized Auxion commerce events.",
+    vendor: "Stripe",
+    authMethod: "api_key",
+    triggerKinds: ["webhook", "polling"],
+    available: true,
+    version: 1,
+    configFields: [
+      { key: "apiVersion", label: "API version", type: "string", required: false },
+      { key: "apiKey", label: "Secret API key", type: "secret", required: true, secret: true, helpText: "Stripe secret key sk_… (stored only by reference)." },
+      { key: "webhookSigningSecret", label: "Webhook signing secret", type: "secret", required: false, secret: true, helpText: "Stripe webhook signing secret whsec_… (stored only by reference)." },
+    ],
+    capabilities: [
+      { key: "commerce.store.read", label: "Account information", sideEffect: "read", operation: "commerce.store.read" },
+      { key: "commerce.customers.read", label: "Read customers", sideEffect: "read", operation: "commerce.customers.read" },
+      { key: "commerce.products.read", label: "Read products", sideEffect: "read", operation: "commerce.products.read" },
+      { key: "commerce.products.write", label: "Create products", sideEffect: "write", operation: "commerce.products.write" },
+      { key: "commerce.prices.read", label: "Read prices", sideEffect: "read", operation: "commerce.prices.read" },
+      { key: "commerce.payments.read", label: "Read payment intents", sideEffect: "read", operation: "commerce.payments.read" },
+      { key: "commerce.payments.capture", label: "Capture payment", sideEffect: "external", operation: "commerce.payments.capture" },
+      { key: "commerce.payments.refund", label: "Refund payment", sideEffect: "external", operation: "commerce.payments.refund" },
+      { key: "commerce.invoices.read", label: "Read invoices", sideEffect: "read", operation: "commerce.invoices.read" },
+      { key: "commerce.subscriptions.read", label: "Read subscriptions", sideEffect: "read", operation: "commerce.subscriptions.read" },
+      { key: "commerce.checkout.create", label: "Create checkout session", sideEffect: "external", operation: "commerce.checkout.create" },
+      { key: "commerce.disputes.read", label: "Read disputes", sideEffect: "read", operation: "commerce.disputes.read" },
+      { key: "commerce.balance.read", label: "Read balance", sideEffect: "read", operation: "commerce.balance.read" },
+      { key: "commerce.events.read", label: "Read events", sideEffect: "read", operation: "commerce.events.read" },
+      { key: "commerce.health", label: "Health", sideEffect: "read", operation: "commerce.health" },
+    ],
+  }),
+  d({
+    id: "paypal",
+    name: "PayPal",
+    category: "commerce",
+    summary: "Read merchant info and transactions; create, authorize, capture, and read orders and payments; issue refunds. Client-credentials authenticated. Webhooks translate PayPal events into normalized Auxion commerce events.",
+    vendor: "PayPal",
+    authMethod: "api_key",
+    triggerKinds: ["webhook"],
+    available: true,
+    version: 1,
+    configFields: [
+      { key: "clientId", label: "Client ID", type: "string", required: true },
+      { key: "environment", label: "Environment", type: "enum", options: ["sandbox", "live"], required: true, helpText: "Defaults to sandbox." },
+      { key: "clientSecret", label: "Client secret", type: "secret", required: true, secret: true, helpText: "PayPal REST app client secret (stored only by reference)." },
+      { key: "webhookId", label: "Webhook ID", type: "string", required: false, helpText: "Configured PayPal webhook id used to gate inbound events." },
+      { key: "webhookSigningSecret", label: "Webhook signing secret", type: "secret", required: false, secret: true, helpText: "Reserved for webhook verification (stored only by reference)." },
+    ],
+    capabilities: [
+      { key: "commerce.store.read", label: "Merchant information", sideEffect: "read", operation: "commerce.store.read" },
+      { key: "commerce.orders.read", label: "Read order", sideEffect: "read", operation: "commerce.orders.read" },
+      { key: "commerce.orders.write", label: "Create order", sideEffect: "external", operation: "commerce.orders.write" },
+      { key: "commerce.payments.authorize", label: "Authorize payment", sideEffect: "external", operation: "commerce.payments.authorize" },
+      { key: "commerce.payments.capture", label: "Capture payment", sideEffect: "external", operation: "commerce.payments.capture" },
+      { key: "commerce.payments.read", label: "Read payment", sideEffect: "read", operation: "commerce.payments.read" },
+      { key: "commerce.payments.refund", label: "Refund payment", sideEffect: "external", operation: "commerce.payments.refund" },
+      { key: "commerce.transactions.read", label: "Read transactions", sideEffect: "read", operation: "commerce.transactions.read" },
+      { key: "commerce.health", label: "Health", sideEffect: "read", operation: "commerce.health" },
+    ],
+  }),
 ]);
 
 const BY_ID: ReadonlyMap<string, ConnectorDescriptor> = new Map(CONNECTOR_REGISTRY.map((c) => [c.id, c]));
