@@ -213,6 +213,87 @@ export const CONNECTOR_REGISTRY: readonly ConnectorDescriptor[] = Object.freeze(
       { key: "contacts.organizations", label: "Organizations", sideEffect: "read", operation: "contacts.organizations" },
     ],
   }),
+
+  /* ---- Communication family (F4.3) — NORMALIZED capabilities ---------------
+   * All three providers expose the SAME `communication.*` capability keys +
+   * `operation` names; each adapter maps the normalized operation onto its own
+   * API. No provider-specific capability is exposed. Slack + Teams use OAuth2;
+   * Discord uses bot-token (api_key) authentication. */
+  d({
+    id: "slack",
+    name: "Slack",
+    category: "communication",
+    summary: "Post, update, delete, and thread messages; list channels + members; search + read history in a connected Slack workspace. Polls a channel and translates messages into normalized Auxion communication events.",
+    vendor: "Slack",
+    authMethod: "oauth2",
+    triggerKinds: ["polling"],
+    available: true,
+    version: 1,
+    scopes: ["channels:read", "channels:history", "chat:write", "users:read", "search:read", "groups:read"],
+    configFields: [
+      { key: "channelId", label: "Channel to monitor", type: "string", required: false, helpText: "Channel id polled for new messages." },
+    ],
+    capabilities: [
+      { key: "communication.send_message", label: "Send message", sideEffect: "external", operation: "communication.send_message" },
+      { key: "communication.reply_message", label: "Thread reply", sideEffect: "external", operation: "communication.reply_message" },
+      { key: "communication.edit_message", label: "Update message", sideEffect: "write", operation: "communication.edit_message" },
+      { key: "communication.delete_message", label: "Delete message", sideEffect: "write", operation: "communication.delete_message" },
+      { key: "communication.list_channels", label: "List channels", sideEffect: "read", operation: "communication.list_channels" },
+      { key: "communication.list_members", label: "List members", sideEffect: "read", operation: "communication.list_members" },
+      { key: "communication.search_messages", label: "Search messages", sideEffect: "read", operation: "communication.search_messages" },
+      { key: "communication.read_history", label: "Read channel history", sideEffect: "read", operation: "communication.read_history" },
+      { key: "communication.list_containers", label: "Workspace info", sideEffect: "read", operation: "communication.list_containers" },
+    ],
+  }),
+  d({
+    id: "microsoft-teams",
+    name: "Microsoft Teams",
+    category: "communication",
+    summary: "Discover teams + channels + members, post + reply to channel messages, read history, and read meeting metadata in Microsoft Teams (Graph). Polls a channel into normalized Auxion communication events.",
+    vendor: "Microsoft",
+    authMethod: "oauth2",
+    triggerKinds: ["polling"],
+    available: true,
+    version: 1,
+    scopes: ["offline_access", "Team.ReadBasic.All", "Channel.ReadBasic.All", "ChannelMessage.Send", "ChannelMessage.Read.All", "OnlineMeetings.Read"],
+    configFields: [
+      { key: "teamId", label: "Team", type: "string", required: false },
+      { key: "channelId", label: "Channel to monitor", type: "string", required: false },
+    ],
+    capabilities: [
+      { key: "communication.list_containers", label: "List teams", sideEffect: "read", operation: "communication.list_containers" },
+      { key: "communication.list_channels", label: "List channels", sideEffect: "read", operation: "communication.list_channels" },
+      { key: "communication.list_members", label: "List members", sideEffect: "read", operation: "communication.list_members" },
+      { key: "communication.send_message", label: "Send message", sideEffect: "external", operation: "communication.send_message" },
+      { key: "communication.reply_message", label: "Thread reply", sideEffect: "external", operation: "communication.reply_message" },
+      { key: "communication.read_history", label: "Read history", sideEffect: "read", operation: "communication.read_history" },
+      { key: "communication.meeting_metadata", label: "Meeting metadata", sideEffect: "read", operation: "communication.meeting_metadata" },
+    ],
+  }),
+  d({
+    id: "discord",
+    name: "Discord",
+    category: "communication",
+    summary: "Bot-authenticated: discover guilds + channels + members, send + reply to messages (with thread support) in a Discord server. Polls a channel into normalized Auxion communication events.",
+    vendor: "Discord",
+    authMethod: "api_key",
+    triggerKinds: ["polling"],
+    available: true,
+    version: 1,
+    configFields: [
+      { key: "botToken", label: "Bot token", type: "secret", required: true, secret: true, helpText: "Discord bot token (stored only by reference)." },
+      { key: "guildId", label: "Server (guild) id", type: "string", required: false },
+      { key: "channelId", label: "Channel to monitor", type: "string", required: false },
+    ],
+    capabilities: [
+      { key: "communication.list_containers", label: "List servers", sideEffect: "read", operation: "communication.list_containers" },
+      { key: "communication.list_channels", label: "List channels", sideEffect: "read", operation: "communication.list_channels" },
+      { key: "communication.list_members", label: "List members", sideEffect: "read", operation: "communication.list_members" },
+      { key: "communication.send_message", label: "Send message", sideEffect: "external", operation: "communication.send_message" },
+      { key: "communication.reply_message", label: "Reply / thread", sideEffect: "external", operation: "communication.reply_message" },
+      { key: "communication.read_history", label: "Read history", sideEffect: "read", operation: "communication.read_history" },
+    ],
+  }),
 ]);
 
 const BY_ID: ReadonlyMap<string, ConnectorDescriptor> = new Map(CONNECTOR_REGISTRY.map((c) => [c.id, c]));

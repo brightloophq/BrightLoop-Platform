@@ -51,6 +51,19 @@ describe("connector registry", () => {
     expect(findConnectorCapability("google-gmail", "gmail.send")?.sideEffect).toBe("external");
     expect(findConnectorCapability("google-gmail", "gmail.read")?.sideEffect).toBe("read");
   });
+  it("registers the three communication connectors with normalized capabilities (F4.3)", () => {
+    expect(findConnector("slack")?.authMethod).toBe("oauth2");
+    expect(findConnector("microsoft-teams")?.authMethod).toBe("oauth2");
+    expect(findConnector("discord")?.authMethod).toBe("api_key"); // bot token
+    for (const id of ["slack", "microsoft-teams", "discord"]) {
+      const c = findConnector(id)!;
+      expect(c.available).toBe(true);
+      expect(c.category).toBe("communication");
+      // NORMALIZED: every provider shares the same capability operation names
+      expect(findConnectorCapability(id, "communication.send_message")?.operation).toBe("communication.send_message");
+    }
+    expect(findConnectorCapability("slack", "communication.send_message")?.sideEffect).toBe("external");
+  });
 });
 
 describe("installation lifecycle", () => {
