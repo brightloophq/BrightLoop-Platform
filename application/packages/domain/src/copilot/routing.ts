@@ -26,6 +26,9 @@ export function routeIntentToCapability(intent: CopilotIntent, ctx: RouteContext
     case "planning": return ctx.hasPlan ? { intent, capabilityKey: "planning.get_execution_plan", mode: "read" } : { intent, capabilityKey: "planning.generate_plan", mode: "action" };
     case "automation": return ctx.hasAutomation ? { intent, capabilityKey: "automation.simulate_workflow", mode: "read" } : { intent, capabilityKey: "automation.build_workflow", mode: "action" };
     case "summary": return { intent, capabilityKey: "execution.get_workspace_state", mode: "read" };
+    // F5 billing — answered from the assembled billing context (read models only,
+    // never raw provider data); no E7 capability call.
+    case "billing": return { intent, capabilityKey: null, mode: "answer" };
     case "analysis": return ctx.hasStrategy ? { intent, capabilityKey: "strategy.get_result", mode: "read" } : { intent, capabilityKey: "execution.get_workspace_state", mode: "read" };
     // Answered from already-assembled context / read models — no capability call.
     case "question": case "explanation": case "approval": case "search":

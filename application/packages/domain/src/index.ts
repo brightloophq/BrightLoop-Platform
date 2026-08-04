@@ -73,5 +73,7 @@ export * from "./copilot/index.js";
 export * from "./execution-runtime/index.js";
 // Integration Platform (Phase F · F4.1) — the connector framework every external service plugs into.
 export * from "./integration/index.js";
+// Billing & Subscription (Phase F · F5) — the commercial layer over the platform.
+export * from "./billing/index.js";
 // Runtime persistence (Phase B) — repository port + result model.
 export * from "./runtime/index.js";

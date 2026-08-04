@@ -26,6 +26,8 @@ export const STATUS_TONE: Record<string, Tone> = {
   viewed: "blue",
   member: "blue",
   client_active: "blue",
+  // F5 billing — a trialing subscription is in-flight.
+  trialing: "blue",
   waiting_client_approval: "warning",
   pending: "warning",
   pending_3ds: "warning",
@@ -33,6 +35,10 @@ export const STATUS_TONE: Record<string, Tone> = {
   delayed: "warning",
   paused: "warning",
   abandoned: "warning",
+  // F5 billing — payment-attention states.
+  past_due: "warning",
+  grace: "warning",
+  delinquent: "warning",
   // negative
   failed: "danger",
   rejected: "danger",
@@ -40,11 +46,16 @@ export const STATUS_TONE: Record<string, Tone> = {
   voided: "danger",
   lost: "danger",
   churned: "danger",
+  // F5 billing — a canceled subscription needs attention.
+  canceled: "danger",
   // neutral
   draft: "neutral",
   not_started: "neutral",
   created: "neutral",
   queued: "neutral",
+  // F5 billing — a lapsed subscription / refunded invoice are terminal-neutral.
+  expired: "neutral",
+  refunded: "neutral",
 };
 
 export const toneFor = (status: string): Tone => STATUS_TONE[status] ?? "neutral";

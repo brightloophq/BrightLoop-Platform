@@ -36,6 +36,7 @@ export * from "./platform-certification.js";
 export * from "./copilot.js";
 export * from "./execution-runtime.js";
 export * from "./integration.js";
+export * from "./billing.js";
 export * from "./narrative.js";
 export * from "./narrative-intelligence.js";
 export * from "./prospect-intelligence.js";

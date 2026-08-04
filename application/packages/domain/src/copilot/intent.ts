@@ -29,6 +29,12 @@ const COMMAND_INTENT: Record<string, CopilotIntent> = {
   approve: "approval",
   help: "clarification",
   context: "summary",
+  // F5 billing commands.
+  billing: "billing",
+  invoice: "billing",
+  invoices: "billing",
+  usage: "billing",
+  subscription: "billing",
 };
 export const COPILOT_COMMANDS = Object.keys(COMMAND_INTENT).map((c) => `/${c}`);
 
@@ -36,6 +42,8 @@ export const COPILOT_COMMANDS = Object.keys(COMMAND_INTENT).map((c) => `/${c}`);
 // (approv → approvals, automat → automation, summar → summary) match correctly.
 const RULES: { intent: CopilotIntent; re: RegExp }[] = [
   { intent: "reporting", re: /\b(report\w*|weekly summary|monthly summary|kpi dashboard|generate.*(report|summar))/i },
+  // F5 billing — placed before planning so "current plan"/"my plan" route to billing.
+  { intent: "billing", re: /\b(billing|invoice\w*|subscription\w*|current plan|my plan|upgrade\w*|quota\w*|remaining (quota|credit|usage)|usage (limit|this month)|payment method|how much.*(pay|cost|owe))/i },
   { intent: "planning", re: /\b(execution plan|create.*plan|generate.*plan|plan the|initiative\w*|milestone\w*|timeline)/i },
   { intent: "automation", re: /\b(automat\w*|workflow\w*|deployment|simulate)/i },
   { intent: "approval", re: /\b(approv\w*|pending decision\w*|sign[- ]?off|review.*approv)/i },

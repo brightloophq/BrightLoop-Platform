@@ -32,3 +32,4 @@ export * from "./platform-certification/index.js";
 export * from "./copilot/index.js";
 export * from "./execution-runtime/index.js";
 export * from "./integration/index.js";
+export * from "./billing/index.js";

@@ -149,7 +149,16 @@ export async function generateCopilotResponse(ctx: AppContext, rawConversationId
     if (context.activeDeployments > 0 || context.failedDeployments > 0 || context.awaitingDeploymentApproval > 0) {
       bullets.push(`${context.activeDeployments} active deployment(s), ${context.failedDeployments} failed, ${context.awaitingDeploymentApproval} awaiting approval — runtimes ${context.runtimesHealthy ? "healthy" : "need attention"}.`);
     }
+    // F5: surface billing state (Auxion billing read models — never raw provider data).
+    if (intentR.intent === "billing" || context.billingTier !== null) {
+      bullets.push(
+        context.billingTier !== null
+          ? `Plan: ${context.billingTier} (${context.billingStatus}).${context.billingUsageAlert ? ` Usage: ${context.billingUsageAlert}.` : ""}`
+          : "No active subscription on this workspace.",
+      );
+    }
     content = renderAnswer({ headline: headlineFor(intentR.intent), bullets, note: "Composed from your live workspace read models." });
+    if (intentR.intent === "billing") citations.push({ kind: "report", refId: "billing", title: "Billing & Subscription", href: "/workspace/settings/billing" });
     if (context.failedDeployments > 0 || context.activeDeployments > 0) citations.push({ kind: "automation", refId: "deployments", title: "Deployment Center", href: "/workspace/deployments" });
     const latestReport = reports[0];
     if (latestReport) citations.push({ kind: "report", refId: latestReport.id, title: latestReport.title, href: "/workspace/reports" });
@@ -182,6 +191,7 @@ function headlineFor(intent: CopilotIntent): string {
     case "explanation": return "Explanation";
     case "approval": return "Pending approvals";
     case "reporting": return "Reporting";
+    case "billing": return "Billing & subscription";
     default: return "Your workspace";
   }
 }

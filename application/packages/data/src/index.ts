@@ -234,6 +234,8 @@ export type {
   CertificationArea,
   FamilySummary,
 } from "./integration/certification/index.js";
+// Phase F · F5 — Billing & Subscription repository adapters (six aggregates).
+export { createBillingRepositories } from "./billing/adapter.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

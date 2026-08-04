@@ -12,7 +12,7 @@
  * fast, clear pre-check in front of RLS, never a replacement for it.
  * ========================================================================== */
 
-import type { Actor, AgentRepositories, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, CertificationRepositories, Clock, CollaborationRepositories, ConnectorAdapterRegistry, ConnectorSecretStore, CopilotRepositories, EmbeddingProviderRegistry, ExecutionRuntimeRepositories, IntegrationRepositories, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeAdapterRegistry, RuntimeIdGen, RuntimeSecretStore, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
+import type { Actor, AgentRepositories, AiFoundationRepositories, AiProviderRegistry, AutomationBuilderRepositories, BillingRepositories, CertificationRepositories, Clock, CollaborationRepositories, ConnectorAdapterRegistry, ConnectorSecretStore, CopilotRepositories, EmbeddingProviderRegistry, ExecutionRuntimeRepositories, IntegrationRepositories, KnowledgeRepositories, ProjectManagerRepositories, ReportingRepositories, RuntimeAdapterRegistry, RuntimeIdGen, RuntimeSecretStore, RuntimeServices, StrategistRepositories, TransformationExecutionRepositories, VectorStorePort } from "@brightloop/domain";
 import { may } from "@brightloop/domain";
 import { isClientRole } from "@brightloop/schema";
 import { ForbiddenError, RuntimeUnavailableError } from "./errors.js";
@@ -193,6 +193,8 @@ export interface AppContext {
   connectorAdapters?: ConnectorAdapterRegistry;
   /** The secret store backing connector secret references. Never returns values upward. */
   connectorSecrets?: ConnectorSecretStore;
+  /** Phase F · Billing & Subscription repositories (F5). Required via `requireBilling`. */
+  billing?: BillingRepositories;
 }
 
 /** Assert the Phase D repositories are wired, or fail with a clean 503. */
@@ -377,6 +379,20 @@ export function requireConnectorSecrets(ctx: AppContext): ConnectorSecretStore {
     throw new RuntimeUnavailableError("The connector secret store is not available");
   }
   return ctx.connectorSecrets;
+}
+
+/** Phase F · Billing & Subscription (F5) capabilities + require helper. */
+export const BILLING_READ_CAP = "billing.read";
+export const BILLING_SUBSCRIPTION_CAP = "billing.subscription.write";
+export const BILLING_INVOICE_CAP = "billing.invoice.write";
+export const BILLING_USAGE_CAP = "billing.usage.write";
+export const BILLING_PAYMENT_CAP = "billing.payment.manage";
+
+export function requireBilling(ctx: AppContext): BillingRepositories {
+  if (ctx.billing === undefined) {
+    throw new RuntimeUnavailableError("The billing store is not available");
+  }
+  return ctx.billing;
 }
 
 /**
