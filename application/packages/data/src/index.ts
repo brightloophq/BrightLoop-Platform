@@ -197,6 +197,11 @@ export { createCommunicationConnectorAdapters, loadCommunicationConfig } from ".
 export type { CommunicationConfig } from "./integration/communication/adapter.js";
 export { createFetchCommTransport } from "./integration/communication/transport.js";
 export type { CommHttpTransport } from "./integration/communication/transport.js";
+// Phase F · F4.4 — Commerce production connectors (Shopify/Stripe/PayPal).
+export { createCommerceConnectorAdapters, loadCommerceConfig } from "./integration/commerce/adapter.js";
+export type { CommerceConnectorConfig } from "./integration/commerce/adapter.js";
+export { createFetchCommerceTransport } from "./integration/commerce/transport.js";
+export type { CommerceHttpTransport, CommerceHttpRequest, CommerceHttpResponse } from "./integration/commerce/transport.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

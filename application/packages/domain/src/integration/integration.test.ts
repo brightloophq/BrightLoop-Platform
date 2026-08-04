@@ -51,6 +51,28 @@ describe("connector registry", () => {
     expect(findConnectorCapability("google-gmail", "gmail.send")?.sideEffect).toBe("external");
     expect(findConnectorCapability("google-gmail", "gmail.read")?.sideEffect).toBe("read");
   });
+  it("registers the three commerce connectors with normalized capabilities (F4.4)", () => {
+    for (const id of ["shopify", "stripe", "paypal"]) {
+      const c = findConnector(id);
+      expect(c, id).not.toBeNull();
+      expect(c!.available).toBe(true);
+      expect(c!.authMethod).toBe("api_key");
+      expect(c!.category).toBe("commerce");
+      expect(c!.capabilities.length).toBeGreaterThan(0);
+      // NORMALIZED: every commerce provider shares the same operation naming + health.
+      expect(findConnectorCapability(id, "commerce.health")?.operation).toBe("commerce.health");
+    }
+    // Shared normalized refund capability across all three providers.
+    for (const id of ["shopify", "stripe", "paypal"]) {
+      expect(findConnectorCapability(id, "commerce.payments.refund")?.operation).toBe("commerce.payments.refund");
+    }
+    // Provider-specific normalized subsets: Stripe exposes subscriptions; PayPal does not.
+    expect(findConnectorCapability("stripe", "commerce.subscriptions.read")).not.toBeNull();
+    expect(findConnectorCapability("paypal", "commerce.subscriptions.read")).toBeNull();
+    // Write operations that reach a provider are `external` side effects.
+    expect(findConnectorCapability("stripe", "commerce.payments.refund")?.sideEffect).toBe("external");
+    expect(findConnectorCapability("shopify", "commerce.products.read")?.sideEffect).toBe("read");
+  });
   it("registers the three communication connectors with normalized capabilities (F4.3)", () => {
     expect(findConnector("slack")?.authMethod).toBe("oauth2");
     expect(findConnector("microsoft-teams")?.authMethod).toBe("oauth2");
