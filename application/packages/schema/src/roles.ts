@@ -223,6 +223,7 @@ export const PERMISSIONS = {
     "integration.health.check",
     "integration.oauth.authorize",
     "integration.ingest",
+    "integration.invoke",
   ],
   client_admin: [
     "own.project.read",

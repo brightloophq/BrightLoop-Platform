@@ -962,3 +962,68 @@ adapter compiles meanwhile via the one documented `as unknown as SupabaseClient`
 **Adding a real connector later:** implement `ConnectorAdapter` in `@brightloop/data`
 + register in `createDefaultConnectorAdapters` + append a `CONNECTOR_REGISTRY`
 descriptor — no framework change.
+
+---
+
+## 15. Phase F · Sprint F4.2 — Google Workspace connectors (branch `feat/f4-google-workspace`, PR open)
+
+The FIRST production connectors on the [§14] F4.1 platform: **Gmail, Google
+Calendar, Google Drive, Google Contacts** (connector ids `google-gmail`/
+`google-calendar`/`google-drive`/`google-contacts`, all oauth2, `available:true`).
+No other vendor built (Slack/Teams/Shopify/Stripe/HubSpot/QuickBooks/Meta/LinkedIn
+remain later sprints). Branched off `feat/f4-integration-core` (F4.1 unmerged).
+Full report: `engineering-blueprint/phase-f4.2/`.
+
+**One additive framework completion (NOT a redesign):** F4.1 declared capabilities
+but couldn't execute them. F4.2 adds an optional `execute(ExecuteOperationInput) →
+ConnectorResult<OperationOutput>` on `ConnectorAdapter` (domain adapter-port.ts,
+same optional-method pattern as oauth/webhook/poll) + `invokeConnectorCapability`
+use-case + one widened audit op. Nothing else in the port/registry/lifecycle/secret
+model/RLS/DTO changed.
+
+- **Domain:** `adapter-port.ts` +execute; `registry.ts` +4 Google descriptors
+  (capabilities name provider-neutral `operation`s, scopes, oauth2). `schema/integration.ts`
+  `connectorOperationSchema` +`"invoke"`.
+- **Data** `packages/data/src/integration/google/`: `transport.ts` (`GoogleHttpTransport`
+  seam + `FetchGoogleHttpTransport` — ONLY place fetch is called; one hop, timeout,
+  bounded body); `client.ts` (`GoogleAdapterConfig` {clientId,clientSecret,
+  defaultRedirectUri,transport,now} + `callGoogle`/`callGoogleForm`); `errors.ts`
+  (status→normalized category + 7 health reasons, pure — numeric error.status
+  coerced to string); `oauth.ts` (Authorization Code URL `access_type=offline`+
+  `prompt=consent`, exchange, refresh, absolute expiry from injected clock);
+  `helpers.ts`; `gmail/calendar/drive/contacts.ts` (op maps + poll→canonical
+  events); `adapter.ts` (`createGoogleConnectorAdapters(config)`,
+  `loadGoogleAdapterConfig(env,transport,now)`). Exported from data barrel.
+- **Application:** `invoke-usecases.ts` (`invokeConnectorCapability` — authorize
+  `integration.invoke` → operable + enabled + declared gates → resolve token →
+  execute → audit `invoke` → `OperationResultDTO`; undeclared=NotFound,
+  not-enabled=Validation, auth fail=RuntimeUnavailable "reconnect"). `shared.ts`
+  `resolveConnectorSecret(ctx,inst,adapter)` — for oauth2 reads the stored token
+  bundle, and if expired REFRESHES via adapter + ROTATES the stored secret (new
+  version/expiry) + re-validates the reference; F4.1 validate/health/poll now call
+  it (Fake api_key path unchanged). `INTEGRATION_INVOKE_CAP="integration.invoke"`
+  (context.ts + roles.ts: admin `integration.*`, team_member explicit, clients NONE).
+  App DTO/type renames: `InvokeConnectorCapabilityInput`, `OperationResultDTO`.
+- **Web:** OAuth callback route `apps/web/src/app/workspace/integrations/oauth/callback/route.ts`
+  (code+state → `completeConnectorOAuth` → redirect, generic error flags only);
+  `connectConnectorAction`/`invokeCapabilityAction`; `ConnectorControls` Connect/
+  Reconnect for oauth2; connect-status banner. Marketplace unchanged (renders registry).
+  `getConnectorAdapterRegistry` now merges Fakes + Google adapters (real fetch
+  transport + env OAuth config).
+- **Migration** `20260807000100_phase_f4_google_workspace.sql`: widen
+  `connector_audit_event` operation CHECK to include `invoke`. NO new tables/columns/
+  RLS/triggers; NO generated-type change (operation is text-check, not pg enum).
+  pgTAP `phase_f4_google_workspace_test.sql`.
+- **Env (out-of-band, never persisted):** `GOOGLE_OAUTH_CLIENT_ID`/`_SECRET`/
+  `_REDIRECT_URI`. Unset → connectors still install, OAuth fails clearly. Access/
+  refresh tokens stored ONLY via ConnectorSecretStore (purpose `oauth_token`, JSON
+  blob {accessToken,refreshToken}, expiresAt on the reference row).
+
+Health = 7 states via reason in snapshot detail (connected/disconnected/expired/
+permission_missing/rate_limited/configuration_error) — no new health enum. Events
+are Auxion-canonical (`email.received`, `calendar.event.changed`,
+`drive.file.changed`) — Google event shapes never exposed. Known limits: Drive
+download/upload + Gmail attachments are metadata-only (binary streaming deferred);
+polling not push. Tests: data +23 (google.test.ts), application +10
+(integration-google.test.ts), domain +2, pgTAP. Gate `typecheck lint test build`
+36/36 green; ZERO live Google calls in CI (fake transport).

@@ -187,6 +187,11 @@ export { createEnvRuntimeSecretStore } from "./execution-runtime/env-secret-stor
 export { createIntegrationRepositories } from "./integration/adapter.js";
 export { createEnvConnectorSecretStore } from "./integration/env-secret-store.js";
 export { createFakeConnectorAdapter, createDefaultConnectorAdapters } from "./integration/fake-connector-adapter.js";
+// Phase F · F4.2 — Google Workspace production connectors (Gmail/Calendar/Drive/Contacts).
+export { createGoogleConnectorAdapters, loadGoogleAdapterConfig } from "./integration/google/adapter.js";
+export { createFetchGoogleHttpTransport } from "./integration/google/transport.js";
+export type { GoogleAdapterConfig } from "./integration/google/client.js";
+export type { GoogleHttpTransport, GoogleHttpRequest, GoogleHttpResponse } from "./integration/google/transport.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

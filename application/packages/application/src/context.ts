@@ -357,6 +357,8 @@ export const INTEGRATION_HEALTH_CAP = "integration.health.check";
 export const INTEGRATION_CRED_CAP = "integration.credentials.manage";
 export const INTEGRATION_OAUTH_CAP = "integration.oauth.authorize";
 export const INTEGRATION_INGEST_CAP = "integration.ingest";
+/** F4.2 · invoke one enabled connector capability (e.g. Gmail send). */
+export const INTEGRATION_INVOKE_CAP = "integration.invoke";
 
 export function requireIntegration(ctx: AppContext): IntegrationRepositories {
   if (ctx.integration === undefined) {

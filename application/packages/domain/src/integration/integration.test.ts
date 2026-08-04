@@ -36,6 +36,21 @@ describe("connector registry", () => {
     expect(connectorSupportsTrigger("fake-connector", "none")).toBe(false);
     expect(findConnectorCapability("fake-connector", "records.read")?.sideEffect).toBe("read");
   });
+  it("registers the four Google Workspace production connectors (F4.2)", () => {
+    for (const id of ["google-gmail", "google-calendar", "google-drive", "google-contacts"]) {
+      const c = findConnector(id);
+      expect(c, id).not.toBeNull();
+      expect(c!.available).toBe(true);
+      expect(c!.authMethod).toBe("oauth2");
+      expect(c!.vendor).toBe("Google");
+      expect(c!.scopes.length).toBeGreaterThan(0);
+      expect(c!.capabilities.length).toBeGreaterThan(0);
+    }
+  });
+  it("Gmail send is an external side effect; read is a read side effect", () => {
+    expect(findConnectorCapability("google-gmail", "gmail.send")?.sideEffect).toBe("external");
+    expect(findConnectorCapability("google-gmail", "gmail.read")?.sideEffect).toBe("read");
+  });
 });
 
 describe("installation lifecycle", () => {

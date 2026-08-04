@@ -87,3 +87,8 @@ export function toOAuthBeginDTO(g: ConnectorOAuthGrant): OAuthBeginDTO {
 
 export interface WebhookIngestDTO { receiptId: string; status: string; signatureValid: boolean; eventCount: number }
 export interface PollDTO { cursor: string | null; eventCount: number; sequence: number }
+
+/* ---- capability invocation (F4.2) ------------------------------------------ */
+
+/** The safe, bounded result of invoking one connector capability. */
+export interface OperationResultDTO { connectorId: string; capabilityKey: string; data: Record<string, unknown> }

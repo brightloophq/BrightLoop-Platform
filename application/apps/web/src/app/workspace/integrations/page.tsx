@@ -5,7 +5,7 @@
  */
 
 import Link from "next/link";
-import { Badge, Button, EmptyState, Icon } from "@brightloop/ui";
+import { Alert, Badge, Button, EmptyState, Icon } from "@brightloop/ui";
 import { loadInstalledConnectors } from "@/lib/integration-data";
 import styles from "../pages.module.css";
 
@@ -14,12 +14,21 @@ export const dynamic = "force-dynamic";
 const healthTone = (h: string): "success" | "warning" | "danger" | "neutral" =>
   h === "healthy" ? "success" : h === "degraded" ? "warning" : h === "unavailable" || h === "unauthorized" ? "danger" : "neutral";
 
-export default async function IntegrationsPage() {
+const CONNECT_MSG: Record<string, { tone: "danger" | "warning"; text: string }> = {
+  denied: { tone: "warning", text: "Authorization was denied. The connector was not connected." },
+  invalid: { tone: "danger", text: "The authorization response was invalid." },
+  failed: { tone: "danger", text: "The connector could not complete authorization." },
+};
+
+export default async function IntegrationsPage({ searchParams }: { searchParams: Promise<{ connect?: string }> }) {
   const data = await loadInstalledConnectors();
   if (data === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  const connect = (await searchParams).connect;
+  const banner = connect ? CONNECT_MSG[connect] : undefined;
 
   return (
     <>
+      {banner && <div style={{ marginBottom: "var(--space-4)" }}><Alert tone={banner.tone}>{banner.text}</Alert></div>}
       <div className={styles.pageHead}>
         <div>
           <h1 className={styles.pageTitle}>Integrations</h1>

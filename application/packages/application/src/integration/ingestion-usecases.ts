@@ -19,7 +19,7 @@ import { requireIntegration, INTEGRATION_INGEST_CAP, type AppContext } from "../
 import { ConflictError, ValidationError } from "../errors.js";
 import { unwrap } from "../runtime-result.js";
 import { requireId, requireString } from "../validate.js";
-import { adapterFor, auditInstallation, loadInstallation, resolveInstallationSecret, resolveSigningSecret } from "./shared.js";
+import { adapterFor, auditInstallation, loadInstallation, resolveConnectorSecret, resolveSigningSecret } from "./shared.js";
 import type { PollDTO, WebhookIngestDTO } from "./dto.js";
 
 const OPERABLE = new Set(["connected", "degraded"]);
@@ -106,7 +106,7 @@ export async function pollConnector(ctx: AppContext, input: PollConnectorInput):
   if (prior !== null) return { cursor: prior.toCursor, eventCount: prior.eventCount, sequence: prior.sequence };
 
   const limit = Math.min(Math.max(1, Math.trunc(input.limit ?? 50)), 500);
-  const secret = await resolveInstallationSecret(ctx, inst);
+  const secret = await resolveConnectorSecret(ctx, inst, adapter);
   const res = await adapter.poll({ connectorId: inst.connectorId, authMethod: inst.authMethod, config: inst.config, secret, cursor: fromCursor, limit });
   if (!res.ok) throw new ValidationError(normalizeConnectorFailure(res.category).userMessage);
 
