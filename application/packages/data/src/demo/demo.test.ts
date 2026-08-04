@@ -39,7 +39,7 @@ describe("demo dataset — orgs", () => {
   it("uses the illustrative brief organizations (no Lorem/placeholder names)", () => {
     const names = DEMO_ORGS.map((o) => o.name);
     expect(names).toContain("Onixus");
-    expect(names).toContain("The New Greenhouse");
+    expect(names).toContain("Verdant Fields Co.");
     expect(names).toContain("Acme Construction");
     expect(names).toContain("Kingston Logistics");
     expect(names).toContain("Green Horizon");
@@ -71,14 +71,14 @@ describe("demo domains (System Map input)", () => {
 
 describe("demo scans + findings", () => {
   it("produces a scan per org with a findings ledger", () => {
-    const scan = demoScanFor("demo_greenhouse");
+    const scan = demoScanFor("demo_verdant");
     expect(scan).not.toBeNull();
-    expect(scan!.id).toBe("sc_demo_greenhouse");
+    expect(scan!.id).toBe("sc_demo_verdant");
     const findings = demoFindingsForScan(scan!.id);
     expect(findings.length).toBeGreaterThan(0);
     for (const f of findings) {
       expect(f.scanId).toBe(scan!.id);
-      expect(f.clientId).toBe("demo_greenhouse");
+      expect(f.clientId).toBe("demo_verdant");
       expect(["low", "medium", "high"]).toContain(f.priority);
     }
   });

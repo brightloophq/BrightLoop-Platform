@@ -1404,7 +1404,7 @@ page).
   env default. Async (reads the request cookie). `demoToggleAvailable()` gates the
   dev-only toggle UI. **Never on in real production.**
 - **Dataset** (`@brightloop/data/demo/`, pure + deterministic, server-only, `now`
-  injected): five believable orgs (Onixus, The New Greenhouse, Acme Construction,
+  injected): five believable orgs (Onixus, Verdant Fields Co., Acme Construction,
   Kingston Logistics, Green Horizon) with domains, scans, findings, pipeline counts,
   risks, activity, ~14 signals (executive detail within the existing schema), and
   analytics. Ships nothing to the browser.

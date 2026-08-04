@@ -5,9 +5,9 @@ import { canonicalUrl, schemaFor, aggregateSchema, SITE_ORIGIN } from "./seo.js"
 function project(over: Partial<PortfolioProject> = {}): PortfolioProject {
   return {
     id: "p_x",
-    slug: "new-greenhouse",
-    name: "The New Greenhouse",
-    client: "The New Greenhouse",
+    slug: "verdant-fields",
+    name: "Verdant Fields Co.",
+    client: "Verdant Fields Co.",
     industry: "Agriculture",
     size: "Micro (2–10)",
     country: "Jamaica",
@@ -42,10 +42,10 @@ function project(over: Partial<PortfolioProject> = {}): PortfolioProject {
 function testimonial(over: Partial<Testimonial> = {}): Testimonial {
   return {
     id: "t_x",
-    projectSlug: "new-greenhouse",
-    author: "Kemar Bailey",
+    projectSlug: "verdant-fields",
+    author: "Maya Thompson",
     role: "Founder",
-    company: "The New Greenhouse",
+    company: "Verdant Fields Co.",
     country: "Jamaica",
     date: "2026-05-24",
     publish: "public",
@@ -62,11 +62,11 @@ function testimonial(over: Partial<Testimonial> = {}): Testimonial {
 
 describe("canonicalUrl()", () => {
   it("builds portfolio, case-study and testimonials URLs", () => {
-    expect(canonicalUrl("portfolio", "new-greenhouse")).toBe(
-      "https://brightloop.co/portfolio/new-greenhouse",
+    expect(canonicalUrl("portfolio", "verdant-fields")).toBe(
+      "https://brightloop.co/portfolio/verdant-fields",
     );
-    expect(canonicalUrl("case", "new-greenhouse")).toBe(
-      "https://brightloop.co/case-studies/new-greenhouse",
+    expect(canonicalUrl("case", "verdant-fields")).toBe(
+      "https://brightloop.co/case-studies/verdant-fields",
     );
     expect(canonicalUrl("testimonials")).toBe("https://brightloop.co/testimonials");
   });
@@ -103,18 +103,18 @@ describe("schemaFor() — never emits schema for unpublished content", () => {
     expect(schema).toMatchObject({
       "@context": "https://schema.org",
       "@type": "CreativeWork",
-      name: "The New Greenhouse — Case Study",
+      name: "Verdant Fields Co. — Case Study",
       about: "Agriculture",
       creator: { "@type": "Organization", name: "Auxion" },
       dateCreated: "2026-05-18",
       keywords: "local, identity",
-      url: "https://brightloop.co/portfolio/new-greenhouse",
+      url: "https://brightloop.co/portfolio/verdant-fields",
     });
   });
 
   it("canonical in schema always points at /portfolio/:slug, never /case-studies", () => {
     // /case-studies/:slug is a view of the same record — one canonical.
-    expect(schemaFor(project())?.url).toBe("https://brightloop.co/portfolio/new-greenhouse");
+    expect(schemaFor(project())?.url).toBe("https://brightloop.co/portfolio/verdant-fields");
   });
 });
 
@@ -124,7 +124,7 @@ describe("schemaFor() — nested Review", () => {
     expect(schema?.review).toMatchObject({
       "@type": "Review",
       reviewRating: { "@type": "Rating", ratingValue: 5, bestRating: 5 },
-      author: { "@type": "Person", name: "Kemar Bailey" },
+      author: { "@type": "Person", name: "Maya Thompson" },
       reviewBody: "They understood what we were building.",
     });
   });

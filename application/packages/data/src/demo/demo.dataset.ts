@@ -6,7 +6,7 @@
  * The only time input is an injected `now` (ms) so the activity feed reads as
  * "recent" while staying testable. It fabricates NOTHING that could be mistaken
  * for a real customer record — the organizations are the illustrative set named
- * in the PX.1 brief (Onixus, The New Greenhouse, Acme Construction, Kingston
+ * in the PX.1 brief (Onixus, Verdant Fields Co., Acme Construction, Kingston
  * Logistics, Green Horizon), and Demo Mode is env-gated + off in real production.
  *
  * Everything downstream (the demo repositories) reads from here, so widening the
@@ -130,8 +130,8 @@ export const DEMO_ORGS: readonly DemoOrg[] = [
     ],
   },
   {
-    id: "demo_greenhouse",
-    name: "The New Greenhouse",
+    id: "demo_verdant",
+    name: "Verdant Fields Co.",
     industry: "Retail & Garden",
     health: 72,
     index: { value: 76, delta: 9 },
@@ -162,9 +162,9 @@ export const DEMO_ORGS: readonly DemoOrg[] = [
       { domainKey: "crm", finding: "Repeat customers not segmented for retention offers", baseline: "Flat list", priority: "medium" },
     ],
     activity: [
-      { entity: "approval", entityId: "ap_grh_09", from: "pending", to: "approved", actor: "Priya Nair", minutesAgo: 52 },
-      { entity: "insight", entityId: "in_grh_31", from: "generated", to: "endorsed", actor: "Marcus Hale", minutesAgo: 140 },
-      { entity: "signal", entityId: "sg_grh_88", from: "detected", to: "validated", actor: "Priya Nair", minutesAgo: 320 },
+      { entity: "approval", entityId: "ap_vfc_09", from: "pending", to: "approved", actor: "Priya Nair", minutesAgo: 52 },
+      { entity: "insight", entityId: "in_vfc_31", from: "generated", to: "endorsed", actor: "Marcus Hale", minutesAgo: 140 },
+      { entity: "signal", entityId: "sg_vfc_88", from: "detected", to: "validated", actor: "Priya Nair", minutesAgo: 320 },
     ],
   },
   {
@@ -529,21 +529,21 @@ const DEMO_SIGNAL_SEEDS: readonly DemoSignalSeed[] = [
     evidence: [{ kind: "document", ref: "doc.scan.ai", label: "Scan finding", detail: "AI domain assembling (71/100)" }],
   },
   {
-    id: "sg_grh_201", clientId: "demo_greenhouse", title: "Seasonal demand spike detected for outdoor range", status: "prioritized",
+    id: "sg_vfc_201", clientId: "demo_verdant", title: "Seasonal demand spike detected for outdoor range", status: "prioritized",
     sourceRef: "metric:sales.category.outdoor", createdBy: "u_priya", daysAgo: 1,
     detail:
       "Severity: opportunity · Confidence: high (0.88). Outdoor category sell-through is 31% above the seasonal baseline. Impact: risk of stockout on top SKUs within 3 weeks. Recommended action: pull forward the next reorder and feature the range in this week's campaign.",
     evidence: [{ kind: "metric", ref: "sales.outdoor.sellthrough", label: "Sell-through", detail: "+31% vs baseline" }],
   },
   {
-    id: "sg_grh_202", clientId: "demo_greenhouse", title: "Repeat customers not segmented for retention", status: "validated",
+    id: "sg_vfc_202", clientId: "demo_verdant", title: "Repeat customers not segmented for retention", status: "validated",
     sourceRef: "crm:segmentation.gap", createdBy: "u_marcus", daysAgo: 4,
     detail:
       "Severity: medium · Confidence: medium (0.68). The customer list is flat — no repeat-buyer segment exists for targeted offers. Impact: leaving repeat-purchase revenue on the table. Recommended action: build a returning-customer segment and a simple win-back flow.",
     evidence: [{ kind: "observation", ref: "obs.crm.review", label: "CRM review", detail: "No segments configured" }],
   },
   {
-    id: "sg_grh_203", clientId: "demo_greenhouse", title: "Weekly sales reporting is spreadsheet-bound", status: "detected",
+    id: "sg_vfc_203", clientId: "demo_verdant", title: "Weekly sales reporting is spreadsheet-bound", status: "detected",
     sourceRef: "analytics:reporting.cadence", createdBy: "u_priya", daysAgo: 9,
     detail:
       "Severity: medium · Confidence: high (0.79). Reporting refreshes weekly by hand, so decisions lag the numbers. Impact: slow reaction to demand shifts. Recommended action: connect POS to an automated daily dashboard.",

@@ -39,7 +39,7 @@ Components stay unaware — there is no `if (demoMode)` in any page.
 ## 3. Dataset (`@brightloop/data/demo/`)
 
 Pure, deterministic, **server-only** (never shipped to the browser); the only time input
-is an injected `now`. Five believable organizations — **Onixus, The New Greenhouse, Acme
+is an injected `now`. Five believable organizations — **Onixus, Verdant Fields Co., Acme
 Construction, Kingston Logistics, Green Horizon** — each with: 7 System-Map domains
 (status + baseline/current scores), a business scan + findings, pipeline counts
 (signals→learnings), risks, business health, transformation index, and an activity feed.

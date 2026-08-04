@@ -106,8 +106,8 @@ describe("PlaceholderReputationRepository — behaviour", () => {
   });
 
   it("returns a published project by slug", async () => {
-    const p = await repo.getProjectBySlug("new-greenhouse");
-    expect(p?.name).toBe("The New Greenhouse");
+    const p = await repo.getProjectBySlug("verdant-fields");
+    expect(p?.name).toBe("Verdant Fields Co.");
   });
 
   it("orders home testimonials pinned-first", async () => {
@@ -134,13 +134,13 @@ describe("PlaceholderReputationRepository — behaviour", () => {
   });
 
   it("excludes the current project from its own related list", async () => {
-    const rel = await repo.listRelatedProjects("new-greenhouse");
-    expect(rel.map((p) => p.slug)).not.toContain("new-greenhouse");
+    const rel = await repo.listRelatedProjects("verdant-fields");
+    expect(rel.map((p) => p.slug)).not.toContain("verdant-fields");
   });
 
   it("lists only published slugs", async () => {
     const slugs = await repo.listPublishedSlugs();
     expect(slugs).not.toContain("northwind-supply");
-    expect(slugs).toContain("new-greenhouse");
+    expect(slugs).toContain("verdant-fields");
   });
 });
