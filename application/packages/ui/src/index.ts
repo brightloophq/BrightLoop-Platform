@@ -125,3 +125,17 @@ export { FormSection } from "./components/FormSection";
 export type { FormSectionProps } from "./components/FormSection";
 export { ToastProvider, useToast } from "./components/Toast";
 export type { ToastTone } from "./components/Toast";
+
+/* ---- Theme system (PX.1a — Light / Dark / System runtime) ---- */
+export { ThemeProvider, useTheme } from "./theme/ThemeProvider";
+export { ThemeScript } from "./theme/ThemeScript";
+export { ThemeToggle } from "./theme/ThemeToggle";
+export type { ThemeToggleProps } from "./theme/ThemeToggle";
+export {
+  THEME_CHOICES,
+  THEME_STORAGE_KEY,
+  DEFAULT_THEME_CHOICE,
+  isThemeChoice,
+  resolveTheme,
+} from "./theme/theme";
+export type { ThemeChoice, ResolvedTheme } from "./theme/theme";

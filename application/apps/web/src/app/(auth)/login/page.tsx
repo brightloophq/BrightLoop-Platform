@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import type { Metadata } from "next";
 import { isClientRole } from "@brightloop/schema";
-import { Eyebrow, Logo } from "@brightloop/ui";
+import { Eyebrow, Logo, ThemeToggle } from "@brightloop/ui";
 import { getActor } from "@/lib/auth";
 import { LoginForm } from "./LoginForm";
 import styles from "./login.module.css";
@@ -56,6 +56,9 @@ export default async function LoginPage({
       </aside>
 
       <main className={styles.formPanel}>
+        <div className={styles.authTheme}>
+          <ThemeToggle variant="compact" label="Theme" />
+        </div>
         <div className={styles.formInner}>
           <h2 className={styles.title}>Sign in</h2>
           <p className={styles.sub}>Welcome back. Use your password or have a link emailed to you.</p>

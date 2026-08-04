@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
+import { ThemeProvider, ThemeScript } from "@brightloop/ui";
 import "@brightloop/ui/tokens.css";
 
 /**
@@ -26,13 +27,27 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  // Dark-first: Navy Ink is the primary canvas. The light theme ("Living
-  // Blueprint" paper) is opt-in via [data-theme="light"] (see tokens/colors.css).
+  // Theme (PX.1a): both palettes are first-class. The user's choice is Light /
+  // Dark / System (default System → follows the OS). `ThemeScript` stamps the
+  // resolved `data-theme` on <html> BEFORE first paint (no flash); `ThemeProvider`
+  // owns the live runtime (persistence, OS-change tracking, instant switching).
+  // The SSR default (before the script runs) is the CSS `:root` = light.
+  // `suppressHydrationWarning` is required because the inline script mutates
+  // `data-theme` on <html> before React hydrates.
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${plexSans.variable} ${plexMono.variable}`}>
+    <html
+      lang="en"
+      className={`${spaceGrotesk.variable} ${plexSans.variable} ${plexMono.variable}`}
+      suppressHydrationWarning
+    >
       <body>
+        {/* Anti-FOUC: runs as the first thing the body parser hits, stamping the
+            resolved `data-theme` on <html> before any styled content paints. Kept
+            in <body> (not a hand-rendered <head>) so it never conflicts with the
+            App Router Metadata API's head management. */}
+        <ThemeScript />
         <a href="#main-content" className="skip-link">Skip to content</a>
-        {children}
+        <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
   );
