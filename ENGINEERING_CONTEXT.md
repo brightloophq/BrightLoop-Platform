@@ -1464,3 +1464,31 @@ only — no backend/architecture change; extends the dashboard, no redesign.
 - **Follow-ons:** wiring charts into Analytics/Signals/Projects/etc. sections,
   heatmap + timeline components, time-range/filter controls, per-chart AI insight
   captions. The library is ready for all of them.
+
+**PX.1d — Interactive Transformation System Map (branch `feat/px1d-system-map`,
+this PR).** The signature interactive map. **Extends** the canonical `SystemMap`
+(reuses `systemMapGeometry`); does not rewrite it, change navigation, or touch the
+backend. Prereqs #76/#77/#78 merged first (main had PX.1a+b+c before this branched).
+
+- **Component** `packages/ui/src/systemmap/`: pure `logic.ts` (search `matchesQuery`,
+  `passesFilters`, `explorerView`, `connectionPath`, tone helpers — **8 tests**),
+  `types.ts` (data-source-agnostic `ExplorerData`/`ExplorerNode`/`ExplorerConnection`/
+  `ExplorerFilters`), `SystemMapExplorer` (interactive nodes with hover summary card
+  + click → detail panel, inter-domain connections with hover flow + animated dash,
+  search highlight, filter chips, keyboard node nav, legend) and `NodeDetailPanel`
+  (overview · status · business impact · **AI layer** (6 canned evidence-shaped
+  actions, no live model) · signals · recommendations · activity timeline · connected
+  systems · metrics · history · next actions). `role`/aria + reduced-motion + token
+  colors → Light/Dark/System automatically.
+- **Data**: `@brightloop/data/demo` `demoSystemMap(now)` — 7 rich domain nodes
+  (health/completion/automation/AI-confidence/owner/signals/recs/detail/history/AI) +
+  8 connections, deterministic + server-only. Web seam `lib/system-map-data.ts`:
+  demo → rich map; normal → a **sparse honest map from live domains** (no fabricated
+  owners/signals/AI); `null` when no domains → educational empty state.
+- **Route** `/admin/system-map` (force-dynamic, transformation.read-gated), linked
+  from the Console's System Map panel ("Open full map") — **no sidebar/nav change**.
+- Gate `pnpm turbo run typecheck lint test build` **green (36/36)**; `@brightloop/ui`
+  +8 logic tests. Report: `engineering-blueprint/px-1/PX.1d-system-map-report.md`.
+- **Follow-ons:** animated per-connection data-flow particles, zoom/pan + node
+  focus, virtualization for very large orgs, live per-node AI wired to the reasoning
+  engine, and org-scope switching.

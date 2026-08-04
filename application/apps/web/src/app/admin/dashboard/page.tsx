@@ -372,6 +372,11 @@ async function ConsoleSystemMap({ scope }: { scope: DashboardScope }) {
               ? "Domains across your portfolio — the Index climbs as each node goes Live."
               : "Seven domains assembled into one operating System."
           }
+          action={
+            <Button asChild variant="ghost">
+              <Link href="/admin/system-map">Open full map</Link>
+            </Button>
+          }
         />
         <div className={styles.systemMap} data-animate="attention">
           <SystemMap nodes={map.nodes} index={map.index} size={320} />

@@ -1,0 +1,257 @@
+/* Interactive System Map (PX.1d). Token-only → themes automatically. Motion is
+   CSS-only and gated behind prefers-reduced-motion. */
+
+.explorer {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-4);
+}
+@media (min-width: 1080px) {
+  /* map + detail panel side-by-side when a node is selected */
+  .explorer[data-open="true"] {
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 400px);
+  }
+}
+
+/* ---- controls (search + filters) ---- */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+.search {
+  flex: 1 1 220px;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+}
+.searchInput {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  outline: none;
+}
+.filterChip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 4px var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.filterChip[data-active="true"] {
+  border-color: var(--signal);
+  color: var(--text-accent);
+  background: var(--signal-tint);
+}
+.filterChip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+.resultCount {
+  margin-left: auto;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+/* ---- the map ---- */
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  max-width: 620px;
+  margin: 0 auto;
+}
+.svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+.orbit {
+  fill: none;
+  stroke: var(--line);
+  stroke-width: 0.5;
+}
+.connection {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 0.6;
+  opacity: 0.5;
+  transition: opacity var(--dur-fast) var(--ease-out), stroke var(--dur-fast) var(--ease-out);
+  cursor: pointer;
+}
+.connection:hover,
+.connection[data-active="true"] {
+  opacity: 1;
+  stroke: var(--signal);
+  stroke-width: 1.1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .connectionFlow {
+    stroke: var(--signal);
+    stroke-width: 1.1;
+    fill: none;
+    stroke-dasharray: 2 4;
+    animation: flow 1.4s linear infinite;
+  }
+}
+@keyframes flow {
+  to { stroke-dashoffset: -6; }
+}
+
+.node {
+  cursor: pointer;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.node:focus-visible {
+  outline: none;
+}
+.node:focus-visible .nodeRing {
+  stroke: var(--focus-ring);
+  stroke-width: 1.4;
+  opacity: 1;
+}
+.nodeDim {
+  opacity: 0.28;
+}
+.nodeCircle {
+  transition: transform var(--dur-fast) var(--ease-out);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.node:hover .nodeCircle,
+.node[data-selected="true"] .nodeCircle {
+  transform: scale(1.12);
+}
+.nodeRing {
+  fill: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+.node[data-selected="true"] .nodeRing,
+.node[data-matched="true"] .nodeRing {
+  opacity: 1;
+  stroke: var(--signal);
+  stroke-width: 1.2;
+}
+.nodeCode {
+  font-family: var(--font-mono);
+  font-size: 3px;
+  font-weight: 600;
+  text-anchor: middle;
+  pointer-events: none;
+}
+.nodeLabel {
+  font-family: var(--font-body);
+  font-size: 2.6px;
+  text-anchor: middle;
+  fill: var(--text-secondary);
+  pointer-events: none;
+}
+.core {
+  fill: var(--surface-2);
+  stroke: var(--line-strong);
+  stroke-width: 0.5;
+}
+.coreIndex {
+  fill: var(--text-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 6px;
+  text-anchor: middle;
+}
+.coreLabel {
+  fill: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 2.6px;
+  text-anchor: middle;
+  letter-spacing: 0.1em;
+}
+
+/* status fills (paired with code text + labels — never color-alone) */
+.stOperating { fill: var(--positive); }
+.stAssembling { fill: var(--caution); }
+.stNot_operating { fill: var(--surface-2); stroke: var(--line-strong); stroke-width: 0.5; }
+
+/* ---- hover summary card ---- */
+.hoverCard {
+  position: absolute;
+  z-index: var(--z-tooltip, 80);
+  pointer-events: none;
+  width: 230px;
+  padding: var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-2);
+  transform: translate(-50%, calc(-100% - 12px));
+}
+.hoverTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  margin-bottom: var(--space-2);
+}
+.hoverGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-1) var(--space-3);
+  font-size: var(--fs-xs);
+}
+.hoverK { color: var(--text-muted); }
+.hoverV { color: var(--text-primary); font-family: var(--font-mono); text-align: right; }
+
+/* connection tooltip */
+.edgeTip {
+  position: absolute;
+  z-index: var(--z-tooltip, 80);
+  pointer-events: none;
+  max-width: 200px;
+  padding: var(--space-2) var(--space-3);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-md);
+  box-shadow: var(--elevation-2);
+  font-size: var(--fs-xs);
+  color: var(--text-primary);
+  transform: translate(-50%, -120%);
+}
+
+.legendRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  justify-content: center;
+  margin-top: var(--space-3);
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+}
+.legendItem { display: inline-flex; align-items: center; gap: var(--space-2); }
+.legendDot { width: 9px; height: 9px; border-radius: var(--radius-pill); flex: none; }
+
+.srOnly {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}

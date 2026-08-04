@@ -473,6 +473,204 @@ export function demoAnalytics(): DemoAnalytics {
   };
 }
 
+/* ---- Interactive System Map (PX.1d) --------------------------------------- */
+
+// Local mirror of the UI ExplorerData shape (data must not import @brightloop/ui).
+// Structurally assignable to it; the web seam types the result as ExplorerData,
+// so any drift fails the build there.
+type SmStatus = "operating" | "assembling" | "not_operating";
+type SmRisk = "low" | "medium" | "high" | "critical";
+interface SmSignal { readonly title: string; readonly severity: "critical" | "high" | "medium" | "low" }
+interface SmRec { readonly title: string; readonly priority: "high" | "medium" | "low" }
+interface SmEvent { readonly label: string; readonly at: string; readonly icon: string }
+interface SmMetric { readonly label: string; readonly value: string }
+interface SmAi { readonly summarize: string; readonly explain: string; readonly recommend: string; readonly predict: string; readonly risk: string; readonly nextAction: string }
+interface SmNode {
+  readonly key: string; readonly code: string; readonly label: string; readonly status: SmStatus;
+  readonly health: number | null; readonly completion: number; readonly automation: number;
+  readonly aiConfidence: number; readonly risk: SmRisk; readonly owner: string;
+  readonly activeSignals: number; readonly recommendations: number; readonly lastUpdated: string;
+  readonly connections: readonly string[]; readonly summary: string; readonly businessImpact: string;
+  readonly signals: readonly SmSignal[]; readonly recs: readonly SmRec[]; readonly activity: readonly SmEvent[];
+  readonly metrics: readonly SmMetric[]; readonly history: readonly SmEvent[]; readonly nextActions: readonly string[];
+  readonly ai: SmAi;
+}
+interface SmConnection { readonly from: string; readonly to: string; readonly flow: string; readonly health: SmRisk }
+export interface DemoSystemMapData {
+  readonly nodes: readonly SmNode[];
+  readonly connections: readonly SmConnection[];
+  readonly index: { readonly value: number; readonly target: number; readonly pct: number };
+  readonly scopeLabel: string;
+}
+
+/** Rich, interactive System Map for Demo Mode. `now` seeds recent timestamps. */
+export function demoSystemMap(now: number): DemoSystemMapData {
+  const hrs = (h: number) => new Date(now - h * 3_600_000).toISOString();
+  const days = (d: number) => new Date(now - d * 86_400_000).toISOString();
+  const nodes: SmNode[] = [
+    {
+      key: "web", code: "WEB", label: "Digital", status: "operating", health: 88, completion: 90, automation: 74,
+      aiConfidence: 0.86, risk: "low", owner: "Amara Chen", activeSignals: 2, recommendations: 1, lastUpdated: hrs(3),
+      connections: ["crm"],
+      summary: "The public presence and acquisition funnel — site, SEO, and conversion paths — operating well and feeding qualified leads into CRM.",
+      businessImpact: "Primary top-of-funnel: ~62% of new leads originate here. A 1-point conversion gain is worth an estimated $14K/mo in pipeline.",
+      signals: [{ title: "Landing page bounce rising on mobile", severity: "medium" }, { title: "Organic traffic up 18% QoQ", severity: "low" }],
+      recs: [{ title: "A/B test the pricing page hero", priority: "medium" }],
+      activity: [{ label: "Conversion tracking verified", at: hrs(3), icon: "check-circle" }, { label: "New campaign launched", at: days(2), icon: "rocket" }],
+      metrics: [{ label: "Conv. rate", value: "4.2%" }, { label: "Sessions/wk", value: "9.1K" }, { label: "Uptime", value: "99.9%" }],
+      history: [{ label: "Domain went live", at: days(120), icon: "rocket" }, { label: "Automation enabled", at: days(40), icon: "workflow" }],
+      nextActions: ["Ship the pricing-page test", "Instrument the demo-request flow"],
+      ai: {
+        summarize: "Digital is healthy and the strongest acquisition channel; the only soft spot is mobile bounce on the pricing page.",
+        explain: "Health is driven by uptime, conversion rate, and lead quality — all above target this quarter.",
+        recommend: "Run a focused mobile pricing-page experiment; expected +0.4pt conversion at 80% confidence.",
+        predict: "At current trend, leads reach ~1,050/mo within two quarters.",
+        risk: "Low. Main exposure is single-page dependency on one campaign source (30% of traffic).",
+        nextAction: "Approve the pricing-page A/B test — highest ROI, lowest effort this cycle.",
+      },
+    },
+    {
+      key: "sales", code: "SAL", label: "Sales", status: "operating", health: 82, completion: 85, automation: 63,
+      aiConfidence: 0.8, risk: "low", owner: "Devon Reyes", activeSignals: 3, recommendations: 2, lastUpdated: hrs(6),
+      connections: ["delivery"],
+      summary: "Pipeline, proposals, and close motion. Consistent win rates; follow-up cadence is the current lever.",
+      businessImpact: "Directly governs revenue conversion. Tightening follow-up is modeled at +8% close rate.",
+      signals: [{ title: "Proposal response time improving", severity: "low" }, { title: "Two stalled enterprise deals", severity: "high" }],
+      recs: [{ title: "Automate 3-touch follow-up sequence", priority: "high" }, { title: "Add pipeline stage SLAs", priority: "medium" }],
+      activity: [{ label: "Proposal accepted — $48K", at: hrs(6), icon: "check-circle" }, { label: "Recommendation created", at: days(1), icon: "sparkles" }],
+      metrics: [{ label: "Win rate", value: "34%" }, { label: "Avg. cycle", value: "26d" }, { label: "Open pipe", value: "$210K" }],
+      history: [{ label: "CRM connected", at: days(90), icon: "plug" }, { label: "Playbook adopted", at: days(30), icon: "book-open" }],
+      nextActions: ["Deploy the follow-up automation", "Review the two stalled deals"],
+      ai: {
+        summarize: "Sales is solid; the biggest upside is disciplined follow-up on warm opportunities.",
+        explain: "Win rate holds at 34% but two enterprise deals have gone quiet past the follow-up window.",
+        recommend: "Stand up a 3-touch automated follow-up; historical lift is ~8% close rate.",
+        predict: "Closing both stalled deals adds ~$0.5M ARR this half.",
+        risk: "Medium on the two stalled deals; otherwise low.",
+        nextAction: "Re-engage the stalled enterprise deals this week with an exec touch.",
+      },
+    },
+    {
+      key: "crm", code: "CRM", label: "CRM", status: "operating", health: 79, completion: 80, automation: 58,
+      aiConfidence: 0.78, risk: "medium", owner: "Priya Nair", activeSignals: 2, recommendations: 1, lastUpdated: hrs(9),
+      connections: ["sales"],
+      summary: "System of record for contacts and accounts. Segmentation is the gap limiting retention plays.",
+      businessImpact: "Underpins retention and expansion. Segmented win-back is modeled at +5% repeat revenue.",
+      signals: [{ title: "Repeat customers not segmented", severity: "medium" }, { title: "Data completeness at 91%", severity: "low" }],
+      recs: [{ title: "Build a returning-customer segment", priority: "medium" }],
+      activity: [{ label: "Contacts synced", at: hrs(9), icon: "users" }, { label: "Dedup run completed", at: days(3), icon: "check" }],
+      metrics: [{ label: "Contacts", value: "12.4K" }, { label: "Complete", value: "91%" }, { label: "Segments", value: "3" }],
+      history: [{ label: "CRM assembled", at: days(75), icon: "plug" }, { label: "Sync automated", at: days(20), icon: "workflow" }],
+      nextActions: ["Create the win-back segment", "Enrich missing firmographics"],
+      ai: {
+        summarize: "CRM is operating but under-segmented, capping retention and expansion motions.",
+        explain: "Data is clean (91%) yet there are no behavioral segments to target repeat buyers.",
+        recommend: "Create a returning-customer segment and a simple win-back flow.",
+        predict: "A win-back segment could recover ~5% of lapsed revenue within a quarter.",
+        risk: "Medium — retention opportunity is being left on the table.",
+        nextAction: "Approve building the returning-customer segment.",
+      },
+    },
+    {
+      key: "operations", code: "OPS", label: "Operations", status: "assembling", health: 68, completion: 66, automation: 45,
+      aiConfidence: 0.72, risk: "medium", owner: "Lena Fisher", activeSignals: 3, recommendations: 2, lastUpdated: hrs(12),
+      connections: ["delivery"],
+      summary: "Internal workflows and handoffs. Assembling — several manual steps remain between onboarding and delivery.",
+      businessImpact: "Manual handoffs slow time-to-value and create avoidable escalations on ~1 in 6 accounts.",
+      signals: [{ title: "Manual onboarding handoff losing context", severity: "high" }, { title: "Ticket backlog steady", severity: "medium" }],
+      recs: [{ title: "Automate the onboarding checklist", priority: "high" }, { title: "Add handoff SLAs", priority: "medium" }],
+      activity: [{ label: "Workflow drafted", at: hrs(12), icon: "workflow" }, { label: "Signal generated", at: days(1), icon: "activity" }],
+      metrics: [{ label: "Cycle time", value: "3.4d" }, { label: "Handoffs", value: "6" }, { label: "Auto", value: "45%" }],
+      history: [{ label: "Assembly started", at: days(35), icon: "workflow" }, { label: "Scan completed", at: days(60), icon: "gauge" }],
+      nextActions: ["Automate onboarding→success handoff", "Cut manual steps from 6 to 3"],
+      ai: {
+        summarize: "Operations is mid-assembly; the manual onboarding handoff is the top drag on time-to-value.",
+        explain: "About 17% of accounts lose context at the onboarding→success handoff.",
+        recommend: "Automate the handoff with a shared checklist tied to the CRM stage.",
+        predict: "Automating it could cut onboarding cycle time from 3.4 to ~2.3 days.",
+        risk: "Medium — escalations and churn risk on affected accounts.",
+        nextAction: "Prioritize the handoff automation next sprint.",
+      },
+    },
+    {
+      key: "delivery", code: "DEL", label: "Delivery", status: "operating", health: 90, completion: 91, automation: 70,
+      aiConfidence: 0.84, risk: "low", owner: "Sofia Marin", activeSignals: 1, recommendations: 0, lastUpdated: hrs(4),
+      connections: ["analytics"],
+      summary: "Project execution and client outcomes. The strongest domain — on-time delivery and satisfaction are high.",
+      businessImpact: "Drives renewals and referrals. Sustained delivery quality correlates with a 22-point NPS lift.",
+      signals: [{ title: "On-time delivery at 96%", severity: "low" }],
+      recs: [],
+      activity: [{ label: "Milestone reached", at: hrs(4), icon: "check-circle" }, { label: "Deliverable approved", at: days(1), icon: "check" }],
+      metrics: [{ label: "On-time", value: "96%" }, { label: "NPS", value: "62" }, { label: "Reopens", value: "2%" }],
+      history: [{ label: "Domain operating", at: days(85), icon: "rocket" }, { label: "QA automated", at: days(25), icon: "workflow" }],
+      nextActions: ["Maintain cadence", "Capture referral asks at milestone close"],
+      ai: {
+        summarize: "Delivery is the healthiest domain — high on-time rate and satisfaction, nothing urgent.",
+        explain: "96% on-time and 2% reopen rate keep clients renewing and referring.",
+        recommend: "Systematize referral asks at milestone completion to convert goodwill.",
+        predict: "Sustained quality supports a +22 NPS trajectory over the year.",
+        risk: "Low.",
+        nextAction: "Add a referral prompt to the milestone-close step.",
+      },
+    },
+    {
+      key: "analytics", code: "ANL", label: "Analytics", status: "assembling", health: 63, completion: 63, automation: 40,
+      aiConfidence: 0.7, risk: "high", owner: "Marcus Hale", activeSignals: 4, recommendations: 2, lastUpdated: hrs(18),
+      connections: ["ai"],
+      summary: "Measurement and reporting. Assembling — reporting is still partly manual, so decisions lag the numbers.",
+      businessImpact: "Slow, manual reporting delays reaction to demand shifts and hides margin erosion until close-out.",
+      signals: [{ title: "Weekly manual reporting cadence", severity: "high" }, { title: "Margins reconciled only at close", severity: "high" }],
+      recs: [{ title: "Automate a daily dashboard", priority: "high" }, { title: "Track committed cost weekly", priority: "high" }],
+      activity: [{ label: "Signal generated", at: hrs(18), icon: "activity" }, { label: "Data source connected", at: days(2), icon: "plug" }],
+      metrics: [{ label: "Freshness", value: "7d" }, { label: "Coverage", value: "63%" }, { label: "Sources", value: "4" }],
+      history: [{ label: "Assembly started", at: days(28), icon: "workflow" }, { label: "Scan completed", at: days(60), icon: "gauge" }],
+      nextActions: ["Connect POS to an automated dashboard", "Move margin tracking to weekly"],
+      ai: {
+        summarize: "Analytics is the biggest risk — manual, weekly reporting means the business reacts late.",
+        explain: "Data refreshes by hand weekly, and margins surface only at project close.",
+        recommend: "Automate a daily dashboard and track committed cost vs budget weekly.",
+        predict: "Real-time reporting typically recovers 2–3 margin points on long projects.",
+        risk: "High — decisions are made on stale data.",
+        nextAction: "Approve the automated daily dashboard — clears two high-severity signals.",
+      },
+    },
+    {
+      key: "ai", code: "AI", label: "AI Layer", status: "assembling", health: 71, completion: 71, automation: 52,
+      aiConfidence: 0.75, risk: "medium", owner: "Amara Chen", activeSignals: 2, recommendations: 3, lastUpdated: hrs(2),
+      connections: ["operations", "sales"],
+      summary: "The intelligence layer — automation, scoring, and forecasting. Assembling, and gated on a unified data model.",
+      businessImpact: "Multiplies every other domain. A unified customer record unlocks reliable scoring and forecasting.",
+      signals: [{ title: "No unified customer data model", severity: "high" }, { title: "Automation coverage climbing", severity: "low" }],
+      recs: [{ title: "Consolidate to one customer record", priority: "high" }, { title: "Pilot model-assisted routing", priority: "medium" }, { title: "AI-assisted proposal drafting", priority: "medium" }],
+      activity: [{ label: "Automation deployed", at: hrs(2), icon: "workflow" }, { label: "Recommendation accepted", at: days(1), icon: "sparkles" }],
+      metrics: [{ label: "Auto cov.", value: "52%" }, { label: "Runs/mo", value: "88" }, { label: "Models", value: "3" }],
+      history: [{ label: "AI layer assembling", at: days(22), icon: "sparkles" }, { label: "First automation", at: days(15), icon: "workflow" }],
+      nextActions: ["Consolidate the customer data model", "Expand automation to routing"],
+      ai: {
+        summarize: "The AI layer is progressing but capped by fragmented data — consolidation is the unlock.",
+        explain: "Customer data lives across three systems, limiting reliable AI-assisted insight.",
+        recommend: "Consolidate to a single customer record before further AI investment.",
+        predict: "A unified model roughly doubles usable automation coverage within a quarter.",
+        risk: "Medium — ROI of AI is capped until data is unified.",
+        nextAction: "Approve the customer-data consolidation initiative.",
+      },
+    },
+  ];
+  const connections: SmConnection[] = [
+    { from: "web", to: "crm", flow: "Leads & identity", health: "low" },
+    { from: "crm", to: "sales", flow: "Qualified contacts", health: "low" },
+    { from: "sales", to: "delivery", flow: "Won engagements", health: "low" },
+    { from: "operations", to: "delivery", flow: "Fulfilment & handoffs", health: "medium" },
+    { from: "delivery", to: "analytics", flow: "Outcomes & measurements", health: "low" },
+    { from: "analytics", to: "ai", flow: "Signals & training data", health: "high" },
+    { from: "ai", to: "operations", flow: "Automations", health: "medium" },
+    { from: "ai", to: "sales", flow: "Lead scoring", health: "medium" },
+  ];
+  const scored = nodes.map((n) => n.health).filter((h): h is number => h !== null);
+  const value = Math.round(scored.reduce((a, b) => a + b, 0) / scored.length);
+  return { nodes, connections, index: { value, target: 92, pct: Math.min(1, value / 92) }, scopeLabel: "Portfolio" };
+}
+
 /* ---- Executive dashboard charts (PX.1c) ----------------------------------- */
 
 export interface DemoChartSeries {

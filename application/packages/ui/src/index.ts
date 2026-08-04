@@ -141,6 +141,26 @@ export { FunnelChart } from "./charts/FunnelChart";
 export type { FunnelChartProps } from "./charts/FunnelChart";
 export type { SeriesPoint } from "./charts/geometry";
 
+/* ---- Interactive System Map (PX.1d) ---- */
+export { SystemMapExplorer } from "./systemmap/SystemMapExplorer";
+export type { SystemMapExplorerProps } from "./systemmap/SystemMapExplorer";
+export { NodeDetailPanel } from "./systemmap/NodeDetailPanel";
+export { explorerView, matchesQuery, passesFilters, connectionPath, healthTone, riskTone } from "./systemmap/logic";
+export { EMPTY_FILTERS } from "./systemmap/types";
+export type {
+  ExplorerData,
+  ExplorerNode,
+  ExplorerConnection,
+  ExplorerFilters,
+  ExplorerSignal,
+  ExplorerRec,
+  ExplorerEvent,
+  ExplorerMetric,
+  ExplorerAi,
+  NodeStatus,
+  NodeRisk,
+} from "./systemmap/types";
+
 /* ---- Theme system (PX.1a — Light / Dark / System runtime) ---- */
 export { ThemeProvider, useTheme } from "./theme/ThemeProvider";
 export { ThemeScript } from "./theme/ThemeScript";
