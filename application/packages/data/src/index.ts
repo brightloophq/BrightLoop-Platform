@@ -217,6 +217,23 @@ export { createSocialConnectorAdapters, loadSocialConfig } from "./integration/s
 export type { SocialConnectorConfig } from "./integration/social/adapter.js";
 export { createFetchSocialTransport } from "./integration/social/transport.js";
 export type { SocialHttpTransport, SocialHttpRequest, SocialHttpResponse } from "./integration/social/transport.js";
+// Phase F · F4.8 — Integration Platform certification harness (automated certifier
+// for F4.1–F4.7: composes the production adapter set offline, cross-checks the
+// registry, renders a deterministic markdown/JSON certification report).
+export {
+  certifyIntegrationPlatform,
+  buildCertificationAdapterRegistry,
+  renderCertificationMarkdown,
+  renderCertificationJson,
+  CERTIFIED_HEALTH_LEVELS,
+} from "./integration/certification/index.js";
+export type {
+  IntegrationCertificationReport,
+  ConnectorCertRow,
+  CapabilityCertRow,
+  CertificationArea,
+  FamilySummary,
+} from "./integration/certification/index.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.
