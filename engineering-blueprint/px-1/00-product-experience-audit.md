@@ -90,14 +90,14 @@ already a deliberate design, which is a strong start.
   error the dashboard shows a `DashboardError` alert; it deliberately does not degrade
   to sample data.
 - **Existing seed:** `supabase/seed.sql` is a LOCAL-only demo seed (a few `[DEMO]`
-  testimonials + portfolio rows, incl. "The New Greenhouse"), run on `supabase db reset`,
+  testimonials + portfolio rows, incl. "Verdant Fields Co."), run on `supabase db reset`,
   never pushed to the hosted DB. It does not populate the dashboard's transformation
   tables and is not a runtime demo mode.
 
 **Recommended shape (respects architecture, no RLS bypass, auto-off in prod):** extend
 the *same* env-gated `DataSource` pattern to the authenticated read adapters — a
 `getDemoDashboardRepository()` / demo read-model source returning a deterministic,
-server-only, richly-populated dataset (believable orgs: Onixus, The New Greenhouse,
+server-only, richly-populated dataset (believable orgs: Onixus, Verdant Fields Co.,
 Acme Construction, Kingston Logistics, Green Horizon) when demo mode is enabled, and
 never in production. This is additive, mirrors `reputationSource()`, keeps demo data
 out of the browser bundle, and writes nothing to the DB.

@@ -26,10 +26,10 @@ export const IS_PLACEHOLDER = true;
 
 export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
   {
-    id: "p_greenhouse",
-    slug: "new-greenhouse",
-    name: "The New Greenhouse",
-    client: "The New Greenhouse",
+    id: "p_verdant_fields",
+    slug: "verdant-fields",
+    name: "Verdant Fields Co.",
+    client: "Verdant Fields Co.",
     industry: "Agriculture",
     size: "Micro (2–10)",
     country: "Jamaica",
@@ -45,30 +45,30 @@ export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
     publish: "featured",
     featuredOnHome: true,
     awards: ["featured_project", "client_favourite"],
-    liveUrl: "https://thenewgreenhouseja.com",
+    liveUrl: "https://example.com/verdant-fields",
     permissionLivePreview: true,
     tags: ["local", "sustainability", "farm-to-table", "identity"],
     summary:
       "A grounded identity and conversion-first site for a Jamaican urban-farming venture bringing fresh produce to local kitchens.",
     challenge:
-      "The New Greenhouse had strong word-of-mouth demand but no cohesive brand or online presence — enquiries lived in DMs and paper notes, and the offer was hard to explain to new customers.",
+      "Verdant Fields Co. had strong word-of-mouth demand but no cohesive brand or online presence — enquiries lived in DMs and paper notes, and the offer was hard to explain to new customers.",
     approach:
       "We built a warm, earthy brand system, then a single-page Webflow site that explains the produce boxes, tells the origin story, and routes orders through a simple form into a shared inbox and calendar.",
-    heroSlot: "rep-hero-greenhouse",
-    gallerySlots: ["rep-greenhouse-1", "rep-greenhouse-2", "rep-greenhouse-3"],
+    heroSlot: "rep-hero-verdant-fields",
+    gallerySlots: ["rep-verdant-fields-1", "rep-verdant-fields-2", "rep-verdant-fields-3"],
     media: [
-      { kind: "image", label: "Homepage", slot: "rep-greenhouse-1" },
-      { kind: "image", label: "Produce box system", slot: "rep-greenhouse-2" },
-      { kind: "website", label: "Live site", url: "https://thenewgreenhouseja.com" },
+      { kind: "image", label: "Homepage", slot: "rep-verdant-fields-1" },
+      { kind: "image", label: "Produce box system", slot: "rep-verdant-fields-2" },
+      { kind: "website", label: "Live site", url: "https://example.com/verdant-fields" },
       { kind: "pdf", label: "Brand guidelines (PDF)", url: "#" },
     ],
     metrics: { disclosed: false },
-    testimonialId: "t_greenhouse",
+    testimonialId: "t_verdant_fields",
     seo: {
-      title: "The New Greenhouse — Brand & Website Case Study | Auxion",
+      title: "Verdant Fields Co. — Brand & Website Case Study | Auxion",
       description:
-        "How Auxion built a farm-to-table brand identity and conversion-first Webflow site for The New Greenhouse, a Jamaican urban-farming venture.",
-      ogImage: "rep-hero-greenhouse",
+        "How Auxion built a farm-to-table brand identity and conversion-first Webflow site for Verdant Fields Co., a Jamaican urban-farming venture.",
+      ogImage: "rep-hero-verdant-fields",
     },
   },
   {
@@ -292,22 +292,22 @@ export const PLACEHOLDER_PROJECTS: readonly PortfolioProject[] = [
 
 export const PLACEHOLDER_TESTIMONIALS: readonly Testimonial[] = [
   {
-    id: "t_greenhouse",
-    projectSlug: "new-greenhouse",
-    author: "Kemar Bailey",
+    id: "t_verdant_fields",
+    projectSlug: "verdant-fields",
+    author: "Maya Thompson",
     role: "Founder",
-    company: "The New Greenhouse",
+    company: "Verdant Fields Co.",
     country: "Jamaica",
     date: "2026-05-24",
     publish: "featured",
     pinned: true,
     featuredOnHome: true,
-    avatarSlot: "rep-av-greenhouse",
+    avatarSlot: "rep-av-verdant-fields",
     overall: 5,
     categories: { communication: 5, quality: 5, timeliness: 5, value: 5, professionalism: 5 },
     quote:
       "They understood what we were building before we could fully explain it. The brand feels like us, and for the first time customers can actually find and order from us online.",
-    media: [{ kind: "image", label: "Kemar at the farm", slot: "rep-tmedia-greenhouse" }],
+    media: [{ kind: "image", label: "Maya on site", slot: "rep-tmedia-verdant-fields" }],
   },
   {
     id: "t_polishedpro",

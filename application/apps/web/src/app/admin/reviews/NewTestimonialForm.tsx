@@ -57,8 +57,8 @@ export function NewTestimonialForm({ projectSlugs }: { projectSlugs: string[] })
           </div>
         ) : null}
 
-        <Input label="Author" name="author" required placeholder="Kemar Bailey" />
-        <Input label="Company" name="company" required placeholder="The New Greenhouse" />
+        <Input label="Author" name="author" required placeholder="Maya Thompson" />
+        <Input label="Company" name="company" required placeholder="Verdant Fields Co." />
         <Input label="Role" name="role" optional placeholder="Founder" />
         <Input label="Country" name="country" optional placeholder="Jamaica" />
         <Input label="Date" name="date" type="date" optional />

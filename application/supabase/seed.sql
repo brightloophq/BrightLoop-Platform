@@ -9,7 +9,7 @@
 --   The owner has real, client-consented testimonials waiting for the Sprint 3
 --   Reputation CMS. Seeding six invented case studies and five invented reviews
 --   into the database that is about to hold real proof would mean hunting them
---   down later — and one wrong click would publish "Kemar Bailey" as a genuine
+--   down later — and one wrong click would publish "Maya Thompson" as a genuine
 --   endorsement. The public site's honest empty states handle an empty database
 --   correctly ("No published projects yet"), so there is nothing to paper over.
 --
@@ -36,8 +36,8 @@ insert into public.testimonials
   (id, project_slug, author, role, company, country, date, publish, pinned, featured_on_home,
    avatar_slot, overall, categories, quote, media)
 values
-  ('t_greenhouse', null, 'Kemar Bailey', 'Founder', '[DEMO] The New Greenhouse', 'Jamaica',
-   '2026-05-24', 'featured', true, true, 'rep-av-greenhouse', 5,
+  ('t_verdant_fields', null, 'Maya Thompson', 'Founder', '[DEMO] Verdant Fields Co.', 'Jamaica',
+   '2026-05-24', 'featured', true, true, 'rep-av-verdant-fields', 5,
    '{"communication":5,"quality":5,"timeliness":5,"value":5,"professionalism":5}'::jsonb,
    'SAMPLE REVIEW — not a real client. They understood what we were building before we could fully explain it.',
    '[]'::jsonb),
@@ -67,18 +67,18 @@ insert into public.portfolio_projects
    awards, live_url, permission_live_preview, tags, summary, challenge, approach,
    hero_slot, gallery_slots, media, metrics, testimonial_id, seo)
 values
-  ('p_greenhouse', 'new-greenhouse', 'The New Greenhouse', '[DEMO] The New Greenhouse',
+  ('p_verdant_fields', 'verdant-fields', 'Verdant Fields Co.', '[DEMO] Verdant Fields Co.',
    'Agriculture', 'Micro (2–10)', 'Jamaica', 2026,
    '["Brand","Build","Grow"]'::jsonb, '$5K–$10K', '["Webflow","Google Workspace","Meta Ads"]'::jsonb,
    'Webflow', '7 weeks', 14, '2026-05-18', 'Live', 'featured', true,
-   '["featured_project","client_favourite"]'::jsonb, 'https://example.com/greenhouse', true,
+   '["featured_project","client_favourite"]'::jsonb, 'https://example.com/verdant-fields', true,
    '["local","sustainability","farm-to-table","identity"]'::jsonb,
    'SAMPLE — A grounded identity and conversion-first site for an urban-farming venture.',
    'SAMPLE — Strong word-of-mouth demand but no cohesive brand or online presence.',
    'SAMPLE — A warm brand system, then a single-page site routing orders into a shared inbox.',
-   'rep-hero-greenhouse', '["rep-greenhouse-1","rep-greenhouse-2"]'::jsonb, '[]'::jsonb,
-   '{"disclosed": false}'::jsonb, 't_greenhouse',
-   '{"title":"[DEMO] The New Greenhouse — Case Study","description":"Sample case study.","ogImage":"rep-hero-greenhouse"}'::jsonb),
+   'rep-hero-verdant-fields', '["rep-verdant-fields-1","rep-verdant-fields-2"]'::jsonb, '[]'::jsonb,
+   '{"disclosed": false}'::jsonb, 't_verdant_fields',
+   '{"title":"[DEMO] Verdant Fields Co. — Case Study","description":"Sample case study.","ogImage":"rep-hero-verdant-fields"}'::jsonb),
 
   ('p_polishedpro', 'polishedpro-cleaners', 'PolishedPro Cleaners', '[DEMO] PolishedPro Cleaners',
    'Home Services', 'Micro (2–10)', 'Jamaica', 2025,
@@ -134,7 +134,7 @@ values
    '{"title":"[DEMO] Northwind Supply — Case Study","description":"Sample case study.","ogImage":"rep-hero-northwind"}'::jsonb);
 
 -- Link testimonials back to their projects now that both exist.
-update public.testimonials set project_slug = 'new-greenhouse'       where id = 't_greenhouse';
+update public.testimonials set project_slug = 'verdant-fields'       where id = 't_verdant_fields';
 update public.testimonials set project_slug = 'polishedpro-cleaners' where id = 't_polishedpro';
 update public.testimonials set project_slug = 'meridian-studio'      where id = 't_meridian';
 update public.testimonials set project_slug = 'verdant-wellness'     where id = 't_verdant';

@@ -80,6 +80,15 @@ export interface DashboardSnapshot {
   readonly activity: readonly DashboardActivity[];
 }
 
+/**
+ * The dashboard read port: produces the raw snapshot for a scope. Implemented by
+ * the Supabase adapter (live) and the demo adapter (Demo Mode); consumers depend
+ * on this shape, never on a concrete repository or data source.
+ */
+export interface TransformationDashboardReader {
+  read(scope: DashboardScope): Promise<DashboardSnapshot>;
+}
+
 /* ---- pure helpers (shared with the adapter, unit-tested) ------------------ */
 
 /** Tally a list of rows by a string field into a status→count map. */

@@ -123,6 +123,9 @@ import {
   createN8nRuntimeAdapter,
   createEnvRuntimeSecretStore,
   createIntegrationRepositories,
+  DemoTransformationDashboardRepository,
+  DemoCoreSurfaceRepository,
+  DemoSignalsRepository,
   createDefaultConnectorAdapters,
   createEnvConnectorSecretStore,
   createGoogleConnectorAdapters,
@@ -149,8 +152,11 @@ import {
   createCoreSurfaceService,
   createRuntimeServices,
   type CatalogRepository,
+  type CoreSurfaceRepository,
   type CoreSurfaceService,
   type DataSource,
+  type SignalsReadRepository,
+  type TransformationDashboardReader,
   type ReputationRepository,
   type RuntimeServices,
   type TransformationService,
@@ -175,6 +181,7 @@ import {
   type ConnectorAdapterRegistry,
   type ConnectorSecretStore,
 } from "@brightloop/domain";
+import { cookies } from "next/headers";
 import { createAnonClient } from "./supabase/anon";
 import { createClient } from "./supabase/server";
 
@@ -210,6 +217,38 @@ function newId(prefix: string): string {
  */
 function reputationSource(): DataSource {
   return process.env.BRIGHTLOOP_DATA_SOURCE === "placeholder" ? "placeholder" : "supabase";
+}
+
+/**
+ * Development/Demo Mode (PX.1b) — serves believable, deterministic demo data
+ * through the SAME read ports the Supabase adapters implement, so no page or
+ * service changes shape. It is a READ data-source swap only: authentication,
+ * capability checks and RLS still run; demo writes throw `DemoModeError`.
+ *
+ * OFF by default and HARD-off in real production (Vercel `production`), so a
+ * customer deployment can never show demo content. Enable with
+ * `AUXION_DEMO_MODE=true` in local dev or a Vercel preview to populate the
+ * command center for demos, investor previews and screenshots.
+ */
+export async function isDemoMode(): Promise<boolean> {
+  if (process.env.VERCEL_ENV === "production") return false;
+  try {
+    const store = await cookies();
+    const toggle = store.get(DEMO_MODE_COOKIE)?.value;
+    if (toggle === "on") return true;
+    if (toggle === "off") return false;
+  } catch {
+    /* outside a request scope (e.g. build) — fall through to the env default */
+  }
+  return process.env.AUXION_DEMO_MODE === "true";
+}
+
+/** The dev-toggle cookie name (set by the non-prod Demo Mode control). */
+export const DEMO_MODE_COOKIE = "auxion_demo";
+
+/** Whether the dev-only Demo Mode toggle should be shown (never in real production). */
+export function demoToggleAvailable(): boolean {
+  return process.env.VERCEL_ENV !== "production";
 }
 
 /**
@@ -263,7 +302,8 @@ export function getCatalogRepository(): CatalogRepository {
  * (internal → the whole portfolio; a client role → only its own org). Fully typed
  * against the generated Database types. Never cached — it carries the session.
  */
-export async function getTransformationDashboardRepository(): Promise<SupabaseTransformationDashboardRepository> {
+export async function getTransformationDashboardRepository(): Promise<TransformationDashboardReader> {
+  if (await isDemoMode()) return new DemoTransformationDashboardRepository();
   const client = await createClient();
   return new SupabaseTransformationDashboardRepository(client);
 }
@@ -272,7 +312,8 @@ export async function getTransformationDashboardRepository(): Promise<SupabaseTr
  * Signals READ adapter for the authenticated command center (fully typed).
  * Request-scoped so RLS scopes what the caller can see. Never cached.
  */
-export async function getSignalsRepository(): Promise<SupabaseSignalsRepository> {
+export async function getSignalsRepository(): Promise<SignalsReadRepository> {
+  if (await isDemoMode()) return new DemoSignalsRepository();
   const client = await createClient();
   return new SupabaseSignalsRepository(client);
 }
@@ -282,7 +323,8 @@ export async function getSignalsRepository(): Promise<SupabaseSignalsRepository>
  * request-scoped (RLS-scoped to the caller). Never cached. Reads feed the System
  * Map / Business Scan / Activation read models; writes go via the service below.
  */
-export async function getCoreSurfaceRepository(): Promise<SupabaseCoreSurfaceRepository> {
+export async function getCoreSurfaceRepository(): Promise<CoreSurfaceRepository> {
+  if (await isDemoMode()) return new DemoCoreSurfaceRepository();
   const client = await createClient();
   return new SupabaseCoreSurfaceRepository(client);
 }
@@ -579,6 +621,12 @@ export function getConnectorSecretStore(): ConnectorSecretStore {
 
 /** The core-surfaces domain service for WRITES (scan/finding/domain/activation). */
 export async function getCoreSurfaceService(): Promise<CoreSurfaceService> {
+  // Demo Mode is read-only: bind the service to the demo repo so a write attempt
+  // throws DemoModeError (surfaced as a friendly action error) instead of hitting
+  // Supabase without a real session.
+  if (await isDemoMode()) {
+    return createCoreSurfaceService({ repo: new DemoCoreSurfaceRepository(), ids: newId });
+  }
   const client = await createClient();
   const repo = new SupabaseCoreSurfaceRepository(client);
   return createCoreSurfaceService({ repo, ids: newId });
