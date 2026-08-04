@@ -128,6 +128,9 @@ import {
   createGoogleConnectorAdapters,
   loadGoogleAdapterConfig,
   createFetchGoogleHttpTransport,
+  createCommunicationConnectorAdapters,
+  loadCommunicationConfig,
+  createFetchCommTransport,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -533,12 +536,19 @@ export async function getIntegrationRepositories(): Promise<IntegrationRepositor
 }
 /**
  * The connector adapters: the deterministic Fakes plus the F4.2 Google Workspace
- * production connectors (Gmail/Calendar/Drive/Contacts), bound to the real fetch
- * transport + app-level OAuth config from the environment. Stateless.
+ * (Gmail/Calendar/Drive/Contacts) and F4.3 Communication (Slack/Teams/Discord)
+ * production connectors, bound to the real fetch transports + app-level OAuth config
+ * from the environment. Stateless.
  */
 export function getConnectorAdapterRegistry(): ConnectorAdapterRegistry {
-  const googleConfig = loadGoogleAdapterConfig(process.env, createFetchGoogleHttpTransport(), () => new Date().toISOString());
-  return { ...createDefaultConnectorAdapters(), ...createGoogleConnectorAdapters(googleConfig) };
+  const now = () => new Date().toISOString();
+  const googleConfig = loadGoogleAdapterConfig(process.env, createFetchGoogleHttpTransport(), now);
+  const commConfig = loadCommunicationConfig(process.env, createFetchCommTransport(), now);
+  return {
+    ...createDefaultConnectorAdapters(),
+    ...createGoogleConnectorAdapters(googleConfig),
+    ...createCommunicationConnectorAdapters(commConfig),
+  };
 }
 /** The env-backed connector secret store (resolves references; never exposes values). */
 export function getConnectorSecretStore(): ConnectorSecretStore {
