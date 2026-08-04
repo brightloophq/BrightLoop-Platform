@@ -1426,3 +1426,41 @@ page).
   calls**. Report: `engineering-blueprint/px-1/PX.1b-demo-mode-report.md`.
 - **Follow-ons:** workspace/portal surfaces, agency back-office, net-new trend-chart
   components (PX.1c), System Map hover/detail panels (PX.1d).
+
+**PX.1c — Executive Dashboards & Data Visualization (branch
+`feat/px1c-executive-dashboards`, this PR).** A reusable, token-only, theme-aware,
+accessible chart library + executive KPI cards, wired into the Console. Presentation
+only — no backend/architecture change; extends the dashboard, no redesign.
+
+- **Chart palette** (`tokens/colors.css`): a 6-hue categorical set `--chart-1..6`
+  (+ `--chart-grid/axis/track`), **computationally validated** (data-viz skill's
+  `validate_palette.js`) for CVD-safety, lightness band, chroma floor and contrast —
+  separate light + dark steps (not an auto-flip). Fixed order, never cycled.
+- **Chart library** `packages/ui/src/charts/`: pure `geometry.ts` (scales, ticks,
+  line/area/sparkline paths, donut arcs, bar layout, funnel bands — deterministic,
+  **18 unit tests**) + components `Sparkline`, `TrendChart` (line/area, hover
+  crosshair+tooltip, draw-in), `BarChart` (per-bar palette, direct labels, hover),
+  `DonutChart` (segments+legend+center total, hover), `FunnelChart` (stages + %).
+  Every chart: one value axis, thin marks, recessive grid, `role="img"` + aria-label,
+  a **screen-reader `<table>` fallback** (identity never color-alone), legend for
+  categorical, and CSS-only motion (reduced-motion safe). SVG uses token colors →
+  themes automatically.
+- **Executive KPI card** `components/KpiCard.tsx`: value + trend sparkline + delta
+  (direction · tone) + previous period + confidence + status accent + one-line
+  context; a null value shows an honest empty state. Console hero + count cards now
+  use it (replacing `MetricCard` there; `MetricCard` unchanged for other consumers).
+- **Data**: `@brightloop/data/demo` gains `demoDashboardCharts()` (12-month revenue/
+  health/index trends, pipeline funnel, signals-by-severity, recommendations-by-
+  category, client growth, AI activity + per-KPI enrichment) — deterministic,
+  server-only. Web seam `lib/dashboard-charts.ts` returns it in Demo Mode, **null in
+  normal mode** (no trend tables → an honest "appears as data accrues" state, never
+  fabricated production data).
+- **Console** (`admin/dashboard/page.tsx`): new "Executive analytics" section (revenue/
+  health/index trends, funnel, severity donut, category bar) + upgraded KPI cards.
+  Navigation, layout and the other zones (System Map, pipeline, attention, activity)
+  are unchanged.
+- Gate `pnpm turbo run typecheck lint test build` **green (36/36)**; `@brightloop/ui`
+  +18 chart tests. Report: `engineering-blueprint/px-1/PX.1c-executive-dashboards-report.md`.
+- **Follow-ons:** wiring charts into Analytics/Signals/Projects/etc. sections,
+  heatmap + timeline components, time-range/filter controls, per-chart AI insight
+  captions. The library is ready for all of them.

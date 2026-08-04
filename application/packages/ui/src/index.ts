@@ -126,6 +126,21 @@ export type { FormSectionProps } from "./components/FormSection";
 export { ToastProvider, useToast } from "./components/Toast";
 export type { ToastTone } from "./components/Toast";
 
+/* ---- Executive KPI + chart library (PX.1c) ---- */
+export { KpiCard } from "./components/KpiCard";
+export type { KpiCardProps, KpiDelta, KpiTone, KpiStatus } from "./components/KpiCard";
+export { Sparkline } from "./charts/Sparkline";
+export type { SparklineProps } from "./charts/Sparkline";
+export { TrendChart } from "./charts/TrendChart";
+export type { TrendChartProps } from "./charts/TrendChart";
+export { BarChart } from "./charts/BarChart";
+export type { BarChartProps } from "./charts/BarChart";
+export { DonutChart } from "./charts/DonutChart";
+export type { DonutChartProps } from "./charts/DonutChart";
+export { FunnelChart } from "./charts/FunnelChart";
+export type { FunnelChartProps } from "./charts/FunnelChart";
+export type { SeriesPoint } from "./charts/geometry";
+
 /* ---- Theme system (PX.1a — Light / Dark / System runtime) ---- */
 export { ThemeProvider, useTheme } from "./theme/ThemeProvider";
 export { ThemeScript } from "./theme/ThemeScript";

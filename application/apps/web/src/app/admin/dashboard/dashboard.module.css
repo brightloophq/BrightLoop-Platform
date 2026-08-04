@@ -40,6 +40,18 @@
   gap: var(--space-3);
 }
 
+/* Executive analytics chart grid (PX.1c) — responsive, 2-up on wide screens. */
+.chartGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4);
+}
+@media (max-width: 720px) {
+  .chartGrid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 .cardLink {
   display: block;
   text-decoration: none;

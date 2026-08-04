@@ -19,15 +19,22 @@ import {
   Icon,
   SectionHeader,
   OperationalPanel,
-  MetricCard,
+  KpiCard,
   PipelineNode,
   AttentionRow,
   SkeletonBlock,
   SystemMap,
+  TrendChart,
+  BarChart,
+  DonutChart,
+  FunnelChart,
+  type KpiStatus,
 } from "@brightloop/ui";
 import { MotionProvider, DashboardEntrance, AnimatedMetric, PipelineAnimation } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { getTransformationDashboardRepository, getCoreSurfaceRepository } from "@/lib/repositories";
+import { getDashboardCharts } from "@/lib/dashboard-charts";
+import type { DemoKpiExtra } from "@brightloop/data";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./dashboard.module.css";
 
@@ -102,6 +109,24 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
 
   const hero = view.metrics.filter((m) => m.key === "health" || m.key === "index");
   const counts = view.metrics.filter((m) => m.key !== "health" && m.key !== "index");
+  // Executive analytics + per-KPI enrichment (Demo Mode; null in normal mode).
+  const charts = await getDashboardCharts();
+  const kpiExtra = (key: string): DemoKpiExtra | undefined => charts?.kpis[key];
+  const kpiProps = (m: DashboardView["metrics"][number]) => {
+    const x = kpiExtra(m.key);
+    return {
+      icon: METRIC_ICON[m.key],
+      label: m.label,
+      value: m.value,
+      suffix: m.suffix,
+      trend: x?.trend,
+      previous: x?.previous,
+      confidence: x?.confidence,
+      status: (x?.status ?? "neutral") as KpiStatus,
+      context: x?.context,
+      delta: x ? { text: x.deltaText, direction: x.deltaDirection, tone: x.deltaTone } : undefined,
+    };
+  };
 
   return (
     <DashboardEntrance className={styles.canvas}>
@@ -135,31 +160,23 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
 
       <div className={styles.overview}>
         <div className={styles.heroGrid}>
-          {hero.map((m) => (
-            <AnimatedMetric key={m.key}>
-              <MetricCard
-                emphasis="hero"
-                icon={METRIC_ICON[m.key]}
-                label={m.label}
-                value={m.value}
-                suffix={m.suffix}
-                caption={scope.kind === "portfolio" ? "Portfolio average" : undefined}
-              />
-            </AnimatedMetric>
-          ))}
+          {hero.map((m) => {
+            const p = kpiProps(m);
+            return (
+              <AnimatedMetric key={m.key}>
+                <KpiCard
+                  {...p}
+                  emphasis="hero"
+                  context={p.context ?? (scope.kind === "portfolio" ? "Portfolio average across organizations." : undefined)}
+                />
+              </AnimatedMetric>
+            );
+          })}
         </div>
 
         <div className={styles.countGrid}>
           {counts.map((m) => {
-            const card = (
-              <MetricCard
-                interactive={Boolean(m.href)}
-                icon={METRIC_ICON[m.key]}
-                label={m.label}
-                value={m.value}
-                suffix={m.suffix}
-              />
-            );
+            const card = <KpiCard {...kpiProps(m)} />;
             return (
               <AnimatedMetric key={m.key}>
                 {m.href ? (
@@ -179,10 +196,56 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
         </div>
       </div>
 
-      {/* ── Zone 2 · Transformation loop (the anchor) ───────────────── */}
-      <OperationalPanel tone="anchor">
+      {/* ── Zone 2 · Executive analytics ────────────────────────────── */}
+      <section data-animate="attention">
         <SectionHeader
           index="02"
+          kicker="Executive analytics"
+          title="Business intelligence"
+          hint="Trends and distributions across the transformation portfolio."
+        />
+        {charts ? (
+          <div className={styles.chartGrid}>
+            <OperationalPanel>
+              <SectionHeader title="Revenue trend" hint="Monthly recurring revenue ($K)" />
+              <TrendChart data={charts.revenueTrend} variant="area" color="var(--chart-1)" seriesName="MRR" format={(n) => `$${n}K`} label="Revenue trend — monthly recurring revenue in thousands" />
+            </OperationalPanel>
+            <OperationalPanel>
+              <SectionHeader title="Business health" hint="Portfolio average, 0–100" />
+              <TrendChart data={charts.healthTrend} variant="line" color="var(--positive)" seriesName="Health" label="Business health trend, 0 to 100" />
+            </OperationalPanel>
+            <OperationalPanel>
+              <SectionHeader title="Transformation Index" hint="Portfolio average, 0–100" />
+              <TrendChart data={charts.transformationTrend} variant="line" color="var(--chart-2)" seriesName="Index" label="Transformation Index trend, 0 to 100" />
+            </OperationalPanel>
+            <OperationalPanel>
+              <SectionHeader title="Pipeline funnel" hint="Signal → Execution conversion" />
+              <FunnelChart data={charts.pipelineFunnel} label="Transformation pipeline funnel from signals to executions" />
+            </OperationalPanel>
+            <OperationalPanel>
+              <SectionHeader title="Signals by severity" />
+              <DonutChart data={charts.signalsBySeverity} centerLabel="Signals" label="Signals by severity" />
+            </OperationalPanel>
+            <OperationalPanel>
+              <SectionHeader title="Recommendations by category" />
+              <BarChart data={charts.recommendationsByCategory} legend label="Recommendations by category" />
+            </OperationalPanel>
+          </div>
+        ) : (
+          <OperationalPanel>
+            <EmptyState
+              icon="line-chart"
+              title="Executive analytics appear as data accrues"
+              body="Revenue, health and pipeline trends chart here once the platform has history to show."
+            />
+          </OperationalPanel>
+        )}
+      </section>
+
+      {/* ── Zone 3 · Transformation loop (the anchor) ───────────────── */}
+      <OperationalPanel tone="anchor">
+        <SectionHeader
+          index="03"
           kicker="The transformation loop"
           title="Pipeline"
           hint="Signal → Insight → Recommendation → Approval → Move → Execution → Measurement → Learning"
@@ -228,7 +291,7 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
       <div className={styles.feed}>
         <div className={styles.feedCol} data-animate="attention">
           <OperationalPanel>
-            <SectionHeader index="03" title="Attention required" />
+            <SectionHeader index="04" title="Attention required" />
             {view.attentionClear ? (
               <EmptyState
                 icon="check-circle"
@@ -262,7 +325,7 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
 
         <div className={styles.feedCol} data-animate="activity">
           <OperationalPanel>
-            <SectionHeader index="04" title="Recent activity" />
+            <SectionHeader index="05" title="Recent activity" />
             <Activity view={view} />
           </OperationalPanel>
         </div>
@@ -270,7 +333,7 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
 
       {/* Quick access strip */}
       <section data-animate="activity">
-        <SectionHeader index="05" title="Jump to" />
+        <SectionHeader index="06" title="Jump to" />
         <div className={styles.quick}>
           {QUICK.map((q) => (
             <Link key={q.href} href={q.href} className={styles.quickCard}>

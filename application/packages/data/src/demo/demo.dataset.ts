@@ -473,6 +473,82 @@ export function demoAnalytics(): DemoAnalytics {
   };
 }
 
+/* ---- Executive dashboard charts (PX.1c) ----------------------------------- */
+
+export interface DemoChartSeries {
+  readonly label: string;
+  readonly value: number;
+}
+
+export interface DemoKpiExtra {
+  readonly trend: readonly number[];
+  readonly deltaText: string;
+  readonly deltaDirection: "up" | "down" | "flat";
+  readonly deltaTone: "positive" | "negative" | "neutral";
+  readonly previous: string;
+  readonly confidence?: number;
+  readonly status: "positive" | "caution" | "critical" | "info" | "neutral";
+  readonly context: string;
+}
+
+export interface DemoDashboardCharts {
+  readonly revenueTrend: readonly DemoChartSeries[];
+  readonly healthTrend: readonly DemoChartSeries[];
+  readonly transformationTrend: readonly DemoChartSeries[];
+  readonly pipelineFunnel: readonly DemoChartSeries[];
+  readonly signalsBySeverity: readonly DemoChartSeries[];
+  readonly recommendationsByCategory: readonly DemoChartSeries[];
+  readonly clientGrowth: readonly DemoChartSeries[];
+  readonly aiActivity: readonly DemoChartSeries[];
+  /** Per-KPI enrichment keyed by the dashboard metric key. */
+  readonly kpis: Readonly<Record<string, DemoKpiExtra>>;
+}
+
+const MONTHS = ["Sep", "Oct", "Nov", "Dec", "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"];
+const series = (values: readonly number[]): DemoChartSeries[] => values.map((v, i) => ({ label: MONTHS[i] ?? `M${i}`, value: v }));
+
+/** Deterministic executive dashboard chart set for Demo Mode. */
+export function demoDashboardCharts(): DemoDashboardCharts {
+  return {
+    revenueTrend: series([118, 124, 131, 129, 142, 150, 148, 163, 171, 182, 196, 210]), // $k MRR
+    healthTrend: series([66, 67, 68, 68, 70, 71, 72, 73, 73, 74, 75, 72]),
+    transformationTrend: series([58, 60, 62, 63, 66, 69, 71, 73, 75, 77, 79, 75]),
+    pipelineFunnel: [
+      { label: "Signals", value: 62 },
+      { label: "Insights", value: 44 },
+      { label: "Recommendations", value: 33 },
+      { label: "Approvals", value: 24 },
+      { label: "Moves", value: 18 },
+      { label: "Executions", value: 13 },
+    ],
+    signalsBySeverity: [
+      { label: "Critical", value: 4 },
+      { label: "High", value: 13 },
+      { label: "Medium", value: 21 },
+      { label: "Low", value: 9 },
+    ],
+    recommendationsByCategory: [
+      { label: "Growth", value: 11 },
+      { label: "Efficiency", value: 9 },
+      { label: "Retention", value: 7 },
+      { label: "Risk", value: 5 },
+      { label: "Brand", value: 4 },
+    ],
+    clientGrowth: series([1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5]),
+    aiActivity: series([12, 18, 24, 21, 33, 41, 38, 52, 61, 58, 73, 88]), // AI runs/mo
+    kpis: {
+      health: { trend: [66, 68, 70, 72, 73, 74, 72], deltaText: "+4 pts", deltaDirection: "up", deltaTone: "positive", previous: "vs 68 last qtr", confidence: 0.88, status: "positive", context: "Portfolio average across 5 organizations." },
+      index: { trend: [62, 66, 69, 73, 77, 79, 75], deltaText: "+9 pts", deltaDirection: "up", deltaTone: "positive", previous: "vs 66 last qtr", confidence: 0.84, status: "positive", context: "Transformation Index climbs as domains go live." },
+      "open-signals": { trend: [9, 11, 14, 12, 15, 13, 12], deltaText: "-2", deltaDirection: "down", deltaTone: "positive", previous: "vs 14 last week", confidence: 0.8, status: "info", context: "Fewer open signals — triage is keeping pace." },
+      insights: { trend: [4, 5, 7, 6, 8, 9, 9], deltaText: "+3", deltaDirection: "up", deltaTone: "positive", previous: "vs 6 last week", confidence: 0.79, status: "info", context: "AI-generated insights awaiting endorsement." },
+      recommendations: { trend: [6, 7, 8, 10, 9, 10, 11], deltaText: "+1", deltaDirection: "up", deltaTone: "positive", previous: "vs 10 last week", confidence: 0.77, status: "info", context: "Active recommendations across the portfolio." },
+      "awaiting-approval": { trend: [2, 3, 5, 4, 6, 5, 6], deltaText: "+1", deltaDirection: "up", deltaTone: "negative", previous: "vs 5 last week", confidence: 0.9, status: "caution", context: "Decisions waiting on an operator." },
+      "moves-in-progress": { trend: [4, 5, 6, 7, 6, 7, 8], deltaText: "+1", deltaDirection: "up", deltaTone: "positive", previous: "vs 7 last week", confidence: 0.82, status: "positive", context: "Approved moves currently executing." },
+      "moves-completed": { trend: [9, 12, 15, 18, 20, 22, 25], deltaText: "+3", deltaDirection: "up", deltaTone: "positive", previous: "vs 22 last month", confidence: 0.86, status: "positive", context: "Completed and measured moves." },
+    },
+  };
+}
+
 /* ---- Signals (the one complete transformation module — real list/detail) --- */
 
 /** Demo team members (Auxion operators) — createdBy id → display name. */
