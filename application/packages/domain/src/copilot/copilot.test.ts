@@ -24,6 +24,13 @@ describe("intent detection", () => {
     expect(detectIntent("What should we prioritize next?").intent).toBe("analysis");
     expect(detectIntent("build a workflow").intent).toBe("automation");
   });
+  it("classifies billing questions (F5)", () => {
+    expect(detectIntent("What's my current plan?").intent).toBe("billing");
+    expect(detectIntent("Show me my invoices").intent).toBe("billing");
+    expect(detectIntent("How much of my quota is remaining?").intent).toBe("billing");
+    expect(detectIntent("What are the upgrade options?").intent).toBe("billing");
+    expect(detectIntent("show my usage this month").intent).toBe("billing");
+  });
   it("parses slash commands", () => {
     const r = detectIntent("/report last week");
     expect(r.isCommand).toBe(true);
@@ -31,6 +38,7 @@ describe("intent detection", () => {
     expect(r.intent).toBe("reporting");
     expect(detectIntent("/help").intent).toBe("clarification");
     expect(detectIntent("/context").intent).toBe("summary");
+    expect(detectIntent("/billing").intent).toBe("billing");
   });
 });
 

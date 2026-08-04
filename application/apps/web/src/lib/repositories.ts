@@ -123,6 +123,7 @@ import {
   createN8nRuntimeAdapter,
   createEnvRuntimeSecretStore,
   createIntegrationRepositories,
+  createBillingRepositories,
   createDefaultConnectorAdapters,
   createEnvConnectorSecretStore,
   createGoogleConnectorAdapters,
@@ -172,6 +173,7 @@ import {
   type RuntimeAdapterRegistry,
   type RuntimeSecretStore,
   type IntegrationRepositories,
+  type BillingRepositories,
   type ConnectorAdapterRegistry,
   type ConnectorSecretStore,
 } from "@brightloop/domain";
@@ -545,6 +547,12 @@ export function getRuntimeSecretStore(): RuntimeSecretStore {
 export async function getIntegrationRepositories(): Promise<IntegrationRepositories> {
   const client = await createClient();
   return createIntegrationRepositories(client);
+}
+
+/** Phase F · F5 — Billing & Subscription repositories, RLS-scoped to the caller. */
+export async function getBillingRepositories(): Promise<BillingRepositories> {
+  const client = await createClient();
+  return createBillingRepositories(client);
 }
 /**
  * The connector adapters: the deterministic Fakes plus the F4.2 Google Workspace

@@ -80,6 +80,11 @@ export const PERMISSIONS = {
     // F4.1 Integration Platform — full connector authority (install, configure,
     // enable/disable, revoke, health, credentials, oauth, ingest).
     "integration.*",
+    // F5 Billing & Subscription — full commercial authority (subscriptions,
+    // invoices, usage metering, payment-method administration). Payment-method
+    // management (`billing.payment.manage`) is admin-only via this wildcard,
+    // matching finance sensitivity (team_member is deliberately excluded below).
+    "billing.*",
   ],
   team_member: [
     "projects.read",
@@ -224,6 +229,13 @@ export const PERMISSIONS = {
     "integration.oauth.authorize",
     "integration.ingest",
     "integration.invoke",
+    // F5 Billing & Subscription — operators read billing, manage subscriptions,
+    // issue invoices, and record usage. Payment-method administration
+    // (`billing.payment.manage`) is withheld — owner/admin only (finance-grade).
+    "billing.read",
+    "billing.subscription.write",
+    "billing.invoice.write",
+    "billing.usage.write",
   ],
   client_admin: [
     "own.project.read",
@@ -269,6 +281,10 @@ export const PERMISSIONS = {
     // F4.1 Integration Platform — clients VIEW their org's connectors + event
     // stream. They never install, configure, or touch credentials/tokens.
     "integration.read",
+    // F5 Billing & Subscription — clients VIEW their own plan, usage, and
+    // invoices. Subscription changes + payment methods are internal-managed
+    // (mutations run through Auxion operators), so no write capability here.
+    "billing.read",
   ],
   client_member: [
     "own.project.read",
@@ -294,6 +310,8 @@ export const PERMISSIONS = {
     "execution.read",
     // F4.1 Integration Platform — read-only visibility into their org's connectors.
     "integration.read",
+    // F5 Billing & Subscription — read-only visibility into their org's billing.
+    "billing.read",
   ],
 } as const satisfies Record<Role, readonly string[]>;
 

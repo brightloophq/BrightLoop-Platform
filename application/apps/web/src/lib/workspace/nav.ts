@@ -31,6 +31,7 @@ export const WORKSPACE_NAV: readonly WorkspaceNavItem[] = [
   { key: "reports", label: "Reports", href: "/workspace/reports", icon: "line-chart" },
   { key: "approvals", label: "Approvals", href: "/workspace/approvals", icon: "check-circle", badgeKey: "approvals" },
   { key: "activity", label: "Activity", href: "/workspace/activity", icon: "activity" },
+  { key: "billing", label: "Billing", href: "/workspace/settings/billing", icon: "credit-card" },
   { key: "settings", label: "Settings", href: "/workspace/settings", icon: "settings" },
 ];
 

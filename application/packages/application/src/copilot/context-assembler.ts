@@ -16,6 +16,8 @@ import { listPlanningSessions } from "../project-manager/planner-read.js";
 import { getWorkspaceHealth, listExecutiveReports } from "../reporting/reporting-read.js";
 import { listStrategyHistory } from "../strategist/strategy-read.js";
 import { getRuntimeOpsDashboard } from "../execution-runtime/runtime-read.js";
+// F5 billing — read models ONLY (no connector/provider import → copilot boundary intact).
+import { getBillingOverview } from "../billing/billing-read.js";
 import type { AppContext } from "../context.js";
 import type { ConversationContextDTO } from "./dto.js";
 
@@ -31,7 +33,7 @@ export async function assembleConversationContext(ctx: AppContext, conversation:
   const wid = conversation.workspaceId;
   const permissions = SUGGESTABLE_PERMISSIONS.filter((p) => hasCapability(ctx.actor.role, p));
 
-  const [health, ops, missions, reports, intents, plans, strategies, runtimeOps] = await Promise.all([
+  const [health, ops, missions, reports, intents, plans, strategies, runtimeOps, billing] = await Promise.all([
     safe(() => getWorkspaceHealth(ctx, wid), { health: null, confidence: null, reportId: null, period: null }),
     safe(() => getAgentOpsDashboard(ctx, wid), { activeMissions: 0, waitingApprovals: 0, failedMissions: 0, completedMissions: 0, totalMissions: 0 }),
     safe(() => listAgentMissions(ctx, wid), []),
@@ -40,8 +42,14 @@ export async function assembleConversationContext(ctx: AppContext, conversation:
     safe(() => listPlanningSessions(ctx, wid), []),
     safe(() => listStrategyHistory(ctx, wid), []),
     safe(() => getRuntimeOpsDashboard(ctx, wid), { runtimes: 0, healthyRuntimes: 0, activeDeployments: 0, failedDeployments: 0, awaitingApproval: 0, runningExecutions: 0, failedExecutions: 0 }),
+    safe(() => getBillingOverview(ctx, wid), { account: null, subscription: null, entitlements: null, usage: null }),
   ]);
   const active = missions.find((m) => m.status === "running" || m.status === "planning" || m.status === "resuming");
+  // The first meter at/over 80% utilization, if any — a plain billing usage alert.
+  const meterOver = billing.usage?.meters.find((m) => m.utilization >= 0.8) ?? null;
+  const billingUsageAlert = meterOver
+    ? `${meterOver.meter.replace(/_/g, " ")} at ${Math.round(meterOver.utilization * 100)}% of limit`
+    : null;
 
   return {
     workspaceId: wid,
@@ -61,5 +69,8 @@ export async function assembleConversationContext(ctx: AppContext, conversation:
     failedDeployments: runtimeOps.failedDeployments,
     awaitingDeploymentApproval: runtimeOps.awaitingApproval,
     runtimesHealthy: runtimeOps.runtimes === 0 || runtimeOps.healthyRuntimes === runtimeOps.runtimes,
+    billingTier: billing.subscription?.tier ?? null,
+    billingStatus: billing.subscription?.status ?? null,
+    billingUsageAlert,
   };
 }

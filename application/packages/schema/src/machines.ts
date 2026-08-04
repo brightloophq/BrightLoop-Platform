@@ -312,6 +312,27 @@ export const MACHINES = {
       deprecated: [],
     },
   },
+
+  /* ===========================================================================
+   * Billing & Subscription (Phase F · F5).
+   * A workspace subscription's lifecycle. `expired` is terminal — a lapsed
+   * subscription is never resurrected; reactivation from `canceled` is allowed
+   * only while still inside the paid period. The billing engine (packages/domain)
+   * and the DB transition trigger (state_transitions) mirror this exactly.
+   * ======================================================================== */
+  subscription: {
+    states: ["trialing", "active", "past_due", "grace", "paused", "canceled", "expired"],
+    initial: "trialing",
+    transitions: {
+      trialing: ["active", "canceled", "expired"], // convert, abandon, or lapse
+      active: ["past_due", "paused", "canceled"],
+      past_due: ["active", "grace", "canceled"], // recover, enter dunning grace, or cancel
+      grace: ["active", "canceled", "expired"], // recover, cancel, or lapse
+      paused: ["active", "canceled"],
+      canceled: ["active", "expired"], // reactivate within period, else expire at period end
+      expired: [],
+    },
+  },
 } as const;
 
 export type MachineName = keyof typeof MACHINES;

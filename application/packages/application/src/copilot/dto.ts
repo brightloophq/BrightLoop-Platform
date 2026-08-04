@@ -36,6 +36,11 @@ export interface ConversationContextDTO {
   failedDeployments: number;
   awaitingDeploymentApproval: number;
   runtimesHealthy: boolean;
+  /** F5 billing awareness — plan/status/usage so the Copilot can answer billing
+   * questions from Auxion's billing read models (never raw provider data). */
+  billingTier: string | null;
+  billingStatus: string | null;
+  billingUsageAlert: string | null;
 }
 
 /** The complete result of one assistant turn. */

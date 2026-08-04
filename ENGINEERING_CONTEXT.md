@@ -1371,3 +1371,91 @@ polling-only, Xero-no-refund, X PKCE deferred) are approved design decisions, no
 Health vocabulary verified uniform across all 6 families; `fetch` confined to the six
 `transport.ts` seams. Tests: data +7, application +15. Gate `pnpm -w typecheck lint test
 build` **green**; **ZERO live provider calls** in CI (offline harness + fake transports).
+
+---
+
+## 22. Phase F · Sprint F5 — Billing & Subscription Platform (branch `feat/f5-billing-platform`, PR open)
+
+The **commercial layer** on top of the certified platform (F1–F4.8). It is NOT a
+Stripe integration — Stripe already exists as a commerce connector (F4.4); F5
+REUSES that connector to settle invoices and builds the billing DOMAIN on top.
+AUXION REMAINS THE SYSTEM OF RECORD: plans, entitlements, usage, and invoices live
+in Auxion tables; the provider is a payment rail, never the record. Branched off
+`main` AFTER `#74` (F4.8 certification) was merged (merge commit `01d308a`).
+
+**New `billing` bounded context, additive across every layer:**
+
+- **Schema** `packages/schema/src/billing.ts` — enums (planTier, billingInterval,
+  subscriptionStatus, invoice status reuses the `invoice` machine, 9 usageMeters,
+  12 entitlementLimitKeys + 7 featureKeys, discount/brand/eventType), value objects
+  (`PlanEntitlements`, `SubscriptionDiscount`, `SubscriptionAddon`,
+  `BillingInvoiceLine`), and 6 persisted roots. **Collision-safe naming** vs the
+  catalog `Plan` and collaboration `Subscription`: `SubscriptionPlan`,
+  `WorkspaceSubscription`, `Billing*`. New `subscription` state machine in
+  `machines.ts` (trialing→active→past_due→grace→…; `expired` terminal, reactivation
+  only from `canceled` inside the period); new tones + `billing.*` capabilities in
+  `roles.ts` (admin `billing.*`; team_member read/subscription/invoice/usage write;
+  **payment.manage is owner/admin only**; clients `billing.read`).
+- **Domain** `packages/domain/src/billing/` — PURE + deterministic (clocks as ISO
+  strings, Node-free): `PLAN_CATALOG` (Free/Starter/Professional/Business/
+  Enterprise, code-defined like CONNECTOR_REGISTRY) + `ADDON_CATALOG` +
+  `COUPON_CATALOG`; the **entitlement engine** (`resolveEntitlements`,
+  `mergeEntitlements`, `checkLimit`, `utilization` — `null` limit = unlimited, no
+  hardcoded tiers); **deterministic usage aggregation** (append-only events →
+  pure fold, window-bounded, dedup by idempotency key); the **invoice engine**
+  (`buildInvoice` with content checksum + `(subscription,period)` idempotency key,
+  proration, discount, tax, `applyInvoicePayment` — NEVER fabricates a price:
+  overage/proration amounts are supplied); subscription lifecycle + date math
+  (month-end-clamped `addMonths`, grace/retry schedule); notification derivation;
+  repository PORTS (6 aggregates) + a namespaced `billingEvents` module.
+- **Migration** `supabase/migrations/20260808000100_phase_f_billing.sql` — 6 tables
+  (`billing_account`/`billing_subscription`/`billing_invoice` versioned roots;
+  `billing_payment_method` versioned; `billing_usage_event`/`billing_event`
+  append-only via `bl_txexec_append_only`). RLS: client-read-own + internal-write;
+  **payment-method write is finance-only (`bl_is_finance`)**; ledgers internal-insert.
+  `subscription` machine seeded into `state_transitions` + guards on subscription
+  (subscription machine) and invoice (reused invoice machine). pgTAP
+  `phase_f_billing_test.sql` (status/enum 23514, unique 23505, transition guards,
+  append-only P0001, cross-tenant isolation, client-write 42501, finance-only 42501).
+  **No card PAN stored** — payment rows carry brand + last4 + an opaque provider ref.
+- **Data** `packages/data/src/billing/` — 6 Supabase adapters
+  (`createBillingRepositories`) + row↔domain mappers (untyped-cast pattern; mappers
+  are the boundary), optimistic concurrency on versioned roots, idempotency lookups
+  on ledgers. Barrel-exported.
+- **Application** `packages/application/src/billing/` — use-cases receive an
+  `AppContext`, authorize on the tenant, drive pure domain + repos, return DTOs:
+  subscription (create/change/cancel/reactivate/pause/resume/coupon/addon), invoice
+  (issue idempotent, recordPayment→paid+recover, recordPaymentFailure→past_due+grace,
+  refund, renew+trial-convert, enterGrace/lapse), usage (idempotent record), read
+  models (overview/entitlements/usage/invoices/history/payment-methods/plans + the
+  `checkUsageAllowance` enforcement seam other subsystems call), and the **charge
+  façade** (`settleInvoiceViaProvider`) that locates the workspace's Stripe/PayPal
+  connector and settles through the certified `invokeConnectorCapability` path —
+  degrading gracefully when none is installed. `context.ts` gains `billing` repos +
+  `BILLING_*` caps + `requireBilling`. DTOs never leak provider ref / checksum /
+  idempotency key (asserted by test). In-memory `createInMemoryBillingRepos`.
+- **Web** `/workspace/settings/billing` (Subscription · Usage-vs-entitlements ·
+  Invoices · Plans · Billing history), `lib/billing-data.ts` (read seam),
+  `getBillingRepositories` wired into `lib/repositories.ts` + `buildAppContext`, nav
+  item `billing` (icon `credit-card`, added to the UI Icon map). READ-only for the
+  viewer — subscription changes + payment methods are internal-managed.
+- **Copilot** — new `billing` intent (schema enum + classifier + slash commands +
+  answer-mode routing); the context assembler folds a billing summary
+  (plan/status/usage alert) from the billing READ models ONLY, so the Copilot
+  answers billing questions WITHOUT importing a connector family or provider id —
+  the F4.8 copilot-boundary certification still passes.
+
+Provider-neutral (Stripe now, PayPal-ready via the same connector seam), everything
+deterministic / idempotent / tenant-safe / append-only-audited. Tests: domain +23
+(`billing.test.ts`), application +18, plus copilot intent + web nav updates. Gate
+`pnpm -w typecheck lint test build` **green (36/36)**; **ZERO live provider calls**
+in CI (in-memory repos + graceful no-connector settlement). **Known follow-ups:**
+(1) `packages/db/generated/database.types.ts` must be regenerated from the CI
+`generated-db-types` artifact and committed (`chore(db)`) so the `db-verify` drift
+check is zero — the Docker-less flow every phase uses; the data adapter compiles
+meanwhile via the documented `as unknown as SupabaseClient` cast. (2) Client-
+initiated self-serve subscription mutation (vs internal-operated) is intentionally
+deferred — clients have full billing VISIBILITY, writes stay internal, matching the
+platform's certified RLS posture. (3) Invoice `void` is modeled via `refunded`
+(the reused `invoice` machine has no void state); a dunning scheduler drives
+`enterGrace`/`lapse` (the transitions exist and are tested; no cron is wired).

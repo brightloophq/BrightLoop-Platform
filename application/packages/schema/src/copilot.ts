@@ -16,6 +16,8 @@ import { z } from "zod";
 export const copilotIntentSchema = z.enum([
   "question", "command", "navigation", "summary", "explanation", "analysis", "planning",
   "reporting", "approval", "automation", "search", "clarification", "escalation",
+  // F5 — billing & subscription questions (plan, usage, quota, invoices, upgrades).
+  "billing",
 ]);
 export type CopilotIntent = z.infer<typeof copilotIntentSchema>;
 
