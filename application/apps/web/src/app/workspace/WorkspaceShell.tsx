@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Icon, Logo } from "@brightloop/ui";
+import { Icon, Logo, ThemeToggle } from "@brightloop/ui";
 import { WORKSPACE_NAV, activeNavKey, breadcrumbs } from "@/lib/workspace/nav";
 import { filterCommands } from "@/lib/workspace/command-palette";
 import type { WorkspaceNotification } from "@/lib/workspace/notifications";
@@ -100,6 +100,7 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
           </nav>
           <span className={styles.topSpacer} />
           <button className={styles.topAction} onClick={() => setPaletteOpen(true)} aria-label="Search and commands"><Icon name="search" size={14} /> Search<kbd>⌘K</kbd></button>
+          <ThemeToggle variant="compact" />
           <button className={styles.iconBtn} aria-label={`Notifications (${notifications.length})`} onClick={() => setNotifOpen((v) => !v)}>
             <Icon name="bell" size={18} />{notifications.length > 0 && <span className={styles.dot} />}
           </button>

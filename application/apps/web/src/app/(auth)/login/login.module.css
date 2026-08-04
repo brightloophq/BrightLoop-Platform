@@ -41,9 +41,18 @@
 }
 
 .formPanel {
+  position: relative;
   display: grid;
   place-items: center;
   padding: var(--space-7) var(--gutter);
+}
+
+/* Pre-auth theme control — top-right of the form panel so the theme is
+   switchable before signing in. */
+.authTheme {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
 }
 
 .formInner {

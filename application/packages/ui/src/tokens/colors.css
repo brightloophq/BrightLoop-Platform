@@ -80,6 +80,9 @@
 :root,
 [data-theme="light"],
 .bl-theme-light {
+  /* native form controls, scrollbars & UA surfaces follow the theme */
+  color-scheme: light;
+
   /* legacy surface aliases → canon */
   --bg-base:       var(--bg);
   --bg-raised:     var(--surface);
@@ -116,6 +119,9 @@
 /* ---- Semantic aliases: DARK (precision command center) — co-equal ---- */
 [data-theme="dark"],
 .bl-theme-dark {
+  /* native form controls, scrollbars & UA surfaces follow the theme */
+  color-scheme: dark;
+
   /* canon token dark overrides */
   --bg:          #0B0C0F;
   --surface:     #14161B;

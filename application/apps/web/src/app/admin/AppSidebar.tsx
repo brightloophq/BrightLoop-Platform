@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon, Logo } from "@brightloop/ui";
+import { Icon, Logo, ThemeToggle } from "@brightloop/ui";
 import { useDrawerSlide } from "@brightloop/ui/motion";
 import { signOut } from "../(auth)/actions";
 import { AdminNav, type AdminNavGroup } from "./AdminNav";
@@ -67,6 +67,8 @@ export function AppSidebar({ groups, roleLabel }: { groups: AdminNavGroup[]; rol
           <Logo variant="mark" height={20} />
           <span className={styles.brandName}>Auxion</span>
         </Link>
+        <span className={styles.mobileBarSpacer} />
+        <ThemeToggle variant="compact" />
       </header>
 
       {/* Scrim (mobile drawer backdrop) */}
@@ -103,6 +105,10 @@ export function AppSidebar({ groups, roleLabel }: { groups: AdminNavGroup[]; rol
         <AdminNav groups={groups} />
 
         <div className={styles.sidebarFoot}>
+          <div className={styles.appearanceRow}>
+            <span className={styles.appearanceLabel}>Appearance</span>
+            <ThemeToggle />
+          </div>
           <span className={styles.who}>
             <span className={styles.whoName}>{roleLabel}</span>
             signed in
