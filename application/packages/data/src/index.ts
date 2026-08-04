@@ -259,13 +259,14 @@ export {
   demoOrgSnapshot,
   demoOrgOptions,
   demoAnalytics,
+  demoDashboardCharts,
   demoSignalRows,
   demoSignalList,
   demoSignalSummary,
   demoSignalDetail,
   demoSignalTransitions,
 } from "./demo/demo.dataset.js";
-export type { DemoOrg } from "./demo/demo.dataset.js";
+export type { DemoOrg, DemoDashboardCharts, DemoChartSeries, DemoKpiExtra } from "./demo/demo.dataset.js";
 // Runtime persistence (Phase B) — fully typed runtime repository adapter.
 export { SupabaseRuntimeRepository } from "./runtime/adapter.js";
 export {

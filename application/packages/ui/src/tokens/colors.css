@@ -42,6 +42,20 @@
   --critical:    #B23B3B; /* Fault / risk */
   --info:        #3C5C8C; /* informational */
 
+  /* ---- Categorical chart palette (PX.1c) — fixed order, never cycled.
+     Computationally validated (CVD-safe, lightness band, chroma floor,
+     contrast) for the light chart surface; dark steps overridden below.
+     chart-1 is the brand amber. Text/labels use ink tokens, not these. ---- */
+  --chart-1: #B4571A; /* amber (brand signal) */
+  --chart-2: #2F6DB5; /* blue */
+  --chart-3: #1E9E6A; /* green */
+  --chart-4: #8A5CC2; /* purple */
+  --chart-5: #C64A4A; /* red */
+  --chart-6: #0FA3B1; /* teal (pair with a label — 2.97:1 on paper) */
+  --chart-grid: var(--line);            /* recessive gridlines */
+  --chart-axis: var(--ink-3);           /* axis text */
+  --chart-track: var(--surface-2);      /* empty track behind bars/donut */
+
   /* ======================================================================
      LEGACY PRIMITIVE SCALES — retained for backwards-compat during
      migration. DO NOT reference in new code; purged in Phase 5.
@@ -142,6 +156,15 @@
   --caution:     #E0A93C;
   --critical:    #E06767;
   --info:        #6E93C9;
+
+  /* categorical chart palette — dark steps (validated against the dark surface;
+     not an auto-flip of the light values) */
+  --chart-1: #D07E2A;
+  --chart-2: #4E82C6;
+  --chart-3: #33A074;
+  --chart-4: #9670CA;
+  --chart-5: #CE5858;
+  --chart-6: #1E9AAE;
 
   /* legacy aliases re-resolve through the overridden canon tokens above */
   --bg-base:       var(--bg);
