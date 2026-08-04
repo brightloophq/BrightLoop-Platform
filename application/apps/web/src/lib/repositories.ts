@@ -134,6 +134,9 @@ import {
   createCommerceConnectorAdapters,
   loadCommerceConfig,
   createFetchCommerceTransport,
+  createCrmConnectorAdapters,
+  loadCrmConfig,
+  createFetchCrmTransport,
 } from "@brightloop/data";
 import {
   createTransformationService,
@@ -539,20 +542,23 @@ export async function getIntegrationRepositories(): Promise<IntegrationRepositor
 }
 /**
  * The connector adapters: the deterministic Fakes plus the F4.2 Google Workspace
- * (Gmail/Calendar/Drive/Contacts), F4.3 Communication (Slack/Teams/Discord) and
- * F4.4 Commerce (Shopify/Stripe/PayPal) production connectors, bound to the real
- * fetch transports + app-level config from the environment. Stateless.
+ * (Gmail/Calendar/Drive/Contacts), F4.3 Communication (Slack/Teams/Discord), F4.4
+ * Commerce (Shopify/Stripe/PayPal) and F4.5 CRM (HubSpot/Salesforce/Pipedrive)
+ * production connectors, bound to the real fetch transports + app-level config from
+ * the environment. Stateless.
  */
 export function getConnectorAdapterRegistry(): ConnectorAdapterRegistry {
   const now = () => new Date().toISOString();
   const googleConfig = loadGoogleAdapterConfig(process.env, createFetchGoogleHttpTransport(), now);
   const commConfig = loadCommunicationConfig(process.env, createFetchCommTransport(), now);
   const commerceConfig = loadCommerceConfig(process.env, createFetchCommerceTransport(), now);
+  const crmConfig = loadCrmConfig(process.env, createFetchCrmTransport(), now);
   return {
     ...createDefaultConnectorAdapters(),
     ...createGoogleConnectorAdapters(googleConfig),
     ...createCommunicationConnectorAdapters(commConfig),
     ...createCommerceConnectorAdapters(commerceConfig),
+    ...createCrmConnectorAdapters(crmConfig),
   };
 }
 /** The env-backed connector secret store (resolves references; never exposes values). */

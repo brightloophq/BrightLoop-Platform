@@ -86,6 +86,29 @@ describe("connector registry", () => {
     }
     expect(findConnectorCapability("slack", "communication.send_message")?.sideEffect).toBe("external");
   });
+  it("registers the three CRM connectors with normalized capabilities (F4.5)", () => {
+    for (const id of ["hubspot", "salesforce", "pipedrive"]) {
+      const c = findConnector(id);
+      expect(c, id).not.toBeNull();
+      expect(c!.available).toBe(true);
+      expect(c!.authMethod).toBe("oauth2");
+      expect(c!.category).toBe("crm");
+      expect(c!.scopes.length).toBeGreaterThan(0);
+      // NORMALIZED: every CRM provider shares the same operation naming + health.
+      expect(findConnectorCapability(id, "crm.health")?.operation).toBe("crm.health");
+      expect(findConnectorCapability(id, "crm.contacts.create")?.sideEffect).toBe("write");
+      expect(findConnectorCapability(id, "crm.deals.stage.update")?.operation).toBe("crm.deals.stage.update");
+    }
+    // Provider-specific normalized subsets: only Salesforce exposes leads; only HubSpot archives contacts.
+    expect(findConnectorCapability("salesforce", "crm.leads.list")).not.toBeNull();
+    expect(findConnectorCapability("hubspot", "crm.leads.list")).toBeNull();
+    expect(findConnectorCapability("hubspot", "crm.contacts.archive")).not.toBeNull();
+    expect(findConnectorCapability("salesforce", "crm.contacts.archive")).toBeNull();
+    // Salesforce is polling-only; HubSpot + Pipedrive are webhook-driven.
+    expect(findConnector("salesforce")!.triggerKinds).toEqual(["polling"]);
+    expect(findConnector("hubspot")!.triggerKinds).toContain("webhook");
+    expect(findConnector("pipedrive")!.triggerKinds).toContain("webhook");
+  });
 });
 
 describe("installation lifecycle", () => {

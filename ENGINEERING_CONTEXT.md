@@ -1126,3 +1126,63 @@ Tests: data +35 (commerce.test.ts, real HMAC vectors), application +8
 (integration-commerce.test.ts — full webhook pipeline + replay + authz), domain +1.
 Gate `typecheck lint test build` **36/36 green**; **ZERO live Shopify/Stripe/PayPal
 calls** in CI (fake transports).
+
+---
+
+## 18. Phase F · Sprint F4.5 — CRM connectors (branch `feat/f4-crm-connectors`, PR open)
+
+The CRM connector family on the [§14] F4.1 platform: **HubSpot, Salesforce,
+Pipedrive** (connector ids `hubspot`/`salesforce`/`pipedrive`, all `oauth2`,
+`available:true`, `category:crm`). Branched off `main` AFTER F4.3 `#69` + F4.4 `#70`
+were merged (this sprint merged both prerequisites first, resolving their additive
+composition-root/registry/ENGINEERING_CONTEXT conflicts). Full report:
+`engineering-blueprint/phase-f4.5/`.
+
+**PURE additive connector family — NO framework/schema/DB/RLS/roles change.** Reuses
+the F4.1 ports + F4.2 `execute()`/`invoke` + F4.1 webhook/polling ingestion +
+`resolveConnectorSecret` OAuth refresh/rotation, all unchanged. `crm` was already a
+`connectorCategory`; no schema edit.
+
+- **Domain:** `registry.ts` +3 descriptors declaring a **NORMALIZED `crm.*`
+  capability vocabulary** — each provider exposes a SUBSET sharing identical
+  `operation` names (HubSpot 24, Salesforce 26 incl. leads, Pipedrive 23). No
+  provider-specific capability exposed. `integration.test.ts` +1.
+- **Data** `packages/data/src/integration/crm/` — the F4.3/F4.4 binding pattern:
+  `transport.ts` (`CrmHttpTransport` seam + `createFetchCrmTransport` — the ONLY fetch
+  site); `client.ts` (`callCrm` engine + `CrmProviderBinding` — the one
+  provider-specific surface — with `authorize(secret,config)→{baseUrl,headers}` +
+  `callTokenEndpoint` supporting body OR Basic client-auth); `oauth.ts` (GENERIC
+  authorization-code exchange/refresh); `errors.ts` (HTTP status → 7 health states,
+  pure); `normalize.ts` (canonical `crm.*` event vocabulary); `contracts.ts`
+  (provider-neutral `CRMContact/Company/Deal/Pipeline/Stage/Owner/Activity/Note/…`);
+  `helpers.ts`; `salesforce-soql.ts` (**allowlisted, escaped, LIMIT-capped SOQL
+  builder — the ONLY place SOQL is produced; no raw SOQL ever accepted**);
+  `hubspot.ts`/`salesforce.ts`/`pipedrive.ts` (op maps + poll + webhook);
+  `webhook.ts` (HubSpot v1 HMAC-SHA256 hex, constant-time; Pipedrive structural);
+  `adapter.ts` (`createCrmConnectorAdapters(cfg)` + `loadCrmConfig`). Barrel-exported.
+- **Auth (all OAuth 2.0 authorization-code):** HubSpot (api.hubapi.com, refresh
+  rotation ~30 min tokens); Salesforce (login.salesforce.com; **instance URL carried
+  as install config** — the exchange runs with empty config so the API base can't come
+  from the token response; polling-only); Pipedrive (oauth.pipedrive.com, **Basic
+  client-auth** at the token endpoint; company domain as install config). App-level
+  client creds via env `HUBSPOT_/SALESFORCE_/PIPEDRIVE_CLIENT_ID|SECRET`; tokens are
+  per-install secrets stored ONLY by reference; optional `webhookSigningSecret`
+  (HubSpot/Pipedrive) via the F4.1 `webhook_signing` purpose.
+- **Web:** `getConnectorAdapterRegistry` merges Fakes + Google + Communication +
+  Commerce + CRM (real fetch transport). Marketplace/detail are registry-driven → CRM
+  appears automatically. **NO web/DB/migration/pgTAP change.**
+
+Event translation (provider shapes stay inside adapters): HubSpot `subscriptionType`
+(`contact.creation`/`deal.propertyChange`→`crm.contact.created`/`crm.deal.stage_changed`
+etc.); Pipedrive `meta.action`+`meta.object` → `crm.deal.won`/`.stage_changed`/…;
+Salesforce polled opportunity deltas → `crm.deal.won`/`.lost`/`.updated`. Webhook
+verify→translate→persist runs through F4.1 `ingestConnectorWebhook` (idempotent;
+replay=duplicate). **Known limits:** Salesforce is polling-only (no body-signed
+webhook); HubSpot uses the v1 body signature (v3 needs method/uri/timestamp the sync
+port omits); Pipedrive webhook verification is structural (no body HMAC) with an
+optional shared-secret gate; Salesforce/Pipedrive API base URLs are install config
+(not persisted from the token response). Tests: data +40 (crm.test.ts, real HubSpot v1
+HMAC vector + SOQL allowlist/injection), application +11 (integration-crm.test.ts —
+OAuth connect + refresh/rotation + webhook replay + poll replay + client/scope
+denial), domain +1. Gate `pnpm -w typecheck lint test build` **green**; **ZERO live
+HubSpot/Salesforce/Pipedrive calls** in CI (fake transports).
