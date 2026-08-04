@@ -128,6 +128,9 @@ import {
   createGoogleConnectorAdapters,
   loadGoogleAdapterConfig,
   createFetchGoogleHttpTransport,
+  createCommunicationConnectorAdapters,
+  loadCommunicationConfig,
+  createFetchCommTransport,
   createCommerceConnectorAdapters,
   loadCommerceConfig,
   createFetchCommerceTransport,
@@ -536,17 +539,19 @@ export async function getIntegrationRepositories(): Promise<IntegrationRepositor
 }
 /**
  * The connector adapters: the deterministic Fakes plus the F4.2 Google Workspace
- * (Gmail/Calendar/Drive/Contacts) and F4.4 Commerce (Shopify/Stripe/PayPal)
- * production connectors, bound to the real fetch transports + app-level config from
- * the environment. Stateless.
+ * (Gmail/Calendar/Drive/Contacts), F4.3 Communication (Slack/Teams/Discord) and
+ * F4.4 Commerce (Shopify/Stripe/PayPal) production connectors, bound to the real
+ * fetch transports + app-level config from the environment. Stateless.
  */
 export function getConnectorAdapterRegistry(): ConnectorAdapterRegistry {
   const now = () => new Date().toISOString();
   const googleConfig = loadGoogleAdapterConfig(process.env, createFetchGoogleHttpTransport(), now);
+  const commConfig = loadCommunicationConfig(process.env, createFetchCommTransport(), now);
   const commerceConfig = loadCommerceConfig(process.env, createFetchCommerceTransport(), now);
   return {
     ...createDefaultConnectorAdapters(),
     ...createGoogleConnectorAdapters(googleConfig),
+    ...createCommunicationConnectorAdapters(commConfig),
     ...createCommerceConnectorAdapters(commerceConfig),
   };
 }

@@ -192,6 +192,11 @@ export { createGoogleConnectorAdapters, loadGoogleAdapterConfig } from "./integr
 export { createFetchGoogleHttpTransport } from "./integration/google/transport.js";
 export type { GoogleAdapterConfig } from "./integration/google/client.js";
 export type { GoogleHttpTransport, GoogleHttpRequest, GoogleHttpResponse } from "./integration/google/transport.js";
+// Phase F · F4.3 — Communication production connectors (Slack/Teams/Discord).
+export { createCommunicationConnectorAdapters, loadCommunicationConfig } from "./integration/communication/adapter.js";
+export type { CommunicationConfig } from "./integration/communication/adapter.js";
+export { createFetchCommTransport } from "./integration/communication/transport.js";
+export type { CommHttpTransport } from "./integration/communication/transport.js";
 // Phase F · F4.4 — Commerce production connectors (Shopify/Stripe/PayPal).
 export { createCommerceConnectorAdapters, loadCommerceConfig } from "./integration/commerce/adapter.js";
 export type { CommerceConnectorConfig } from "./integration/commerce/adapter.js";

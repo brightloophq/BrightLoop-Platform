@@ -1030,7 +1030,51 @@ polling not push. Tests: data +23 (google.test.ts), application +10
 
 ---
 
-## 16. Phase F · Sprint F4.4 — Commerce connectors (branch `feat/f4-commerce-connectors`, PR open)
+## 16. Phase F · Sprint F4.3 — Communication connectors (branch `feat/f4-communication-connectors`, PR open)
+
+**Slack / Microsoft Teams / Discord** on the F4.1 platform, following the F4.2
+production-connector pattern. Framework treated as production-ready and UNCHANGED:
+F4.3 adds ZERO framework/schema/migration/web changes — only registry descriptors +
+data adapters + a composition-root merge + tests. DO-NOT-IMPLEMENT
+(Zoom/Telegram/WhatsApp/Signal/Email/Google/Commerce/CRM/Accounting) untouched.
+Branched off `main` (with #67 F4.1 + #68 F4.2 merged first). Report:
+`engineering-blueprint/phase-f4.3/`.
+
+Design: three connectors as **data-driven bindings over ONE generic engine** — no
+provider business logic outside an adapter. `packages/data/src/integration/communication/`:
+`transport.ts` (CommHttpTransport seam + FetchCommTransport — only fetch); `errors.ts`
+(HTTP-status + Slack body-`ok` classifiers → category + 7 health reasons + reasonForCategory,
+pure); `client.ts` (`CommProviderBinding` contract {connectorId, authStyle bearer|bot,
+oauth?, probeUrl, classify, ops, poll} + `callProvider` applying Bearer/Bot auth +
+`callTokenEndpoint`); `oauth.ts` (GENERIC Authorization-Code authorize/exchange/refresh,
+endpoint-parameterized per binding); `normalize.ts` (`COMM_EVENTS` canonical vocabulary);
+`slack.ts`/`teams.ts`/`discord.ts` (bindings: normalized op → provider API + poll translator);
+`adapter.ts` (`createCommAdapter` generic + `createCommunicationConnectorAdapters(config)`
++ `loadCommunicationConfig(env,transport,now)` — OAuth methods present ONLY for oauth
+bindings with creds). Wired into `getConnectorAdapterRegistry` (Fakes + Google + Communication).
+
+Auth: Slack + Teams = oauth2 (reuse F4.1 OAuth + F4.2 resolveConnectorSecret refresh/rotate;
+Teams issues refresh tokens via offline_access, Slack tokens non-expiring); Discord =
+**bot token (api_key)**, `Authorization: Bot <token>`, no OAuth. Client creds via env
+`SLACK_CLIENT_ID/SECRET`, `MS_TEAMS_CLIENT_ID/SECRET`; Discord bot token is a per-install
+secret. NORMALIZED capabilities: all three expose identical `communication.*` keys+operations
+(send_message/reply_message/edit_message/delete_message/list_channels/list_members/
+search_messages/read_history/list_containers/meeting_metadata) — each provider declares its
+subset; adapters map to provider APIs; no provider API exposed. Events: provider messages →
+canonical `communication.message.created/.replied` etc. inside adapters (Slack/Teams/Discord
+poll), then F4.1 normalizeTranslatedEvents + idempotent polling persistence. Health: 7 states
+via snapshot detail.reason (Slack HTTP-200 `{ok:false}` via classifySlack). Authorization:
+existing `integration.invoke` funnel; clients cannot invoke. **DB change: NONE** (reuses
+connector_* tables + `invoke` audit op + integration.invoke; no migration/pgTAP/type change).
+Web: NONE (marketplace registry-driven; Slack/Teams Connect via existing OAuth flow; Discord
+botToken via existing InstallForm secret field). Tests: data +24 (communication.test.ts),
+application +5 (integration-communication.test.ts), domain +1. Gate `typecheck lint test build`
+36/36 green; ZERO live provider calls (fake transport). Known limits: polling-not-push,
+metadata-only files/meetings, Teams edit/delete not exposed.
+
+---
+
+## 17. Phase F · Sprint F4.4 — Commerce connectors (branch `feat/f4-commerce-connectors`, PR open)
 
 The commerce connector family on the [§14] F4.1 platform: **Shopify, Stripe,
 PayPal** (connector ids `shopify`/`stripe`/`paypal`, all `api_key`,
