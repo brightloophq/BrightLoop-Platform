@@ -1315,3 +1315,59 @@ envelope), application +11 (integration-social.test.ts — OAuth connect + refre
 webhook replay + poll replay + client/scope denial), domain +1. Gate
 `pnpm -w typecheck lint test build` **green**; **ZERO live Meta/LinkedIn/X/TikTok calls** in
 CI (fake transports).
+
+---
+
+## 21. Phase F · Sprint F4.8 — Integration Platform Certification (branch `feat/f4-platform-certification`, PR open)
+
+The FINAL Integration-Platform sprint. **Introduces NO new providers, connector
+families, Marketplace features, UI, Copilot commands, or DB schema.** It certifies
+that everything built F4.1→F4.7 (Google · Communication · Commerce · CRM · Finance ·
+Social — 6 families, 19 production connectors + 2 framework Fakes) behaves as ONE
+coherent platform. Branched off `main` AFTER F4.7 `#73` (Social) was merged. Report:
+`docs/engineering/integration-platform-certification.{md,json}` (engineering-blueprint
+untouched, by pre-flight invariant).
+
+**Pure additive test + tooling sprint — zero framework/schema/DB/RLS/roles/web change.**
+Two new certification surfaces plus a re-runnable report generator; no production code
+path altered (no defects required a fix — the platform certified clean on first pass).
+
+- **Certification harness** `packages/data/src/integration/certification/` (PURE,
+  OFFLINE, deterministic): `certify.ts` composes the SAME production adapter set the
+  web composition root wires (`buildCertificationAdapterRegistry` — Fakes + 6 families
+  against a stub transport, fake env, fixed clock — never fetches), then cross-checks
+  it against the domain `CONNECTOR_REGISTRY` (single source of truth). Proves every
+  declared capability has descriptor·operation·adapter·HANDLER (an adapter reports the
+  op supported via its pure `discoverCapabilities` op map) — **no orphan capability, no
+  undeclared handler, no duplicate registration, no orphan adapter**; every AVAILABLE
+  connector is installable + invocable (execute) + health-reporting + connection-validating
+  with trigger wiring (poll for polling, verify+translate for webhook) and OAuth wiring
+  matching its descriptor. The two framework Fakes are exempt from the hidden-handler
+  check (their shared discovery list is a fixed reference union, not a defect). `report.ts`
+  renders a deterministic markdown + JSON certification report. Barrel-exported from
+  `@brightloop/data`. `certify.test.ts` (+7) asserts ZERO defects and pins the matrix
+  totals (24 registry connectors · 21 installable · 3 catalogue examples · 254 capabilities).
+- **Cross-provider certification** `packages/application/src/integration/certification.test.ts`
+  (+15): drives ONE representative connector per family (gmail/slack/shopify/hubspot/
+  quickbooks/meta — spanning oauth2 + api_key, webhook + polling) through the REAL
+  use-cases on the in-memory doubles, certifying platform-wide invariants: **authorization**
+  (integration.invoke funnel, client denial on every family, cross-tenant read denied,
+  workspace-listing isolation), **secret** non-leak (no token/credential/signing-secret in
+  any DTO/event/audit row, all families), **OAuth** transparent refresh+rotation before
+  invoke + revoked-token reconnect, **webhook** verify + idempotent replay + rejection +
+  malformed-body tolerance, **polling** cursor persistence + replay safety, **audit**
+  completeness (every invoke → correlated row with workspace/connector/capability/outcome),
+  **health** vocabulary (only the shared normalized levels), and the **Copilot boundary**
+  (a source scan proving no connector-family import or provider id inside `*/copilot`).
+- **Report generator** `scripts/certify-integration.mjs`: `pnpm -w build && node
+  application/scripts/certify-integration.mjs` runs the harness and writes the reports;
+  exits non-zero on any defect (CI-style gate). Imports the compiled harness by path.
+
+Certification result: **CERTIFIED — READY FOR REVIEW**. All 8 areas PASS; 0 orphan
+capabilities · 0 undeclared handlers · 0 duplicate registrations · 0 orphan adapters.
+Documented, intentional exceptions (normalized-subset asymmetries + sync-port webhook/OAuth
+limits from F4.4–F4.7 — PayPal/Pipedrive structural webhook, Salesforce/LinkedIn/X/TikTok
+polling-only, Xero-no-refund, X PKCE deferred) are approved design decisions, not defects.
+Health vocabulary verified uniform across all 6 families; `fetch` confined to the six
+`transport.ts` seams. Tests: data +7, application +15. Gate `pnpm -w typecheck lint test
+build` **green**; **ZERO live provider calls** in CI (offline harness + fake transports).
