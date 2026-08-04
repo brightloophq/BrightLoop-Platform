@@ -207,6 +207,11 @@ export { createCrmConnectorAdapters, loadCrmConfig } from "./integration/crm/ada
 export type { CrmConnectorConfig } from "./integration/crm/adapter.js";
 export { createFetchCrmTransport } from "./integration/crm/transport.js";
 export type { CrmHttpTransport, CrmHttpRequest, CrmHttpResponse } from "./integration/crm/transport.js";
+// Phase F · F4.6 — Finance production connectors (QuickBooks Online/Xero).
+export { createFinanceConnectorAdapters, loadFinanceConfig } from "./integration/finance/adapter.js";
+export type { FinanceConnectorConfig } from "./integration/finance/adapter.js";
+export { createFetchFinanceTransport } from "./integration/finance/transport.js";
+export type { FinanceHttpTransport, FinanceHttpRequest, FinanceHttpResponse } from "./integration/finance/transport.js";
 // Transformation dashboard — fully typed read adapter (Sprint 4).
 export { SupabaseTransformationDashboardRepository } from "./transformation/dashboard.js";
 // Signals — fully typed read adapter (Sprint 5). Writes go through the domain service.

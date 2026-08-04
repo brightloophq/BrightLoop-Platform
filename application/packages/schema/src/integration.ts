@@ -22,7 +22,7 @@ import { z } from "zod";
 /** Marketplace grouping — provider-neutral, never a vendor name. */
 export const connectorCategorySchema = z.enum([
   "communication", "crm", "commerce", "payments", "marketing",
-  "productivity", "storage", "analytics", "custom",
+  "productivity", "storage", "analytics", "finance", "custom",
 ]);
 export type ConnectorCategory = z.infer<typeof connectorCategorySchema>;
 

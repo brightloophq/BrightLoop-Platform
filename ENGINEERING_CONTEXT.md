@@ -1186,3 +1186,66 @@ HMAC vector + SOQL allowlist/injection), application +11 (integration-crm.test.t
 OAuth connect + refresh/rotation + webhook replay + poll replay + client/scope
 denial), domain +1. Gate `pnpm -w typecheck lint test build` **green**; **ZERO live
 HubSpot/Salesforce/Pipedrive calls** in CI (fake transports).
+
+---
+
+## 19. Phase F · Sprint F4.6 — Finance connectors (branch `feat/f4-finance-connectors`, PR open)
+
+The Finance connector family on the [§14] F4.1 platform: **QuickBooks Online, Xero**
+(connector ids `quickbooks`/`xero`, both `oauth2`, `available:true`, `category:finance`).
+Branched off `main` AFTER F4.5 `#71` (CRM) was merged. Full report:
+`engineering-blueprint/phase-f4.6/` (report only — no blueprint edit).
+
+**PURE additive connector family — reuses the F4.1 ports + F4.2 `execute()`/`invoke` +
+F4.1 webhook/polling ingestion + `resolveConnectorSecret` OAuth refresh/rotation, all
+unchanged.** The ONE additive schema touch: `connectorCategorySchema` gained a new
+`"finance"` member (Zod enum only — connector `category` is NOT persisted in the DB, so
+no migration / pgTAP / RLS / type-drift impact; QuickBooks/Xero are accounting software,
+not `payments` processors, so a distinct category is correct).
+
+- **Domain:** `registry.ts` +2 descriptors declaring a **NORMALIZED `finance.*`
+  capability vocabulary** — both providers expose the same `operation` names (QuickBooks
+  21 incl. `finance.payments.refund`, Xero 20). No provider-specific capability exposed.
+  `integration.test.ts` +1 block.
+- **Data** `packages/data/src/integration/finance/` — the F4.3/F4.4/F4.5 binding pattern:
+  `transport.ts` (`FinanceHttpTransport` seam + `createFetchFinanceTransport` — the ONLY
+  fetch site); `client.ts` (`callFinance` engine + `FinanceProviderBinding` — the one
+  provider-specific surface — with `authorize(secret,config)→{baseUrl,headers}` +
+  `callTokenEndpoint` (HTTP Basic client-auth, both providers)); `oauth.ts` (GENERIC
+  authorization-code exchange/refresh, Basic-auth default); `errors.ts` (HTTP status →
+  7 health states, pure, QBO `Fault`/Xero `Type` safe-code extraction); `normalize.ts`
+  (canonical `finance.*` event vocabulary); `contracts.ts` (provider-neutral
+  `FinanceCompany/Account/Customer/Invoice/Payment/Expense/Item/Tax/Health/SearchResult`);
+  `helpers.ts`; `quickbooks-query.ts` (**allowlisted, escaped, MAXRESULTS-capped QBO
+  query builder — the ONLY place QBO query text is produced; no raw query ever
+  accepted**); `quickbooks.ts`/`xero.ts` (op maps + poll + webhook); `webhook.ts` (shared
+  HMAC-SHA256 base64 verify, constant-time — Intuit `intuit-signature` + Xero
+  `x-xero-signature`); `adapter.ts` (`createFinanceConnectorAdapters(cfg)` +
+  `loadFinanceConfig`). Barrel-exported.
+- **Auth (both OAuth 2.0 authorization-code, HTTP Basic client-auth at the token
+  endpoint):** QuickBooks (Intuit `oauth.platform.intuit.com`; **realmId + environment
+  (production/sandbox) carried as install config** — API base `${host}/v3/company/{realmId}`);
+  Xero (`identity.xero.com`; **tenantId carried as install config** and attached as the
+  `Xero-Tenant-Id` header — the multi-tenant analogue of Salesforce's instance URL).
+  App-level client creds via env `QUICKBOOKS_/XERO_CLIENT_ID|SECRET`; tokens are
+  per-install secrets stored ONLY by reference; optional `webhookSigningSecret`
+  (both) via the F4.1 `webhook_signing` purpose.
+- **Web:** `getConnectorAdapterRegistry` merges Fakes + Google + Communication + Commerce
+  + CRM + Finance (real fetch transport). Marketplace/detail are registry-driven →
+  Finance appears automatically. **NO web/DB/migration/pgTAP change.**
+
+Event translation (provider shapes stay inside adapters): QuickBooks
+`eventNotifications[].dataChangeEvent.entities[]` (`Invoice`/`Payment`/`Customer`/…
++ operation → `finance.invoice.updated`/`.voided`/`finance.payment.created`/…); Xero
+`events[]` (`eventCategory`+`eventType` → `finance.invoice.created`/`.customer.updated`/…).
+Webhook verify→translate→persist runs through F4.1 `ingestConnectorWebhook` (idempotent;
+replay=duplicate). **Known limits / normalized-subset asymmetry:** only QuickBooks exposes
+`finance.payments.refund` (RefundReceipt); Xero models refunds through credit notes /
+overpayments (a distinct object) and omits it — mirrors the F4.5 Salesforce-leads /
+HubSpot-archive pattern. QBO has no first-class REST list endpoint — every list/read goes
+through the allowlisted query builder; Xero expenses map to `BankTransactions` of
+`Type=="SPEND"`. Tests: data +31 (finance.test.ts — real Intuit + Xero HMAC-SHA256 base64
+vectors + QBO query allowlist/injection), application +11 (integration-finance.test.ts —
+OAuth connect + refresh/rotation + webhook replay + poll replay + client/scope denial),
+domain +1. Gate `pnpm -w typecheck lint test build` **green**; **ZERO live QuickBooks/Xero
+calls** in CI (fake transports).

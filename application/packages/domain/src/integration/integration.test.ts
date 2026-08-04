@@ -109,6 +109,29 @@ describe("connector registry", () => {
     expect(findConnector("hubspot")!.triggerKinds).toContain("webhook");
     expect(findConnector("pipedrive")!.triggerKinds).toContain("webhook");
   });
+  it("registers the two finance connectors with normalized capabilities (F4.6)", () => {
+    for (const id of ["quickbooks", "xero"]) {
+      const c = findConnector(id);
+      expect(c, id).not.toBeNull();
+      expect(c!.available).toBe(true);
+      expect(c!.authMethod).toBe("oauth2");
+      expect(c!.category).toBe("finance");
+      expect(c!.scopes.length).toBeGreaterThan(0);
+      expect(c!.triggerKinds).toContain("webhook");
+      expect(c!.triggerKinds).toContain("polling");
+      // NORMALIZED: every finance provider shares the same operation naming + health.
+      expect(findConnectorCapability(id, "finance.health")?.operation).toBe("finance.health");
+      expect(findConnectorCapability(id, "finance.invoices.list")?.sideEffect).toBe("read");
+      expect(findConnectorCapability(id, "finance.invoices.create")?.sideEffect).toBe("write");
+      expect(findConnectorCapability(id, "finance.company.read")?.operation).toBe("finance.company.read");
+    }
+    // Provider-specific normalized subset: only QuickBooks exposes payment refunds
+    // (Xero models refunds through credit notes / overpayments — a distinct object).
+    expect(findConnectorCapability("quickbooks", "finance.payments.refund")).not.toBeNull();
+    expect(findConnectorCapability("xero", "finance.payments.refund")).toBeNull();
+    // Finance is its own marketplace category, distinct from commerce/payments.
+    expect(listConnectors("finance").map((c) => c.id).sort()).toEqual(["quickbooks", "xero"]);
+  });
 });
 
 describe("installation lifecycle", () => {
