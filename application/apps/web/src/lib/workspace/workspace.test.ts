@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { existsSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { WORKSPACE_NAV, activeNavKey, breadcrumbs } from "./nav";
 import { WORKSPACE_COMMANDS, filterCommands, subsequenceMatch } from "./command-palette";
 import { rankSearch, groupByKind, type SearchDoc } from "./search";
@@ -20,6 +22,15 @@ describe("workspace navigation", () => {
     expect(t.map((b) => b.label)).toEqual(["Workspace", "AI Team"]);
     const d = breadcrumbs("/workspace/projects/proj_abc123def");
     expect(d[d.length - 1]!.label).toBe("Detail"); // opaque id collapses
+  });
+  it("every nav destination resolves to a real route (no dead links)", () => {
+    // PX.1g navigation-parity guard: a sidebar href with no page.tsx behind it is a
+    // dead link. This test file lives at src/lib/workspace/, so the App Router tree
+    // is ../../app and an href "/workspace/x" maps to ../../app/workspace/x/page.tsx.
+    for (const item of WORKSPACE_NAV) {
+      const page = fileURLToPath(new URL(`../../app${item.href}/page.tsx`, import.meta.url));
+      expect(existsSync(page), `${item.key} → ${item.href} has no page.tsx`).toBe(true);
+    }
   });
 });
 

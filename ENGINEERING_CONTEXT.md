@@ -1568,3 +1568,35 @@ PX.1e AI state machine, the dashboard's Suspense skeleton), so PX.1f is surgical
   motion was **not** captured in this environment (changes are transform/opacity-only,
   token-driven, structurally tested); `system-map` canvas intentionally has no generic
   skeleton; Drawer exit stays instant (unmounts on close).
+
+**PX.1g — Final UX Certification (branch `feat/px1g-final-ux-certification`, this PR).**
+The closing PX.1 sprint: audit the complete merged product route-by-route, fix verified
+defects, certify for production. **Not** backend/feature/rewrite/nav-redesign. Merged
+PX.1f (PR #81, merge commit `c7af3e7`) first. A five-front audit (nav parity · theme
+hygiene · loading/error/empty coverage · cleanup + data honesty · a11y + responsive)
+drove a small, shared-primitive-first set of fixes:
+- **P1 — Portal mobile nav** was unreachable below 1024px (sidebar off-canvas, no
+  opener). New client `PortalShell` reuses the admin mobile mechanism (bar + scrim +
+  off-canvas drawer + Escape/focus/close-on-nav, GSAP `useDrawerSlide`) and its CSS.
+- **P1 — Error-boundary parity.** New shared `RouteError` primitive (`@brightloop/ui`,
+  `role="alert"`, retry, no payload leak); `workspace/error.tsx` + `portal/error.tsx`
+  added; `admin/error.tsx` refactored onto it (bespoke `admin/error.module.css` deleted).
+- **P1/P2 — Loading parity.** One cascading `loading.tsx` per shell root (workspace +
+  portal), built on `PageSkeleton` — no more frozen-page navigations.
+- **P2 — Theme hygiene.** Last three hardcoded status/glass colors tokenized:
+  `Navbar` scrolled glass → `color-mix(var(--bg-raised))` (now flips in dark; was
+  near-white), `cms` live-row → `--positive`, `automation` failed-row → `--critical`.
+- **P2 — a11y.** `Toast` danger → assertive; workspace command-palette items `<a>`→
+  `<button>` (keyboard/AT operable). **P3** — admin/portal active-nav made
+  boundary-correct.
+- **Tests (+2, pure node):** Navbar-glass token lock in `overlay-tokens.test.ts`;
+  `WORKSPACE_NAV` dead-link guard in `workspace.test.ts`. Gate `pnpm turbo run typecheck
+  lint test build` **green** (`@brightloop/ui` 109, `@brightloop/web` 182). Zero new
+  deps; no schema/migration/secret/generated-type/nav-hierarchy/capability change; Demo
+  Mode production guard untouched.
+- **Known limits:** no rendered screenshots / authenticated Vercel visual QA (Browser
+  pane not displayable, no headless auth session); no rendered PDF-vs-UI design diff (no
+  PDF rasterizer); ten admin async routes + two orphan admin routes documented
+  OUT-OF-SCOPE. Deliverables: `engineering-blueprint/px-1/PX.1g-*.md` (final-ux-audit,
+  design-parity, responsive/accessibility/theme certifications, data-honesty,
+  performance-review, visual-evidence-index, engineering-report).

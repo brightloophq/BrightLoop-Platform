@@ -21,6 +21,13 @@ describe("scrim overlay is a single semantic token", () => {
       expect(source).not.toMatch(/rgba\(\s*6,\s*10,\s*19/);
     }
   });
+
+  it("Navbar scrolled glass is a theme token, not a baked near-white rgba", () => {
+    const navbar = css("../components/Navbar.module.css");
+    // PX.1g: the scrolled paper-glass fill must flip with the theme.
+    expect(navbar).toContain("color-mix(in srgb, var(--bg-raised)");
+    expect(navbar).not.toMatch(/rgba\(\s*251,\s*252,\s*253/); // old near-white literal
+  });
 });
 
 describe("status tints use tokens (color-mix), not hardcoded rgba", () => {

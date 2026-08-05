@@ -116,7 +116,7 @@
 
 /* Rows that are live on the public site get a subtle tint. */
 .rowLive {
-  border-color: rgba(22, 179, 100, 0.25);
+  border-color: color-mix(in srgb, var(--positive) 25%, transparent);
 }
 
 .form {

@@ -120,9 +120,9 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
                 return (
                   <div key={cmd.id}>
                     {header && <div className={styles.paletteGroup}>{header}</div>}
-                    <a className={styles.paletteItem} data-active={i === cursor} onMouseEnter={() => setCursor(i)} onClick={() => go(cmd.href)}>
+                    <button type="button" className={styles.paletteItem} data-active={i === cursor} onMouseEnter={() => setCursor(i)} onClick={() => go(cmd.href)}>
                       {cmd.label}<span className={styles.paletteHint}>{cmd.hint}</span>
-                    </a>
+                    </button>
                   </div>
                 );
               })}

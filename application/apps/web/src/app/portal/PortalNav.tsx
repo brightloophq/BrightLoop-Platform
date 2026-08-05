@@ -16,8 +16,12 @@ export interface PortalNavItem {
 
 export function PortalNav({ items }: { items: PortalNavItem[] }) {
   const pathname = usePathname();
+  // Exact match or a true path-segment prefix (href + "/") — never a bare
+  // startsWith, so a parent link can't stay lit on an unrelated sibling route.
   const isActive = (href: string) =>
-    href === "/portal" ? pathname === "/portal" : pathname.startsWith(href);
+    href === "/portal"
+      ? pathname === "/portal"
+      : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <nav className={styles.nav} aria-label="Portal">

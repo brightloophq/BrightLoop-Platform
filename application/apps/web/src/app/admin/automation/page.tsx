@@ -68,7 +68,11 @@ export default async function AutomationPage() {
               <Card
                 key={a.id}
                 className={[styles.row, a.status === "failed" ? styles.rowLive : null].filter(Boolean).join(" ")}
-                style={a.status === "failed" ? { borderColor: "rgba(239,68,68,0.3)" } : undefined}
+                style={
+                  a.status === "failed"
+                    ? { borderColor: "color-mix(in srgb, var(--critical) 30%, transparent)" }
+                    : undefined
+                }
               >
                 <div className={styles.rowBody}>
                   <div className={styles.rowTop}>

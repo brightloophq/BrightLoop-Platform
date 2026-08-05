@@ -13,10 +13,11 @@
     backdrop-filter var(--dur-base) var(--ease-out);
 }
 
-/* Scrolled >8px: light paper glass with a signal-hairline underline
-   (Living Blueprint navbar is light-first, handoff §05 / §01.4). */
+/* Scrolled >8px: paper-glass fill with a signal-hairline underline
+   (Living Blueprint navbar, handoff §05 / §01.4). Tokenised so the glass
+   flips with the theme instead of staying near-white in dark mode. */
 .scrolled {
-  background: rgba(251, 252, 253, 0.82);
+  background: color-mix(in srgb, var(--bg-raised) 82%, transparent);
   backdrop-filter: blur(var(--blur-md));
   -webkit-backdrop-filter: blur(var(--blur-md));
   border-bottom-color: var(--border-subtle);
