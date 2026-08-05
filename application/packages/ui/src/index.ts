@@ -141,6 +141,22 @@ export { FunnelChart } from "./charts/FunnelChart";
 export type { FunnelChartProps } from "./charts/FunnelChart";
 export type { SeriesPoint } from "./charts/geometry";
 
+/* ---- Shared AI Action surface (PX.1e) ---- */
+export { AiActionBar } from "./ai/AiActionBar";
+export type { AiActionBarProps } from "./ai/AiActionBar";
+export { AiResultPanel } from "./ai/AiResultPanel";
+export type { AiResultPanelProps } from "./ai/AiResultPanel";
+export { resultTone, formatConfidence, canRetry, canCopy, isBusy, activeKey } from "./ai/state";
+export type {
+  AiResult,
+  AiResultKind,
+  AiEvidence,
+  AiExecutable,
+  AiActionOutcome,
+  AiActionDef,
+  AiViewState,
+} from "./ai/types";
+
 /* ---- Interactive System Map (PX.1d) ---- */
 export { SystemMapExplorer } from "./systemmap/SystemMapExplorer";
 export type { SystemMapExplorerProps } from "./systemmap/SystemMapExplorer";
