@@ -109,6 +109,8 @@ export { SkeletonBlock } from "./components/SkeletonBlock";
 export type { SkeletonBlockProps } from "./components/SkeletonBlock";
 export { PageSkeleton } from "./components/PageSkeleton";
 export type { PageSkeletonProps, PageSkeletonVariant } from "./components/PageSkeleton";
+export { RouteError } from "./components/RouteError";
+export type { RouteErrorProps } from "./components/RouteError";
 export { SystemMap, systemMapGeometry } from "./components/SystemMap";
 export type { SystemMapProps, SystemMapNodeInput } from "./components/SystemMap";
 

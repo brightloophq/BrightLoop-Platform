@@ -33,8 +33,12 @@ export interface AdminNavGroup {
 export function AdminNav({ groups }: { groups: AdminNavGroup[] }) {
   const pathname = usePathname();
 
+  // Exact match or a true path-segment prefix (href + "/") — never a bare
+  // startsWith, so e.g. /admin/projects can't light up for /admin/project.
   const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+    href === "/admin"
+      ? pathname === "/admin"
+      : pathname === href || pathname.startsWith(href + "/");
 
   return (
     <nav className={styles.nav} aria-label="Admin">

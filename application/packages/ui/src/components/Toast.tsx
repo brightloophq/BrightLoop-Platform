@@ -83,8 +83,17 @@ function ToastItem({ tone, message, onDone }: { tone: ToastTone; message: string
     return () => clearTimeout(timer);
   }, [reduced, onDone]);
 
+  // A failure toast must interrupt the screen reader (assertive), not queue behind
+  // current speech; informational tones stay polite so they don't steal focus.
+  const assertive = tone === "danger";
+
   return (
-    <div ref={ref} className={[styles.toast, styles[tone]].join(" ")} role="status" aria-live="polite">
+    <div
+      ref={ref}
+      className={[styles.toast, styles[tone]].join(" ")}
+      role={assertive ? "alert" : "status"}
+      aria-live={assertive ? "assertive" : "polite"}
+    >
       <Icon name={TONE_ICON[tone]} size={16} className={styles.icon} />
       <span className={styles.message}>{message}</span>
     </div>

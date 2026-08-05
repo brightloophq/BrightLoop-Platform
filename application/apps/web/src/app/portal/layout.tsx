@@ -1,10 +1,8 @@
 import type { ReactNode } from "react";
-import Link from "next/link";
-import { Logo, ThemeToggle } from "@brightloop/ui";
 import { requireSurface } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { signOut } from "../(auth)/actions";
-import { PortalNav, type PortalNavItem } from "./PortalNav";
+import { type PortalNavItem } from "./PortalNav";
+import { PortalShell } from "./PortalShell";
 import styles from "../admin/admin.module.css";
 
 /**
@@ -68,31 +66,7 @@ export default async function PortalLayout({ children }: { children: ReactNode }
 
   return (
     <div className={styles.shell}>
-      <aside className={styles.sidebar}>
-        <Link href="/portal" className={styles.brand}>
-          <Logo variant="mark" height={22} />
-          <span className={styles.env}>Portal</span>
-        </Link>
-
-        <PortalNav items={items} />
-
-        <div className={styles.sidebarFoot}>
-          <div className={styles.appearanceRow}>
-            <span className={styles.appearanceLabel}>Appearance</span>
-            <ThemeToggle />
-          </div>
-          <span className={styles.who}>
-            <span className={styles.whoName}>{actor.role.replace("_", " ")}</span>
-            signed in
-          </span>
-          <form action={signOut}>
-            <button type="submit" className={styles.signout}>
-              Sign out
-            </button>
-          </form>
-        </div>
-      </aside>
-
+      <PortalShell items={items} roleLabel={actor.role.replace("_", " ")} />
       <main id="main-content" tabIndex={-1} className={styles.main}>{children}</main>
     </div>
   );

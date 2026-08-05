@@ -6,6 +6,7 @@ import { Button } from "./Button";
 import { Container } from "./Container";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "../theme/ThemeToggle";
 import styles from "./Navbar.module.css";
 
 export interface MegaMenuItem {
@@ -211,6 +212,9 @@ export function Navbar({ links, ctaLabel, ctaHref, pathname }: NavbarProps) {
           </nav>
 
           <div className={styles.actions}>
+            <span className={styles.desktopTheme}>
+              <ThemeToggle variant="compact" label="Theme" />
+            </span>
             <span className={styles.desktopCta}>
               <Button variant="primary" size="sm" asChild>
                 <Link href={ctaHref}>{ctaLabel}</Link>
@@ -276,6 +280,11 @@ export function Navbar({ links, ctaLabel, ctaHref, pathname }: NavbarProps) {
                 </div>
               ))}
             </nav>
+
+            <div className={styles.drawerTheme}>
+              <span className={styles.drawerGroupLabel}>Appearance</span>
+              <ThemeToggle variant="segmented" label="Theme" />
+            </div>
 
             <Button variant="primary" size="md" block asChild>
               <Link href={ctaHref} onClick={closeDrawer}>

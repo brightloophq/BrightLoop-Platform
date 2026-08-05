@@ -120,7 +120,7 @@
 .paletteInput { width: 100%; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); font-size: var(--fs-lg); padding: var(--space-4) var(--space-5); outline: none; }
 .paletteList { max-height: 52vh; overflow-y: auto; padding: var(--space-2); }
 .paletteGroup { font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: var(--ls-eyebrow); color: var(--ink-3); padding: var(--space-2) var(--space-3) 2px; }
-.paletteItem { display: flex; align-items: baseline; gap: var(--space-3); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); color: var(--ink); font-size: var(--fs-sm); cursor: pointer; text-decoration: none; }
+.paletteItem { display: flex; align-items: baseline; gap: var(--space-3); width: 100%; padding: var(--space-2) var(--space-3); border: 0; border-radius: var(--radius-md); background: transparent; text-align: left; color: var(--ink); font-family: inherit; font-size: var(--fs-sm); cursor: pointer; text-decoration: none; }
 .paletteItem[data-active="true"], .paletteItem:hover { background: var(--surface-2); }
 .paletteHint { color: var(--ink-3); font-size: var(--fs-xs); margin-left: auto; }
 .notifPanel { position: absolute; top: calc(var(--header-h) - 8px); right: var(--space-6); width: min(400px, 92vw); background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius-xl); box-shadow: var(--shadow-xl); z-index: 60; overflow: hidden; }
