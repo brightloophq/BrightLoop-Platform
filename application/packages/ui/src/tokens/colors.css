@@ -25,7 +25,7 @@
   --surface-2:   #EDEAE3; /* recessed / chips / core */
   --ink:         #16181D; /* primary text */
   --ink-2:       #55585F; /* secondary text */
-  --ink-3:       #8A8D94; /* muted / meta */
+  --ink-3:       #676A71; /* muted / meta — darkened for WCAG AA (4.8:1 on --bg; was #8A8D94 = 2.94:1) */
   --line:        rgba(22, 24, 29, 0.11);  /* hairline — 11% ink */
   --line-strong: rgba(22, 24, 29, 0.20);  /* strong border — 20% ink */
 
@@ -109,8 +109,11 @@
   --text-primary:   var(--ink);
   --text-secondary: var(--ink-2);
   --text-muted:     var(--ink-3);
-  --text-accent:    var(--signal);
-  --text-link:      var(--signal);
+  /* Accent/link TEXT uses a deeper amber than the --signal fill so body-size text
+     clears WCAG AA on paper (5.06:1 on --bg; raw --signal #B4571A is only 4.31:1).
+     Fills / borders / focus keep --signal — this darkens the text role only. */
+  --text-accent:    #A44E12;
+  --text-link:      #A44E12;
   --text-on-accent: var(--action-fg);
 
   --focus-ring:     var(--signal);
@@ -142,7 +145,7 @@
   --surface-2:   #1C1F26;
   --ink:         #ECEDEF;
   --ink-2:       #A2A6AE;
-  --ink-3:       #6C7079;
+  --ink-3:       #7A7E87; /* muted / meta — lightened for WCAG AA (4.8:1 on dark --bg; was #6C7079 = 3.94:1) */
   --line:        rgba(255, 255, 255, 0.09);
   --line-strong: rgba(255, 255, 255, 0.18);
 

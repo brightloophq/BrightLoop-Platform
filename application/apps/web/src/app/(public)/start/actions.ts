@@ -74,9 +74,14 @@ export async function createProspectAccount(
   const password = String(formData.get("password") ?? "");
 
   if (!name || !company) return { error: "Your name and company are required" };
+  // This is the public, service-role-backed write — bound every field so a scripted
+  // POST can't submit multi-megabyte values (Turnstile throttles volume, not size).
+  if (name.length > 120 || company.length > 160) {
+    return { error: "Your name or company name is too long" };
+  }
   if (!EMAIL_RE.test(email) || email.length > 254) return { error: "Enter a valid email" };
-  if (password.length < 8 || !/[a-z]/i.test(password) || !/[0-9]/.test(password)) {
-    return { error: "Password must be at least 8 characters with a letter and a number" };
+  if (password.length < 8 || password.length > 200 || !/[a-z]/i.test(password) || !/[0-9]/.test(password)) {
+    return { error: "Password must be 8–200 characters with a letter and a number" };
   }
 
   // Anti-bot gate (Decision M). No-op unless TURNSTILE_SECRET_KEY is configured.
@@ -84,10 +89,14 @@ export async function createProspectAccount(
   if (!turnstile.ok) return { error: turnstile.reason ?? "Anti-bot check failed" };
 
   let funnel: FunnelPayload = {};
-  try {
-    funnel = JSON.parse(String(formData.get("funnel") ?? "{}"));
-  } catch {
-    /* funnel data optional — account still creates */
+  const rawFunnel = String(formData.get("funnel") ?? "{}");
+  // Guard the size BEFORE parsing — an unbounded body is the cheap DoS here.
+  if (rawFunnel.length <= 20_000) {
+    try {
+      funnel = JSON.parse(rawFunnel);
+    } catch {
+      /* funnel data optional — account still creates */
+    }
   }
 
   const admin = createServiceRoleClient();
