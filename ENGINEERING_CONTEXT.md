@@ -1589,11 +1589,21 @@ drove a small, shared-primitive-first set of fixes:
 - **P2 — a11y.** `Toast` danger → assertive; workspace command-palette items `<a>`→
   `<button>` (keyboard/AT operable). **P3** — admin/portal active-nav made
   boundary-correct.
-- **Tests (+2, pure node):** Navbar-glass token lock in `overlay-tokens.test.ts`;
-  `WORKSPACE_NAV` dead-link guard in `workspace.test.ts`. Gate `pnpm turbo run typecheck
-  lint test build` **green** (`@brightloop/ui` 109, `@brightloop/web` 182). Zero new
-  deps; no schema/migration/secret/generated-type/nav-hierarchy/capability change; Demo
-  Mode production guard untouched.
+- **Follow-up — public landing-page theme toggle.** Review found the Light/Dark/System
+  control was on auth/authenticated shells + login but not the public marketing Navbar
+  (`packages/ui/src/components/Navbar.tsx` never composed `ThemeToggle`, though the PX.1a
+  runtime is active there via the root layout). Fixed by adding the **existing**
+  `ThemeToggle` — compact in the desktop actions (before the CTA, hidden <1024px),
+  segmented in the mobile drawer ("Appearance"). Reuse only: no second provider/runtime,
+  no nav-hierarchy change, tokens only. Verified live: toggle on the landing page, dark
+  pref persists across reload (`data-theme=dark`, no FOUC), 0px overflow desktop+375px,
+  desktop control hidden on mobile. Guard: `Navbar.theme.test.ts` (6).
+- **Tests (+8, pure node):** Navbar-glass token lock in `overlay-tokens.test.ts`;
+  `WORKSPACE_NAV` dead-link guard in `workspace.test.ts`; `Navbar.theme.test.ts` (public
+  toggle exposure). Gate `pnpm turbo run typecheck lint test build` **green**
+  (`@brightloop/ui` 115, `@brightloop/web` 182). Zero new deps; no schema/migration/
+  secret/generated-type/nav-hierarchy/capability change; Demo Mode production guard
+  untouched.
 - **Known limits:** no rendered screenshots / authenticated Vercel visual QA (Browser
   pane not displayable, no headless auth session); no rendered PDF-vs-UI design diff (no
   PDF rasterizer); ten admin async routes + two orphan admin routes documented

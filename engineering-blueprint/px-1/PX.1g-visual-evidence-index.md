@@ -21,10 +21,21 @@ authenticated SSO session.
 | 7 | Workspace route compiles + auth-gates | `navigate /workspace` | Redirects to Sign in, no 500 |
 | 8 | Server errors during the above | `preview_logs(level=error)` | "No server errors found" |
 | 9 | Production build (all routes) | `pnpm turbo run build` | Success, 9/9 tasks |
+| 10 | Landing-page theme toggle present (desktop) | `read_page` of `/` | ARIA radiogroup: Light / Dark / System radios in the Navbar, before the CTA |
+| 11 | Theme persists + anti-FOUC on public page | set `auxion-theme=dark`, reload, computed | `data-theme=dark`; header + body `rgb(11,12,15)` before paint |
+| 12 | No horizontal overflow with toggle | computed `scrollWidth-clientWidth` | 0px at 1280px **and** 375px |
+| 13 | Responsive: desktop toggle hides on mobile | computed `display` at 375px | `.desktopTheme` `display:none`; hamburger `flex` |
+| 14 | Console (landing, after toggle actions) | `read_console_messages(onlyErrors)` | No errors |
 
 ## What was NOT captured (and is not claimed)
 - Rendered screenshots of any surface (Light / Dark / System · desktop / mobile ·
   reduced-motion) — Browser pane not displayable.
+- Interactive click-to-switch of the landing-page toggle and the toggle's `aria-checked`
+  reflecting the saved choice — both need React hydration, which does not run while the
+  pane is hidden. The hydration-independent anti-FOUC path (`ThemeScript` on reload) was
+  verified instead.
+- Opening the mobile drawer to see the in-drawer segmented toggle — the burger click
+  needs hydration; the drawer markup is asserted by `Navbar.theme.test.ts` and the build.
 - Authenticated interactive QA of Console, Signals, Analytics, System Map, AI actions,
   Integrations, Billing, Workspace, Portal (no authenticated headless session).
 - Rendered PDF-vs-UI design diff (no PDF rasterizer — see Design Parity).

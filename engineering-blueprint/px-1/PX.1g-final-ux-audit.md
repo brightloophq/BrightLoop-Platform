@@ -126,6 +126,21 @@ above.
 toast queued behind current screen-reader speech instead of interrupting. **Fix:**
 `danger` → `role="alert"` + `aria-live="assertive"`; informational tones stay polite.
 
+### P2-0 — Theme toggle absent from the public landing page ✅ FIXED (follow-up)
+A final review found the Light/Dark/System control was available on authenticated shells
+and the login page but **not** on the public marketing Navbar
+(`packages/ui/src/components/Navbar.tsx`) — so a visitor on the landing page had no
+visible way to choose a theme, even though the PX.1a Theme Runtime
+(`ThemeProvider`/`ThemeScript`) is already active there via the root layout. **Root
+cause:** the Navbar's `.actions` group rendered only the CTA + hamburger; it never
+composed `ThemeToggle`, on desktop or in the mobile drawer. **Fix:** added the existing
+`ThemeToggle` (reuse — no second implementation/provider) — **compact** in the desktop
+`.actions` (before the CTA, `.desktopTheme`, hidden <1024px) and **segmented** in the
+mobile drawer under an "Appearance" label (`.drawerTheme`). Tokens only; no nav-hierarchy
+change. Guarded by `Navbar.theme.test.ts` (6 tests). Verified live: toggle present on the
+landing page, dark preference persists across reload (`data-theme=dark`, no FOUC), 0px
+horizontal overflow at desktop and 375px, desktop toggle correctly hidden on mobile.
+
 ### P2-5 — Command-palette results were mouse-only ✅ FIXED
 `WorkspaceShell.tsx:123` rendered each result as `<a>` **without `href`** — not
 keyboard-focusable, no link/button role, operable only by mouse (arrow-key nav existed
@@ -194,7 +209,7 @@ documented, lower-priority follow-up — not reworked in PX.1g to avoid risk.)
 |---|---|---|---|
 | P0 | 0 | — | — |
 | P1 | 2 | 2 | 0 |
-| P2 | 5 | 5 | 0 |
+| P2 | 6 | 6 | 0 |
 | P3 | 6 | 1 | 5 |
 | OUT-OF-SCOPE | 3 (+charter exclusions) | 0 | all |
 

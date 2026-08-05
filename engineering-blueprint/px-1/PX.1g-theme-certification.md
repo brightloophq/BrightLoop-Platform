@@ -48,10 +48,35 @@ expression, sampled under both themes:
 No console errors on the public surface. The PX.1f status-tint tokenization (Alert,
 PlaceholderNotice) and `--scrim` (Drawer, Navbar backdrop) remain in place and tested.
 
+## Public landing-page toggle exposure (follow-up)
+A review found the theme **control** was absent from the public marketing Navbar (the
+runtime was active via the root `ThemeProvider`/`ThemeScript`, but no `ThemeToggle` was
+composed into `packages/ui/src/components/Navbar.tsx`). Fixed by adding the **existing**
+`ThemeToggle` — compact in the desktop actions (before the CTA, hidden <1024px) and
+segmented in the mobile drawer under an "Appearance" label. No second theme
+implementation, provider, or runtime; tokens only; no hardcoded colors (asserted by
+`Navbar.theme.test.ts`). The Navbar glass, being token-based, keeps the toggle legible in
+both scrolled and unscrolled states, Light and Dark.
+
+**Live verification (dev server, public home):**
+- Toggle present in the desktop Navbar as an ARIA `radiogroup` (Light / Dark / System,
+  "System … currently light").
+- Stored preference `auxion-theme=dark` applied by `ThemeScript` **before paint** on
+  reload → `data-theme=dark`, header + body dark (`rgb(11,12,15)`); persistence + anti-
+  FOUC confirmed on the public surface.
+- 0px horizontal overflow at 1280px and 375px; desktop toggle `display:none` at 375px
+  (mobile control is the drawer's segmented toggle); no console errors.
+- Interactive click-to-switch and the toggle's `aria-checked` reflecting the saved choice
+  require React hydration, which does not run in this hidden-pane environment (documented
+  limitation); the pre-paint `ThemeScript` path — the anti-FOUC guarantee — is
+  hydration-independent and verified above.
+
 ## Result
-**CERTIFIED.** With the three fixes, no inappropriate hardcoded visual color remains in
-the audited trees; all surface, text, border, status and overlay colors resolve through
-theme tokens and flip correctly across Light / Dark / System. Full-visual screenshot
-matrix across every route was not captured (see Visual Evidence Index — Browser pane not
-displayable in this environment); the change is token-level and verified via computed
-values + the hygiene tests.
+**CERTIFIED.** With the three color fixes, no inappropriate hardcoded visual color
+remains in the audited trees; all surface, text, border, status and overlay colors
+resolve through theme tokens and flip correctly across Light / Dark / System. The
+Light/Dark/System control is now reachable on **every** surface — public, auth, and
+authenticated — via the single shared runtime. Full-visual screenshot matrix across every
+route was not captured (see Visual Evidence Index — Browser pane not displayable in this
+environment); changes are token-level and verified via computed values + the hygiene
+tests.

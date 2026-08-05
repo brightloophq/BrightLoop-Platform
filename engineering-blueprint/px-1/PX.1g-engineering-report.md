@@ -43,11 +43,23 @@ preserved; tracked tree clean. Branch `feat/px1g-final-ux-certification` created
 - `WorkspaceShell.tsx` (+`workspace.module.css`) — command-palette items `<a>`→`<button>`
   (keyboard/AT operable).
 
-**Tests (+2, house style, pure node — no rendering, no live providers):**
+**Follow-up — public landing-page theme toggle (§9):**
+- `packages/ui/src/components/Navbar.tsx` (+`.module.css`) — the public Navbar now
+  composes the **existing** `ThemeToggle` (reuse — no second implementation/provider):
+  **compact** in the desktop `.actions` before the CTA (`.desktopTheme`, hidden <1024px)
+  and **segmented** in the mobile drawer under an "Appearance" label (`.drawerTheme`). The
+  PX.1a runtime (`ThemeProvider`/`ThemeScript`) is already active on public pages via the
+  root layout, so this exposes it — no runtime change, no nav-hierarchy change, tokens
+  only.
+
+**Tests (+8, house style, pure node — no rendering, no live providers):**
 - `tokens/overlay-tokens.test.ts` — Navbar glass must be a `--bg-raised` color-mix, never
   the near-white literal (regression lock).
 - `workspace/workspace.test.ts` — every `WORKSPACE_NAV` destination resolves to a real
   `page.tsx` (dead-link guard).
+- `components/Navbar.theme.test.ts` (6) — public Navbar exposes the shared `ThemeToggle`
+  twice (compact desktop + segmented drawer), introduces no second provider/runtime,
+  hides the desktop control <1024px, and adds no hardcoded colors.
 
 ## 4. Approach discipline
 Priority order honored: shared primitive → shared layout → shared token → route-specific.
@@ -72,7 +84,7 @@ backend/product-capability findings documented as OUT-OF-SCOPE, not built.
 `pnpm turbo run typecheck lint test build`:
 - typecheck — **pass** (all packages)
 - lint — **pass** (one pre-existing unrelated warning in `theme.test.ts`)
-- test — **pass** (`@brightloop/ui` 109, `@brightloop/web` 182; +2 new)
+- test — **pass** (`@brightloop/ui` 115, `@brightloop/web` 182; +8 new)
 - build — **pass** (9/9 tasks; no first-load regression)
 Database/security CI gates (migrate · pgTAP · RLS · adapter · type-drift · gitleaks) are
 unchanged by this branch (no schema/migration/secret/generated-type changes) and run on
