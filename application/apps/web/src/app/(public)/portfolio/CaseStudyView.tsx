@@ -23,6 +23,7 @@ import {
   StatChip,
   Tag,
 } from "@brightloop/ui";
+import { safeJsonLd } from "@/lib/json-ld";
 import home from "../home.module.css";
 import styles from "./case-study.module.css";
 
@@ -70,7 +71,7 @@ export function CaseStudyView({ project, testimonial, related, variant }: CaseSt
       {schema ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
         />
       ) : null}
 

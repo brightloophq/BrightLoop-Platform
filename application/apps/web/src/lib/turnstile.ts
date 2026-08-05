@@ -5,10 +5,12 @@ import "server-only";
  * the public signup endpoint).
  *
  * PROVIDER-BEHIND-ENV, like payments/email. When TURNSTILE_SECRET_KEY is unset
- * (dev / controlled launch), verification is a NO-OP and signup proceeds — the
- * gate does not block a launch that hasn't provisioned Turnstile yet. When the
- * secret IS set, a valid token is REQUIRED and checked against Cloudflare, so a
- * public opening cannot be scripted for mass account creation.
+ * in dev / preview, verification is a NO-OP so local and staging signup work
+ * without provisioning Turnstile. In real PRODUCTION an unset secret fails
+ * CLOSED — the public signup uses the service-role client to create auth users
+ * and tenant orgs, so it must never run without its bot gate; a misconfiguration
+ * is safer rejected than scripted. When the secret IS set, a valid token is
+ * REQUIRED and checked against Cloudflare in every environment.
  *
  * The matching public site key (NEXT_PUBLIC_TURNSTILE_SITE_KEY) drives the widget
  * on the signup form; when it's absent the widget renders nothing.
@@ -22,7 +24,15 @@ export function isTurnstileEnforced(): boolean {
 
 export async function verifyTurnstile(token: string | null): Promise<{ ok: boolean; reason?: string }> {
   const secret = process.env.TURNSTILE_SECRET_KEY;
-  if (!secret) return { ok: true }; // not enforced
+  if (!secret) {
+    // Production must never accept the public, service-role-backed signup without
+    // the bot gate. Unset secret in prod = fail CLOSED; in dev / preview it stays
+    // a no-op so signup works without provisioning Turnstile.
+    if (process.env.VERCEL_ENV === "production") {
+      return { ok: false, reason: "Sign-up is temporarily unavailable. Please try again shortly." };
+    }
+    return { ok: true }; // not enforced outside production
+  }
 
   if (!token) return { ok: false, reason: "Please complete the anti-bot check." };
 
