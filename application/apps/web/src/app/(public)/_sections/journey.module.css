@@ -1,0 +1,178 @@
+/* TransformationJourney — sticky scroll story. Token-driven; theme + reduced-motion safe. */
+
+.journey {
+  position: relative;
+  padding-block: var(--space-8);
+  background: var(--surface-inset);
+  border-block: var(--border-hairline);
+}
+
+.grid {
+  max-width: var(--container-wide, 1200px);
+  margin-inline: auto;
+  padding-inline: var(--space-5);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-6);
+}
+
+/* ---- sticky diagram ---- */
+.sticky {
+  position: static;
+}
+
+.diagram {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.svg {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  overflow: visible;
+}
+
+.diagramCaption {
+  margin: 0;
+  max-width: 34ch;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+}
+
+.orbit {
+  fill: none;
+  stroke: var(--border-subtle);
+  stroke-width: 0.6;
+}
+
+.link {
+  stroke: var(--signal);
+  stroke-width: 0.9;
+  stroke-linecap: round;
+  /* pathLength=1 → dash space of 1; default drawn (offset 0). JS hides then draws. */
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  opacity: 0.55;
+}
+
+.nodeDisc {
+  fill: var(--surface-card);
+  stroke: var(--border-strong, var(--border-subtle));
+  stroke-width: 0.8;
+  transition: fill var(--dur-orchestrate, 0.44s) ease, stroke var(--dur-orchestrate, 0.44s) ease;
+}
+
+.nodeText {
+  fill: var(--text-muted);
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: 4px;
+  letter-spacing: 0.2px;
+  transition: fill var(--dur-orchestrate, 0.44s) ease;
+}
+
+/* Lit node — amber, on-brand "Operating" state. */
+.node.lit .nodeDisc {
+  fill: color-mix(in srgb, var(--signal) 22%, var(--surface-card));
+  stroke: var(--signal);
+}
+.node.lit .nodeText {
+  fill: var(--text-primary);
+}
+
+.core {
+  fill: var(--grad-loop-fallback, var(--signal));
+  fill: var(--surface-raised, var(--surface-card));
+  stroke: var(--signal);
+  stroke-width: 1;
+}
+
+.coreText {
+  fill: var(--text-primary);
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: 5px;
+  letter-spacing: 0.3px;
+}
+
+/* ---- steps ---- */
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.step {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--space-4);
+  align-items: start;
+  transition: opacity var(--dur-orchestrate, 0.44s) ease;
+}
+
+.stepNum {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: var(--fs-h3);
+  color: var(--signal);
+  line-height: 1;
+  opacity: 0.5;
+}
+
+.stepDiscipline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--text-accent);
+}
+
+.stepTitle {
+  margin: var(--space-2) 0 var(--space-3);
+  font-size: var(--fs-h3);
+  color: var(--text-primary);
+}
+
+.stepText {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-base);
+  line-height: var(--lh-body);
+  max-width: 46ch;
+}
+
+/* Desktop: sticky diagram beside the scrolling steps. */
+@media (min-width: 1024px) {
+  .grid {
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: var(--space-8);
+    align-items: start;
+  }
+  .sticky {
+    position: sticky;
+    top: calc(var(--nav-height, 64px) + var(--space-6));
+    align-self: start;
+  }
+  .steps {
+    gap: min(28vh, var(--space-9, 96px));
+    padding-block: 12vh;
+  }
+  /* Dim the non-active steps a touch so the current one leads. Motion only. */
+  @media (prefers-reduced-motion: no-preference) {
+    .step {
+      opacity: 0.45;
+    }
+    .step.active {
+      opacity: 1;
+    }
+  }
+}

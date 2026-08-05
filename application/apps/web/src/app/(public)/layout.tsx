@@ -8,6 +8,9 @@ import {
   PRIMARY_NAV,
 } from "@/lib/navigation";
 import { placeholderScope } from "@/lib/repositories";
+import { IntroScript } from "./_intro/IntroScript";
+import { Preloader } from "./_intro/Preloader";
+import "./intro.css";
 
 /**
  * Public marketing shell — sticky glass Navbar + MegaMenu + Footer (handoff §05).
@@ -21,6 +24,9 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
+      <IntroScript />
+      <div className="introCover" aria-hidden="true" />
+      <Preloader />
       <PlaceholderNotice reputation={scope.reputation} catalog={scope.catalog} />
       <Navbar links={PRIMARY_NAV} ctaLabel={PRIMARY_CTA.label} ctaHref={PRIMARY_CTA.href} />
       <main id="main-content" tabIndex={-1}>{children}</main>

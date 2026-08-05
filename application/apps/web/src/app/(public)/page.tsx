@@ -10,13 +10,37 @@ import {
   Container,
   Eyebrow,
   Icon,
+  Marquee,
   Section,
   ServiceCard,
   Stars,
   Testimonial,
 } from "@brightloop/ui";
+import { CountUp, HeroSequence, Reveal } from "@brightloop/ui/motion";
 import { getCatalogRepository, getReputationRepository } from "@/lib/repositories";
+import { TransformationJourney } from "./_sections/TransformationJourney";
+import { PlatformShowcase } from "./_sections/PlatformShowcase";
 import styles from "./home.module.css";
+
+/**
+ * The public capability strip. These are capability CATEGORIES that map directly
+ * to the four disciplines (Brand · Build · Automate · Grow) — neutral nouns, not
+ * fabricated service claims or metrics. Content, never motion, lives here.
+ */
+const CAPABILITY_MARQUEE = [
+  "Brand",
+  "Strategy",
+  "Design",
+  "Build",
+  "Websites",
+  "Funnels",
+  "Automate",
+  "Workflows",
+  "Operations",
+  "Grow",
+  "Analytics",
+  "Optimisation",
+] as const;
 
 /**
  * ISR, 5 min — the featured case study comes from the CMS and must appear
@@ -71,44 +95,53 @@ export default async function HomePage() {
       {/* ---- Hero ---- */}
       <Section rhythm="hero" tone="dark" className={styles.hero}>
         <div className={styles.heroGlow} aria-hidden="true" />
-        <Container width="wide" className={styles.heroGrid}>
-          <div>
-            <Eyebrow>Brand · Build · Automate · Grow</Eyebrow>
-            <h1 className={styles.heroTitle}>
-              Four disciplines. <span className={styles.heroAccent}>One loop.</span>
-            </h1>
-            <p className={styles.heroSub}>
-              Most agencies hand you a logo, a site, or a campaign — then leave the gaps to you.
-              Auxion connects all four so your brand, website, operations and marketing compound
-              instead of competing.
-            </p>
-            <div className={styles.heroActions}>
-              <Button variant="primary" size="lg" asChild>
-                <Link href="/assessment">Start the Health Assessment</Link>
-              </Button>
-              <Button variant="secondary" size="lg" asChild>
-                <Link href="/contact">Book a Strategy Call</Link>
-              </Button>
-            </div>
-            <p className={styles.heroNote}>
-              Free assessment · No card required · Takes about 5 minutes
-            </p>
-          </div>
-
-          {/* The loop visual — the four disciplines as one cycle. */}
-          <div className={styles.loop} aria-hidden="true">
-            <div className={styles.loopRing} />
-            {LOOP_NODES.map((node) => (
-              <div
-                key={node.discipline}
-                className={`${styles.loopNode} ${styles[node.position]}`}
-              >
-                <Icon name={node.icon} size={18} className={styles.loopNodeIcon} />
-                <span className={styles.loopNodeLabel}>{node.discipline}</span>
+        <Container width="wide">
+          <HeroSequence className={styles.heroGrid}>
+            <div>
+              <div data-hero="eyebrow">
+                <Eyebrow>Brand · Build · Automate · Grow</Eyebrow>
               </div>
-            ))}
-            <div className={styles.loopCore}>Auxion</div>
-          </div>
+              <span className={styles.titleMask}>
+                <h1 className={styles.heroTitle} data-hero="title">
+                  Four disciplines. <span className={styles.heroAccent}>One loop.</span>
+                </h1>
+              </span>
+              <p className={styles.heroSub} data-hero="sub">
+                Most agencies hand you a logo, a site, or a campaign — then leave the gaps to you.
+                Auxion connects all four so your brand, website, operations and marketing compound
+                instead of competing.
+              </p>
+              <div className={styles.heroActions} data-hero="actions">
+                <Button variant="primary" size="lg" asChild>
+                  <Link href="/assessment">Start the Health Assessment</Link>
+                </Button>
+                <Button variant="secondary" size="lg" asChild>
+                  <Link href="/contact">Book a Strategy Call</Link>
+                </Button>
+              </div>
+              <p className={styles.heroNote} data-hero="note">
+                Free assessment · No card required · Takes about 5 minutes
+              </p>
+            </div>
+
+            {/* The loop visual — the four disciplines as one cycle. */}
+            <div className={styles.loop} aria-hidden="true">
+              <div className={styles.loopRing} data-hero="loopRing" />
+              {LOOP_NODES.map((node) => (
+                <div
+                  key={node.discipline}
+                  className={`${styles.loopNode} ${styles[node.position]}`}
+                  data-hero="loopNode"
+                >
+                  <Icon name={node.icon} size={18} className={styles.loopNodeIcon} />
+                  <span className={styles.loopNodeLabel}>{node.discipline}</span>
+                </div>
+              ))}
+              <div className={styles.loopCore} data-hero="loopCore">
+                Auxion
+              </div>
+            </div>
+          </HeroSequence>
         </Container>
       </Section>
 
@@ -124,19 +157,22 @@ export default async function HomePage() {
         </Container>
       </div>
 
+      {/* ---- Capability marquee ---- */}
+      <Marquee items={CAPABILITY_MARQUEE} label="What Auxion does" icon="sparkles" />
+
       {/* ---- The four disciplines ---- */}
       <Section>
         <Container width="wide">
-          <div className={styles.head}>
+          <Reveal className={styles.head}>
             <Eyebrow>The framework</Eyebrow>
             <h2 className={styles.title}>Everything a small business needs, in the right order</h2>
             <p className={styles.lede}>
               Each discipline stands alone. Together they form the loop — brand earns the click,
               build converts it, automation catches it, and growth compounds it.
             </p>
-          </div>
+          </Reveal>
 
-          <div className={styles.serviceGrid}>
+          <Reveal className={styles.serviceGrid}>
             {Object.entries(DISCIPLINE_SLUGS).map(([slug, discipline]) => {
               const copy = PLACEHOLDER_DISCIPLINE_COPY[discipline];
               const count = moduleCountFor(discipline);
@@ -152,18 +188,25 @@ export default async function HomePage() {
                 />
               );
             })}
-          </div>
+          </Reveal>
         </Container>
       </Section>
+
+      {/* ---- The transformation journey (scroll story) ---- */}
+      <TransformationJourney />
+
+      {/* ---- The platform, showcased as a product ---- */}
+      <PlatformShowcase />
 
       {/* ---- Proof: featured case study ---- */}
       <Section inset>
         <Container width="wide">
-          <div className={styles.head}>
+          <Reveal className={styles.head}>
             <Eyebrow>Proof</Eyebrow>
             <h2 className={styles.title}>The loop, applied</h2>
-          </div>
+          </Reveal>
 
+          <Reveal stagger={false}>
           {marquee ? (
             <CaseStudyCard
               name={marquee.name}
@@ -186,28 +229,29 @@ export default async function HomePage() {
               until it is real and client-approved.
             </Alert>
           )}
+          </Reveal>
         </Container>
       </Section>
 
       {/* ---- Testimonials ---- */}
       <Section>
         <Container width="wide">
-          <div className={`${styles.head} ${styles.headCentered}`}>
+          <Reveal className={`${styles.head} ${styles.headCentered}`}>
             <Eyebrow>What clients say</Eyebrow>
             <h2 className={styles.title}>Rated by the businesses we build for</h2>
             {aggregate.count > 0 ? (
               <div className={styles.ratingRow}>
                 <Stars value={aggregate.overall} showValue />
                 <span>
-                  based on {aggregate.count} verified{" "}
+                  based on <CountUp to={aggregate.count} /> verified{" "}
                   {aggregate.count === 1 ? "review" : "reviews"}
                 </span>
               </div>
             ) : null}
-          </div>
+          </Reveal>
 
           {testimonials.length > 0 ? (
-            <div className={styles.testimonialGrid}>
+            <Reveal className={styles.testimonialGrid}>
               {testimonials.map((t) => (
                 <Testimonial
                   key={t.id}
@@ -219,7 +263,7 @@ export default async function HomePage() {
                   projectHref={t.projectSlug ? `/portfolio/${t.projectSlug}` : undefined}
                 />
               ))}
-            </div>
+            </Reveal>
           ) : (
             <Alert tone="neutral" title="No published reviews yet">
               Reviews appear here once they are real, attributed and approved for publication.
@@ -231,6 +275,7 @@ export default async function HomePage() {
       {/* ---- Closing CTA ---- */}
       <Section rhythm="tight">
         <Container width="wide">
+          <Reveal stagger={false}>
           <CTASection
             eyebrow="Start here"
             title="Find out where your business actually stands"
@@ -247,6 +292,7 @@ export default async function HomePage() {
             }
             note="Free · No card required · About 5 minutes"
           />
+          </Reveal>
         </Container>
       </Section>
     </>

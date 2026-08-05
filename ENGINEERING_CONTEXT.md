@@ -1610,3 +1610,48 @@ drove a small, shared-primitive-first set of fixes:
   OUT-OF-SCOPE. Deliverables: `engineering-blueprint/px-1/PX.1g-*.md` (final-ux-audit,
   design-parity, responsive/accessibility/theme certifications, data-honesty,
   performance-review, visual-evidence-index, engineering-report).
+
+**PX.1h — Public Agency Experience + Signature Motion System (branch
+`feat/px1h-signature-motion`, this PR).** Makes the **public** site read as a premium AI-
+transformation agency with a real platform, via a deliberate, visible motion layer — while
+keeping the authenticated product restrained. **Not** backend/feature/rewrite/nav-redesign;
+no Framer Motion; no schema/RLS/billing/auth/domain/migration/generated-type/API change; no
+fabricated proof/metrics/logos/projects. Merged PX.1g (PR #82, merge commit `9009a0e`) first
+(it carried the required public theme toggle), then branched off `main`.
+- **Audit finding:** the homepage `(public)/page.tsx` was a **static Server Component** (its
+  CSS had zero `@keyframes`/`animation`/`transition`); **ScrollTrigger did not exist** in the
+  repo; no preloader/hero-choreography/marquee. The public theme toggle (PX.1g) was preserved.
+- **Motion engine — new PUBLIC/editorial vocabulary beside the operational one**
+  (`@brightloop/ui/motion`): `public.config.ts` (pure: `PUBLIC_PRESET`, `HERO_SEQUENCE`,
+  `JOURNEY_STAGES` = Brand·Build·Automate·Grow, `MARQUEE`, `PARALLAX`), `public.ts` (gsap
+  builders: reveal/revealStagger/maskReveal/heroSequence/countUp), `scroll.ts`
+  (`registerScrollTrigger` — the one place ScrollTrigger turns on, code-split to public
+  routes), `gsapClient.ts` (re-exports gsap/useGSAP so app code uses ui's dep), `intro.ts`
+  (preloader→hero handoff), and host components `Reveal`/`Parallax`/`CountUp`/`HeroSequence`
+  (keep content server-rendered — marker/host pattern). New reusable `Marquee` UI component.
+- **Shipped (public):** **branded preloader** (mark→wordmark→loop line→mask away; once per
+  session, never under reduced motion; inline `IntroScript` pre-paint gate like `ThemeScript`;
+  JS-independent CSS **failsafe** so content is never trapped); **hero signature entrance**
+  (masked headline + loop ring→nodes→core activation, built paused, played on handoff);
+  **capability marquee** (seamless two-track loop, duplicate `aria-hidden`, pause on
+  hover/focus, static under reduce, CSS-only if JS throttled); **transformation-journey
+  ScrollTrigger story** (native sticky loop diagram + four scrolling stages that light nodes
+  and draw connections — the loop completes as you scroll; **doubles as the public System Map
+  sequence**, reusing the pure `systemMapGeometry` primitive with generic data; renders
+  fully-lit/readable with no-JS/reduced/mobile, scroll build is desktop+motion only via
+  `gsap.matchMedia`); **platform showcase** (layered panels naming canonical surfaces —
+  Console·Signals·Insights·Recommendations·Moves·Analytics — abstract UI, **no fake metrics**);
+  **scroll reveals + a real count-up** (testimonials' verified aggregate review count).
+- **Authenticated product:** left restrained (already carries its operational motion from
+  PX.1a–f); the public vocabulary + ScrollTrigger never enter the app bundle.
+- **Reduced motion / no-JS:** content is never hidden — hidden states apply in JS only when
+  motion is allowed; preloader/journey-build/marquee/reveals all no-op safely.
+- **Tests (+10, pure node):** `motion/public-motion.test.ts` (7) + `(public)/_intro/intro.test.ts`
+  (3). Gate `pnpm turbo run typecheck lint test build` **green** (`@brightloop/ui` 122,
+  `@brightloop/web` 185). Homepage `/` First Load JS **232 kB** vs ~205 kB other public routes
+  → the whole GSAP+ScrollTrigger+motion layer is **~27 kB**, code-split to `/` only.
+- **Known limits:** interactive/visual motion QA not capturable here (Browser pane not
+  displayed → does not composite frames **or hydrate** the client runtime; confirmed even the
+  shipped Navbar scroll-glass is inert there). Deferred (documented): public route transitions,
+  navbar-entrance/magnetic-CTA, per-line headline split. Deliverables:
+  `engineering-blueprint/px-1/PX.1h-signature-motion-{audit,report}.md`.
