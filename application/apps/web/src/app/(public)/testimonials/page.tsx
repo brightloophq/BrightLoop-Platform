@@ -13,6 +13,7 @@ import {
   Stars,
 } from "@brightloop/ui";
 import { getReputationRepository } from "@/lib/repositories";
+import { safeJsonLd } from "@/lib/json-ld";
 import home from "../home.module.css";
 import styles from "./testimonials.module.css";
 
@@ -70,7 +71,7 @@ export default async function TestimonialsPage({ searchParams }: PageProps) {
       {schema ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(schema) }}
         />
       ) : null}
 

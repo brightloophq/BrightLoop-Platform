@@ -3,10 +3,14 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **Phase D · Sprint D8 (Engineering
-> Certification)** — Phase D D1–D7 complete and merged; D8 certifies production
-> readiness. Previously: **Phase C · Sprint C3 (Discovery/
-> Crawler Runtime)** — the first real, SSRF-guarded website ingress into the pipeline.
+> convention that changed). Last updated: after **LR.1 (Production Readiness &
+> Launch Certification)** — repository + production/security/data-honesty audit,
+> code-level P0/P1 fixes (Turnstile fail-closed-in-prod, public + global error
+> boundaries, JSON-LD injection hardening), verdict **READY AFTER P0 + P1 FIXES**
+> (code ready; go-live gated on operational/content items). See §23 and
+> `engineering-blueprint/LR.1-production-readiness-report.md`. Prior sprints on
+> `main`: Phase D (D1–D8), Phase A/B/C engine, Phase E, Phase F (F1–F5), and the
+> Product Experience program **PX.1a–h** (PX.1i is open PR #85, CI-green).
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
 > (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
@@ -1655,3 +1659,43 @@ fabricated proof/metrics/logos/projects. Merged PX.1g (PR #82, merge commit `900
   shipped Navbar scroll-glass is inert there). Deferred (documented): public route transitions,
   navbar-entrance/magnetic-CTA, per-line headline split. Deliverables:
   `engineering-blueprint/px-1/PX.1h-signature-motion-{audit,report}.md`.
+
+**PX.1i — Premium Experience (interaction/polish) — OPEN PR #85 (base `main`, CI-green).**
+The 20% of micro-interaction fixes that raise perceived quality: primary Button uses semantic
+`--action-fg` (fixes white-on-near-white CTA on dark-token surfaces) + real hover/press;
+`--grad-signal` hero accent (was near-invisible `--grad-loop`); Card `--ease-precise` hover +
+amber edge; ServiceCard/CaseStudyCard arrow/icon feedback; `Stars` `--signal` (fixes undefined
+`--star-gold`); Field hover/focus; CTASection elevation. Token-only, reduced-motion safe, zero
+backend. Left open, not merged. Report `engineering-blueprint/px-1/PX.1i-premium-experience-report.md`.
+
+## 23. LR.1 — Production Readiness & Launch Certification (branch `feat/lr1-production-readiness`, PR open)
+
+Repository + production/security/data-honesty audit of the `main` baseline (cut @ `5bc068e`).
+Full report: `engineering-blueprint/LR.1-production-readiness-report.md`.
+
+- **Verdict: READY AFTER P0 + P1 FIXES.** No P0. The **code** is engineering-certified
+  production-ready; go-live is gated on **operational/content** items (not code): approve
+  placeholder content, flip the site-wide `robots` noindex (`layout.tsx:26`, intentionally off
+  now), set real production hostnames, provision `TURNSTILE_SECRET_KEY`, and build/verify the
+  Stripe adapter (or keep payments disabled). See `docs/PRE-LAUNCH.md`.
+- **Audit evidence (all clean at code level):** three-layer integrity + fail-closed ES256 JWT
+  auth; service role is `server-only` (never client-reachable); webhooks verify HMAC (timing-safe)
+  on the raw body, fail closed; full CSP/HSTS/nosniff/X-Frame/Referrer/Permissions headers with
+  **no** `ignoreBuildErrors`; demo mode returns `false` the instant `VERCEL_ENV==="production"`;
+  placeholder data is banner-labelled + `disclosed:false`; result metrics render only through
+  `disclosedMetrics()`; payments default to a mock whose webhook verify never blanket-passes; no
+  TODO/console/debug/dead-code/runtime-`any`.
+- **P1 code fixes shipped (this branch):** (1) **`lib/turnstile.ts` fails CLOSED in production**
+  when `TURNSTILE_SECRET_KEY` is unset (dev/preview keep the no-op) — the public service-role
+  signup can no longer be scripted if misconfigured; (2) **`(public)/error.tsx`** — public/marketing
+  routes gained an error boundary (reuse shared `RouteError`); (3) **`global-error.tsx`** — root
+  self-contained crash fallback (own `<html>/<body>`, no token dependency); (4) **`lib/json-ld.ts`
+  `safeJsonLd()`** (+test) escapes `<`/`>`/`&`/U+2028/U+2029, applied at the two `application/ld+json`
+  injection sites — closes a stored-XSS breakout vector (moderated CMS input; defence-in-depth).
+- **Deferred (justified):** `script-src 'unsafe-inline'` → nonce CSP (real regression risk on
+  Next's inline bootstrap + anti-FOUC theme script; unverifiable here). Root OG/`metadataBase`/
+  homepage JSON-LD (P2 SEO). `next/image remotePatterns` (P3).
+- **Repo hygiene flagged:** 6 open PRs (#85/#75/#66/#10/#7 superseded/#6 held) + stale branches to
+  triage. **Environment limit:** no DB/auth/runtime/visual/Lighthouse/pen-test here — this is a
+  code+config certification; runtime QA (SR pass, contrast, Core Web Vitals, live journeys) remains
+  the owner's pre-launch step. Gate `typecheck·lint·test·build` **36/36 green**; additive only.
