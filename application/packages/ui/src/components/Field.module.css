@@ -30,7 +30,13 @@
   color: var(--text-muted);
 }
 .control:hover {
-  border-color: var(--slate-600);
+  border-color: color-mix(in srgb, var(--signal) 28%, var(--line-strong));
+}
+/* Focus picks up the amber signal border under the global focus ring — one
+   coherent accent, not the legacy slate. */
+.control:focus,
+.control:focus-visible {
+  border-color: var(--signal);
 }
 .control:disabled {
   opacity: var(--opacity-disabled);

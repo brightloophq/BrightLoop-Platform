@@ -8,14 +8,16 @@
 
 .interactive {
   transition:
-    border-color var(--dur-base) var(--ease-out),
-    box-shadow var(--dur-base) var(--ease-out),
-    transform var(--dur-base) var(--ease-out);
+    border-color var(--dur-base) var(--ease-precise),
+    box-shadow var(--dur-base) var(--ease-precise),
+    transform var(--dur-base) var(--ease-precise);
 }
 .interactive:hover {
-  border-color: var(--border-strong);
+  /* A restrained amber-tinted edge reads as "responding" without shouting — the
+     one signal, used as interaction feedback. */
+  border-color: color-mix(in srgb, var(--signal) 38%, var(--line-strong));
   box-shadow: var(--elevation-3);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 
 @media (prefers-reduced-motion: reduce) {

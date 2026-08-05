@@ -35,6 +35,14 @@
   --signal:      #B4571A; /* THE accent — amber, system state only */
   --signal-tint: color-mix(in srgb, var(--signal) 12%, transparent); /* active fill — 12% signal */
   --on-signal:   #FFFFFF; /* text/icon on a signal fill */
+  /* Signature amber wash for a hero headline accent — a legible amber sheen that
+     resolves from --signal, so it stays high-contrast on the dark hero field and
+     on paper. Reserved for the ONE accented headline word, never body text. */
+  --grad-signal: linear-gradient(
+    115deg,
+    var(--signal) 0%,
+    color-mix(in srgb, var(--signal) 58%, white) 100%
+  ); /* @kind color */
 
   /* ---- Semantic (state) ---- */
   --positive:    #1F7A54; /* Operating / healthy */

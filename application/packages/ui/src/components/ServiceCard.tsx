@@ -37,7 +37,7 @@ export function ServiceCard({
           {meta ? <span className={styles.meta}>{meta}</span> : <span />}
           <span className={styles.explore}>
             {exploreLabel}
-            <Icon name="arrow-right" size={14} />
+            <Icon name="arrow-right" size={14} className={styles.arrow} />
           </span>
         </span>
       </Link>
