@@ -173,7 +173,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-overlay);
-  background: rgba(6, 10, 19, var(--opacity-scrim));
+  background: var(--scrim);
   backdrop-filter: blur(var(--blur-sm));
   -webkit-backdrop-filter: blur(var(--blur-sm));
   border: none;

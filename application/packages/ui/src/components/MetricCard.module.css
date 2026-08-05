@@ -78,3 +78,10 @@
   box-shadow: var(--elevation-3);
   border-color: var(--border-strong);
 }
+
+/* Match Card: keep the elevation cue but drop the lift when motion is reduced. */
+@media (prefers-reduced-motion: reduce) {
+  .interactive:hover {
+    transform: none;
+  }
+}

@@ -107,6 +107,8 @@ export { AttentionRow } from "./components/AttentionRow";
 export type { AttentionRowProps, AttentionTone } from "./components/AttentionRow";
 export { SkeletonBlock } from "./components/SkeletonBlock";
 export type { SkeletonBlockProps } from "./components/SkeletonBlock";
+export { PageSkeleton } from "./components/PageSkeleton";
+export type { PageSkeletonProps, PageSkeletonVariant } from "./components/PageSkeleton";
 export { SystemMap, systemMapGeometry } from "./components/SystemMap";
 export type { SystemMapProps, SystemMapNodeInput } from "./components/SystemMap";
 

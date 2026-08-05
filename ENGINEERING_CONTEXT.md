@@ -1531,3 +1531,40 @@ tokens. Mandatory audit + route-to-AI matrix:
   routes; new registry capabilities for Signals/Analytics/Recommendations/etc. (each a
   registry entry over an existing service); Approvals/Projects/Reporting wiring; live-
   provider enablement behind the existing kill-switches.
+
+**PX.1f — Motion & Feedback (branch `feat/px1f-motion-feedback`, this PR).** A focused
+Product-Experience sprint — **not** backend, not a new capability, not a redesign. The
+mandatory audit (`engineering-blueprint/px-1/PX.1f-motion-feedback-audit.md`) found the
+motion system already mature (central `motion/tokens.ts` + `presets.config.ts`, a
+triple-layer reduced-motion strategy, token-driven charts, one accessible toast, the
+PX.1e AI state machine, the dashboard's Suspense skeleton), so PX.1f is surgical and
+**extends** — no new dependency, no second toast/animation system.
+
+- **Structured route loading** (the headline gap: **no `loading.tsx`/`error.tsx`
+  existed anywhere**). New `PageSkeleton` (`packages/ui/src/components/`) — the one
+  composed, layout-matching route skeleton, built on `SkeletonBlock`, shape from the
+  **pure** `pageSkeletonPlan()` (5 variants; `aria-busy`/`aria-live` + `sr-only`).
+  App-level `AdminRouteSkeleton` reproduces the admin chrome; **9 CMS/ops routes** get a
+  `loading.tsx` (analytics/invoices/leads/proposals/contracts/automation/clients/
+  projects/conversations). Transformation routes already stream via `Suspense` — left
+  as-is.
+- **Segment error boundary** `admin/error.tsx` — themed, `role="alert"`, `reset()`
+  retry, never leaks the raw error/stack/payload.
+- **Refinements:** `Button` visible loading spinner (kept the disable + `aria-busy`);
+  `Drawer` CSS entrance (slide + scrim fade; focus-trap/scroll/restore untouched) +
+  `.close` hover/focus; `MetricCard` reduced-motion guard (matches `Card`);
+  `conversations/InternalNotes` no longer fails silently (error toast + loading button).
+- **Token hygiene:** new `--scrim` token (Drawer/Navbar), and `Alert`/`PlaceholderNotice`
+  status tints moved to `color-mix(var(--token))` — no hardcoded status colors remain.
+- **Tests (+20, pure node — house style):** `PageSkeleton.plan.test.ts` (variant
+  structure + count clamping + token-radius contract), `motion/reduced-motion.test.ts`
+  (reads shipped CSS: global reset + per-component guards + Button spinner),
+  `tokens/overlay-tokens.test.ts` (scrim/tint token hygiene). Gate
+  `pnpm turbo run typecheck lint test build` **green (27/27)**; `@brightloop/ui`
+  108 tests; **zero** new deps; server-component additions (no new client boundary
+  except the required `error.tsx`). Report:
+  `engineering-blueprint/px-1/PX.1f-motion-feedback-report.md`.
+- **Known limits:** interactive visual before/after across themes/viewports/reduced-
+  motion was **not** captured in this environment (changes are transform/opacity-only,
+  token-driven, structurally tested); `system-map` canvas intentionally has no generic
+  skeleton; Drawer exit stays instant (unmounts on close).

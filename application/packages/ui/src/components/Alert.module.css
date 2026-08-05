@@ -31,18 +31,18 @@
   color: var(--info);
 }
 .success {
-  background: rgba(22, 179, 100, 0.08);
-  border-color: rgba(22, 179, 100, 0.28);
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+  border-color: color-mix(in srgb, var(--success) 28%, transparent);
   color: var(--success);
 }
 .warning {
-  background: rgba(245, 165, 36, 0.08);
-  border-color: rgba(245, 165, 36, 0.28);
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+  border-color: color-mix(in srgb, var(--warning) 28%, transparent);
   color: var(--warning);
 }
 .danger {
-  background: rgba(239, 68, 68, 0.08);
-  border-color: rgba(239, 68, 68, 0.28);
+  background: color-mix(in srgb, var(--danger) 8%, transparent);
+  border-color: color-mix(in srgb, var(--danger) 28%, transparent);
   color: var(--danger);
 }
 .neutral {

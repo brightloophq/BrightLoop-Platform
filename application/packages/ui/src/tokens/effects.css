@@ -21,6 +21,9 @@
   --opacity-hint:     0.4;  /* @kind other */
   --opacity-scrim:    0.72; /* @kind other */ /* overlay backdrop */
 
+  /* ---- Overlay scrim (single source; overlays must reference this, not raw rgba) ---- */
+  --scrim: rgba(6, 10, 19, var(--opacity-scrim)); /* @kind color */ /* drawer / mobile-nav backdrop */
+
   /* ---- Z-index scale ---- */
   --z-base:      0;    /* @kind other */
   --z-raised:    10;   /* @kind other */

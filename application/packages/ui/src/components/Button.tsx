@@ -71,7 +71,7 @@ export function Button({
       aria-busy={loading || undefined}
       {...rest}
     >
-      {leftIcon}
+      {loading ? <span className={styles.spinner} aria-hidden="true" /> : leftIcon}
       {children}
       {rightIcon}
     </button>

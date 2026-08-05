@@ -2,12 +2,14 @@
   position: fixed;
   inset: 0;
   z-index: var(--z-overlay);
-  background: rgba(6, 10, 19, var(--opacity-scrim));
+  background: var(--scrim);
   backdrop-filter: blur(var(--blur-sm));
   -webkit-backdrop-filter: blur(var(--blur-sm));
   border: none;
   padding: 0;
   cursor: default;
+  /* Fade the backdrop in on open. Global reduced-motion reset collapses this. */
+  animation: drawerScrimIn var(--dur-fast) var(--ease-out);
 }
 
 .drawer {
@@ -22,13 +24,42 @@
   flex-direction: column;
 }
 
+/* Slide the panel in from its edge on open (transform + opacity only). The drawer
+   unmounts on close, so this is an entrance-only cue; reduced motion snaps it. */
 .right {
   right: 0;
   border-left: var(--border-hairline);
+  animation: drawerSlideInRight var(--dur-base) var(--ease-out);
 }
 .left {
   left: 0;
   border-right: var(--border-hairline);
+  animation: drawerSlideInLeft var(--dur-base) var(--ease-out);
+}
+
+@keyframes drawerScrimIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes drawerSlideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+@keyframes drawerSlideInLeft {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: none;
+  }
 }
 
 .head {
@@ -57,6 +88,17 @@
   border-radius: var(--radius-sm);
   color: var(--text-primary);
   cursor: pointer;
+  transition:
+    background-color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+.close:hover {
+  background: var(--bg-raised);
+  border-color: var(--border-strong);
+}
+.close:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
 }
 
 .body {

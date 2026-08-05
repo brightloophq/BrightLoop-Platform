@@ -89,3 +89,23 @@
   opacity: var(--opacity-disabled);
   cursor: not-allowed;
 }
+
+/* Visible pending affordance. The button is already disabled + aria-busy while
+   loading (Button.tsx); this makes "working…" legible, not color-only. The global
+   reduced-motion reset (tokens/base.css) collapses the spin to a static ring. */
+.spinner {
+  width: 1em;
+  height: 1em;
+  flex: none;
+  border-radius: var(--radius-pill);
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  opacity: 0.9;
+  animation: buttonSpin var(--dur-slow) linear infinite;
+}
+
+@keyframes buttonSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
