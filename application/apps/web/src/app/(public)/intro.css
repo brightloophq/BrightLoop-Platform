@@ -1,0 +1,31 @@
+/* =============================================================================
+ * Pre-paint intro cover (global). Exists in the server HTML but is only shown
+ * while `data-intro-pending` is set (by IntroScript, before first paint). It
+ * hides the hero underneath until React's Preloader takes over, so the branded
+ * intro never flashes the hero. With no JS the attribute is never set → the
+ * cover stays hidden → the page renders normally (content is never trapped).
+ * ========================================================================== */
+
+.introCover {
+  display: none;
+}
+
+html[data-intro-pending] .introCover {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: var(--bg);
+  /* Failsafe: if the React Preloader never clears the cover (JS slow, disabled,
+   * or errored), fade it away on its own so content is NEVER trapped. The normal
+   * path removes `data-intro-pending` well before this fires (~1.5s), cancelling
+   * this rule entirely. */
+  animation: introCoverFailsafe 0.4s linear 3s forwards;
+}
+
+@keyframes introCoverFailsafe {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}

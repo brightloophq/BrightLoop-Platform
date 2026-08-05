@@ -21,6 +21,13 @@
   align-items: center;
 }
 
+/* Overflow-hidden wrapper so the headline can rise from behind a mask (the
+ * motion is transform-only; the wrapper is inert under reduced motion). */
+.titleMask {
+  display: block;
+  overflow: hidden;
+}
+
 .heroTitle {
   font-size: var(--fs-display);
   line-height: var(--lh-tight);

@@ -1,0 +1,78 @@
+/* Marquee — seamless capability ticker. Token-driven; theme + reduced-motion safe. */
+
+.marquee {
+  --marquee-dur: 30s;
+  position: relative;
+  border-block: var(--border-hairline);
+  background: var(--surface-inset);
+  padding-block: var(--space-4);
+  outline: none;
+}
+
+.marquee:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--focus-ring, var(--signal));
+}
+
+.viewport {
+  overflow: hidden;
+  /* Fade the edges so items enter/leave softly rather than clipping hard. */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.lane {
+  display: flex;
+  width: max-content;
+  animation: marquee-scroll var(--marquee-dur) linear infinite;
+  will-change: transform;
+}
+
+/* Calm, premium: settle on hover or keyboard focus. */
+.marquee:hover .lane,
+.marquee:focus-within .lane {
+  animation-play-state: paused;
+}
+
+.track {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding-inline: var(--space-4);
+  white-space: nowrap;
+}
+
+.text {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-lg);
+  letter-spacing: var(--ls-wide);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+.sep {
+  color: var(--signal);
+  opacity: 0.7;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lane {
+    animation: none;
+  }
+}
+
+@keyframes marquee-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    /* Two identical tracks → -50% lands the second exactly where the first began. */
+    transform: translate3d(-50%, 0, 0);
+  }
+}

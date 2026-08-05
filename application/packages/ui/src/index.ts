@@ -55,6 +55,8 @@ export { Testimonial } from "./components/Testimonial";
 export type { TestimonialProps } from "./components/Testimonial";
 export { CaseStudyCard } from "./components/CaseStudyCard";
 export type { CaseStudyCardProps, CaseStudyFact } from "./components/CaseStudyCard";
+export { Marquee } from "./components/Marquee";
+export type { MarqueeProps } from "./components/Marquee";
 export { ProjectCard } from "./components/ProjectCard";
 export type { ProjectCardProps } from "./components/ProjectCard";
 export { MediaTile } from "./components/MediaTile";

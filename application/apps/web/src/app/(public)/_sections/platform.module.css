@@ -1,0 +1,228 @@
+/* PlatformShowcase — layered product panels. Token-driven; theme + reduced-motion safe. */
+
+.section {
+  position: relative;
+  overflow: hidden;
+}
+
+.glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(50% 50% at 80% 10%, color-mix(in srgb, var(--signal) 14%, transparent), transparent 60%),
+    radial-gradient(45% 45% at 10% 90%, color-mix(in srgb, var(--signal) 8%, transparent), transparent 60%);
+}
+
+.head {
+  position: relative;
+  max-width: 60ch;
+  margin-bottom: var(--space-7);
+}
+
+.title {
+  font-size: var(--fs-h2);
+  margin: 0 0 var(--space-4);
+  color: var(--text-primary);
+}
+
+.lede {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--fs-lg);
+  line-height: var(--lh-body);
+}
+
+/* ---- layered stage ---- */
+.stage {
+  position: relative;
+  min-height: 340px;
+  margin-bottom: var(--space-7);
+}
+
+.mainPanelWrap {
+  max-width: 560px;
+}
+
+.panel {
+  border: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  box-shadow: var(--elevation-3, var(--elevation-2));
+  overflow: hidden;
+}
+
+.panelBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: var(--border-hairline);
+  background: var(--surface-inset);
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong, var(--border-subtle));
+}
+
+.panelName {
+  margin-left: var(--space-3);
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.panelBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 120px 1fr auto;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.rowLabel {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+}
+
+.rowBar {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-inset);
+  overflow: hidden;
+}
+
+.rowBarFill {
+  display: block;
+  height: 100%;
+  width: 64%;
+  border-radius: inherit;
+  background: var(--grad-loop);
+  opacity: 0.85;
+}
+
+.row:nth-child(2) .rowBarFill { width: 46%; }
+.row:nth-child(3) .rowBarFill { width: 72%; }
+.row:nth-child(4) .rowBarFill { width: 58%; }
+
+.rowState {
+  font-size: var(--fs-xs);
+  color: var(--text-accent);
+  font-weight: var(--fw-semibold);
+}
+
+/* Floating cards — depth around the main panel. */
+.floatA,
+.floatB {
+  position: absolute;
+  z-index: 2;
+}
+
+.floatA {
+  top: 8%;
+  right: 2%;
+  width: 220px;
+}
+
+.floatB {
+  bottom: 0;
+  right: 16%;
+  width: 240px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: var(--border-hairline);
+  border-radius: var(--radius-md);
+  background: var(--surface-raised, var(--surface-card));
+  box-shadow: var(--elevation-2);
+}
+
+.cardKicker {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-xs);
+  text-transform: uppercase;
+  letter-spacing: var(--ls-eyebrow);
+  color: var(--text-accent);
+}
+
+.cardTitle {
+  font-family: var(--font-display);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-base);
+  color: var(--text-primary);
+}
+
+.spark {
+  height: 24px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--signal) 40%, transparent), transparent);
+}
+
+.pill {
+  align-self: flex-start;
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--signal) 22%, transparent);
+  color: var(--text-primary);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+}
+
+/* ---- canonical surface strip ---- */
+.surfaces {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.surface {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  border: var(--border-hairline);
+  border-radius: var(--radius-pill);
+  background: var(--surface-card);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  color: var(--text-secondary);
+}
+
+.surfaceIcon {
+  color: var(--signal);
+}
+
+/* Stack the floating cards below the main panel on small screens (no overlap). */
+@media (max-width: 767px) {
+  .stage {
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+  }
+  .floatA,
+  .floatB {
+    position: static;
+    width: 100%;
+  }
+  .row {
+    grid-template-columns: 96px 1fr auto;
+  }
+}

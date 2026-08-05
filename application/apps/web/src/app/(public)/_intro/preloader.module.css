@@ -1,0 +1,40 @@
+/* Preloader overlay — branded intro. Token-driven; theme-aware. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100; /* above the pre-paint .introCover (z 90) */
+  background: var(--bg);
+  display: grid;
+  place-items: center;
+  will-change: transform;
+}
+
+.inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.word {
+  color: var(--text-primary);
+}
+
+.bar {
+  display: block;
+  width: min(220px, 46vw);
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--grad-loop);
+  transform-origin: left center;
+}
