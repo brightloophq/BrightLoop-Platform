@@ -159,7 +159,7 @@
   }
   .sticky {
     position: sticky;
-    top: calc(var(--nav-height, 64px) + var(--space-6));
+    top: calc(var(--header-h) + var(--space-6));
     align-self: start;
   }
   .steps {

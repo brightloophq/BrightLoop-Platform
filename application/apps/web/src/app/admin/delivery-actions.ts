@@ -25,6 +25,9 @@ function id(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 }
 
+/** Same shape as the public signup's check — a pragmatic format guard, not RFC 5322. */
+const LEAD_EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 async function authorizeWrite(capability: string) {
   const actor = await getActor();
   if (!actor) throw new Error("Not signed in");
@@ -41,7 +44,16 @@ export async function createLead(formData: FormData): Promise<ActionResult> {
     const { supabase } = await authorizeWrite("clients.create");
     const name = String(formData.get("name") ?? "").trim();
     const email = String(formData.get("email") ?? "").trim().toLowerCase();
+    const company = String(formData.get("company") ?? "").trim();
     if (!name || !email) return { ok: false, error: "Name and email are required" };
+    if (name.length > 120 || company.length > 160) {
+      return { ok: false, error: "Name or company is too long" };
+    }
+    // The client form is noValidate, so the server is the only email check —
+    // never persist a malformed address that downstream flows would try to email.
+    if (!LEAD_EMAIL_RE.test(email) || email.length > 254) {
+      return { ok: false, error: "Enter a valid email address" };
+    }
 
     const valueRaw = String(formData.get("value") ?? "0").trim();
     const value = Math.round(Number(valueRaw) * 100); // dollars → cents
@@ -51,10 +63,10 @@ export async function createLead(formData: FormData): Promise<ActionResult> {
       id: id("lead"),
       name,
       email,
-      company: String(formData.get("company") ?? "").trim(),
-      industry: String(formData.get("industry") ?? "").trim(),
+      company,
+      industry: String(formData.get("industry") ?? "").trim().slice(0, 80),
       value,
-      source: String(formData.get("source") ?? "").trim(),
+      source: String(formData.get("source") ?? "").trim().slice(0, 80),
       stage: "new", // every lead starts new; movement is a guarded transition
     });
     if (error) return { ok: false, error: error.message };

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 600" role="img" aria-label="Auxion">
+  <rect width="600" height="600" rx="128" fill="#152238" />
+  <defs>
+    <linearGradient id="a" x1="0.1" y1="0" x2="0.9" y2="1">
+      <stop offset="0" stop-color="#2a4a86" />
+      <stop offset="1" stop-color="#17274d" />
+    </linearGradient>
+  </defs>
+  <g transform="translate(300 300) scale(0.8) translate(-300 -300)">
+    <polygon points="300,104 469.7,202 300,300 130.3,202" fill="#c6cfd8" />
+    <polygon points="130.3,202 300,300 300,496 130.3,398" fill="#b1bdc9" />
+    <polygon points="469.7,202 469.7,398 300,496 300,300" fill="#9dabb9" />
+    <polygon points="300,158 272.582,354 327.418,354" fill="#93a1af" stroke="#ffffff" stroke-width="9" stroke-linejoin="round" />
+    <polygon points="262,140 300,140 252,470 176,470" fill="url(#a)" stroke="#ffffff" stroke-width="9" stroke-linejoin="round" />
+    <polygon points="338,140 300,140 348,470 424,470" fill="url(#a)" stroke="#ffffff" stroke-width="9" stroke-linejoin="round" />
+    <polygon points="268.582,356 331.418,356 336.655,392 263.345,392" fill="url(#a)" stroke="#ffffff" stroke-width="9" stroke-linejoin="round" />
+    <polygon points="300,404 338,436 300,468 262,436" fill="#95a3b1" stroke="#ffffff" stroke-width="9" stroke-linejoin="round" />
+    <polygon points="300,44 521.7,172 521.7,428 300,556 78.3,428 78.3,172" fill="none" stroke="#9aa8b6" stroke-width="15" stroke-linejoin="round" />
+  </g>
+</svg>
