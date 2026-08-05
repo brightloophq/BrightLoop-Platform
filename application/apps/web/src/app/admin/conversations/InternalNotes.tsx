@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button } from "@brightloop/ui";
+import { Button, useToast } from "@brightloop/ui";
 import { addInternalNote } from "../../conversation-actions";
 import styles from "../../chat.module.css";
 
@@ -21,6 +21,7 @@ export interface InternalNote {
  */
 export function InternalNotes({ conversationId, notes }: { conversationId: string; notes: InternalNote[] }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [body, setBody] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -53,6 +54,7 @@ export function InternalNotes({ conversationId, notes }: { conversationId: strin
         />
         <Button
           variant="secondary"
+          loading={pending}
           disabled={pending || body.trim().length === 0}
           onClick={async () => {
             setPending(true);
@@ -64,6 +66,9 @@ export function InternalNotes({ conversationId, notes }: { conversationId: strin
             if (res.ok) {
               setBody("");
               router.refresh();
+              toast("Internal note added", "success");
+            } else {
+              toast("Couldn't add note — please try again", "danger");
             }
           }}
         >
