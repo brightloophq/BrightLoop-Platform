@@ -1492,3 +1492,42 @@ backend. Prereqs #76/#77/#78 merged first (main had PX.1a+b+c before this branch
 - **Follow-ons:** animated per-connection data-flow particles, zoom/pan + node
   focus, virtualization for very large orgs, live per-node AI wired to the reasoning
   engine, and org-scope switching.
+
+**PX.1e — AI Experience Everywhere (branch `feat/px1e-ai-experience`, this PR).**
+Surfaces AI on product pages **through the certified path** — never a provider call
+from UI, no second Copilot. Reuses `may()` authorization, Demo Mode, and design
+tokens. Mandatory audit + route-to-AI matrix:
+`engineering-blueprint/px-1/PX.1e-ai-experience-audit.md`.
+
+- **Shared AI surface** `packages/ui/src/ai/`: `AiActionBar` (the ONE action surface —
+  a row of contextual actions + inline result; owns only view state, runs an injected
+  server action), `AiResultPanel` (summary/explanation/risk/recommendation/comparison/
+  forecast/action-plan; evidence · capability · generated-at · confidence · advisory-
+  vs-proposal · **Demo** badge · copy/retry · gated executable; honest denied /
+  unavailable(+future-phase) / error states; `aria-live`), pure `state.ts` (**5
+  tests**), `types.ts` (`AiActionOutcome` etc.). Token-only → Light/Dark/System.
+- **Certified seam** `apps/web/src/lib/ai/`: pure `matrix.ts` (route→action defs +
+  permission + advisory/supported/future status — **4 tests**), `demo-content.ts`
+  (deterministic, evidence-shaped, `demo:true` outputs), and the `"use server"`
+  `runContextualAiAction(ctx, key)` — authorizes with `may(actor, permission)` (same
+  primitive as the Copilot gate), returns a demo result in Demo Mode, an honest
+  future-phase/denied state otherwise, and a Copilot handoff for advisory/supported
+  actions in production. **No provider call in UI.** Bound per-route via
+  `runContextualAiAction.bind(null, { route })`.
+- **Wired:** Console (advisory — summarize/explain-health/top-risks/next-actions) and
+  Signals (demo-gated; future-phase in production so there are no dead buttons); the
+  System Map already carries its PX.1d AI layer. Route matrix marks Insights /
+  Recommendations / Clients / Invoices / Analytics as **Future Phase** (read-model
+  present, no capability wired). **No `billing` intent/capability exists** — flagged
+  future.
+- **Write safety:** any executable result is a gated `executable` (permission +
+  requiresApproval) handed to the existing confirm/approval flow; AI never mutates
+  billing/permissions/secrets/subscriptions/connector-creds/destructive records
+  directly.
+- Gate `pnpm turbo run typecheck lint test build` **green (36/36)**; `@brightloop/ui`
+  +5, web +4 tests; ZERO live provider calls. Report:
+  `engineering-blueprint/px-1/PX.1e-ai-experience-report.md`.
+- **Follow-ons:** inline Copilot execution (`generateCopilotResponse`) for advisory
+  routes; new registry capabilities for Signals/Analytics/Recommendations/etc. (each a
+  registry entry over an existing service); Approvals/Projects/Reporting wiring; live-
+  provider enablement behind the existing kill-switches.

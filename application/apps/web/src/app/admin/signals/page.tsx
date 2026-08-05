@@ -23,11 +23,14 @@ import {
   Pagination,
   SectionHeader,
   SkeletonBlock,
+  AiActionBar,
   type OperationalColumn,
 } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
-import { getSignalsRepository } from "@/lib/repositories";
+import { getSignalsRepository, isDemoMode } from "@/lib/repositories";
+import { actionDefs, routeHasLiveAi } from "@/lib/ai/matrix";
+import { runContextualAiAction } from "@/lib/ai/actions";
 import { SignalsControls } from "./SignalsControls";
 import styles from "./signals.module.css";
 
@@ -59,6 +62,9 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
 
   const query = parseSignalListQuery(await searchParams);
   const canWrite = canWriteSignals(actor);
+  // AI bar shows in Demo Mode (deterministic previews) or once a signals capability
+  // is wired; hidden in production today so there are no dead/future-only buttons.
+  const showAi = (await isDemoMode()) || routeHasLiveAi("signals");
 
   return (
     <div className={styles.page}>
@@ -78,6 +84,13 @@ export default async function SignalsPage({ searchParams }: { searchParams: Prom
               ) : null
             }
           />
+          {showAi && (
+            <AiActionBar
+              label="Ask Auxion AI"
+              actions={actionDefs("signals")}
+              run={runContextualAiAction.bind(null, { route: "signals" })}
+            />
+          )}
           <Suspense key={signalsHref(query)} fallback={<SignalsSkeleton />}>
             <SignalsWorkspace query={query} canWrite={canWrite} />
           </Suspense>

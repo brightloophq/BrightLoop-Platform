@@ -28,12 +28,15 @@ import {
   BarChart,
   DonutChart,
   FunnelChart,
+  AiActionBar,
   type KpiStatus,
 } from "@brightloop/ui";
 import { MotionProvider, DashboardEntrance, AnimatedMetric, PipelineAnimation } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { getTransformationDashboardRepository, getCoreSurfaceRepository } from "@/lib/repositories";
 import { getDashboardCharts } from "@/lib/dashboard-charts";
+import { actionDefs } from "@/lib/ai/matrix";
+import { runContextualAiAction } from "@/lib/ai/actions";
 import type { DemoKpiExtra } from "@brightloop/data";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./dashboard.module.css";
@@ -153,6 +156,14 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
               </Button>
             </>
           }
+        />
+      </div>
+
+      <div data-animate="attention">
+        <AiActionBar
+          label="Ask Auxion AI"
+          actions={actionDefs("console")}
+          run={runContextualAiAction.bind(null, { route: "console" })}
         />
       </div>
 
