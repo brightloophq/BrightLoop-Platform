@@ -15,6 +15,14 @@
   background: color-mix(in srgb, var(--signal) 10%, transparent);
   color: var(--text-accent);
   margin-bottom: var(--space-2);
+  transition:
+    background-color var(--dur-base) var(--ease-precise),
+    transform var(--dur-base) var(--ease-precise);
+}
+/* Hovering the card (the Link fills it) intensifies the discipline mark. */
+.card:hover .icon {
+  background: color-mix(in srgb, var(--signal) 16%, transparent);
+  transform: translateY(-1px);
 }
 
 .name {
@@ -59,4 +67,20 @@
   color: var(--text-link);
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
+}
+
+/* The arrow travels toward its destination on hover — the small, deliberate
+   "go" cue premium products share (Linear/Vercel). Reduced motion drops it. */
+.arrow {
+  transition: transform var(--dur-base) var(--ease-precise);
+}
+.card:hover .arrow {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover .icon,
+  .card:hover .arrow {
+    transform: none;
+  }
 }

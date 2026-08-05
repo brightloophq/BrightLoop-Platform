@@ -11,10 +11,14 @@
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
+  /* Colour resolves fast; the lift/settle uses the precise curve so press feels
+     mechanical and deliberate rather than springy. */
   transition:
     background-color var(--dur-fast) var(--ease-out),
     border-color var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out);
+    color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-base) var(--ease-precise),
+    transform var(--dur-base) var(--ease-precise);
 }
 
 /* Minimum 44px touch target on coarse pointers (handoff §11 accessibility). */
@@ -41,26 +45,40 @@
   font-size: var(--fs-lg);
 }
 
-/* ---- variants ---- */
+/* ---- variants ----
+   The primary action is ink-on-paper (paper-on-ink in dark). Text uses the
+   semantic --action-fg so it flips with the theme — the old hardcoded white left
+   white-on-near-white text on any dark-token surface (e.g. the dark hero band). */
 .primary {
-  background: var(--action-primary);
-  color: var(--bl-white);
+  background: var(--action-bg);
+  color: var(--action-fg);
 }
 .primary:hover:not(:disabled) {
-  background: var(--action-primary-hover);
+  /* Shift the fill 12% toward the surface for a perceptible, theme-correct
+     feedback (lightens in light, darkens in dark), then lift + settle. */
+  background: color-mix(in srgb, var(--action-bg) 88%, var(--surface));
+  transform: translateY(-1px);
+  box-shadow: var(--elevation-2);
 }
 .primary:active:not(:disabled) {
-  background: var(--action-primary-press);
+  transform: translateY(0) scale(0.98);
+  box-shadow: none;
 }
 
 .secondary {
   background: transparent;
   color: var(--text-primary);
-  border-color: var(--border-strong);
+  border-color: var(--line-strong);
 }
 .secondary:hover:not(:disabled) {
-  border-color: var(--bl-cyan);
-  color: var(--text-accent);
+  /* One signal, amber — never the legacy cyan. */
+  border-color: var(--signal);
+  color: var(--signal);
+  background: var(--signal-tint);
+  transform: translateY(-1px);
+}
+.secondary:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
 
 .ghost {
@@ -75,14 +93,30 @@
 /* Gradient is the loop mark / rare CTA emphasis only — never decoration. */
 .gradient {
   background: var(--grad-loop);
-  color: var(--bl-white);
+  /* --grad-loop is a low-contrast surface→tint wash, so text must be the ink
+     tone (which flips with theme), not the on-action colour. */
+  color: var(--ink);
 }
 .gradient:hover:not(:disabled) {
   box-shadow: var(--glow-blue);
+  transform: translateY(-1px);
+}
+.gradient:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
 }
 
 .block {
   width: 100%;
+}
+
+/* Reduced motion: keep every colour/feedback change, drop only the travel. */
+@media (prefers-reduced-motion: reduce) {
+  .primary:hover:not(:disabled),
+  .secondary:hover:not(:disabled),
+  .gradient:hover:not(:disabled),
+  .button:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 .button:disabled {

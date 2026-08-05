@@ -7,6 +7,8 @@
     radial-gradient(90% 140% at 15% 0%, color-mix(in srgb, var(--signal) 18%, transparent), transparent 60%),
     radial-gradient(80% 130% at 90% 100%, color-mix(in srgb, var(--signal) 12%, transparent), transparent 55%),
     var(--bg-raised);
+  /* Raised as a deliberate closing panel, not a flat band. */
+  box-shadow: var(--elevation-2);
   padding: var(--space-8) var(--space-6);
   text-align: center;
   display: flex;

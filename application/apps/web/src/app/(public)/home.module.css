@@ -36,8 +36,10 @@
   max-width: 15ch;
 }
 
+/* The signature accented word. --grad-loop was a near-invisible surface→tint wash
+   on the dark hero; --grad-signal is a legible, confident amber sheen. */
 .heroAccent {
-  background: var(--grad-loop);
+  background: var(--grad-signal);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;

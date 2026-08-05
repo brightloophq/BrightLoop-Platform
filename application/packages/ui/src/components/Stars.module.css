@@ -2,12 +2,13 @@
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  /* Star gold is reserved for ratings only (handoff §04.1). */
-  color: var(--star-gold);
+  /* Ratings carry the one amber signal (--star-gold was never defined, so filled
+     stars had been rendering in an inherited fallback colour). */
+  color: var(--signal);
 }
 
 .empty {
-  color: var(--slate-700);
+  color: var(--line-strong);
 }
 
 .value {

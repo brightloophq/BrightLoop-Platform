@@ -65,6 +65,19 @@
   font-size: var(--fs-sm);
 }
 
+.ctaArrow {
+  transition: transform var(--dur-base) var(--ease-precise);
+}
+.card:hover .ctaArrow {
+  transform: translateX(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:hover .ctaArrow {
+    transform: none;
+  }
+}
+
 /* Media placeholder — real hero imagery is outstanding (heroSlot). */
 .media {
   aspect-ratio: 4 / 3;

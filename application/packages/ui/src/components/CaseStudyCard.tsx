@@ -71,7 +71,7 @@ export function CaseStudyCard({
 
           <span className={styles.cta}>
             {ctaLabel}
-            <Icon name="arrow-right" size={14} />
+            <Icon name="arrow-right" size={14} className={styles.ctaArrow} />
           </span>
         </div>
 
