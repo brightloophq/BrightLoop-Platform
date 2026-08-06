@@ -12,7 +12,7 @@
  * ========================================================================== */
 
 import { PIPELINE_STAGE_ORDER } from "@brightloop/domain";
-import type { ScanDTO, TimelineEntryDTO, ArtifactDTO } from "@brightloop/application";
+import type { ScanDTO, TimelineEntryDTO, ArtifactDTO, EvidenceValidationDTO, EvidenceClaimTraceDTO, EvidenceFindingTraceDTO } from "@brightloop/application";
 
 /* ---- primitives -------------------------------------------------------------- */
 
@@ -20,6 +20,23 @@ import type { ScanDTO, TimelineEntryDTO, ArtifactDTO } from "@brightloop/applica
 export const DISCOVERY_STAGES: ReadonlySet<string> = new Set(["discovery_planning", "discovery_completion", "evidence_normalization"]);
 /** The one stage the C2 provider implements. */
 export const REASONING_STAGE = "provider_execution";
+/**
+ * The deterministic intelligence stages the runtime executes with NO provider and
+ * NO credit (evidence validation, graph, reasoning-job creation, routing, grounding,
+ * findings, recommendations, report). They are always supported — they run through
+ * the intelligence stage registry regardless of the crawler/provider kill switches.
+ */
+export const INTELLIGENCE_STAGES: ReadonlySet<string> = new Set([
+  "evidence_validation",
+  "graph_assembly",
+  "graph_snapshot",
+  "reasoning_job_creation",
+  "provider_routing",
+  "grounding_validation",
+  "finding_synthesis",
+  "recommendation_candidates",
+  "report_assembly",
+]);
 
 const STAGE_LABELS: Record<string, string> = {
   discovery_planning: "Discovery planning",
@@ -162,6 +179,11 @@ export function nextStageView(scan: ScanDTO, flags: RuntimeFlags): NextStageView
     return flags.providerEnabled
       ? { ...base, support: "supported", reason: null }
       : { ...base, support: "provider_disabled", reason: "Live reasoning is disabled (AUXION_LIVE_AI_ENABLED / AUXION_ANTHROPIC_ENABLED)." };
+  }
+  // The deterministic intelligence stages run with no provider and no credit —
+  // they are executable through the intelligence stage registry.
+  if (INTELLIGENCE_STAGES.has(stage)) {
+    return { ...base, support: "supported", reason: null };
   }
   return { ...base, support: "unsupported", reason: `${stageLabel(stage)} has no runtime implementation yet.` };
 }
@@ -865,6 +887,226 @@ export function buildProspectSummary(input: SummaryInput): ProspectSummaryView {
     nextHumanAction: nextAction(),
     reportReady: report.present,
     proposalReady: proposal.present,
+  };
+}
+
+/* ---- Evidence Validation (Sprint C-EV) -------------------------------------- */
+
+/** A resolved evidence reference: the cited id joined to its source page. */
+export interface EvidenceRefView {
+  id: string;
+  url: string | null;
+  source: string;
+  state: string;
+  /** Page title, when the source page was crawled. */
+  title: string | null;
+  /** Bounded snippet of the source page's extracted text. Never raw HTML. */
+  snippet: string | null;
+}
+
+/** Tone tokens aligned with the schema `Tone` (Badge escape-hatch) palette. */
+export type SupportTone = "success" | "blue" | "warning" | "danger" | "neutral";
+
+/** One auditable conclusion: what it claims, how well evidence supports it, and its trail. */
+export interface EvidenceConclusionView {
+  id: string;
+  /** Human label — a finding title or a bounded claim statement. */
+  label: string;
+  kind: "finding" | "claim";
+  /** "strength" | "weakness" for deterministic findings; null for provider claims. */
+  findingKind: string | null;
+  /** The 5-level support level for provider claims; null for deterministic findings. */
+  supportLevel: string | null;
+  supportLabel: string | null;
+  tone: SupportTone;
+  confidence: number;
+  survives: boolean;
+  reasonCodes: string[];
+  /** A plain-language explanation of the level + confidence. */
+  reasonText: string;
+  evidence: EvidenceRefView[];
+}
+
+export interface EvidenceValidationView {
+  present: boolean;
+  providerAttempted: boolean;
+  statusLabel: string;
+  supported: number;
+  partiallySupported: number;
+  weakSupport: number;
+  unsupported: number;
+  contradicted: number;
+  surviving: number;
+  totalClaims: number;
+  averageConfidence: number;
+  evidenceCount: number;
+  /** Deterministic strengths/weaknesses, each evidence-linked (always present). */
+  findings: EvidenceConclusionView[];
+  /** Grounded provider claims that survived validation. */
+  claims: EvidenceConclusionView[];
+  /** Provider claims validation rejected. */
+  rejectedClaims: EvidenceConclusionView[];
+  summary: string;
+}
+
+export const EMPTY_EVIDENCE_VALIDATION: EvidenceValidationView = {
+  present: false, providerAttempted: false, statusLabel: "Not run", supported: 0, partiallySupported: 0, weakSupport: 0,
+  unsupported: 0, contradicted: 0, surviving: 0, totalClaims: 0, averageConfidence: 0, evidenceCount: 0,
+  findings: [], claims: [], rejectedClaims: [], summary: "Evidence validation has not run yet.",
+};
+
+const SUPPORT_LABEL: Record<string, string> = {
+  supported: "Supported",
+  partially_supported: "Partially supported",
+  weak_support: "Weak support",
+  unsupported: "Unsupported",
+  contradicted: "Contradicted",
+};
+const SUPPORT_TONE: Record<string, SupportTone> = {
+  supported: "success",
+  partially_supported: "blue",
+  weak_support: "warning",
+  unsupported: "neutral",
+  contradicted: "danger",
+};
+
+/** Human phrases for the stable reason codes — the confidence explanation. */
+const REASON_PHRASE: Record<string, string> = {
+  multi_source: "corroborated by multiple observed sources",
+  multiple_sources: "supported by more than one source",
+  single_source: "rests on a single source",
+  observed_evidence: "backed by directly observed evidence",
+  estimated_evidence: "based on estimated evidence",
+  inferred_evidence: "based on inferred evidence",
+  stale_evidence: "the supporting evidence is stale",
+  high_confidence: "high evidence quality",
+  moderate_confidence: "moderate evidence quality",
+  low_confidence: "low evidence quality",
+  evidence_conflict: "the evidence conflicts",
+  rests_on_unavailable_source: "rests on a source that could not be observed",
+  no_evidence: "cites no evidence",
+  malformed_citation: "cites an unknown or malformed reference",
+  fabricated_metric: "asserts a metric with no evidence",
+  fabricated_competitor: "names a competitor outside the discovered set",
+  unsupported_causal_claim: "asserts causation without strong evidence",
+  missing_limitations: "omits required limitations",
+  certainty_exceeds_evidence: "claims more certainty than the evidence supports",
+  prohibited_sensitive_claim: "matches a prohibited claim pattern",
+};
+
+/** Compose a plain-language explanation from reason codes (capped, deduped). */
+export function explainReasons(reasonCodes: string[]): string {
+  const phrases = reasonCodes.map((c) => REASON_PHRASE[c] ?? c.replace(/_/g, " ")).filter((v, i, a) => a.indexOf(v) === i).slice(0, 4);
+  if (phrases.length === 0) return "";
+  const text = phrases.join("; ");
+  return text.charAt(0).toUpperCase() + text.slice(1) + ".";
+}
+
+/** Resolve a conclusion's cited evidence ids to page-joined references. */
+function resolveEvidence(
+  evidenceIds: string[],
+  refById: Map<string, { url: string; source: string; state: string }>,
+  pageByUrl: Map<string, { title: string | null; preview: string }>,
+): EvidenceRefView[] {
+  return evidenceIds.map((id) => {
+    const ref = refById.get(id) ?? null;
+    const url = ref?.url ?? null;
+    const page = url !== null ? pageByUrl.get(url) ?? null : null;
+    return {
+      id,
+      url,
+      source: ref?.source ?? "unknown",
+      state: ref?.state ?? "unavailable",
+      title: page?.title ?? null,
+      snippet: page !== null && page.preview !== "" ? page.preview : null,
+    };
+  });
+}
+
+function findingToConclusion(f: EvidenceFindingTraceDTO, resolve: (ids: string[]) => EvidenceRefView[]): EvidenceConclusionView {
+  return {
+    id: f.id,
+    label: boundedText(f.title, 200) || f.id,
+    kind: "finding",
+    findingKind: f.kind,
+    supportLevel: null,
+    supportLabel: null,
+    tone: f.kind === "weakness" ? "warning" : "success",
+    confidence: f.confidence,
+    survives: true,
+    reasonCodes: [],
+    reasonText: f.evidenceIds.length > 0 ? `Derived deterministically from ${f.evidenceIds.length} evidence item(s).` : "Derived deterministically; no evidence linked.",
+    evidence: resolve(f.evidenceIds),
+  };
+}
+
+function claimToConclusion(c: EvidenceClaimTraceDTO, resolve: (ids: string[]) => EvidenceRefView[]): EvidenceConclusionView {
+  return {
+    id: c.id,
+    label: boundedText(c.statement, 240) || (c.survives ? "Validated claim" : "Rejected claim"),
+    kind: "claim",
+    findingKind: null,
+    supportLevel: c.supportLevel,
+    supportLabel: SUPPORT_LABEL[c.supportLevel] ?? c.supportLevel,
+    tone: SUPPORT_TONE[c.supportLevel] ?? "neutral",
+    confidence: c.confidence,
+    survives: c.survives,
+    reasonCodes: c.reasonCodes,
+    reasonText: explainReasons(c.reasonCodes),
+    evidence: resolve(c.evidenceIds),
+  };
+}
+
+/**
+ * Build the evidence-validation surface: deterministic findings + validated
+ * provider claims, each resolved to the source pages behind it. Everything is
+ * DERIVED from already-safe DTOs joined to the discovery pages; nothing is
+ * invented, and no raw provider output is introduced.
+ */
+export function buildEvidenceValidationView(dto: EvidenceValidationDTO | null, discovery: DiscoveryView): EvidenceValidationView {
+  if (dto === null || !dto.present) return EMPTY_EVIDENCE_VALIDATION;
+
+  const refById = new Map(dto.evidence.map((e) => [e.id, { url: e.url, source: e.source, state: e.state }]));
+  const pageByUrl = new Map<string, { title: string | null; preview: string }>();
+  for (const p of discovery.pages) {
+    for (const u of [p.finalUrl, p.requestedUrl]) if (u !== "") pageByUrl.set(u, { title: p.title, preview: p.preview });
+  }
+  const resolve = (ids: string[]) => resolveEvidence(ids, refById, pageByUrl);
+
+  const findings = dto.findings.map((f) => findingToConclusion(f, resolve));
+  const claims = dto.claims.map((c) => claimToConclusion(c, resolve));
+  const rejectedClaims = dto.rejectedClaims.map((c) => claimToConclusion(c, resolve));
+  const totalClaims = dto.groundedCount + dto.rejectedCount;
+
+  const statusLabel = !dto.providerAttempted
+    ? "Deterministic only"
+    : dto.contradicted > 0
+      ? "Review required"
+      : dto.surviving > 0
+        ? "Validated"
+        : "No claims survived";
+
+  const summary = dto.providerAttempted
+    ? `${dto.surviving} of ${totalClaims} provider claim(s) validated against evidence; ${dto.unsupported + dto.contradicted} rejected. Average confidence ${dto.averageConfidence}.`
+    : `${findings.length} deterministic finding(s), each traced to evidence. No provider claims were produced (live AI disabled).`;
+
+  return {
+    present: true,
+    providerAttempted: dto.providerAttempted,
+    statusLabel,
+    supported: dto.supported,
+    partiallySupported: dto.partiallySupported,
+    weakSupport: dto.weakSupport,
+    unsupported: dto.unsupported,
+    contradicted: dto.contradicted,
+    surviving: dto.surviving,
+    totalClaims,
+    averageConfidence: dto.averageConfidence,
+    evidenceCount: dto.evidence.length,
+    findings,
+    claims,
+    rejectedClaims,
+    summary,
   };
 }
 

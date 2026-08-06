@@ -425,3 +425,105 @@
     transition: none !important;
   }
 }
+
+/* ---- evidence validation (Sprint C-EV) ------------------------------------- */
+.evSection {
+  margin-top: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.evHeading {
+  margin: 0 0 var(--space-1);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.evCard {
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface-inset);
+  overflow: hidden;
+}
+.evSummary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  list-style: none;
+}
+.evSummary::-webkit-details-marker {
+  display: none;
+}
+.evTitle {
+  font-size: var(--fs-sm);
+  color: var(--text-primary);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.evChips {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-shrink: 0;
+}
+.evBody {
+  padding: 0 var(--space-4) var(--space-4);
+  border-top: 1px solid var(--border-hairline);
+}
+.evReason {
+  margin: var(--space-3) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+.evList {
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.evItem {
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+}
+.evItemHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.evUrl {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--action-primary);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.evUrl:hover {
+  text-decoration: underline;
+}
+.evSnippet {
+  margin: var(--space-2) 0 0;
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+@media (max-width: 640px) {
+  .evSummary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2);
+  }
+}

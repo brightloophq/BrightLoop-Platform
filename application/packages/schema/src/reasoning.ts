@@ -176,6 +176,36 @@ export type GroundingRejectionReason = z.infer<typeof groundingRejectionReasonSc
 export const groundingRejectionSchema = z.object({ reason: groundingRejectionReasonSchema, claimId: z.string().nullable().default(null), detail: z.string() });
 export type GroundingRejection = z.infer<typeof groundingRejectionSchema>;
 
+/* ---- 6 · evidence-validation support taxonomy ------------------------------
+ * The five levels a validated claim can carry once measured against the evidence
+ * that backs it. `supported` / `partially_supported` / `weak_support` are the
+ * graded outcomes for a GROUNDED claim (ordered by evidence strength);
+ * `unsupported` (no evidence, or an assertion beyond the evidence) and
+ * `contradicted` (the evidence actively undermines the claim) are the two
+ * negative outcomes a REJECTED claim maps to. A claim SURVIVES into the next
+ * stage only when its level is one of the three positive grades. */
+export const evidenceSupportLevelSchema = z.enum([
+  "supported",
+  "partially_supported",
+  "weak_support",
+  "unsupported",
+  "contradicted",
+]);
+export type EvidenceSupportLevel = z.infer<typeof evidenceSupportLevelSchema>;
+
+/** The three positive grades — a claim at one of these survives validation. */
+export const SURVIVING_EVIDENCE_SUPPORT_LEVELS: readonly EvidenceSupportLevel[] = ["supported", "partially_supported", "weak_support"];
+
+/** A per-claim support assessment: level, recomputed confidence, reason codes. */
+export const evidenceSupportAssessmentSchema = z.object({
+  level: evidenceSupportLevelSchema,
+  /** Recalculated 0–100 confidence, derived from evidence quality — never inflated. */
+  confidence: z.number().int().min(0).max(100),
+  /** Stable, sorted, de-duplicated codes explaining the level + confidence. */
+  reasonCodes: z.array(z.string()).default([]),
+});
+export type EvidenceSupportAssessment = z.infer<typeof evidenceSupportAssessmentSchema>;
+
 /* ---- 7 · retry / fallback ------------------------------------------------- */
 export const reasoningFailureKindSchema = z.enum(["retryable", "fatal", "validation", "budget_exhausted", "timeout", "cancelled"]);
 export type ReasoningFailureKind = z.infer<typeof reasoningFailureKindSchema>;

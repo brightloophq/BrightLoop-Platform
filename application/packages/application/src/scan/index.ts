@@ -14,6 +14,7 @@ export { getScanTimeline } from "./timeline.js";
 export { getScanReport } from "./report.js";
 export { getScanProposal } from "./proposal.js";
 export { getScanNarrative, parseAudience } from "./narrative.js";
+export { getScanEvidenceValidation, toEvidenceValidationDTO } from "./evidence-validation.js";
 export {
   getScanArtifact,
   parseArtifactKind,

@@ -36,6 +36,7 @@
 import {
   StageBlockedError,
   assembleGraph,
+  classifyClaimSupport,
   createSnapshot,
   newReasoningJob,
   runCompetitorIntelligence,
@@ -43,6 +44,7 @@ import {
   synthesizeNarrative,
   synthesizeProposalIntelligence,
   validateGrounding,
+  type EvidenceFacts,
   type GroundingClaim,
   type GroundingContext,
   type NarrativeProspectInput,
@@ -55,6 +57,7 @@ import {
   type CompetitorIntelligenceSnapshot,
   type EvidenceBundle,
   type EvidenceState,
+  type EvidenceSupportLevel,
   type FreshnessBand,
   type IntelligenceGraph,
   type NarrativeSnapshot,
@@ -266,13 +269,17 @@ function groundingValidation(deps: IntelligenceStageDeps): StageExecutor {
     const rawClaims: RawClaim[] = outcome === null ? [] : extractClaims(outcome.envelope);
     const grounded: unknown[] = [];
     const rejected: unknown[] = [];
+    // Support taxonomy tally (C-EV) — counts per level + the confidences of the
+    // claims that SURVIVE, so the average reflects only what moves forward.
+    const supportCounts: Record<EvidenceSupportLevel, number> = { supported: 0, partially_supported: 0, weak_support: 0, unsupported: 0, contradicted: 0 };
+    const survivingConfidences: number[] = [];
 
     let index = 0;
     for (const raw of rawClaims) {
       const evidenceIds = Array.isArray(raw.evidenceIds) ? raw.evidenceIds.filter((x): x is string => typeof x === "string") : [];
       // Derive the claim's evidence facts from the bundle it references — the
       // strongest state + freshest band, and the evidence confidence as a CEILING.
-      const facts = evidenceIds.map((id) => context.evidenceById.get(id)).filter((f): f is NonNullable<typeof f> => f !== undefined);
+      const facts: EvidenceFacts[] = evidenceIds.map((id) => context.evidenceById.get(id)).filter((f): f is EvidenceFacts => f !== undefined);
       const state = strongestState(facts.map((f) => f.state));
       const band = freshestBand(facts.map((f) => f.freshnessBand));
       const ceiling = facts.length === 0 ? 0 : Math.min(...facts.map((f) => f.confidenceValue));
@@ -292,11 +299,43 @@ function groundingValidation(deps: IntelligenceStageDeps): StageExecutor {
       };
       index += 1;
       const rejections = validateGrounding(claim, context);
-      if (rejections.length === 0) grounded.push({ id: claim.id, claim: claim.statement, evidenceIds: claim.evidenceIds, evidenceState: claim.evidenceState, confidenceValue: claim.confidenceValue, grounded: true });
-      else rejected.push({ id: claim.id, reasons: rejections.map((r) => r.reason) });
+      // Grade the claim's support and RECALCULATE its confidence from evidence
+      // quality. A claim survives ONLY when grounding passed (rejections empty);
+      // the graded level is descriptive for both grounded and rejected claims.
+      const support = classifyClaimSupport({ citedFacts: facts, rejections, providerConfidence: claim.confidenceValue });
+      const survives = rejections.length === 0;
+      supportCounts[support.level] += 1;
+
+      if (survives) {
+        survivingConfidences.push(support.confidence);
+        grounded.push({
+          id: claim.id,
+          claim: claim.statement,
+          evidenceIds: claim.evidenceIds,
+          evidenceState: claim.evidenceState,
+          confidenceValue: claim.confidenceValue,
+          grounded: true,
+          supportLevel: support.level,
+          recomputedConfidence: support.confidence,
+          reasonCodes: support.reasonCodes,
+          survives,
+        });
+      } else {
+        rejected.push({
+          id: claim.id,
+          evidenceIds: claim.evidenceIds,
+          reasons: rejections.map((r) => r.reason),
+          supportLevel: support.level,
+          recomputedConfidence: support.confidence,
+          reasonCodes: support.reasonCodes,
+          survives,
+        });
+      }
     }
 
     const enrichment = outcome === null ? null : (outcome.envelope["enrichment"] as { status?: unknown; rejectionCategories?: unknown } | undefined);
+    const surviving = supportCounts.supported + supportCounts.partially_supported + supportCounts.weak_support;
+    const averageConfidence = survivingConfidences.length === 0 ? 0 : Math.round(survivingConfidences.reduce((a, b) => a + b, 0) / survivingConfidences.length);
     return {
       envelope: {
         scanId: run.scanId,
@@ -307,8 +346,19 @@ function groundingValidation(deps: IntelligenceStageDeps): StageExecutor {
         rejected,
         groundedCount: grounded.length,
         rejectedCount: rejected.length,
+        // Evidence-validation support taxonomy — counts per level, survivors, and
+        // the average recalculated confidence of the surviving claims.
+        support: {
+          supported: supportCounts.supported,
+          partiallySupported: supportCounts.partially_supported,
+          weakSupport: supportCounts.weak_support,
+          unsupported: supportCounts.unsupported,
+          contradicted: supportCounts.contradicted,
+          surviving,
+          averageConfidence,
+        },
         parserRejectionCategories: Array.isArray(enrichment?.rejectionCategories) ? enrichment.rejectionCategories : [],
-        note: outcome === null ? "No provider output — deterministic path only." : "Provider claims validated against evidence; ungrounded claims excluded.",
+        note: outcome === null ? "No provider output — deterministic path only." : "Provider claims validated against evidence; every surviving claim carries a support level and a recalculated confidence.",
       },
       kind: "validated_claims",
       sourceArtifactIds: outcome === null ? [bundleArtifact.id] : [outcome.id, bundleArtifact.id],
@@ -453,6 +503,8 @@ function reportAssembly(deps: IntelligenceStageDeps): StageExecutor {
       acceptedClaims: groundedCount,
       rejectedClaims: rejectedCount,
       rejectionCategories: claims === null ? [] : (claims.envelope["parserRejectionCategories"] as unknown[] ?? []),
+      // Evidence-validation support taxonomy summary (counts + average confidence).
+      support: claims === null ? null : (claims.envelope["support"] ?? null),
     };
 
     // C10 · Narrative Engine — the deterministic PRESENTATION layer. It is built

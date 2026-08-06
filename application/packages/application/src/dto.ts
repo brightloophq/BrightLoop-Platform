@@ -11,6 +11,7 @@
  * ========================================================================== */
 
 import type {
+  EvidenceSupportLevel,
   RuntimeArtifact,
   RuntimeNarrativeVersion,
   RuntimeProposalVersion,
@@ -75,6 +76,77 @@ export interface ArtifactDTO {
 
 export interface NarrativeDTO extends ArtifactDTO {
   audience: string;
+}
+
+/* ---- evidence validation (Sprint C-EV) --------------------------------------
+ * The traceability surface: every conclusion, its support level, its recalculated
+ * confidence, and the evidence ids behind it. A dedicated projecting DTO — NOT a
+ * raw `validated_claims` envelope passthrough — is what keeps model-shaped content
+ * off the wire while still making each conclusion auditable. */
+
+/** One provider claim measured against evidence. */
+export interface EvidenceClaimTraceDTO {
+  id: string;
+  /** Bounded, sanitized statement (never raw model output); empty when withheld. */
+  statement: string;
+  supportLevel: EvidenceSupportLevel;
+  /** Recalculated 0–100 confidence, derived from evidence quality. */
+  confidence: number;
+  /** True when the claim carries forward into findings. */
+  survives: boolean;
+  evidenceIds: string[];
+  /** Stable codes explaining the level + confidence (the "why"). */
+  reasonCodes: string[];
+}
+
+/** A resolvable evidence reference — the id a conclusion cites, and its origin. */
+export interface EvidenceRefDTO {
+  id: string;
+  /** The source origin (page URL), bounded; empty when unknown. */
+  url: string;
+  /** The evidence source family (e.g. "website" | "pages"). */
+  source: string;
+  /** observed | estimated | inferred | unavailable. */
+  state: string;
+}
+
+/** One deterministic finding (strength/weakness), always evidence-linked. */
+export interface EvidenceFindingTraceDTO {
+  id: string;
+  title: string;
+  /** "strength" | "weakness". */
+  kind: string;
+  category: string | null;
+  /** 0–100 confidence the deterministic engine assigned. */
+  confidence: number;
+  evidenceIds: string[];
+}
+
+export interface EvidenceValidationDTO {
+  /** True once either deterministic findings or validated claims exist. */
+  present: boolean;
+  /** True when a live provider produced claims for validation. */
+  providerAttempted: boolean;
+  enrichmentStatus: string;
+  supported: number;
+  partiallySupported: number;
+  weakSupport: number;
+  unsupported: number;
+  contradicted: number;
+  /** supported + partially + weak — the claims that carry forward. */
+  surviving: number;
+  groundedCount: number;
+  rejectedCount: number;
+  /** Mean recalculated confidence across surviving claims (0 when none). */
+  averageConfidence: number;
+  /** Every cited evidence reference (id → origin), for the drill-down join. */
+  evidence: EvidenceRefDTO[];
+  /** Deterministic strengths/weaknesses — always available once findings run. */
+  findings: EvidenceFindingTraceDTO[];
+  /** Grounded provider claims that survived (present only with live AI). */
+  claims: EvidenceClaimTraceDTO[];
+  /** Provider claims validation rejected, with their negative support level. */
+  rejectedClaims: EvidenceClaimTraceDTO[];
 }
 
 /* ---- mappers ---------------------------------------------------------------- */

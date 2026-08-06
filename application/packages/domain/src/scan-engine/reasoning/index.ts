@@ -92,6 +92,7 @@ export {
   type StageSpec,
 } from "./stages.js";
 export * from "./grounding.js";
+export * from "./support.js";
 export * from "./routing-integration.js";
 export * from "./retry.js";
 export * from "./multipass.js";

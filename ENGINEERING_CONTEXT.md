@@ -1699,3 +1699,53 @@ Full report: `engineering-blueprint/LR.1-production-readiness-report.md`.
   triage. **Environment limit:** no DB/auth/runtime/visual/Lighthouse/pen-test here — this is a
   code+config certification; runtime QA (SR pass, contrast, Core Web Vitals, live journeys) remains
   the owner's pre-launch step. Gate `typecheck·lint·test·build` **36/36 green**; additive only.
+
+---
+
+## 24. Evidence Validation Runtime — Trust & Traceability (branch `feat/evidence-validation-runtime`)
+
+A Phase-C intelligence-runtime sprint. **Additive only** — no migration, RLS, generated-type,
+capability, or provider-call change; live AI stays disabled by default. Full report:
+`engineering-blueprint/evidence-validation-runtime-report.md`.
+
+**Doc-drift correction (important for future sessions):** §12/§13 above stop at Phase C3, but
+the intelligence pipeline is fully built and merged past that. The **9 deterministic
+intelligence stages** (`evidence_validation → graph_assembly → graph_snapshot →
+reasoning_job_creation → provider_routing → grounding_validation → finding_synthesis →
+recommendation_candidates → report_assembly`) execute as real runtime stage executors in
+`packages/application/src/pipeline/stage-executors.ts` (`createIntelligenceStageRegistry`),
+composed into the live driver at `apps/web/src/lib/runtime-driver.ts` alongside the C3 crawler
+and C2 provider registries. Commits `7d5a537`/`dc91495`/`624712b` (competitor/proposal/narrative)
+are on `main`. **Stage 4 `evidence_validation` was never a placeholder** — it reads the
+`discovery_manifest` and produces the `evidence_bundle`. The UI's "no runtime implementation
+yet" text was a **stale classifier**, now fixed.
+
+- **Support taxonomy (Stage 10 runtime logic).** New pure domain classifier
+  `classifyClaimSupport` (`scan-engine/reasoning/support.ts`) grades each validated claim into
+  **SUPPORTED / PARTIALLY_SUPPORTED / WEAK_SUPPORT / UNSUPPORTED / CONTRADICTED** and
+  recalculates confidence from evidence quality (state ceiling × freshness × source coverage) —
+  only ever lowered vs the provider's advisory value, never raised; 0 for no-evidence /
+  over-assertion; CONTRADICTED for an unavailable-source or conflict. Schema:
+  `evidenceSupportLevelSchema` / `evidenceSupportAssessmentSchema` /
+  `SURVIVING_EVIDENCE_SUPPORT_LEVELS` (prefixed to avoid the `proposal.ts` support-tier symbol).
+  The `grounding_validation` executor attaches `supportLevel`/`recomputedConfidence`/
+  `reasonCodes`/`survives` to each grounded + rejected claim and a `support` summary
+  (per-level counts, `surviving`, `averageConfidence`) to `validated_claims`, threaded into the
+  report's `providerEnrichment`. **Survival is grounding-driven** (a rejected claim never
+  promotes); the level is descriptive.
+- **Stale UI classifier fixed.** `nextStageView` (`apps/web/src/lib/prospect-scanner.ts`) now
+  recognises `INTELLIGENCE_STAGES` and reports them **supported** (they run with no crawler/
+  provider and no credit). The genuinely-unknown-stage fallback is retained.
+- **Traceability surface.** `getScanEvidenceValidation` (`packages/application/src/scan/
+  evidence-validation.ts`) is the **sanctioned gate** over `validated_claims` (deliberately NOT
+  in `READABLE_ARTIFACT_KINDS`): it returns a bounded, explicit-pick `EvidenceValidationDTO`
+  (never the raw envelope), `safeText`-strips every string, **never surfaces a rejected claim's
+  statement**, and projects a bounded id→origin evidence index from `evidence_bundle`. Pure web
+  builder `buildEvidenceValidationView` joins conclusion → evidence id → source page + snippet;
+  `EvidenceValidationPanel` renders progress/counts/avg-confidence + native `<details>`
+  drill-down (Conclusion → support + confidence explanation → evidence item → original page +
+  snippet). Wired into the prospect-scanner workspace after `EvidenceCoverage`.
+- **Tests:** domain `support.test.ts` (+15), application `evidence-validation.test.ts` (+6) +
+  extended `reasoning-spine.test.ts`, web `prospect-scanner.test.ts` (+ blocks; corrected the
+  stale-classifier test). Gate `pnpm turbo run typecheck lint test build` **36/36 green**;
+  ZERO provider/network/credit.
