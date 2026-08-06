@@ -15,6 +15,7 @@ import { StageReadiness } from "../components/StageReadiness";
 import { DiscoverySummary } from "../components/DiscoverySummary";
 import { PageEvidenceTable } from "../components/PageEvidenceTable";
 import { EvidenceCoverage } from "../components/EvidenceCoverage";
+import { EvidenceValidationPanel } from "../components/EvidenceValidationPanel";
 import { ReasoningReadiness } from "../components/ReasoningReadiness";
 import { RuntimeTimeline } from "../components/RuntimeTimeline";
 import { InternalReportView, ProposalReview } from "../components/StructuredArtifactView";
@@ -85,7 +86,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
   }
   if (data === null) notFound();
 
-  const { scan, identity, flags, next, discovery, evidence, report, proposal, readiness, summary, competitor, proposalIntelligence, narrative, timeline, reportReviewRequired, canAssess } = data;
+  const { scan, identity, flags, next, discovery, evidence, evidenceValidation, report, proposal, readiness, summary, competitor, proposalIntelligence, narrative, timeline, reportReviewRequired, canAssess } = data;
   const rows = buildTimelineRows(timeline);
   const latestEvent = rows[0]?.type ?? null;
 
@@ -139,6 +140,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
       <PageEvidenceTable pages={discovery.pages} />
       <ReasoningReadiness readiness={readiness} flags={flags} />
       <EvidenceCoverage evidence={evidence} />
+      <EvidenceValidationPanel view={evidenceValidation} />
       <RuntimeTimeline rows={rows} />
 
       <OperationalPanel>

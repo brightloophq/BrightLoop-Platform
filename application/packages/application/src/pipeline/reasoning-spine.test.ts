@@ -164,10 +164,24 @@ describe("grounding_validation", () => {
     expect(work.envelope!["providerEnriched"]).toBe(true);
     expect(work.envelope!["groundedCount"]).toBe(1);
     expect(work.envelope!["rejectedCount"]).toBe(1);
-    const claims = work.envelope!["claims"] as { id: string }[];
+    const claims = work.envelope!["claims"] as { id: string; supportLevel: string; recomputedConfidence: number; survives: boolean; reasonCodes: string[] }[];
     expect(claims[0]!.id).toBe("c1");
     // raw provider prose never becomes a finding wholesale — only grounded, evidence-linked claims survive
     expect(JSON.stringify(work.envelope)).not.toContain("market leader");
+
+    // Evidence-validation taxonomy — the grounded claim carries a survivable
+    // support level, a recalculated confidence, and reason codes; the ungrounded
+    // one is UNSUPPORTED and does not survive.
+    expect(["supported", "partially_supported", "weak_support"]).toContain(claims[0]!.supportLevel);
+    expect(claims[0]!.survives).toBe(true);
+    expect(claims[0]!.recomputedConfidence).toBeGreaterThanOrEqual(0);
+    expect(claims[0]!.reasonCodes.length).toBeGreaterThan(0);
+    const rejected = work.envelope!["rejected"] as { supportLevel: string; survives: boolean }[];
+    expect(rejected[0]!.supportLevel).toBe("unsupported");
+    expect(rejected[0]!.survives).toBe(false);
+    const support = work.envelope!["support"] as { surviving: number; unsupported: number; averageConfidence: number };
+    expect(support.surviving).toBe(1);
+    expect(support.unsupported).toBe(1);
   });
 });
 

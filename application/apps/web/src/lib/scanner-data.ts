@@ -4,6 +4,7 @@ import {
   getScan,
   getScanArtifact,
   getScanAssessment,
+  getScanEvidenceValidation,
   getScanProposal,
   getScanReport,
   getScanTimeline,
@@ -21,6 +22,7 @@ import {
   buildNarrativeView,
   buildDiscoveryView,
   buildEvidenceView,
+  buildEvidenceValidationView,
   buildStructuredView,
   buildProspectSummary,
   computeReasoningReadiness,
@@ -36,6 +38,7 @@ import {
   type NarrativeView,
   type DiscoveryView,
   type EvidenceView,
+  type EvidenceValidationView,
   type NextStageView,
   type ProspectIdentity,
   type ProspectSummaryView,
@@ -107,6 +110,8 @@ export interface ScanWorkspaceData {
   timeline: TimelineEntryDTO[];
   discovery: DiscoveryView;
   evidence: EvidenceView;
+  /** Evidence-validation traceability surface (Sprint C-EV). */
+  evidenceValidation: EvidenceValidationView;
   report: StructuredView;
   proposal: StructuredView;
   readiness: ReasoningReadinessView;
@@ -135,7 +140,7 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const scan = await getScan(ctx, runId);
   const flags = readRuntimeFlags();
 
-  const [timeline, manifestArtifact, ingressArtifact, competitorArtifact, proposalArtifact, narrativeArtifact, reportArtifact, proposalDocArtifact, assessment] = await Promise.all([
+  const [timeline, manifestArtifact, ingressArtifact, competitorArtifact, proposalArtifact, narrativeArtifact, reportArtifact, proposalDocArtifact, assessment, evidenceValidationDto] = await Promise.all([
     optional(getScanTimeline(ctx, runId)),
     optional(getScanArtifact(ctx, runId, "discovery_manifest")),
     optional(getScanArtifact(ctx, runId, "evidence_ingress")),
@@ -145,12 +150,14 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     optional<ArtifactDTO>(getScanReport(ctx, runId)),
     optional<ArtifactDTO>(getScanProposal(ctx, runId)),
     optional(getScanAssessment(ctx, runId)),
+    optional(getScanEvidenceValidation(ctx, runId)),
   ]);
 
   const identity = readIdentity(scan.metadata);
   const next = nextStageView(scan, flags);
   const discovery = buildDiscoveryView(manifestArtifact ?? null);
   const evidence = buildEvidenceView(ingressArtifact ?? null);
+  const evidenceValidation = buildEvidenceValidationView(evidenceValidationDto ?? null, discovery);
 
   // Prefer an operator-approved (valid) C1 report; otherwise fall back to the
   // machine-derived C6 assessment, surfaced explicitly as "review required".
@@ -183,6 +190,7 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     timeline: timeline ?? [],
     discovery,
     evidence,
+    evidenceValidation,
     report,
     proposal,
     readiness,
