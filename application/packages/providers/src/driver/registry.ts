@@ -73,17 +73,110 @@ const BLOCK_REASONS: Partial<Record<PipelineRunStage, string>> = {
  * final status, so the engine records a stage failure and the driver maps the
  * disposition (budget_exhausted / deadline / retryable).
  */
+/** A reasoning job's declared token/cost budget. */
+interface ReasoningBudget {
+  inputTokens: number;
+  outputTokens: number;
+  costCeiling: number;
+  latencyCeilingMs: number;
+}
+
+interface ReasoningJobRef {
+  id: string;
+  stage: string;
+  evidenceIds: string[];
+  /** The job's declared budget, or null when the envelope carried none. */
+  budget: ReasoningBudget | null;
+}
+
+function posNum(value: unknown, fallback: number): number {
+  return typeof value === "number" && Number.isFinite(value) && value > 0 ? value : fallback;
+}
+
 /** The first job in a `reasoning_jobs` envelope, reduced to what execution needs. */
-function firstReasoningJob(envelope: Record<string, unknown>): { id: string; stage: string; evidenceIds: string[] } | null {
+function firstReasoningJob(envelope: Record<string, unknown>): ReasoningJobRef | null {
   const jobs = envelope["jobs"];
   if (!Array.isArray(jobs) || jobs.length === 0) return null;
   const job = jobs[0] as Record<string, unknown>;
   const inputRefs = (job["inputRefs"] ?? {}) as Record<string, unknown>;
+  const rawBudget = job["budget"];
+  const budget: ReasoningBudget | null =
+    rawBudget !== null && typeof rawBudget === "object"
+      ? {
+          inputTokens: posNum((rawBudget as Record<string, unknown>)["inputTokens"], 8_000),
+          outputTokens: posNum((rawBudget as Record<string, unknown>)["outputTokens"], 2_000),
+          costCeiling: posNum((rawBudget as Record<string, unknown>)["costCeiling"], 1),
+          latencyCeilingMs: posNum((rawBudget as Record<string, unknown>)["latencyCeilingMs"], 60_000),
+        }
+      : null;
   return {
     id: typeof job["id"] === "string" ? job["id"] : "",
     stage: typeof job["stage"] === "string" ? job["stage"] : "reasoning",
     evidenceIds: Array.isArray(inputRefs["evidenceIds"]) ? (inputRefs["evidenceIds"] as unknown[]).filter((x): x is string => typeof x === "string") : [],
+    budget,
   };
+}
+
+/* ---- evidence hydration ------------------------------------------------------
+ * The reasoning turn needs the actual evidence CONTENT, not just the ids. The
+ * live diagnostic proved the model was handed only evidence identifiers + scan
+ * metadata and (correctly) refused to reason, so the runtime must hydrate the
+ * referenced bundle items. Bounded by construction: only the job's referenced
+ * OBSERVED items, a capped count, flat signals, and truncated strings. The digest
+ * travels as fenced BUSINESS_CONTEXT DATA (prompt.ts), never as instructions. */
+
+const MAX_EVIDENCE_ITEMS = 8;
+const MAX_SIGNAL_STRING = 800;
+const MAX_SIGNAL_ARRAY = 12;
+
+interface EvidenceDigestItem {
+  id: string;
+  source: string;
+  state: string;
+  url: string | null;
+  signals: Record<string, unknown>;
+}
+
+/** Flatten + bound one evidence item's `value` into safe, capped signals. */
+function boundSignals(value: unknown): Record<string, unknown> {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return {};
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v === "string") out[k] = v.length > MAX_SIGNAL_STRING ? `${v.slice(0, MAX_SIGNAL_STRING)}…` : v;
+    else if (typeof v === "number" || typeof v === "boolean") out[k] = v;
+    else if (Array.isArray(v)) out[k] = v.slice(0, MAX_SIGNAL_ARRAY).filter((x) => typeof x === "string" || typeof x === "number" || typeof x === "boolean");
+    // nested objects are dropped to keep the digest flat + within budget
+  }
+  return out;
+}
+
+/** Load the referenced OBSERVED evidence items from the bundle, bounded + safe. */
+async function loadEvidenceDigest(deps: DefaultRegistryDeps, runId: string, evidenceIds: string[]): Promise<EvidenceDigestItem[]> {
+  const bundle = await deps.runtime.artifacts.latest(runId, "evidence_bundle");
+  if (!bundle.ok || bundle.value === null) return [];
+  const items = bundle.value.envelope["items"];
+  if (!Array.isArray(items)) return [];
+  const wanted = new Set(evidenceIds);
+  const digest: EvidenceDigestItem[] = [];
+  for (const raw of items) {
+    if (raw === null || typeof raw !== "object") continue;
+    const item = raw as Record<string, unknown>;
+    const id = item["id"];
+    if (typeof id !== "string") continue;
+    if (wanted.size > 0 && !wanted.has(id)) continue; // only what the job references
+    if (item["state"] === "unavailable") continue; // never hydrate an unavailable item
+    const provenance = (item["provenance"] ?? {}) as Record<string, unknown>;
+    const citations = Array.isArray(item["citations"]) ? (item["citations"] as unknown[]) : [];
+    digest.push({
+      id,
+      source: typeof item["source"] === "string" ? item["source"] : "pages",
+      state: typeof item["state"] === "string" ? item["state"] : "observed",
+      url: typeof provenance["origin"] === "string" ? (provenance["origin"] as string) : typeof citations[0] === "string" ? (citations[0] as string) : null,
+      signals: boundSignals(item["value"]),
+    });
+    if (digest.length >= MAX_EVIDENCE_ITEMS) break;
+  }
+  return digest;
 }
 
 function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
@@ -102,6 +195,21 @@ function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
     const job = jobsArtifact.ok && jobsArtifact.value !== null ? firstReasoningJob(jobsArtifact.value.envelope) : null;
     const sourceArtifactIds = jobsArtifact.ok && jobsArtifact.value !== null ? [jobsArtifact.value.id] : [];
 
+    // EVIDENCE HYDRATION — hand the model the actual referenced evidence CONTENT,
+    // not just its ids, so it can ground claims instead of refusing for lack of
+    // evidence. Bounded + observed-only; travels as fenced BUSINESS_CONTEXT DATA.
+    const evidence = job === null ? [] : await loadEvidenceDigest(deps, run.id, job.evidenceIds);
+
+    // TOKEN BUDGET — use the reasoning job's declared budget (≈2000 output tokens)
+    // instead of the 512 default that truncated the JSON mid-string. Falls back to
+    // a safe value (capped by the provider config) when the job declares none.
+    const budget: ReasoningBudget = job?.budget ?? {
+      inputTokens: 8_000,
+      outputTokens: Math.min(deps.config.maxOutputTokens, 2_000),
+      costCeiling: 1,
+      latencyCeilingMs: 60_000,
+    };
+
     const outcome = await runControlledReasoning(
       {
         runId: run.id,
@@ -109,7 +217,8 @@ function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
         scanId: run.scanId,
         objective: job === null ? "Execute the reasoning stage for this scan and return a grounded structured result." : `Execute the ${job.stage} reasoning job and return a grounded structured result.`,
         outputSchemaId: "execution_outcomes",
-        businessContext: job === null ? run.metadata : { ...run.metadata, reasoningJobId: job.id, evidenceIds: job.evidenceIds },
+        businessContext: job === null ? run.metadata : { ...run.metadata, reasoningJobId: job.id, evidenceIds: job.evidenceIds, evidence },
+        budget,
       },
       { config: deps.config, adapter, now: deps.now, traceId: deps.traceId, ids: deps.ids, runtime: deps.runtime },
     );

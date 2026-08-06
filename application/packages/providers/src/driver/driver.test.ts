@@ -477,3 +477,60 @@ describe("safe claim enrichment", () => {
     expect(JSON.stringify(work.envelope)).not.toContain(RAW_SENTINEL);
   });
 });
+
+/* ===== 11 · token budget + evidence hydration (the reasoning-rejected fix) === */
+describe("reasoning budget + evidence hydration", () => {
+  const EVIDENCE_MARK = "we build custom guitars in kingston";
+
+  function heldRegistry(svc: RuntimeServices, transport: FakeAnthropicTransport) {
+    const config = loadAnthropicConfig({ AUXION_LIVE_AI_ENABLED: "true", AUXION_ANTHROPIC_ENABLED: "true", ANTHROPIC_API_KEY: "k" });
+    return createDefaultStageRegistry({
+      config, adapter: new AnthropicReasoningProviderAdapter({ config, transport }),
+      runtime: svc, now: T0, traceId: "t", ids: (p) => `${p}_x`,
+    });
+  }
+
+  it("threads the reasoning job's output budget and hydrates referenced evidence content into the prompt", async () => {
+    const h = harness({ enabled: true });
+    const run = await h.svc.runs.createRun(START);
+    if (!run.ok) throw new Error("run");
+
+    await h.svc.artifacts.persist({
+      runId: run.value.id, clientId: run.value.clientId, scanId: run.value.scanId, kind: "evidence_bundle",
+      envelope: { scanId: run.value.scanId, items: [
+        { id: "ev:scan-1:website", source: "website", state: "observed", provenance: { origin: "https://acme.test/" }, citations: ["https://acme.test/"], value: { siteTitle: "Acme Guitars", visibleText: EVIDENCE_MARK, hasContactDetails: true } },
+        { id: "ev:scan-1:page-gone", source: "pages", state: "unavailable", value: {} },
+      ] },
+      validationStatus: "valid",
+    });
+    await h.svc.artifacts.persist({
+      runId: run.value.id, clientId: run.value.clientId, scanId: run.value.scanId, kind: "reasoning_jobs",
+      envelope: { scanId: run.value.scanId, jobs: [{ id: "job", stage: "executive_summary", inputRefs: { evidenceIds: ["ev:scan-1:website"] }, budget: { inputTokens: 8000, outputTokens: 2000, costCeiling: 0, latencyCeilingMs: 30000 } }] },
+      validationStatus: "valid",
+    });
+
+    const transport = new FakeAnthropicTransport(OK_SCRIPT);
+    const support = heldRegistry(h.svc, transport).resolve(REASONING_STAGE, run.value);
+    if (support.kind !== "executable") throw new Error("not executable");
+    await support.execute(REASONING_STAGE, run.value);
+
+    expect(transport.sent).toHaveLength(1);
+    // budget threaded: max_tokens is the job's 2000, NOT the old 512 that truncated
+    expect(transport.sent[0]!.maxOutputTokens).toBe(2000);
+    // the actual evidence CONTENT (not just the id) reached the prompt as DATA
+    expect(transport.sent[0]!.userContent).toContain(EVIDENCE_MARK);
+    // the unavailable item was never hydrated
+    expect(transport.sent[0]!.userContent).not.toContain("page-gone");
+  });
+
+  it("falls back to a safe output budget (> the old 512 default) when the job declares none", async () => {
+    const h = harness({ enabled: true });
+    const run = await h.svc.runs.createRun(START);
+    if (!run.ok) throw new Error("run");
+    const transport = new FakeAnthropicTransport(OK_SCRIPT);
+    const support = heldRegistry(h.svc, transport).resolve(REASONING_STAGE, run.value);
+    if (support.kind !== "executable") throw new Error("not executable");
+    await support.execute(REASONING_STAGE, run.value);
+    expect(transport.sent[0]!.maxOutputTokens).toBeGreaterThan(512);
+  });
+});
