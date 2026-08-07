@@ -15,6 +15,7 @@
 
 import {
   executeReasoningJob,
+  RUNTIME_EVENTS,
   type ExecutionContext,
   type GroundingContext,
   type ParsedProviderOutput,
@@ -48,6 +49,19 @@ export interface ControlledReasoningInput {
   /** Token/cost budget for the single turn. */
   budget?: { inputTokens?: number; outputTokens?: number; costCeiling?: number; latencyCeilingMs?: number };
   deadline?: string | null;
+  /**
+   * The CANONICAL reasoning-job id — the `public.reasoning_jobs` ledger row created
+   * by `ReasoningService.create()` at reasoning_job_creation. It is REQUIRED: this
+   * path never mints a reasoning id, so the provider attempt always persists against
+   * that ledger row (satisfying the `provider_attempts.reasoning_job_id` FK).
+   */
+  jobId: string;
+  /**
+   * The attempt number to record for the provider attempt. Defaults to the in-run
+   * reasoning attempt count; supply the ledger's monotonic attempt to keep
+   * `unique(reasoning_job_id, attempt)` distinct across queue retries.
+   */
+  attemptNumber?: number;
 }
 
 export interface ControlledReasoningDeps {
@@ -80,7 +94,8 @@ function buildJob(input: ControlledReasoningInput, deps: ControlledReasoningDeps
     latencyCeilingMs: input.budget?.latencyCeilingMs ?? 60_000,
   };
   return reasoningJobSchema.parse({
-    id: deps.ids("rjob"),
+    // The canonical ledger id — never minted here (only ReasoningService.create mints).
+    id: input.jobId,
     scanId: input.scanId,
     clientId: input.clientId,
     taskType: "reasoning",
@@ -178,13 +193,14 @@ async function persistAttempt(
 ): Promise<void> {
   const response = outcome.response;
   const succeeded = outcome.finalStatus === "succeeded";
-  await runtime.providerAttempts.record({
+  const attempt = input.attemptNumber ?? outcome.attempts.length;
+  const recorded = await runtime.providerAttempts.record({
     reasoningJobId: job.id,
     runId: input.runId,
     clientId: input.clientId,
     scanId: input.scanId,
     providerId,
-    attempt: outcome.attempts.length,
+    attempt,
     status: succeeded ? "succeeded" : outcome.finalStatus === "timed_out" ? "timed_out" : outcome.finalStatus === "cancelled" ? "cancelled" : "failed",
     latencyMs: response?.latencyMs ?? null,
     estimatedCost: response?.cost.estimatedCost ?? null,
@@ -196,4 +212,15 @@ async function persistAttempt(
     rawResponseRef: response?.rawResponseRef ?? null,
     lastError: succeeded ? null : outcome.finalStatus,
   });
+
+  // SAFE, PERMANENT OBSERVABILITY — a persistence failure is NEVER swallowed. On
+  // error, record an append-only runtime event carrying only safe metadata (ids +
+  // stable error code + final status) — never raw provider text.
+  if (!recorded.ok) {
+    await runtime.events.emitRunEvent(
+      RUNTIME_EVENTS.providerAttemptPersistFailed,
+      { id: input.runId, clientId: input.clientId, scanId: input.scanId },
+      { reasoningJobId: job.id, attempt, providerId, error: recorded.code, finalStatus: outcome.finalStatus },
+    );
+  }
 }

@@ -201,16 +201,35 @@ function reasoningJobCreation(deps: IntelligenceStageDeps): StageExecutor {
     const bundle = evidenceBundleSchema.parse(bundleArtifact.envelope);
     const evidenceIds = bundle.items.filter((i) => i.state !== "unavailable").map((i) => i.id);
 
+    const inputRefs = { evidenceIds, graphSnapshotChecksum: typeof snapshot.checksum === "string" ? snapshot.checksum : null, discoveryManifestId: null, graphRefs: [] };
+    const budget = { costCeiling: 0, inputTokens: deps.reasoningInputTokens ?? 8000, outputTokens: deps.reasoningOutputTokens ?? 2000, latencyCeilingMs: 30_000 };
+
+    // Create (or replay) the relational execution LEDGER row (public.reasoning_jobs)
+    // for this reasoning job. The reasoning_jobs ARTIFACT below stays the immutable
+    // spec; this row is the FK target that provider_attempts references, and its id
+    // is the ONE canonical job id carried through provider_execution. Idempotent on
+    // reasoningKey(run, stage, taskType) → replay/resume converges on the same row/id.
+    const ledger = await deps.runtime.reasoning.create({
+      runId: run.id,
+      clientId: run.clientId,
+      scanId: run.scanId,
+      stage: "executive_summary",
+      taskType: "reasoning",
+      metadata: { inputRefs, budget, requiredOutputs: ["execution_outcomes"] },
+      deadline: null,
+    });
+    if (!ledger.ok) throw new StageBlockedError("reasoning_ledger_unpersisted");
+
     const job = newReasoningJob(
       {
-        id: `job:${run.scanId}:executive_summary`,
+        id: ledger.value.id,
         scanId: run.scanId,
         clientId: run.clientId,
         taskType: "reasoning",
         stage: "executive_summary",
-        inputRefs: { evidenceIds, graphSnapshotChecksum: typeof snapshot.checksum === "string" ? snapshot.checksum : null, discoveryManifestId: null, graphRefs: [] },
+        inputRefs,
         requiredOutputs: ["execution_outcomes"],
-        budget: { costCeiling: 0, inputTokens: deps.reasoningInputTokens ?? 8000, outputTokens: deps.reasoningOutputTokens ?? 2000, latencyCeilingMs: 30_000 },
+        budget,
       },
       deps.now(),
     );

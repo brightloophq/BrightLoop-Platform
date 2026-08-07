@@ -18,10 +18,11 @@ import {
   InMemoryRuntimeRepository,
   PIPELINE_STAGE_ORDER,
   PIPELINE_STAGE_SPECS,
+  StageBlockedError,
   type RuntimeServices,
   type StageWork,
 } from "@brightloop/domain";
-import type { PipelineRunStage, RuntimeArtifactKind } from "@brightloop/schema";
+import type { PipelineRunStage, RuntimeArtifactKind, RuntimeRun } from "@brightloop/schema";
 import { AnthropicReasoningProviderAdapter } from "../anthropic/adapter.js";
 import { loadAnthropicConfig, PROVIDER_DISABLED_REASON } from "../anthropic/config.js";
 import { FakeAnthropicTransport, type FakeTransportOptions } from "../testing/fake-transport.js";
@@ -40,11 +41,26 @@ const OK_SCRIPT: FakeTransportOptions = {
   script: [{ text: `{"analysis":"${RAW_SENTINEL}"}`, usage: { inputTokens: 180, outputTokens: 40 } }],
 };
 
-/** A reference executor that produces exactly the artifact each Phase-A spec declares. */
-const referenceExecutor = async (stage: PipelineRunStage): Promise<StageWork> => {
-  const kind = PIPELINE_STAGE_SPECS[stage].producesArtifact;
-  return kind === null ? { envelope: null, kind: null } : { envelope: { stage, produced: kind }, kind: kind as RuntimeArtifactKind };
-};
+/**
+ * A reference executor that produces exactly the artifact each Phase-A spec declares.
+ * For `reasoning_job_creation` it mirrors production: it creates the canonical
+ * `public.reasoning_jobs` ledger row and emits a real `reasoning_jobs` artifact
+ * carrying that ledger id — so `provider_execution` receives a canonical id.
+ */
+function referenceExecutorFor(svc: RuntimeServices) {
+  return async (stage: PipelineRunStage, run: RuntimeRun): Promise<StageWork> => {
+    if (stage === "reasoning_job_creation") {
+      const ledger = await svc.reasoning.create({ runId: run.id, clientId: run.clientId, scanId: run.scanId, stage: "executive_summary", taskType: "reasoning", metadata: {}, deadline: null });
+      if (!ledger.ok) throw new Error("ledger create failed");
+      return {
+        envelope: { scanId: run.scanId, jobs: [{ id: ledger.value.id, stage: "executive_summary", inputRefs: { evidenceIds: [] }, budget: { inputTokens: 8000, outputTokens: 2000, costCeiling: 0, latencyCeilingMs: 30000 } }] },
+        kind: "reasoning_jobs",
+      };
+    }
+    const kind = PIPELINE_STAGE_SPECS[stage].producesArtifact;
+    return kind === null ? { envelope: null, kind: null } : { envelope: { stage, produced: kind }, kind: kind as RuntimeArtifactKind };
+  };
+}
 
 interface Harness {
   repo: InMemoryRuntimeRepository;
@@ -99,8 +115,9 @@ async function seedToReasoning(h: Harness): Promise<void> {
   const init = await h.svc.coordinator.initializeRun(START);
   if (!init.ok) throw new Error("init failed");
   const turns = PIPELINE_STAGE_ORDER.indexOf(REASONING_STAGE); // stages before provider_execution
+  const reference = referenceExecutorFor(h.svc);
   for (let i = 0; i < turns; i += 1) {
-    const turn = await h.svc.coordinator.runOnce("seed", referenceExecutor);
+    const turn = await h.svc.coordinator.runOnce("seed", reference);
     if (!turn.ok) throw new Error(`seed turn ${i} failed: ${turn.message}`);
   }
 }
@@ -400,15 +417,14 @@ describe("reasoning_jobs → provider_execution seam", () => {
     expect(Object.keys(work.envelope ?? {}).sort()).toEqual(["attempts", "enrichment", "finalStatus", "kind", "model", "providerId", "validationStatus"]);
   });
 
-  it("falls back to the run input with empty lineage when no reasoning_jobs artifact exists", async () => {
+  it("BLOCKS (no fabricated id) when no reasoning_jobs artifact exists", async () => {
     const h = harness({ enabled: true });
     const run = await h.svc.runs.createRun(START);
     if (!run.ok) throw new Error("run");
     const support = enabledRegistry(h.svc).resolve(REASONING_STAGE, run.value);
     if (support.kind !== "executable") throw new Error("not executable");
-    const work = await support.execute(REASONING_STAGE, run.value);
-    expect(work.kind).toBe("execution_outcomes");
-    expect(work.sourceArtifactIds).toEqual([]);
+    // provider_execution requires the canonical ledger id — it never mints one.
+    await expect(support.execute(REASONING_STAGE, run.value)).rejects.toBeInstanceOf(StageBlockedError);
   });
 });
 
@@ -527,10 +543,71 @@ describe("reasoning budget + evidence hydration", () => {
     const h = harness({ enabled: true });
     const run = await h.svc.runs.createRun(START);
     if (!run.ok) throw new Error("run");
+    // A reasoning_jobs artifact whose job declares NO budget → the safe fallback applies.
+    await h.svc.artifacts.persist({
+      runId: run.value.id, clientId: run.value.clientId, scanId: run.value.scanId, kind: "reasoning_jobs",
+      envelope: { scanId: run.value.scanId, jobs: [{ id: "rjob_nobudget", stage: "executive_summary", inputRefs: { evidenceIds: [] } }] },
+      validationStatus: "valid",
+    });
     const transport = new FakeAnthropicTransport(OK_SCRIPT);
     const support = heldRegistry(h.svc, transport).resolve(REASONING_STAGE, run.value);
     if (support.kind !== "executable") throw new Error("not executable");
     await support.execute(REASONING_STAGE, run.value);
     expect(transport.sent[0]!.maxOutputTokens).toBeGreaterThan(512);
+  });
+});
+
+/* ===== 12 · canonical ledger id + provider-attempt persistence =============== */
+describe("provider-attempt persistence against the canonical ledger id", () => {
+  function enabledReg(svc: RuntimeServices) {
+    const config = loadAnthropicConfig({ AUXION_LIVE_AI_ENABLED: "true", AUXION_ANTHROPIC_ENABLED: "true", ANTHROPIC_API_KEY: "k" });
+    return createDefaultStageRegistry({ config, adapter: new AnthropicReasoningProviderAdapter({ config, transport: new FakeAnthropicTransport(OK_SCRIPT) }), runtime: svc, now: T0, traceId: "t", ids: (p) => `${p}_x` });
+  }
+
+  // Seed a run + the ledger row + a reasoning_jobs artifact carrying the ledger id.
+  async function seed(h: Harness): Promise<{ run: RuntimeRun; canonicalId: string }> {
+    const run = await h.svc.runs.createRun(START);
+    if (!run.ok) throw new Error("run");
+    const ledger = await h.svc.reasoning.create({ runId: run.value.id, clientId: run.value.clientId, scanId: run.value.scanId, stage: "executive_summary", taskType: "reasoning", metadata: {}, deadline: null });
+    if (!ledger.ok) throw new Error("ledger");
+    await h.svc.artifacts.persist({
+      runId: run.value.id, clientId: run.value.clientId, scanId: run.value.scanId, kind: "reasoning_jobs",
+      envelope: { scanId: run.value.scanId, jobs: [{ id: ledger.value.id, stage: "executive_summary", inputRefs: { evidenceIds: [] }, budget: { inputTokens: 8000, outputTokens: 2000, costCeiling: 0, latencyCeilingMs: 30000 } }] },
+      validationStatus: "valid",
+    });
+    return { run: run.value, canonicalId: ledger.value.id };
+  }
+
+  it("records the provider attempt against the ledger id and bumps the ledger attempt", async () => {
+    const h = harness({ enabled: true });
+    const { run, canonicalId } = await seed(h);
+    const support = enabledReg(h.svc).resolve(REASONING_STAGE, run);
+    if (support.kind !== "executable") throw new Error("not executable");
+    await support.execute(REASONING_STAGE, run);
+
+    const attempts = await h.svc.providerAttempts.list(canonicalId);
+    expect(attempts.ok && attempts.value.length).toBeGreaterThan(0);
+    expect(attempts.ok && attempts.value[0]!.reasoningJobId).toBe(canonicalId);
+    // the ledger attempt was bumped so a queue retry records a distinct row
+    const after = await h.svc.reasoning.get(canonicalId);
+    expect(after.ok && after.value.attempt).toBeGreaterThanOrEqual(1);
+  });
+
+  it("emits a safe persist-failure event (no raw text) and does NOT throw when the attempt cannot be recorded", async () => {
+    const h = harness({ enabled: true });
+    const { run, canonicalId } = await seed(h);
+    // Pre-seed a CONFLICTING attempt: same idempotency key (job id + attempt 1) but a
+    // different providerId, which the store fingerprints distinctly → the execution's
+    // insert returns `conflict` — the offline analogue of the production FK failure.
+    await h.svc.providerAttempts.record({ reasoningJobId: canonicalId, runId: run.id, clientId: run.clientId, scanId: run.scanId, providerId: "some-other-provider", attempt: 1, status: "succeeded", latencyMs: 999, estimatedCost: null, actualCost: null, inputTokens: null, outputTokens: null, usageEstimated: true, rawResponseRef: null, lastError: null });
+
+    const support = enabledReg(h.svc).resolve(REASONING_STAGE, run);
+    if (support.kind !== "executable") throw new Error("not executable");
+    await support.execute(REASONING_STAGE, run); // must not throw despite the persistence conflict
+
+    const events = h.repo.allEvents().filter((e) => e.eventType === "runtime.provider.attempt_persist_failed");
+    expect(events.length).toBeGreaterThan(0);
+    expect(JSON.stringify(events)).not.toContain(RAW_SENTINEL); // safe metadata only
+    expect(JSON.stringify(events[0]!.payload)).toContain(canonicalId);
   });
 });

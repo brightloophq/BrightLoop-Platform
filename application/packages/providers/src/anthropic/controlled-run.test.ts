@@ -27,6 +27,8 @@ function harness(script: FakeTransportOptions = { script: [{ text: '{"summary":"
 
 const input = {
   runId: "run-1", clientId: "c1", scanId: "scan-1",
+  // The canonical ledger id is REQUIRED — this path never mints one.
+  jobId: "rjob_smoke_1",
   objective: "Summarize the digital-presence findings.", outputSchemaId: "schema.summary.v1",
   businessContext: { domain: "example.com" },
 };
