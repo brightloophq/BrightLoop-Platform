@@ -3,14 +3,17 @@
 > Orientation for future AI sessions and new engineers. Factual and concise.
 > **Maintenance rule: update this file at the end of every completed sprint**
 > (add the sprint to "Completed sprints", adjust "Next planned sprint", revise any
-> convention that changed). Last updated: after **LR.1 (Production Readiness &
-> Launch Certification)** — repository + production/security/data-honesty audit,
-> code-level P0/P1 fixes (Turnstile fail-closed-in-prod, public + global error
-> boundaries, JSON-LD injection hardening), verdict **READY AFTER P0 + P1 FIXES**
-> (code ready; go-live gated on operational/content items). See §23 and
-> `engineering-blueprint/LR.1-production-readiness-report.md`. Prior sprints on
-> `main`: Phase D (D1–D8), Phase A/B/C engine, Phase E, Phase F (F1–F5), and the
-> Product Experience program **PX.1a–h** (PX.1i is open PR #85, CI-green).
+> convention that changed). Last updated: after the **Live Reasoning Execution
+> fixes** — token budget + evidence hydration (PR #91) and the canonical
+> reasoning-job-id / provider-attempt persistence-contract repair (PR #92), both
+> merged to `main`. See §25. Preceding recent work on `main`: **Evidence Validation
+> Runtime — Trust & Traceability** (PR #88, §24), **LR.1/LR.2** launch certification
+> (§23), and the Product Experience program **PX.1a–i**. Prior sprints on `main`:
+> Phase D (D1–D8), Phase A/B/C engine, Phase E, Phase F (F1–F5).
+>
+> **⚠ §12/§13 are STALE** (they stop at Phase C3). The intelligence pipeline is fully
+> built and merged through C10 — see §24's doc-drift correction and §25 before
+> assuming any runtime stage is unimplemented; verify against the code, not §12.
 >
 > **Two work tracks run in parallel.** (A) The **transformation-cycle product**
 > (Signals → Insights → …), tracked in §4/§10/§12. (B) The **Business Intelligence
@@ -1749,3 +1752,46 @@ yet" text was a **stale classifier**, now fixed.
   extended `reasoning-spine.test.ts`, web `prospect-scanner.test.ts` (+ blocks; corrected the
   stale-classifier test). Gate `pnpm turbo run typecheck lint test build` **36/36 green**;
   ZERO provider/network/credit.
+
+## 25. Live Reasoning Execution — budget, evidence hydration & persistence contract (all merged)
+
+Three fixes to the live `provider_execution` path, diagnosed against the real Anthropic API and
+merged to `main`. **Additive only** — no migration, RLS, generated-type, capability, queue, retry,
+budget-model, adapter, or prompt-template change.
+
+**How it was diagnosed (PR #89 → #90, reverted).** A **temporary, flag-gated** diagnostic
+(`AUXION_REASONING_DIAGNOSTIC`, default off) logged bounded/redacted response metadata at the
+`normalize.ts` boundary for exactly one controlled production turn, then was removed. It confirmed
+the root cause of `reasoning rejected`: the Anthropic output was **truncated at a 512-token cap**
+(`stop_reason: max_tokens`) → unterminated JSON → structured-output validation reject → 3 retries →
+`rejected`. Do **not** re-introduce raw-response logging; the diagnostic was a one-shot.
+
+- **Token budget + evidence hydration (PR #91, `ab1fde3`).** The `provider_execution` executor
+  (`packages/providers/src/driver/registry.ts`) now (a) threads the reasoning job's declared
+  **output budget** (~2000, from the `reasoning_jobs` artifact) instead of the 512 default that
+  truncated the JSON, and (b) **hydrates the referenced OBSERVED evidence CONTENT** (bounded ≤8
+  items, flat signals, strings ≤800 chars) into `businessContext` — carried as fenced
+  `BUSINESS_CONTEXT` DATA (never instructions). Previously the model got only evidence **IDs** and
+  correctly refused for lack of content.
+- **Canonical id + provider-attempt persistence (PR #92, `908fa72`).** `provider_attempts.reasoning_job_id`
+  is `NOT NULL REFERENCES public.reasoning_jobs(id)`, but the pipeline never populated that ledger
+  and `controlled-run.buildJob` minted a throwaway `rjob_*`, so every attempt insert failed the FK
+  and was **silently swallowed** (empty `provider_attempts`). Fix: **one canonical id** now flows
+  `reasoning_jobs artifact → public.reasoning_jobs ledger → provider_execution → provider_attempts`.
+  `reasoning_job_creation` creates/replays the **ledger row** via `ReasoningService.create`
+  (idempotent on `reasoningKey`); the immutable artifact carries that ledger id.
+- **Invariants (do not regress):** only `ReasoningService.create` mints reasoning ids;
+  `controlled-run.buildJob` takes a **required** `jobId` (never `deps.ids("rjob")`);
+  `provider_execution` **BLOCKS** (consuming no attempt) when the canonical id is absent — it never
+  fabricates one; the ledger `attempt` is bumped (`markRunning`) before execution so queue retries
+  keep `(reasoning_job_id, attempt)` unique; `persistAttempt` **never swallows** the result — on
+  failure it emits `runtime.provider.attempt_persist_failed` with **safe metadata only**
+  (`reasoningJobId`/`attempt`/`providerId`/`errorCode`/`executionStatus`, never raw output). No FK
+  weakened; `runtime_events.event_type` is a `text` column, so new event names need **no migration**.
+- **Known limits:** the in-memory runtime double does **not** enforce the
+  `provider_attempts → reasoning_jobs` FK, so offline tests exercise the observability path via an
+  idempotency conflict; the real FK resolution is covered by the canonical-id threading + `db-verify`.
+  `reasoning rejected` is a **provider-output-validation** failure (truncation/malformed JSON) —
+  SEPARATE from persistence; #91 addresses the truncation, #92 restores the telemetry to diagnose
+  any recurrence. Gate `pnpm turbo run typecheck lint test build` **36/36 green**; CI `db-verify`
+  green (drift 0); ZERO live provider calls in CI (fake transport; the live diagnostic was one turn).
