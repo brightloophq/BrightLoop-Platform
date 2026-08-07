@@ -81,6 +81,8 @@ export const RUNTIME_EVENTS = {
   reasoningCompleted: "runtime.reasoning.completed",
   reasoningFailed: "runtime.reasoning.failed",
   providerAttempted: "runtime.provider.attempted",
+  /** A provider-attempt row could not be persisted — never silently swallowed. */
+  providerAttemptPersistFailed: "runtime.provider.attempt_persist_failed",
   jobEnqueued: "runtime.queue.enqueued",
   jobLeased: "runtime.queue.leased",
   jobCompleted: "runtime.queue.completed",

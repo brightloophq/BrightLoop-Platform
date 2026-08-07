@@ -110,6 +110,24 @@ describe("reasoning_job_creation", () => {
     // no prompt or response persisted
     expect(JSON.stringify(work.envelope)).not.toMatch(/prompt|response|chain.of.thought/i);
   });
+
+  it("creates the public.reasoning_jobs ledger row and the artifact carries its id (idempotent)", async () => {
+    await persist("discovery_manifest", MANIFEST);
+    await runStage("evidence_validation");
+    await runStage("graph_assembly");
+    await runStage("graph_snapshot");
+
+    const work = await runStage("reasoning_job_creation");
+    const jobId = (work.envelope!["jobs"] as { id: string }[])[0]!.id;
+    // the artifact job id resolves to a real ledger row — the FK target for provider_attempts
+    const ledger = await services.reasoning.get(jobId);
+    expect(ledger.ok).toBe(true);
+    expect(ledger.ok && ledger.value.stage).toBe("executive_summary");
+
+    // idempotent: re-running the stage converges on the SAME canonical id
+    const work2 = await runStage("reasoning_job_creation");
+    expect((work2.envelope!["jobs"] as { id: string }[])[0]!.id).toBe(jobId);
+  });
 });
 
 /* ===== provider routing (control-only) ======================================= */

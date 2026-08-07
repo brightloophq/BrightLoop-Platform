@@ -186,39 +186,53 @@ function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
     }
     const adapter = deps.adapter;
 
-    // C6.2c · consume the `reasoning_jobs` artifact when it exists, so the runtime
-    // job (produced by reasoning_job_creation) drives this execution's input and
-    // lineage. Backward-compatible: with no job artifact, the input falls back to
-    // the run itself, exactly as before. This never changes the execution_outcomes
-    // envelope (still metadata-only — no model output is persisted).
+    // CANONICAL ID — provider_execution REQUIRES the `reasoning_jobs` artifact and
+    // the canonical job id it carries (the `public.reasoning_jobs` ledger row created
+    // at reasoning_job_creation). No id is minted here: a missing artifact or id
+    // BLOCKS (consuming no attempt) rather than fabricating one — so the provider
+    // attempt always persists against the ledger row and its FK resolves.
     const jobsArtifact = await deps.runtime.artifacts.latest(run.id, "reasoning_jobs");
-    const job = jobsArtifact.ok && jobsArtifact.value !== null ? firstReasoningJob(jobsArtifact.value.envelope) : null;
-    const sourceArtifactIds = jobsArtifact.ok && jobsArtifact.value !== null ? [jobsArtifact.value.id] : [];
+    if (!jobsArtifact.ok || jobsArtifact.value === null) throw new StageBlockedError("reasoning_jobs_missing");
+    const job = firstReasoningJob(jobsArtifact.value.envelope);
+    if (job === null || job.id === "") throw new StageBlockedError("reasoning_job_id_missing");
+    const canonicalJobId = job.id;
+    const sourceArtifactIds = [jobsArtifact.value.id];
 
     // EVIDENCE HYDRATION — hand the model the actual referenced evidence CONTENT,
     // not just its ids, so it can ground claims instead of refusing for lack of
     // evidence. Bounded + observed-only; travels as fenced BUSINESS_CONTEXT DATA.
-    const evidence = job === null ? [] : await loadEvidenceDigest(deps, run.id, job.evidenceIds);
+    const evidence = await loadEvidenceDigest(deps, run.id, job.evidenceIds);
 
     // TOKEN BUDGET — use the reasoning job's declared budget (≈2000 output tokens)
     // instead of the 512 default that truncated the JSON mid-string. Falls back to
     // a safe value (capped by the provider config) when the job declares none.
-    const budget: ReasoningBudget = job?.budget ?? {
+    const budget: ReasoningBudget = job.budget ?? {
       inputTokens: 8_000,
       outputTokens: Math.min(deps.config.maxOutputTokens, 2_000),
       costCeiling: 1,
       latencyCeilingMs: 60_000,
     };
 
+    // Bump the ledger's attempt BEFORE execution so each queue retry records a
+    // distinct provider_attempts row (`unique(reasoning_job_id, attempt)`).
+    let attemptNumber: number | undefined;
+    const current = await deps.runtime.reasoning.get(canonicalJobId);
+    if (current.ok) {
+      const bumped = await deps.runtime.reasoning.markRunning(canonicalJobId, current.value.attempt + 1);
+      if (bumped.ok) attemptNumber = bumped.value.attempt;
+    }
+
     const outcome = await runControlledReasoning(
       {
         runId: run.id,
         clientId: run.clientId,
         scanId: run.scanId,
-        objective: job === null ? "Execute the reasoning stage for this scan and return a grounded structured result." : `Execute the ${job.stage} reasoning job and return a grounded structured result.`,
+        objective: `Execute the ${job.stage} reasoning job and return a grounded structured result.`,
         outputSchemaId: "execution_outcomes",
-        businessContext: job === null ? run.metadata : { ...run.metadata, reasoningJobId: job.id, evidenceIds: job.evidenceIds, evidence },
+        businessContext: { ...run.metadata, reasoningJobId: canonicalJobId, evidenceIds: job.evidenceIds, evidence },
         budget,
+        jobId: canonicalJobId,
+        attemptNumber,
       },
       { config: deps.config, adapter, now: deps.now, traceId: deps.traceId, ids: deps.ids, runtime: deps.runtime },
     );
