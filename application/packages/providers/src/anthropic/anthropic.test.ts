@@ -191,6 +191,37 @@ describe("adapter.execute", () => {
     await expect(adapter.execute(request(), control())).rejects.toMatchObject({ kind: "validation" });
   });
 
+  it("attaches SAFE failure telemetry on a truncated (max_tokens) malformed body — no raw content", async () => {
+    const { adapter } = adapterWith({ script: [{ text: '{"summary":"the business is', stopReason: "max_tokens", usage: { inputTokens: 812, outputTokens: 2000 }, latencyMs: 7341 }] });
+    try {
+      await adapter.execute(request(), control());
+      throw new Error("expected a throw");
+    } catch (e) {
+      const err = e as ProviderExecutionError;
+      expect(err).toBeInstanceOf(ProviderExecutionError);
+      expect(err.telemetry?.stopReason).toBe("max_tokens");
+      expect(err.telemetry?.parserOutcome).toBe("invalid_json");
+      expect(err.telemetry?.providerErrorCode).toBe("malformed_response");
+      expect(err.telemetry?.inputTokens).toBe(812);
+      expect(err.telemetry?.outputTokens).toBe(2000);
+      expect(err.telemetry?.latencyMs).toBe(7341);
+      expect(err.telemetry?.responseLength).toBeGreaterThan(0);
+      // classification + counts ONLY — the body text never rides along
+      expect(JSON.stringify(err.telemetry)).not.toContain("the business is");
+      expect(err.message).not.toContain("the business is");
+    }
+  });
+
+  it("classifies a valid-JSON but non-object body as non_object_json", async () => {
+    const { adapter } = adapterWith({ script: [{ text: "[1,2,3]", stopReason: "end_turn" }] });
+    await expect(adapter.execute(request(), control())).rejects.toMatchObject({ telemetry: { parserOutcome: "non_object_json" } });
+  });
+
+  it("attaches a safe providerErrorCode on a transport failure", async () => {
+    const { adapter } = adapterWith({ script: [{ throw: "rate_limit" }] });
+    await expect(adapter.execute(request(), control())).rejects.toMatchObject({ telemetry: { providerErrorCode: "rate_limit" } });
+  });
+
   it("classifies rate limit, overloaded, auth, context, and network", async () => {
     for (const [cat, kind] of [["rate_limit", "retryable"], ["overloaded", "retryable"], ["authentication", "fatal"], ["context_too_large", "fatal"], ["network", "retryable"]] as const) {
       const { adapter } = adapterWith({ script: [{ throw: cat }] });

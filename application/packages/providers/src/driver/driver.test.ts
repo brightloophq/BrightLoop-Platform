@@ -229,11 +229,12 @@ describe("ControlledRuntimeDriver · reasoning executes", () => {
     // nor in any emitted event
     expect(JSON.stringify(h.repo.allEvents())).not.toContain(RAW_SENTINEL);
 
-    // the provider-attempt event carries only safe keys, no content
-    const providerEvents = h.repo.allEvents().filter((e) => e.eventType.startsWith("runtime.provider"));
+    // the provider-attempt event carries only SAFE, allowlisted keys — no content
+    const SAFE_EVENT_KEYS = new Set(["attempt", "providerId", "status", "failureKind", "finishReason", "stopReason", "parserOutcome", "providerErrorCode", "latencyMs", "inputTokens", "outputTokens", "responseLength"]);
+    const providerEvents = h.repo.allEvents().filter((e) => e.eventType === "runtime.provider.attempted");
     expect(providerEvents.length).toBeGreaterThan(0);
     for (const e of providerEvents) {
-      expect(Object.keys(e.payload).sort()).toEqual(["attempt", "providerId", "status"]);
+      for (const k of Object.keys(e.payload)) expect(SAFE_EVENT_KEYS.has(k)).toBe(true);
     }
   });
 
@@ -609,5 +610,56 @@ describe("provider-attempt persistence against the canonical ledger id", () => {
     expect(events.length).toBeGreaterThan(0);
     expect(JSON.stringify(events)).not.toContain(RAW_SENTINEL); // safe metadata only
     expect(JSON.stringify(events[0]!.payload)).toContain(canonicalId);
+  });
+});
+
+/* ===== 13 · provider failure observability ================================== */
+describe("provider failure observability", () => {
+  // A truncated (max_tokens) body — the production reasoning-rejected signature.
+  const TRUNCATED: FakeTransportOptions = { script: [{ text: '{"summary":"the business is', stopReason: "max_tokens", usage: { inputTokens: 812, outputTokens: 2000 }, latencyMs: 7341 }] };
+
+  it("surfaces structured failure telemetry in runtime.provider.attempted + a structured failure code (no raw text)", async () => {
+    const h = harness({ enabled: true, script: TRUNCATED });
+    await seedToReasoning(h);
+    const result = await h.driver.runQueueTurn();
+
+    // structured, safe failure code — not the opaque "reasoning rejected"
+    expect(result.stage).toBe(REASONING_STAGE);
+    expect(["failed", "retried"]).toContain(result.outcome);
+    expect(result.failureCode).toBe("reasoning_output_truncated");
+
+    // the provider-attempt event carries safe structured metadata
+    const ev = h.repo.allEvents().filter((e) => e.eventType === "runtime.provider.attempted");
+    expect(ev.length).toBeGreaterThan(0);
+    const p = ev[ev.length - 1]!.payload as Record<string, unknown>;
+    expect(p["status"]).toBe("failed");
+    expect(p["failureKind"]).toBe("validation");
+    expect(p["parserOutcome"]).toBe("invalid_json");
+    expect(p["stopReason"]).toBe("max_tokens");
+    expect(p["inputTokens"]).toBe(812);
+    expect(p["outputTokens"]).toBe(2000);
+    expect(p["latencyMs"]).toBe(7341);
+    expect(typeof p["responseLength"]).toBe("number");
+    // the raw body text never appears in any event
+    expect(JSON.stringify(h.repo.allEvents())).not.toContain("the business is");
+  });
+
+  it("records safe usage metadata on a SUCCESSFUL execution", async () => {
+    const h = harness({ enabled: true }); // OK_SCRIPT: usage 180/40
+    await seedToReasoning(h);
+    await h.driver.runQueueTurn();
+    const ev = h.repo.allEvents().filter((e) => e.eventType === "runtime.provider.attempted");
+    const p = ev[ev.length - 1]!.payload as Record<string, unknown>;
+    expect(p["status"]).toBe("succeeded");
+    expect(p["inputTokens"]).toBe(180);
+    expect(p["outputTokens"]).toBe(40);
+  });
+
+  it("maps a transport failure to a safe transport failure code", async () => {
+    const h = harness({ enabled: true, script: { script: [{ throw: "rate_limit" }] } });
+    await seedToReasoning(h);
+    const result = await h.driver.runQueueTurn();
+    expect(["failed", "retried"]).toContain(result.outcome);
+    expect(result.failureCode).toBe("reasoning_transport_failure");
   });
 });

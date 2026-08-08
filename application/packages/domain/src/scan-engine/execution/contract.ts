@@ -65,15 +65,37 @@ export interface RawProviderOutput {
 }
 
 /* ---- typed failure (§6 retry classification) ------------------------------ */
+/**
+ * SAFE failure telemetry an adapter may attach to a `ProviderExecutionError`.
+ * Classification + counts ONLY — never raw output, prompts, evidence, or secrets.
+ * Every field is optional/nullable when the value is unavailable.
+ */
+export interface ProviderExecutionTelemetry {
+  /** The provider's raw stop-reason string (a fixed enum value, e.g. "max_tokens"). */
+  stopReason?: string | null;
+  /** How the output parser resolved the body: invalid_json | non_object_json. */
+  parserOutcome?: string | null;
+  /** The adapter's stable error classification (category), never a raw message. */
+  providerErrorCode?: string | null;
+  /** Character length of the response body (a count, never the body). */
+  responseLength?: number | null;
+  inputTokens?: number | null;
+  outputTokens?: number | null;
+  latencyMs?: number | null;
+}
+
 /** A provider failure carrying its retry classification. Thrown by adapters. */
 export class ProviderExecutionError extends Error {
   readonly kind: ReasoningFailureKind;
   readonly finishReason: FinishReason;
-  constructor(kind: ReasoningFailureKind, message: string, finishReason: FinishReason = "error") {
+  /** Safe telemetry about the failure (classification + counts only), or null. */
+  readonly telemetry: ProviderExecutionTelemetry | null;
+  constructor(kind: ReasoningFailureKind, message: string, finishReason: FinishReason = "error", telemetry: ProviderExecutionTelemetry | null = null) {
     super(message);
     this.name = "ProviderExecutionError";
     this.kind = kind;
     this.finishReason = finishReason;
+    this.telemetry = telemetry;
   }
 }
 

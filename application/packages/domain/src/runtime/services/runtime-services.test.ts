@@ -456,15 +456,25 @@ describe("ReasoningService & ProviderAttemptService", () => {
     expect(listed.ok && Object.keys(listed.value[0]!)).not.toContain("rawResponse");
   });
 
-  it("never places provider response content in an emitted event", async () => {
+  it("never places provider response content in an emitted event — only safe, allowlisted keys", async () => {
     const h = harness();
     await h.svc.providerAttempts.record({
       reasoningJobId: "rj1", runId: "r1", clientId: "c1", scanId: "s1",
-      providerId: "opaque-a", attempt: 0, status: "succeeded", rawResponseRef: "blob://secret-ref",
+      providerId: "opaque-a", attempt: 0, status: "failed", rawResponseRef: "blob://secret-ref",
+      // safe failure telemetry (classification + counts) surfaces in the event
+      failureKind: "validation", parserOutcome: "invalid_json", stopReason: "max_tokens",
+      providerErrorCode: "malformed_response", responseLength: 1844, latencyMs: 7341, inputTokens: 812, outputTokens: 2000,
     });
     const events = h.repo.allEvents().filter((e) => e.eventType.startsWith("runtime.provider"));
     expect(events).toHaveLength(1);
-    expect(Object.keys(events[0]!.payload).sort()).toEqual(["attempt", "providerId", "status"]);
+    const SAFE_KEYS = ["attempt", "providerId", "status", "failureKind", "finishReason", "stopReason", "parserOutcome", "providerErrorCode", "latencyMs", "inputTokens", "outputTokens", "responseLength"];
+    // every emitted key is on the safe allowlist — no content field can slip in
+    for (const k of Object.keys(events[0]!.payload)) expect(SAFE_KEYS).toContain(k);
+    // the raw-response REFERENCE is never emitted
+    expect(JSON.stringify(events[0]!.payload)).not.toContain("secret-ref");
+    // and the structured metadata is present
+    expect(events[0]!.payload["parserOutcome"]).toBe("invalid_json");
+    expect(events[0]!.payload["stopReason"]).toBe("max_tokens");
   });
 });
 

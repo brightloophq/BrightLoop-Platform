@@ -133,6 +133,29 @@ export const executionEventSchema = z.object({
 });
 export type ExecutionEvent = z.infer<typeof executionEventSchema>;
 
+/* ---- 7 · safe failure telemetry ------------------------------------------
+ * SAFE observability metadata about the terminal provider failure. It carries
+ * ONLY classification + counts — never raw output, prompts, evidence, or secrets.
+ * Populated for a non-succeeded outcome (esp. the malformed/transport paths where
+ * `response` is null); every field is nullable when the value is unavailable. */
+export const providerFailureTelemetrySchema = z.object({
+  failureKind: reasoningFailureKindSchema.nullable().default(null),
+  /** Normalized finish reason. */
+  finishReason: finishReasonSchema.nullable().default(null),
+  /** The provider's raw stop-reason string (a fixed enum value, e.g. "max_tokens") — not content. */
+  stopReason: z.string().nullable().default(null),
+  /** How the output parser resolved the body: parsed | invalid_json | non_object_json. */
+  parserOutcome: z.string().nullable().default(null),
+  /** The adapter's stable error classification (category), never a raw message. */
+  providerErrorCode: z.string().nullable().default(null),
+  /** Character length of the response body (a count, never the body). */
+  responseLength: z.number().int().nonnegative().nullable().default(null),
+  inputTokens: z.number().int().nonnegative().nullable().default(null),
+  outputTokens: z.number().int().nonnegative().nullable().default(null),
+  latencyMs: z.number().int().nonnegative().nullable().default(null),
+});
+export type ProviderFailureTelemetry = z.infer<typeof providerFailureTelemetrySchema>;
+
 /* ---- the orchestrator's aggregate outcome --------------------------------- */
 export const executionOutcomeSchema = z.object({
   jobId: z.string(),
@@ -141,6 +164,8 @@ export const executionOutcomeSchema = z.object({
   attempts: z.array(executionAttemptSchema).default([]),
   events: z.array(executionEventSchema).default([]),
   provenance: reasoningResultProvenanceSchema.nullable().default(null),
+  /** Safe telemetry about the terminal failure (null on success). */
+  failureTelemetry: providerFailureTelemetrySchema.nullable().default(null),
 });
 export type ExecutionOutcome = z.infer<typeof executionOutcomeSchema>;
 

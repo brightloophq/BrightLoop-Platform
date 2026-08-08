@@ -15,11 +15,16 @@ import type { FinishReason, ModelMetadata } from "@brightloop/schema";
 import type { RawProviderOutput } from "@brightloop/domain";
 import type { TransportResult } from "./transport.js";
 
+/** How the parser resolved a malformed body — safe classification, never content. */
+export type ParserOutcome = "invalid_json" | "non_object_json";
+
 /** Thrown when the provider body is not the required single JSON object. */
 export class MalformedOutputError extends Error {
-  constructor(message: string) {
+  readonly parserOutcome: ParserOutcome;
+  constructor(message: string, parserOutcome: ParserOutcome) {
     super(message);
     this.name = "MalformedOutputError";
+    this.parserOutcome = parserOutcome;
   }
 }
 
@@ -55,10 +60,10 @@ export function parseJsonObject(text: string): Record<string, unknown> {
   try {
     parsed = JSON.parse(unfenced);
   } catch {
-    throw new MalformedOutputError("provider response was not valid JSON");
+    throw new MalformedOutputError("provider response was not valid JSON", "invalid_json");
   }
   if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
-    throw new MalformedOutputError("provider response was not a JSON object");
+    throw new MalformedOutputError("provider response was not a JSON object", "non_object_json");
   }
   return parsed as Record<string, unknown>;
 }
