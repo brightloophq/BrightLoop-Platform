@@ -136,13 +136,24 @@ export class AnthropicReasoningProviderAdapter implements ReasoningProviderAdapt
         signal: controller.signal,
         metadata: { traceId: request.traceId },
       });
-      // Malformed JSON → validation failure, not a promoted answer (§5).
+      // Malformed JSON → validation failure, not a promoted answer (§5). Attach SAFE
+      // telemetry from the transport result (stop-reason, byte/token counts, latency,
+      // parser outcome) — classification + counts only, never the body — so the
+      // failure is observable without exposing raw model output.
       try {
         return normalizeResponse({ result, providerId: this.providerId });
       } catch (err) {
         if (err instanceof MalformedOutputError) {
           const c = classifyCategory("malformed_response");
-          throw new ProviderExecutionError(c.kind, err.message, c.finishReason);
+          throw new ProviderExecutionError(c.kind, err.message, c.finishReason, {
+            stopReason: result.stopReason,
+            parserOutcome: err.parserOutcome,
+            providerErrorCode: c.category,
+            responseLength: result.text.length,
+            inputTokens: result.usage.inputTokens ?? null,
+            outputTokens: result.usage.outputTokens ?? null,
+            latencyMs: result.latencyMs,
+          });
         }
         throw err;
       }
@@ -164,13 +175,13 @@ export class AnthropicReasoningProviderAdapter implements ReasoningProviderAdapt
         const category = abortReason === "timeout" ? "timeout" : "aborted";
         const c = classifyCategory(category);
         const detail = abortReason === "deadline" ? "deadline exceeded" : abortReason === "timeout" ? "request timed out" : `cancelled by ${abortReason}`;
-        return new ProviderExecutionError(c.kind, detail, c.finishReason);
+        return new ProviderExecutionError(c.kind, detail, c.finishReason, { providerErrorCode: c.category });
       }
       const c = classifyCategory(err.category);
-      return new ProviderExecutionError(c.kind, `provider error: ${err.category}`, c.finishReason);
+      return new ProviderExecutionError(c.kind, `provider error: ${err.category}`, c.finishReason, { providerErrorCode: c.category });
     }
     // Never rethrow an unknown/raw error across the boundary — classify as fatal.
     const c = classifyCategory("unknown");
-    return new ProviderExecutionError(c.kind, "unexpected provider failure", c.finishReason);
+    return new ProviderExecutionError(c.kind, "unexpected provider failure", c.finishReason, { providerErrorCode: c.category });
   }
 }

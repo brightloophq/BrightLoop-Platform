@@ -194,6 +194,10 @@ async function persistAttempt(
   const response = outcome.response;
   const succeeded = outcome.finalStatus === "succeeded";
   const attempt = input.attemptNumber ?? outcome.attempts.length;
+  // SAFE failure telemetry — present for a non-succeeded outcome (esp. the
+  // malformed/transport path where `response` is null). Classification + counts
+  // only; the `runtime.provider.attempted` event surfaces it, never raw output.
+  const ft = outcome.failureTelemetry;
   const recorded = await runtime.providerAttempts.record({
     reasoningJobId: job.id,
     runId: input.runId,
@@ -202,15 +206,22 @@ async function persistAttempt(
     providerId,
     attempt,
     status: succeeded ? "succeeded" : outcome.finalStatus === "timed_out" ? "timed_out" : outcome.finalStatus === "cancelled" ? "cancelled" : "failed",
-    latencyMs: response?.latencyMs ?? null,
+    latencyMs: response?.latencyMs ?? ft?.latencyMs ?? null,
     estimatedCost: response?.cost.estimatedCost ?? null,
     actualCost: response?.cost.actualCost ?? null,
-    inputTokens: response?.usage.actualInputTokens ?? null,
-    outputTokens: response?.usage.actualOutputTokens ?? null,
+    inputTokens: response?.usage.actualInputTokens ?? ft?.inputTokens ?? null,
+    outputTokens: response?.usage.actualOutputTokens ?? ft?.outputTokens ?? null,
     usageEstimated: response?.usage.estimated ?? true,
     // Safe pointer only — never raw model content.
     rawResponseRef: response?.rawResponseRef ?? null,
     lastError: succeeded ? null : outcome.finalStatus,
+    // Safe failure telemetry for the event payload (never a raw message/body).
+    failureKind: ft?.failureKind ?? null,
+    finishReason: ft?.finishReason ?? response?.finishReason ?? null,
+    stopReason: ft?.stopReason ?? null,
+    parserOutcome: ft?.parserOutcome ?? null,
+    providerErrorCode: ft?.providerErrorCode ?? null,
+    responseLength: ft?.responseLength ?? null,
   });
 
   // SAFE, PERMANENT OBSERVABILITY — a persistence failure is NEVER swallowed. On

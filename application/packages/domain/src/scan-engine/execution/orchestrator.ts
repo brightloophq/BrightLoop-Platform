@@ -44,6 +44,7 @@ import type {
   ExecutionOutcome,
   ExecutionStatus,
   ReasoningFailureKind,
+  ProviderFailureTelemetry,
 } from "@brightloop/schema";
 import type { GroundingContext } from "../reasoning/grounding.js";
 
@@ -103,6 +104,8 @@ export async function executeReasoningJob(
   let finalStatus: ExecutionStatus = "failed";
   let terminalResponse: ExecutionResponse | null = null;
   let terminalModel: ExecutionResponse["model"] = null;
+  // The last adapter throw (reset each iteration) — carries safe failure telemetry.
+  let terminalError: ProviderExecutionError | null = null;
 
   const tried: string[] = [];
   let providerId: string | null = chain[0] ?? null;
@@ -166,10 +169,12 @@ export async function executeReasoningJob(
 
     let kind: ReasoningFailureKind | null = null;
     let raw: Awaited<ReturnType<ReasoningProviderAdapter["execute"]>> | null = null;
+    terminalError = null;
     try {
       raw = await adapter.execute(request, control);
     } catch (err) {
-      kind = err instanceof ProviderExecutionError ? err.kind : "fatal";
+      terminalError = err instanceof ProviderExecutionError ? err : null;
+      kind = terminalError?.kind ?? "fatal";
     }
 
     if (raw !== null && kind === null) {
@@ -246,7 +251,60 @@ export async function executeReasoningJob(
     if (attempt + 1 >= retryPolicy.maxAttempts) finalStatus = STATUS_FOR_KIND[kind!]; // last iteration
   }
 
-  return finalize(job, selection, finalStatus, terminalResponse, attempts, events, ctx.now, terminalModel);
+  const failureTelemetry = finalStatus === "succeeded" ? null : buildFailureTelemetry(attempts, terminalError, terminalResponse);
+  return finalize(job, selection, finalStatus, terminalResponse, attempts, events, ctx.now, terminalModel, failureTelemetry);
+}
+
+/**
+ * Derive SAFE failure telemetry for a non-succeeded outcome — classification +
+ * counts ONLY, never raw output. Prefers a terminal adapter error (the
+ * malformed/transport path, where `response` is null); falls back to the terminal
+ * validated response (the reject/timeout path); else the last attempt.
+ */
+function buildFailureTelemetry(
+  attempts: ExecutionAttempt[],
+  terminalError: ProviderExecutionError | null,
+  terminalResponse: ExecutionResponse | null,
+): ProviderFailureTelemetry {
+  const last = attempts[attempts.length - 1] ?? null;
+  if (terminalError !== null) {
+    const t = terminalError.telemetry;
+    return {
+      failureKind: terminalError.kind,
+      finishReason: terminalError.finishReason,
+      stopReason: t?.stopReason ?? null,
+      parserOutcome: t?.parserOutcome ?? null,
+      providerErrorCode: t?.providerErrorCode ?? null,
+      responseLength: t?.responseLength ?? null,
+      inputTokens: t?.inputTokens ?? null,
+      outputTokens: t?.outputTokens ?? null,
+      latencyMs: t?.latencyMs ?? last?.latencyMs ?? null,
+    };
+  }
+  if (terminalResponse !== null) {
+    return {
+      failureKind: last?.failureKind ?? null,
+      finishReason: terminalResponse.finishReason,
+      stopReason: null,
+      parserOutcome: "parsed",
+      providerErrorCode: null,
+      responseLength: null,
+      inputTokens: terminalResponse.usage.actualInputTokens ?? null,
+      outputTokens: terminalResponse.usage.actualOutputTokens ?? null,
+      latencyMs: terminalResponse.latencyMs,
+    };
+  }
+  return {
+    failureKind: last?.failureKind ?? null,
+    finishReason: null,
+    stopReason: null,
+    parserOutcome: null,
+    providerErrorCode: null,
+    responseLength: null,
+    inputTokens: null,
+    outputTokens: null,
+    latencyMs: last?.latencyMs ?? null,
+  };
 }
 
 /* ---- helpers -------------------------------------------------------------- */
@@ -279,8 +337,9 @@ function finalize(
   events: ExecutionEvent[],
   now: string,
   model: ExecutionResponse["model"],
+  failureTelemetry: ProviderFailureTelemetry | null = null,
 ): ExecutionOutcome {
   const validationStatus = finalStatus === "succeeded" ? "passed" : finalStatus === "rejected" || finalStatus === "failed" || finalStatus === "timed_out" ? "failed" : "skipped";
   const provenance = buildResultProvenance({ job, selection, model, startedAt: now, completedAt: now, validationStatus });
-  return { jobId: job.id, finalStatus, response, attempts, events, provenance };
+  return { jobId: job.id, finalStatus, response, attempts, events, provenance, failureTelemetry };
 }

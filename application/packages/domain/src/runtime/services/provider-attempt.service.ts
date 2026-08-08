@@ -40,6 +40,17 @@ export interface RecordAttemptInput {
   /** A REFERENCE to stored raw output. Never the output itself. */
   rawResponseRef?: string | null;
   lastError?: string | null;
+  /**
+   * SAFE failure telemetry surfaced ONLY in the `runtime.provider.attempted` event
+   * payload (classification + counts) — never written to the attempt row, never raw
+   * output/prompts/evidence/secrets.
+   */
+  failureKind?: string | null;
+  finishReason?: string | null;
+  stopReason?: string | null;
+  parserOutcome?: string | null;
+  providerErrorCode?: string | null;
+  responseLength?: number | null;
 }
 
 export class ProviderAttemptService {
@@ -86,8 +97,21 @@ export class ProviderAttemptService {
         clientId: input.clientId,
         runId: input.runId,
         scanId: input.scanId,
-        // provider id and outcome only — no response content of any kind
-        payload: { providerId: input.providerId, attempt: input.attempt, status: input.status },
+        // SAFE metadata only — classification + counts. No response content, ever.
+        payload: {
+          providerId: input.providerId,
+          attempt: input.attempt,
+          status: input.status,
+          failureKind: input.failureKind ?? null,
+          finishReason: input.finishReason ?? null,
+          stopReason: input.stopReason ?? null,
+          parserOutcome: input.parserOutcome ?? null,
+          providerErrorCode: input.providerErrorCode ?? null,
+          latencyMs: input.latencyMs ?? null,
+          inputTokens: input.inputTokens ?? null,
+          outputTokens: input.outputTokens ?? null,
+          responseLength: input.responseLength ?? null,
+        },
       });
     }
     return result;

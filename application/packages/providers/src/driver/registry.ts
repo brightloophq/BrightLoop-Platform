@@ -12,7 +12,7 @@
  * ========================================================================== */
 
 import { StageBlockedError, type ReasoningProviderAdapter, type RuntimeServices, type StageExecutor, type StageWork } from "@brightloop/domain";
-import { providerEnrichmentSchema, type PipelineRunStage, type ProviderEnrichment, type RuntimeRun } from "@brightloop/schema";
+import { providerEnrichmentSchema, type ExecutionOutcome, type PipelineRunStage, type ProviderEnrichment, type RuntimeRun } from "@brightloop/schema";
 import type { AnthropicConfig } from "../anthropic/config.js";
 import { PROVIDER_DISABLED_REASON } from "../anthropic/config.js";
 import { runControlledReasoning } from "../anthropic/controlled-run.js";
@@ -252,8 +252,10 @@ function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
 
     if (outcome.finalStatus !== "succeeded") {
       // Not a StageBlockedError — a genuine stage failure the engine records and
-      // the queue retries/dead-letters per the existing policy.
-      throw new Error(`reasoning ${outcome.finalStatus}`);
+      // the queue retries/dead-letters per the existing policy. The message is a
+      // STRUCTURED, SAFE failure code derived from the outcome's telemetry — never
+      // a raw provider message — so `runtime.stage.failed` is diagnosable.
+      throw new Error(reasoningFailureCode(outcome));
     }
 
     // C7 · distil SAFE, structured claim candidates from the VALIDATED output,
@@ -279,6 +281,31 @@ function reasoningExecutor(deps: DefaultRegistryDeps): StageExecutor {
       sourceArtifactIds,
     };
   };
+}
+
+/**
+ * A STABLE, SAFE structured failure code for a non-succeeded reasoning outcome —
+ * derived from the outcome's safe telemetry, never from a raw provider message.
+ * This replaces the opaque "reasoning rejected" so `runtime.stage.failed` names
+ * the actual cause (truncation, invalid JSON, refusal, transport, schema, …).
+ */
+function reasoningFailureCode(outcome: ExecutionOutcome): string {
+  const status = outcome.finalStatus;
+  if (status === "timed_out") return "reasoning_timeout";
+  if (status === "cancelled") return "reasoning_cancelled";
+  if (status === "budget_exhausted") return "reasoning_budget_exhausted";
+
+  const ft = outcome.failureTelemetry;
+  // Root causes first: a truncated body (hit the output cap) explains a later
+  // invalid-JSON symptom, so truncation and refusal are classified before parsing.
+  if (ft?.stopReason === "max_tokens" || ft?.finishReason === "length") return "reasoning_output_truncated";
+  if (ft?.stopReason === "refusal" || ft?.finishReason === "content_filter") return "reasoning_provider_refused";
+  if (ft?.parserOutcome === "invalid_json") return "reasoning_invalid_json";
+  if (ft?.parserOutcome === "non_object_json") return "reasoning_non_object_json";
+  const code = ft?.providerErrorCode;
+  if (code === "rate_limit" || code === "overloaded" || code === "server_error" || code === "network") return "reasoning_transport_failure";
+  if (ft?.failureKind === "validation" || ft?.parserOutcome === "parsed") return "reasoning_schema_invalid";
+  return `reasoning_${status}`;
 }
 
 /** Build the safe enrichment section from a parse result. Never carries prose. */
