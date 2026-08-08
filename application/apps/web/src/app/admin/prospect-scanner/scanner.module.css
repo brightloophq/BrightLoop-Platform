@@ -527,3 +527,55 @@
     gap: var(--space-2);
   }
 }
+
+/* ---- one-click auto-run (Run Full Scan) ------------------------------------ */
+.autorunProgress {
+  margin-top: var(--space-4);
+  height: 8px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-inset);
+  border: 1px solid var(--border-hairline);
+  overflow: hidden;
+}
+.autorunBar {
+  height: 100%;
+  background: var(--action-primary);
+  border-radius: inherit;
+  transition: width var(--dur-slow, 420ms) var(--ease-out, ease);
+  min-width: 2px;
+}
+.autorunMeta {
+  margin-top: var(--space-3);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+.advanced {
+  margin-top: var(--space-4);
+}
+.advanced > summary {
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  padding: var(--space-2) 0;
+  list-style: none;
+}
+.advanced > summary::-webkit-details-marker {
+  display: none;
+}
+.advanced > summary::before {
+  content: "▸ ";
+  color: var(--text-muted);
+}
+.advanced[open] > summary::before {
+  content: "▾ ";
+}
+@media (prefers-reduced-motion: reduce) {
+  .autorunBar {
+    transition: none !important;
+  }
+}
