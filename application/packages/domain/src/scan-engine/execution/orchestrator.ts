@@ -106,6 +106,9 @@ export async function executeReasoningJob(
   let terminalModel: ExecutionResponse["model"] = null;
   // The last adapter throw (reset each iteration) — carries safe failure telemetry.
   let terminalError: ProviderExecutionError | null = null;
+  // A SAFE, content-free correction carried into the NEXT attempt after a
+  // validation failure (truncated / malformed) — never the raw response.
+  let retryDirective: "truncated" | "malformed" | null = null;
 
   const tried: string[] = [];
   let providerId: string | null = chain[0] ?? null;
@@ -141,7 +144,7 @@ export async function executeReasoningJob(
       continue;
     }
 
-    const request = buildExecutionRequest({ job, policy: ctx.policy, providerId, traceId: ctx.traceId });
+    const request = buildExecutionRequest({ job, policy: ctx.policy, providerId, traceId: ctx.traceId, retryDirective });
 
     if (!adapterMeetsCapabilities(adapter, job.providerRequirements.capabilities)) {
       attempts.push(attemptRecord(providerId, attempt, "failed", "fatal", 0, ctx.now));
@@ -234,6 +237,17 @@ export async function executeReasoningJob(
       if (kind === "cancelled") { finalStatus = "cancelled"; break; }
       if (kind === "budget_exhausted") { finalStatus = "budget_exhausted"; break; }
     }
+
+    // A validation failure means the output was truncated or not a single JSON
+    // object; carry a SAFE directive (no raw content) so the NEXT attempt's prompt
+    // asks for a more concise / strictly-JSON answer instead of resending the same
+    // oversized request. Cleared for any non-validation failure.
+    retryDirective =
+      kind === "validation"
+        ? terminalError?.telemetry?.stopReason === "max_tokens" || terminalError?.finishReason === "length"
+          ? "truncated"
+          : "malformed"
+        : null;
 
     // ---- decide the next move (retry same / fallback / stop). kind is set here.
     const decision = decideRetry(kind!, attempt, selection, retryPolicy);
