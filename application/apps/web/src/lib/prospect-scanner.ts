@@ -12,7 +12,7 @@
  * ========================================================================== */
 
 import { PIPELINE_STAGE_ORDER } from "@brightloop/domain";
-import type { ScanDTO, TimelineEntryDTO, ArtifactDTO, EvidenceValidationDTO, EvidenceClaimTraceDTO, EvidenceFindingTraceDTO } from "@brightloop/application";
+import { computeProspectPackage, type ScanDTO, type TimelineEntryDTO, type ArtifactDTO, type EvidenceValidationDTO, type EvidenceClaimTraceDTO, type EvidenceFindingTraceDTO, type ProspectPackageState, type PackageReviewDecision } from "@brightloop/application";
 
 /* ---- primitives -------------------------------------------------------------- */
 
@@ -895,6 +895,143 @@ export function buildCompetitorIntelligenceView(content: unknown, context?: Comp
     marketPosition: typeof c["marketPosition"] === "string" ? (c["marketPosition"] as string) : null,
     reviewRequired,
     summary: typeof c["summary"] === "string" ? (c["summary"] as string) : "",
+  };
+}
+
+/* ---- Commercial Proposal + Client Narrative + Package (post-scan commercial) --- */
+
+export interface CommercialProposalView {
+  present: boolean;
+  status: CommercialStatus;
+  statusLabel: string;
+  /** needs_pricing | priced — pricing is NEVER invented; needs_pricing is the honest default. */
+  commercialState: string | null;
+  needsPricing: boolean;
+  workItemCount: number;
+  summary: string;
+}
+
+export function emptyCommercialProposalView(): CommercialProposalView {
+  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), commercialState: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet." };
+}
+
+/** Build the proposal-draft surface from a persisted proposal_version DTO. */
+export function buildCommercialProposalView(dto: ArtifactDTO | null): CommercialProposalView {
+  if (dto === null) return emptyCommercialProposalView();
+  const c = dto.content;
+  const draftReady = c["status"] === "draft_ready";
+  const status: CommercialStatus = draftReady ? "needs_review" : "insufficient_evidence";
+  const commercialState = typeof c["commercialState"] === "string" ? (c["commercialState"] as string) : null;
+  return {
+    present: true,
+    status,
+    statusLabel: commercialStatusLabel(status),
+    commercialState,
+    needsPricing: commercialState === "needs_pricing",
+    workItemCount: Array.isArray(c["recommendedWork"]) ? (c["recommendedWork"] as unknown[]).length : 0,
+    summary: typeof c["executiveSummary"] === "string" ? (c["executiveSummary"] as string) : "",
+  };
+}
+
+export interface ClientNarrativeView {
+  present: boolean;
+  status: CommercialStatus;
+  statusLabel: string;
+  sectionCount: number;
+}
+
+export function emptyClientNarrativeView(): ClientNarrativeView {
+  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), sectionCount: 0 };
+}
+
+/** Build the client-narrative surface from a persisted narrative_version DTO. */
+export function buildClientNarrativeView(dto: ArtifactDTO | null): ClientNarrativeView {
+  if (dto === null) return emptyClientNarrativeView();
+  const c = dto.content;
+  const ready = c["status"] === "ready";
+  const status: CommercialStatus = ready ? "needs_review" : "insufficient_evidence";
+  return { present: true, status, statusLabel: commercialStatusLabel(status), sectionCount: Array.isArray(c["sections"]) ? (c["sections"] as unknown[]).length : 0 };
+}
+
+export interface PackageComponentView {
+  key: string;
+  label: string;
+  /** "complete" for the always-terminal core/report rows; else a CommercialStatus. */
+  status: CommercialStatus | "complete";
+  statusLabel: string;
+  note: string | null;
+}
+
+export interface ProspectPackageView {
+  state: ProspectPackageState;
+  stateLabel: string;
+  badge: string;
+  reason: string;
+  components: PackageComponentView[];
+  reviewDecision: PackageReviewDecision;
+  /** True once every required component is present — the review actions unlock. */
+  canReview: boolean;
+}
+
+const PACKAGE_STATE_LABEL: Record<ProspectPackageState, string> = {
+  not_started: "Not started",
+  running: "Running",
+  blocked: "Blocked",
+  ready_for_review: "Ready for review",
+  approved: "Approved",
+  revision_requested: "Revision requested",
+  rejected: "Rejected",
+};
+const PACKAGE_STATE_BADGE: Record<ProspectPackageState, string> = {
+  not_started: "not_started",
+  running: "running",
+  blocked: "failed",
+  ready_for_review: "in_review",
+  approved: "completed",
+  revision_requested: "in_review",
+  rejected: "failed",
+};
+
+export interface PackageViewInput {
+  scanCompleted: boolean;
+  reportPresent: boolean;
+  competitor: CompetitorIntelligenceView;
+  proposal: CommercialProposalView;
+  narrative: ClientNarrativeView;
+  commercialEnqueued: boolean;
+  commercialFailed: boolean;
+  reviewDecision: PackageReviewDecision;
+}
+
+/** Fold the commercial components + review decision into the command-center view. */
+export function buildProspectPackageView(input: PackageViewInput): ProspectPackageView {
+  const pkg = computeProspectPackage({
+    scanCompleted: input.scanCompleted,
+    reportPresent: input.reportPresent,
+    competitor: input.competitor.status,
+    proposal: input.proposal.status,
+    narrative: input.narrative.status,
+    commercialFailed: input.commercialFailed,
+    commercialEnqueued: input.commercialEnqueued,
+    reviewDecision: input.reviewDecision,
+  });
+
+  const components: PackageComponentView[] = [
+    { key: "core", label: "Core assessment", status: input.scanCompleted ? "complete" : "running", statusLabel: input.scanCompleted ? "Complete" : "Running", note: null },
+    { key: "report", label: "Report", status: input.reportPresent ? "complete" : "running", statusLabel: input.reportPresent ? "Ready" : "Pending", note: null },
+    { key: "competitor", label: "Competitor intelligence", status: input.competitor.status, statusLabel: input.competitor.statusLabel, note: null },
+    { key: "proposal", label: "Proposal", status: input.proposal.status, statusLabel: input.proposal.status === "needs_review" ? "Draft ready" : input.proposal.statusLabel, note: input.proposal.needsPricing ? "Pricing required" : null },
+    { key: "narrative", label: "Narrative", status: input.narrative.status, statusLabel: input.narrative.status === "needs_review" ? "Generated" : input.narrative.statusLabel, note: input.narrative.status === "needs_review" ? "Review required" : null },
+  ];
+
+  return {
+    state: pkg.state,
+    stateLabel: PACKAGE_STATE_LABEL[pkg.state],
+    badge: PACKAGE_STATE_BADGE[pkg.state],
+    reason: pkg.reason,
+    components,
+    reviewDecision: input.reviewDecision,
+    canReview: pkg.componentsReady,
   };
 }
 

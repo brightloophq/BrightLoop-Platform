@@ -23,6 +23,7 @@ import { InternalReportView, ProposalReview } from "../components/StructuredArti
 import { CompetitorIntelligencePanel } from "../components/CompetitorIntelligencePanel";
 import { ProposalIntelligencePanel } from "../components/ProposalIntelligencePanel";
 import { NarrativePanel } from "../components/NarrativePanel";
+import { ProspectPackagePanel } from "../components/ProspectPackagePanel";
 import { ProspectSummary } from "../components/ProspectSummary";
 import { assessProspectForm, cancelProspectScanForm, retryProspectScanForm } from "../scanner-actions";
 import styles from "../scanner.module.css";
@@ -87,7 +88,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
   }
   if (data === null) notFound();
 
-  const { scan, identity, flags, next, discovery, evidence, evidenceValidation, report, proposal, readiness, summary, competitor, proposalIntelligence, narrative, timeline, reportReviewRequired, canAssess } = data;
+  const { scan, identity, flags, next, discovery, evidence, evidenceValidation, report, proposal, readiness, summary, competitor, proposalIntelligence, narrative, prospectPackage, timeline, reportReviewRequired, canAssess } = data;
   const rows = buildTimelineRows(timeline);
   const latestEvent = rows[0]?.type ?? null;
 
@@ -192,6 +193,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
       <ProposalIntelligencePanel proposal={proposalIntelligence} />
       <NarrativePanel narrative={narrative} />
       <ProposalReview view={proposal} />
+      <ProspectPackagePanel pkg={prospectPackage} runId={scan.id} />
       <ProspectSummary summary={summary} />
     </>
   );

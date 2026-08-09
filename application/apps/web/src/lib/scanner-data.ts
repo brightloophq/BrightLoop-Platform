@@ -4,15 +4,20 @@ import {
   getScan,
   getScanArtifact,
   getScanAssessment,
+  getScanClientNarrative,
+  getScanCommercialProposal,
   getScanEvidenceValidation,
+  getProspectPackageReview,
   getScanProposal,
   getScanReport,
   getScanTimeline,
   listScans,
   type ArtifactDTO,
+  type PackageReviewDecision,
   type ScanDTO,
   type TimelineEntryDTO,
 } from "@brightloop/application";
+import { COMMERCIAL_STAGE_ORDER } from "@brightloop/domain";
 import { loadCrawlerConfig } from "@brightloop/crawler";
 import { loadAnthropicConfig } from "@brightloop/providers";
 import { buildAppContext } from "./runtime-api";
@@ -20,6 +25,9 @@ import {
   buildCompetitorIntelligenceView,
   buildProposalIntelligenceView,
   buildNarrativeView,
+  buildCommercialProposalView,
+  buildClientNarrativeView,
+  buildProspectPackageView,
   buildDiscoveryView,
   buildEvidenceView,
   buildEvidenceValidationView,
@@ -36,6 +44,9 @@ import {
   type CompetitorIntelligenceView,
   type ProposalIntelligenceView,
   type NarrativeView,
+  type CommercialProposalView,
+  type ClientNarrativeView,
+  type ProspectPackageView,
   type DiscoveryView,
   type EvidenceView,
   type EvidenceValidationView,
@@ -122,6 +133,14 @@ export interface ScanWorkspaceData {
   proposalIntelligence: ProposalIntelligenceView;
   /** Read-only Narrative status surface (C10). */
   narrative: NarrativeView;
+  /** Post-scan commercial proposal DRAFT surface (proposal_versions). */
+  commercialProposal: CommercialProposalView;
+  /** Post-scan client narrative surface (narrative_versions, audience=client). */
+  clientNarrative: ClientNarrativeView;
+  /** The prospect-package command-center view (readiness + review state). */
+  prospectPackage: ProspectPackageView;
+  /** The current human review decision on the package. */
+  packageReviewDecision: PackageReviewDecision;
   /** True when the report shown is the machine-derived C6 assessment awaiting review. */
   reportReviewRequired: boolean;
   /** True when a discovery manifest exists, so an assessment can be run. */
@@ -140,7 +159,7 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const scan = await getScan(ctx, runId);
   const flags = readRuntimeFlags();
 
-  const [timeline, manifestArtifact, ingressArtifact, competitorArtifact, proposalArtifact, narrativeArtifact, reportArtifact, proposalDocArtifact, assessment, evidenceValidationDto] = await Promise.all([
+  const [timeline, manifestArtifact, ingressArtifact, competitorArtifact, proposalArtifact, narrativeArtifact, reportArtifact, proposalDocArtifact, assessment, evidenceValidationDto, commercialProposalDto, clientNarrativeDto, packageReviewDto] = await Promise.all([
     optional(getScanTimeline(ctx, runId)),
     optional(getScanArtifact(ctx, runId, "discovery_manifest")),
     optional(getScanArtifact(ctx, runId, "evidence_ingress")),
@@ -151,6 +170,9 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     optional<ArtifactDTO>(getScanProposal(ctx, runId)),
     optional(getScanAssessment(ctx, runId)),
     optional(getScanEvidenceValidation(ctx, runId)),
+    optional<ArtifactDTO>(getScanCommercialProposal(ctx, runId)),
+    optional<ArtifactDTO>(getScanClientNarrative(ctx, runId)),
+    optional(getProspectPackageReview(ctx, runId)),
   ]);
 
   const identity = readIdentity(scan.metadata);
@@ -174,6 +196,27 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const narrative = narrativeArtifact ? buildNarrativeView(narrativeArtifact.content) : emptyNarrativeView();
   const proposal = buildStructuredView(proposalDocArtifact, [...PROPOSAL_SECTIONS]);
   const proposalIntelligence = proposalArtifact ? buildProposalIntelligenceView(proposalArtifact.content) : emptyProposalIntelligenceView();
+
+  // Post-scan commercial package: the DRAFT proposal + client narrative + the
+  // deterministic readiness/review fold. Enqueued/failed are read from the event
+  // timeline (append-only), never inferred from artifact presence alone.
+  const commercialProposal = buildCommercialProposalView(commercialProposalDto ?? null);
+  const clientNarrative = buildClientNarrativeView(clientNarrativeDto ?? null);
+  const packageReviewDecision: PackageReviewDecision = packageReviewDto?.decision ?? "pending";
+  const commercialStageSet = new Set<string>(COMMERCIAL_STAGE_ORDER);
+  const commercialEnqueued = (timeline ?? []).some((e) => e.type === "runtime.commercial.enqueued");
+  const commercialFailed = (timeline ?? []).some((e) => e.type === "runtime.queue.dead_lettered" && e.stage !== null && commercialStageSet.has(e.stage));
+  const prospectPackage = buildProspectPackageView({
+    scanCompleted,
+    reportPresent: reportArtifact !== null,
+    competitor,
+    proposal: commercialProposal,
+    narrative: clientNarrative,
+    commercialEnqueued,
+    commercialFailed,
+    reviewDecision: packageReviewDecision,
+  });
+
   const readiness = computeReasoningReadiness({
     scan,
     flags,
@@ -199,6 +242,10 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     competitor,
     proposalIntelligence,
     narrative,
+    commercialProposal,
+    clientNarrative,
+    prospectPackage,
+    packageReviewDecision,
     reportReviewRequired,
     canAssess: manifestArtifact !== null,
   };
