@@ -1,16 +1,16 @@
 import { Badge, OperationalPanel, SectionRule } from "@brightloop/ui";
-import type { CompetitorIntelligenceView } from "@/lib/prospect-scanner";
+import { commercialBadgeStatus, type CompetitorIntelligenceView } from "@/lib/prospect-scanner";
 import styles from "../scanner.module.css";
 
 /**
- * Competitor Intelligence status surface (Phase C · Sprint C8).
+ * Competitor Intelligence status surface (Phase C · Sprint C8 + post-scan commercial).
  *
- * Read-only. Exposes exactly the deterministic snapshot's status, confidence and
- * evidence count — no redesign, no generated prose. When no competitor evidence
- * exists the panel states so explicitly; the runtime never fails on absence.
+ * Read-only. Exposes the coherent commercial status (Not run / Running / Ready /
+ * Insufficient evidence / Review required / Failed), confidence and evidence count.
+ * Competitors are discovered ONLY from the prospect's own site references + admin
+ * input, gated by identity validation — never searched, scraped, or inferred.
  */
 export function CompetitorIntelligencePanel({ competitor }: { competitor: CompetitorIntelligenceView }) {
-  const badgeStatus = competitor.status === "available" ? "active" : competitor.status === "review_required" ? "pending" : "idle";
   const facts: { key: string; value: string }[] = [
     { key: "Status", value: competitor.statusLabel },
     { key: "Competitors", value: String(competitor.competitorCount) },
@@ -23,8 +23,7 @@ export function CompetitorIntelligencePanel({ competitor }: { competitor: Compet
       <SectionRule index="11" label="Competitor intelligence" meta="deterministic · evidence-only" />
 
       <div className={styles.badgeRow} style={{ marginBottom: "var(--space-3)" }}>
-        <Badge status={badgeStatus}>{competitor.statusLabel}</Badge>
-        {competitor.reviewRequired ? <Badge status="pending">Review required</Badge> : null}
+        <Badge status={commercialBadgeStatus(competitor.status)}>{competitor.statusLabel}</Badge>
       </div>
 
       <div className={styles.summaryGrid}>
@@ -41,7 +40,7 @@ export function CompetitorIntelligencePanel({ competitor }: { competitor: Compet
       </div>
 
       <div className={styles.railFoot}>
-        <span>Analyzes only verified competitor evidence</span>
+        <span>From the prospect&apos;s own references + admin input · identity-gated</span>
         <span>No search · no scraping · no inferred competitors</span>
       </div>
     </OperationalPanel>

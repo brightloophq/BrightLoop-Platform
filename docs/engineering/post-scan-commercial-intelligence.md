@@ -86,14 +86,28 @@ non-blocklisted partner/vendor link can survive as a low-confidence candidate.
 The human-review gate and the `reviewRequired` flag carry that precision burden —
 Auxion never auto-asserts or auto-sends.
 
-## Status model (planned)
+## Status model (increment 3 — landed for competitor)
 
-Replace the UI collapse that flattens five realities ("never ran", "ran but no
-evidence", "malformed", "unknown status", "kill switch") into one "Unavailable".
-Explicit states, reusing existing enums where possible:
-`not_started · running · ready · insufficient_evidence · needs_review ·
-approved · failed`. "Ran but no verified evidence" (`insufficient_evidence`) is a
-completed outcome, never conflated with "not started".
+The UI collapse that flattened five realities ("never ran", "ran but no evidence",
+"malformed", "unknown status", "kill switch") into one "Unavailable" is replaced by
+a coherent `CommercialStatus`: `not_started`, `running`, `ready`,
+`insufficient_evidence`, `needs_review`, `failed` (`apps/web/.../prospect-scanner.ts`).
+The competitor view derives it from the persisted snapshot + whether the core scan
+completed: an available snapshot → `needs_review` (C8 always flags review) or
+`ready`; an unavailable one → `insufficient_evidence` **once the scan has completed**
+(the commercial workflow ran), else `not_started`. Badge tone comes from the schema
+`toneFor` map — never invented. Proposal/narrative adopt the same model when they
+wire (increments 5–6).
+
+## Trigger (increment 3 — landed)
+
+The `run-until-wait` endpoint, on detecting `lifecycle === "completed"`, calls
+`triggerCommercialWorkflow` (`apps/web/.../commercial-run.ts`) — a **server-side**,
+bounded, idempotent drive of `commercial.enqueueForCompletedRun` +
+`runCommercialOnce`, in the same request that reports `done`, so the browser's
+post-completion refresh already sees the revised snapshot. Best-effort: a commercial
+failure never fails the (already-completed) core run, and the workflow resumes on the
+next completion poll. Not browser-driven.
 
 ## Human review gate (planned)
 
@@ -121,7 +135,7 @@ executor `outputSchemaId`), never by forking a second uncontrolled path.
 |---|---|---|
 | 1 | Competitor Discovery producer (pure domain + tests) | **landed** |
 | 2 | Commercial workflow engine — separate `CommercialCoordinator`, `commercial_intelligence` queue jobType, idempotent enqueue-on-completion, competitor stage executor persisting a revised `competitor_snapshot` | **landed** |
-| 3 | Orchestration trigger (enqueue at scan completion + server-side drive) + coherent commercial status model + competitor UX | next |
+| 3 | Orchestration trigger (enqueue at scan completion + server-side drive) + coherent commercial status model + competitor UX | **landed** |
 | 4 | Human-review gate scaffolding (lifecycle + version persistence) | next |
 | 5 | Proposal wiring (AIS-004; pricing → `needs_pricing`) | later PR |
 | 6 | Narrative wiring (AIS-001, deterministic-first) | later PR |

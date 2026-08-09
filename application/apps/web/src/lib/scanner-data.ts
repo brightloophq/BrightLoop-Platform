@@ -169,7 +169,8 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
       : { id: assessmentReport.id, kind: assessmentReport.kind, version: assessmentReport.version, status: assessmentReport.validationStatus, createdAt: assessmentReport.createdAt, content: assessmentReport.content });
   const reportReviewRequired = reportArtifact === null && assessmentReport !== null;
   const report = buildStructuredView(reportSource, [...REPORT_SECTIONS]);
-  const competitor = competitorArtifact ? buildCompetitorIntelligenceView(competitorArtifact.content) : emptyCompetitorIntelligenceView();
+  const scanCompleted = scan.lifecycle === "completed";
+  const competitor = competitorArtifact ? buildCompetitorIntelligenceView(competitorArtifact.content, { scanCompleted }) : emptyCompetitorIntelligenceView();
   const narrative = narrativeArtifact ? buildNarrativeView(narrativeArtifact.content) : emptyNarrativeView();
   const proposal = buildStructuredView(proposalDocArtifact, [...PROPOSAL_SECTIONS]);
   const proposalIntelligence = proposalArtifact ? buildProposalIntelligenceView(proposalArtifact.content) : emptyProposalIntelligenceView();

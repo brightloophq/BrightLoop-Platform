@@ -703,10 +703,48 @@ export interface SummaryInput {
 /* ---- Competitor Intelligence (Phase C · Sprint C8) ------------------------- */
 
 /** A read-only surface for the deterministic competitor snapshot. No redesign. */
+/**
+ * The COHERENT commercial status vocabulary, replacing the overloaded
+ * "Unavailable" that used to mean five different things. Each value is a distinct,
+ * honest operator-facing state:
+ *   not_started         — the post-scan commercial workflow has not run yet;
+ *   running             — it is in flight;
+ *   ready               — produced and requires no review;
+ *   insufficient_evidence — it RAN and verified nothing (a COMPLETED outcome, ≠ not run);
+ *   needs_review        — produced and awaiting human review;
+ *   failed              — the workflow errored.
+ */
+export type CommercialStatus = "not_started" | "running" | "ready" | "insufficient_evidence" | "needs_review" | "failed";
+
+const COMMERCIAL_STATUS_LABEL: Record<CommercialStatus, string> = {
+  not_started: "Not run",
+  running: "Running",
+  ready: "Ready",
+  insufficient_evidence: "Insufficient evidence",
+  needs_review: "Review required",
+  failed: "Failed",
+};
+export function commercialStatusLabel(status: CommercialStatus): string {
+  return COMMERCIAL_STATUS_LABEL[status];
+}
+
+/** A status token whose schema `toneFor` tone matches the commercial status. */
+const COMMERCIAL_STATUS_BADGE: Record<CommercialStatus, string> = {
+  not_started: "not_started", // neutral
+  running: "running", // blue
+  ready: "completed", // success
+  insufficient_evidence: "created", // neutral
+  needs_review: "in_review", // warning
+  failed: "failed", // danger
+};
+export function commercialBadgeStatus(status: CommercialStatus): string {
+  return COMMERCIAL_STATUS_BADGE[status];
+}
+
 export interface CompetitorIntelligenceView {
   present: boolean;
-  /** Available / Unavailable / Review Required — the operator-facing status. */
-  status: "available" | "unavailable" | "review_required";
+  /** The coherent commercial status — see CommercialStatus. */
+  status: CommercialStatus;
   statusLabel: string;
   competitorCount: number;
   evidenceCount: number;
@@ -719,7 +757,13 @@ export interface CompetitorIntelligenceView {
 
 /** The empty view when no competitor snapshot exists yet. */
 export function emptyCompetitorIntelligenceView(): CompetitorIntelligenceView {
-  return { present: false, status: "unavailable", statusLabel: "Not produced yet", competitorCount: 0, evidenceCount: 0, confidence: null, confidenceBand: null, marketPosition: null, reviewRequired: false, summary: "Competitor intelligence has not run yet." };
+  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), competitorCount: 0, evidenceCount: 0, confidence: null, confidenceBand: null, marketPosition: null, reviewRequired: false, summary: "Competitor discovery has not run yet." };
+}
+
+/** Context for deriving the coherent competitor status from the persisted snapshot. */
+export interface CompetitorViewContext {
+  /** True once the core scan has completed — i.e. the commercial workflow has run. */
+  scanCompleted: boolean;
 }
 
 /* ---- Proposal Intelligence (Phase C · Sprint C9) --------------------------- */
@@ -823,13 +867,22 @@ export function buildProposalIntelligenceView(content: unknown): ProposalIntelli
  * Build the operator surface from a persisted `competitor_snapshot` envelope.
  * Everything is DERIVED — no invention. A missing snapshot yields the empty view.
  */
-export function buildCompetitorIntelligenceView(content: unknown): CompetitorIntelligenceView {
+export function buildCompetitorIntelligenceView(content: unknown, context?: CompetitorViewContext): CompetitorIntelligenceView {
   if (content === null || typeof content !== "object") return emptyCompetitorIntelligenceView();
   const c = content as Record<string, unknown>;
-  const rawStatus = c["status"] === "available" ? "available" : "unavailable";
+  const available = c["status"] === "available";
   const reviewRequired = c["reviewRequired"] === true;
-  const status: CompetitorIntelligenceView["status"] = rawStatus === "available" && reviewRequired ? "review_required" : rawStatus;
-  const statusLabel = status === "available" ? "Available" : status === "review_required" ? "Review Required" : "Unavailable";
+  // Distinguish the five realities the old "Unavailable" collapsed: an available
+  // snapshot needs review (or is ready); an unavailable one is insufficient_evidence
+  // ONLY once the commercial workflow has run (scan completed), else not_started.
+  const status: CommercialStatus = available
+    ? reviewRequired
+      ? "needs_review"
+      : "ready"
+    : context?.scanCompleted
+      ? "insufficient_evidence"
+      : "not_started";
+  const statusLabel = commercialStatusLabel(status);
   const confidence = c["confidence"];
   return {
     present: true,

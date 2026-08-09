@@ -9,6 +9,7 @@ import { buildAppContext } from "@/lib/runtime-api";
 import { buildRuntimeDriver } from "@/lib/runtime-driver";
 import { getRuntimeServices } from "@/lib/repositories";
 import { buildAutoRunResponse, runUntilWait, type AutoRunResponse } from "@/lib/auto-run";
+import { triggerCommercialWorkflow } from "@/lib/commercial-run";
 
 /**
  * POST /api/internal/runtime/run-until-wait — bounded one-click auto-run.
@@ -110,6 +111,23 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     await emitAutorunEvents(svc, actor.userId, before, after, response);
+
+    // Core scan complete → drive the post-scan commercial workflow, SERVER-SIDE,
+    // in the same request so a post-`done` refresh already sees the result. Bounded
+    // + idempotent; a commercial failure must NEVER fail the (already-completed)
+    // core run's response.
+    if (after.lifecycle === "completed") {
+      try {
+        await triggerCommercialWorkflow(svc.commercial, `internal:${actor.userId}`, {
+          runId: body.runId,
+          scanId: after.scanId,
+          clientId: after.clientId,
+        });
+      } catch {
+        // best-effort; the commercial workflow is resumable on the next completion poll.
+      }
+    }
+
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
     if (isApplicationError(error)) return NextResponse.json(error.toBody(), { status: error.status });
