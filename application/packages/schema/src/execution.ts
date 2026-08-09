@@ -53,6 +53,13 @@ export const executionRequestSchema = z.object({
   costCeiling: z.number().nonnegative(),
   latencyCeilingMs: z.number().int().positive(),
   deadline: z.string().nullable().default(null),
+  /**
+   * A SAFE, content-free correction for a retry after a validation failure —
+   * `truncated` (previous output hit the token cap) or `malformed` (not a single
+   * JSON object). The provider prompt turns this into a "be more concise / return
+   * only JSON" instruction. NEVER carries the previous raw response.
+   */
+  retryDirective: z.enum(["truncated", "malformed"]).nullable().default(null),
 });
 export type ExecutionRequest = z.infer<typeof executionRequestSchema>;
 

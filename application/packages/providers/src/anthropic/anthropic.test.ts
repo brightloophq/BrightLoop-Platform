@@ -33,6 +33,7 @@ function request(over: Partial<ExecutionRequest> = {}): ExecutionRequest {
     businessContext: { industry: "retail" }, evidenceRefs: ["ev-1"], graphSnapshotRef: "graph-1",
     allowedClaims: ["a"], prohibitedClaims: ["never say X"], outputSchemaId: "schema.findings.v1",
     tokenBudget: { inputTokens: 1000, outputTokens: 400 }, costCeiling: 1, latencyCeilingMs: 30_000, deadline: null,
+    retryDirective: null,
     ...over,
   };
 }
@@ -78,12 +79,36 @@ describe("config + kill switches", () => {
 
 /* ===== request translation ================================================== */
 describe("request translation", () => {
-  it("requires JSON-only output, the schema id, citations, and limitations", () => {
+  it("requires JSON-only output, the schema id, citations, and prioritizing complete JSON", () => {
     const { system, userContent } = translateRequest(request());
     expect(system).toMatch(/SINGLE JSON object/);
     expect(system).toMatch(/cite the evidence/i);
-    expect(system).toMatch(/limitations/i);
+    // bounding: a complete valid JSON object matters more than adding another claim
+    expect(system).toMatch(/COMPLETE, valid JSON|fewer, shorter claims/i);
     expect(userContent).toContain("schema.findings.v1");
+  });
+
+  it("supplies the exact compact execution_outcomes shape + hard bounds (not just the id)", () => {
+    const { userContent } = translateRequest(request({ outputSchemaId: "execution_outcomes" }));
+    expect(userContent).toContain('"claims"');
+    expect(userContent).toMatch(/at most 8 claims/i);
+    expect(userContent).toMatch(/<= 160 characters/i);
+    expect(userContent).toMatch(/at most 3 evidenceIds/i);
+    // the verbose keys the model previously invented are explicitly excluded
+    expect(userContent).not.toMatch(/"summary"|"limitations"/);
+  });
+
+  it("adds a SAFE correction only on a retryDirective — never the raw previous response", () => {
+    const none = translateRequest(request({ outputSchemaId: "execution_outcomes" })).userContent;
+    expect(none).not.toMatch(/OUTPUT CORRECTION/);
+
+    const truncated = translateRequest(request({ outputSchemaId: "execution_outcomes", retryDirective: "truncated" })).userContent;
+    expect(truncated).toMatch(/OUTPUT CORRECTION/);
+    expect(truncated).toMatch(/truncated|fewer and shorter/i);
+
+    const malformed = translateRequest(request({ outputSchemaId: "execution_outcomes", retryDirective: "malformed" })).userContent;
+    expect(malformed).toMatch(/OUTPUT CORRECTION/);
+    expect(malformed).toMatch(/valid JSON object/i);
   });
 
   it("forbids hidden chain-of-thought / scratchpad", () => {

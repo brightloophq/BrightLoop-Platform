@@ -10,9 +10,12 @@
 import { describe, it, expect } from "vitest";
 import {
   reasoningInputSchema,
+  type ExecutionRequest,
+  type ProviderCapability,
   type ReasoningInput,
   type ReasoningJob,
   type SelectionResult,
+  type TokenEstimate,
 } from "@brightloop/schema";
 import { newReasoningJob } from "../reasoning/job.js";
 import { buildRoutingRequest } from "../reasoning/routing-integration.js";
@@ -20,7 +23,7 @@ import type { GroundingContext, GroundingClaim } from "../reasoning/grounding.js
 import { buildExecutionRequest } from "./request.js";
 import { validateExecutionOutput, type ParsedProviderOutput } from "./validate.js";
 import { buildUsage, buildCostAccounting, costOf, projectedExceedsCeiling } from "./accounting.js";
-import { newCancellationToken, cancel, adapterMeetsCapabilities } from "./contract.js";
+import { newCancellationToken, cancel, adapterMeetsCapabilities, ProviderExecutionError, type ProviderHealthReport, type RawProviderOutput, type ReasoningProviderAdapter } from "./contract.js";
 import { InMemoryReasoningAdapter, type ScriptedResponse } from "./test-adapter.js";
 import { executeReasoningJob, type ExecutionContext } from "./orchestrator.js";
 
@@ -351,5 +354,56 @@ describe("test adapter + determinism", () => {
   it("keeps routing integration intact (request budget maps through)", () => {
     const rr = buildRoutingRequest(makeJob());
     expect(rr.tokens).toEqual({ inputTokens: 1000, outputTokens: 500 });
+  });
+});
+
+/* ---- bounded-output retry correction (real validation retry) --------------- */
+describe("validation-retry correction", () => {
+  /** Records each request; attempt 1 fails as truncated (finishReason=length), attempt 2 succeeds. */
+  class RecordingAdapter implements ReasoningProviderAdapter {
+    readonly providerId = "p-rec";
+    readonly requests: ExecutionRequest[] = [];
+    private calls = 0;
+    capabilities(): ProviderCapability[] {
+      return ["structured_output"];
+    }
+    supportsStructuredOutput(): boolean {
+      return true;
+    }
+    async healthCheck(): Promise<ProviderHealthReport> {
+      return { providerId: this.providerId, status: "healthy", detail: null };
+    }
+    estimateTokens(): TokenEstimate {
+      return { inputTokens: 100, outputTokens: 100 };
+    }
+    async execute(request: ExecutionRequest): Promise<RawProviderOutput> {
+      this.requests.push(request);
+      this.calls += 1;
+      if (this.calls === 1) {
+        // truncated at the output cap → a validation failure marked finishReason=length
+        throw new ProviderExecutionError("validation", "output truncated", "length");
+      }
+      return { output: goodOutput, finishReason: "stop", usage: { inputTokens: 100, outputTokens: 40 }, latencyMs: 20, model: { provider: "test", model: "m", version: null } };
+    }
+  }
+
+  it("sends a truncation correction on the retry and succeeds in EXACTLY 2 provider calls", async () => {
+    const rec = new RecordingAdapter();
+    const out = await executeReasoningJob(makeJob(), selection("p-rec"), new Map([["p-rec", rec]]), ctx());
+    expect(out.finalStatus).toBe("succeeded");
+    expect(rec.requests).toHaveLength(2); // truncated attempt, then the corrected one
+    expect(rec.requests[0]!.retryDirective).toBeNull(); // first attempt is uncorrected
+    expect(rec.requests[1]!.retryDirective).toBe("truncated"); // the retry carries the SAFE directive
+  });
+
+  it("carries only a safe directive into the retry — never the previous raw response", async () => {
+    const rec = new RecordingAdapter();
+    await executeReasoningJob(makeJob(), selection("p-rec"), new Map([["p-rec", rec]]), ctx());
+    // the ExecutionRequest structurally cannot hold a raw response; the retry differs
+    // from the first ONLY by the safe enum directive.
+    const { retryDirective: _d0, ...first } = rec.requests[0]!;
+    const { retryDirective: _d1, ...second } = rec.requests[1]!;
+    expect(second).toEqual(first); // identical apart from the directive
+    expect(JSON.stringify(rec.requests[1])).not.toContain("truncated output"); // no prior error message
   });
 });

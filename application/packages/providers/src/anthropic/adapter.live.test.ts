@@ -36,7 +36,7 @@ describe.skipIf(!LIVE)("Anthropic adapter (LIVE)", () => {
       taskObjective: 'Return {"status":"ok"} and nothing else.',
       businessContext: {}, evidenceRefs: [], graphSnapshotRef: null, allowedClaims: [], prohibitedClaims: [],
       outputSchemaId: "schema.smoke.v1",
-      tokenBudget: { inputTokens: 200, outputTokens: 64 }, costCeiling: 1, latencyCeilingMs: 20_000, deadline: null,
+      tokenBudget: { inputTokens: 200, outputTokens: 64 }, costCeiling: 1, latencyCeilingMs: 20_000, deadline: null, retryDirective: null,
     };
     const control: ExecutionControl = { signal: newCancellationToken(), timeoutMs: 20_000, deadline: null, now: new Date().toISOString() };
 

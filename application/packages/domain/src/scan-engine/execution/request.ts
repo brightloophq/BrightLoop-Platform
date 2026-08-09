@@ -15,6 +15,8 @@ export interface BuildExecutionRequestInput {
   providerId: string; // selected provider (opaque)
   traceId: string;
   systemPolicy?: string; // system framing; defaults to the joined policy rules
+  /** SAFE, content-free correction for a retry after a validation failure. */
+  retryDirective?: "truncated" | "malformed" | null;
 }
 
 /** Deterministic union of two id lists, preserving first-seen order. */
@@ -53,5 +55,6 @@ export function buildExecutionRequest(input: BuildExecutionRequestInput): Execut
     costCeiling: job.budget.costCeiling,
     latencyCeilingMs: job.budget.latencyCeilingMs,
     deadline: job.deadline,
+    retryDirective: input.retryDirective ?? null,
   });
 }

@@ -30,11 +30,43 @@ const OUTPUT_RULES = [
   "Respond with a SINGLE JSON object and nothing else — no prose, no markdown fences, no preamble.",
   "The JSON must satisfy the requested output contract exactly.",
   "Every material claim must cite the evidence ids it rests on; a claim without a citation is not permitted.",
-  "State limitations explicitly. If the evidence does not support a conclusion, say so rather than guessing.",
+  "Cite evidence by ID only — never quote or restate the evidence content.",
   "Never fabricate a metric, a competitor, a benchmark, or a source.",
-  "Never claim access to a source that was not provided. If data is unavailable, report it as unavailable.",
+  "Never claim access to a source that was not provided. If data is unavailable, omit the claim.",
   "Do not include hidden reasoning, a scratchpad, or internal deliberation — only the final JSON answer.",
+  "A COMPLETE, valid JSON object matters more than completeness of analysis: if you approach the limit, return FEWER, shorter claims rather than risk truncation.",
 ] as const;
+
+/**
+ * Compact structural contracts by output-contract id. Giving the model the EXACT
+ * small shape (not just the id) removes ambiguity, caps verbosity, and makes the
+ * output parse reliably within the token budget. `execution_outcomes` is the only
+ * contract the reasoning stage uses; the downstream parser reads ONLY `claims`.
+ */
+const OUTPUT_CONTRACT_SHAPES: Record<string, string> = {
+  execution_outcomes: [
+    "OUTPUT SHAPE — return EXACTLY this JSON object, with no other top-level keys:",
+    '{"claims":[{"category":"observation|strength|weakness|risk|opportunity|context","statement":"terse factual sentence","evidenceIds":["<id from EVIDENCE_REFS>"],"confidence":0-100}]}',
+    "BOUNDS (hard): at most 8 claims; statement <= 160 characters; at most 3 evidenceIds per claim; confidence is an integer 0-100.",
+    "Do NOT include summary, findings, limitations, error, or any key other than \"claims\". Prioritize the strongest, best-evidenced claims first.",
+  ].join("\n"),
+};
+
+/** The compact shape spec for an output-contract id, or "" when none is defined. */
+function outputContractShape(outputSchemaId: string): string {
+  return OUTPUT_CONTRACT_SHAPES[outputSchemaId] ?? "";
+}
+
+/** A SAFE retry correction from the failure classification only — never raw content. */
+function retryCorrection(directive: "truncated" | "malformed" | null): string {
+  if (directive === "truncated") {
+    return "OUTPUT CORRECTION: your previous response hit the output limit and was truncated before the JSON was complete. Return the SAME required JSON object using SUBSTANTIALLY fewer and shorter claims (prefer 3–5). A complete, valid JSON object is mandatory — never exceed the limit.";
+  }
+  if (directive === "malformed") {
+    return "OUTPUT CORRECTION: your previous response was not a single valid JSON object. Return ONLY the required JSON object with the exact allowed keys — no prose, no markdown, no code fences.";
+  }
+  return "";
+}
 
 /** Render a labelled data fence. Content inside is DATA, never instruction. */
 function dataBlock(label: string, body: string): string {
@@ -81,11 +113,18 @@ export function buildSystemPrompt(request: ExecutionRequest): string {
  * allowed / prohibited claim lists — each in its own labelled data block.
  */
 export function buildUserContent(request: ExecutionRequest): string {
-  const parts: string[] = [
-    `TASK: ${request.taskObjective.trim()}`,
-    "",
-    `OUTPUT CONTRACT ID: ${request.outputSchemaId}`,
-  ];
+  const parts: string[] = [];
+
+  // A retry correction (if any) leads, so the model reads it before the task.
+  const correction = retryCorrection(request.retryDirective);
+  if (correction !== "") parts.push(correction, "");
+
+  parts.push(`TASK: ${request.taskObjective.trim()}`, "", `OUTPUT CONTRACT ID: ${request.outputSchemaId}`);
+
+  // The exact compact shape + hard bounds for this contract (removes ambiguity,
+  // caps verbosity, keeps the response well under the output-token budget).
+  const shape = outputContractShape(request.outputSchemaId);
+  if (shape !== "") parts.push("", shape);
 
   if (Object.keys(request.businessContext).length > 0) {
     parts.push("", dataBlock("BUSINESS_CONTEXT", stableJson(request.businessContext)));
