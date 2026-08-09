@@ -22,6 +22,9 @@ export const SCAN_WRITE_CAP = "transformation.scan.write";
 /** Capability required to read a scan and its outputs (internal authority). */
 export const SCAN_READ_CAP = "transformation.read";
 
+/** Capability to DECIDE a prospect-package review (grant authority: owner/admin). */
+export const PACKAGE_REVIEW_CAP = "transformation.approve";
+
 /** Phase D · capability to seed / write a transformation workspace (internal). */
 export const TRANSFORMATION_WRITE_CAP = "transformation.write";
 /** Phase D · capability to read a transformation workspace (internal). */
