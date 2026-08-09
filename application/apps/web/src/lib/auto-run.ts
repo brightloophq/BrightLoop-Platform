@@ -74,6 +74,10 @@ export interface RunUntilWaitOptions {
 
 export interface AutoRunLoopResult {
   turnsExecuted: number;
+  /** Turns that actually executed a stage (advanced/blocked/failed/retried). */
+  stageExecutions: number;
+  /** Turns that leased nothing (`no_job_available`) — waits, not work. */
+  emptyPolls: number;
   last: DriverResult | null;
   decision: AutoRunDecision;
   /** True when the loop stopped only because it hit its turn/time bound while
@@ -92,19 +96,23 @@ export async function runUntilWait(driver: AutoRunDriver, opts: RunUntilWaitOpti
   const start = opts.now();
 
   let turnsExecuted = 0;
+  let stageExecutions = 0;
+  let emptyPolls = 0;
   let last: DriverResult | null = null;
   let decision: AutoRunDecision = "terminal";
 
   while (turnsExecuted < maxTurns && opts.now() - start < maxMillis) {
     last = await driver.runQueueTurn({ owner: opts.owner, clientId: opts.clientId });
     turnsExecuted += 1;
+    if (last.outcome === "no_job_available") emptyPolls += 1;
+    else stageExecutions += 1;
     decision = classifyAutoRunOutcome(last.outcome);
     if (decision !== "continue") break;
   }
 
   // If we exited while the last turn was still "continue", we stopped only because
   // the bound was reached — there is more work waiting for the next poll.
-  return { turnsExecuted, last, decision, budgetReached: decision === "continue" };
+  return { turnsExecuted, stageExecutions, emptyPolls, last, decision, budgetReached: decision === "continue" };
 }
 
 /* ---- response mapping -------------------------------------------------------- */
@@ -120,7 +128,12 @@ export interface AutoRunResponse {
   completedStages: number;
   totalStages: number;
   progress: number;
+  /** Total driver turns this request (executions + empty polls) — kept for compat. */
   turnsExecuted: number;
+  /** Turns that actually executed a stage. */
+  stageExecutions: number;
+  /** Turns that leased nothing (waits, not work). */
+  polls: number;
   /** continue → poll again after retryAfterMs; done → stop; blocked → stop + surface. */
   nextAction: AutoRunNextAction;
   retryAfterMs: number;
@@ -177,6 +190,8 @@ export function buildAutoRunResponse(input: BuildAutoRunResponseInput): AutoRunR
     totalStages: total,
     progress: input.progress,
     turnsExecuted: input.loop.turnsExecuted,
+    stageExecutions: input.loop.stageExecutions,
+    polls: input.loop.emptyPolls,
     nextAction,
     retryAfterMs,
     failureCode: input.loop.last?.failureCode ?? null,

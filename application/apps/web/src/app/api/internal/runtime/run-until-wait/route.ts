@@ -83,12 +83,21 @@ export async function POST(req: Request): Promise<NextResponse> {
     // Re-read the run so progress/status reflect the turns just executed.
     const after = await getScan(ctx, body.runId);
 
-    // Exact backoff for a scheduled retry, read from the queue's own availability.
+    // Exact backoff for the next poll, read from the queue's own availability —
+    // so a browser polls once after the real backoff instead of every 2 seconds.
     let retryAfterMs: number | undefined;
     const svc = await getRuntimeServices();
-    if (loop.decision === "wait" && loop.last?.queueJobId) {
-      const job = await svc.queue.get(loop.last.queueJobId);
-      if (job.ok) retryAfterMs = Math.max(0, new Date(job.value.availableAt).getTime() - Date.now());
+    if (loop.decision === "wait") {
+      if (loop.last?.queueJobId) {
+        // A retry was scheduled: wait exactly until that job is eligible again.
+        const job = await svc.queue.get(loop.last.queueJobId);
+        if (job.ok) retryAfterMs = Math.max(0, new Date(job.value.availableAt).getTime() - Date.now());
+      } else {
+        // no_job_available: the run's next queued job is backing off — wait its
+        // real `available_at`, not a fixed interval.
+        const next = await svc.queue.nextEligibleInMs("advance_stage", before.clientId);
+        if (next.ok && next.value !== null) retryAfterMs = next.value;
+      }
     }
 
     const response = buildAutoRunResponse({

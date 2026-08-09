@@ -496,6 +496,14 @@ export class SupabaseRuntimeRepository implements RuntimeRepository {
     return ok("found", { eligible: eligible.count ?? 0, queued: queued.count ?? 0, leased: leased.count ?? 0 });
   }
 
+  async queueNextAvailableAt(jobType: string, clientId: string | null): Promise<RuntimeResult<{ availableAt: string | null }>> {
+    let q = this.db.from("job_queue").select("available_at").eq("job_type", jobType).eq("status", "queued");
+    if (clientId !== null) q = q.eq("client_id", clientId);
+    const { data, error } = await q.order("available_at", { ascending: true }).limit(1).maybeSingle();
+    if (error !== null) return mapDatabaseError(error, "queueNextAvailableAt");
+    return ok("found", { availableAt: data === null ? null : (data as { available_at: string }).available_at });
+  }
+
   async requeueJob(runId: string, stage: string, jobType: string, availableAt: string): Promise<RuntimeResult<RuntimeQueueJob>> {
     // Only a non-progressing job is resettable; an active (queued/leased) job has
     // nothing to retry. The `.in(status)` filter makes that atomic — no read-first.

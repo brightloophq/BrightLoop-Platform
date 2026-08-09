@@ -73,6 +73,16 @@ describe("runUntilWait", () => {
     expect(r.decision).toBe("wait");
   });
 
+  it("separates real stage executions from empty polls in the metrics", async () => {
+    const clock = { t: 0 };
+    // advance, advance, then an empty poll (no_job_available) which stops the loop
+    const { driver } = scriptedDriver(["advanced", "advanced", "no_job_available"], clock);
+    const r = await runUntilWait(driver, { clientId: "c1", owner: "o", now: now(clock) });
+    expect(r.stageExecutions).toBe(2);
+    expect(r.emptyPolls).toBe(1);
+    expect(r.turnsExecuted).toBe(3);
+  });
+
   it("stops on a blocked turn (never loops on it)", async () => {
     const clock = { t: 0 };
     const { driver } = scriptedDriver(["advanced", "provider_disabled"], clock);
@@ -109,7 +119,7 @@ describe("runUntilWait", () => {
 });
 
 describe("buildAutoRunResponse", () => {
-  const loop = (over: Partial<AutoRunLoopResult>): AutoRunLoopResult => ({ turnsExecuted: 1, last: dr("advanced"), decision: "continue", budgetReached: false, ...over });
+  const loop = (over: Partial<AutoRunLoopResult>): AutoRunLoopResult => ({ turnsExecuted: 1, stageExecutions: 1, emptyPolls: 0, last: dr("advanced"), decision: "continue", budgetReached: false, ...over });
 
   it("continues (poll again) with the exact backoff when waiting", () => {
     const r = buildAutoRunResponse({ runId: "run_1", scanStatus: "running", currentStage: "provider_execution", progress: 60, loop: loop({ decision: "wait", last: dr("retried") }), retryAfterMs: 12000 });
