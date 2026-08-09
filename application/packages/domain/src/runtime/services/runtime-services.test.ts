@@ -292,6 +292,16 @@ describe("QueueService", () => {
     expect(await h.svc.queue.renew(jobId, "w1", 60)).toMatchObject({ ok: true });
   });
 
+  it("nextEligibleInMs exposes the real backoff of the next queued job (not a fixed poll)", async () => {
+    const h = harness();
+    // nothing queued → null (the caller polls normally)
+    expect(await h.svc.queue.nextEligibleInMs("advance_stage", "c1")).toMatchObject({ ok: true, value: null });
+    // a job backing off 30s in the future → the exact remaining backoff
+    const future = new Date(new Date(h.now()).getTime() + 30_000).toISOString();
+    await h.svc.queue.enqueue({ jobType: "advance_stage", clientId: "c1", runId: "r1", scanId: "s1", stage: "a", availableAt: future });
+    expect(await h.svc.queue.nextEligibleInMs("advance_stage", "c1")).toMatchObject({ ok: true, value: 30_000 });
+  });
+
   it("renews a lease so it survives past the original expiry", async () => {
     const h = harness();
     await h.svc.queue.enqueue({ jobType: "advance_stage", clientId: "c1", runId: "r1", scanId: "s1", stage: "a" });

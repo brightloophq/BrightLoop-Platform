@@ -61,7 +61,7 @@ export function ScanHeader({ scan, identity, next, flags, latestEvent }: ScanHea
 
       <div className={styles.railFoot}>
         <span>Run · {scan.id}</span>
-        <span>Mode · Manual, one stage per turn</span>
+        <span>Automatic · checkpointed execution</span>
       </div>
     </OperationalPanel>
   );

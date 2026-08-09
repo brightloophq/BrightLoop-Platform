@@ -184,6 +184,19 @@ export class QueueService {
     return this.repo.queueDepth(jobType, clientId, this.ctx.clock());
   }
 
+  /**
+   * The exact ms to wait until the next queued job becomes eligible (its
+   * `available_at`), or null when nothing is queued. Non-mutating — lets the
+   * auto-run wait a real backoff instead of polling on a fixed interval.
+   */
+  async nextEligibleInMs(jobType = "advance_stage", clientId: string | null = null): Promise<RuntimeResult<number | null>> {
+    const r = await this.repo.queueNextAvailableAt(jobType, clientId);
+    if (!r.ok) return r;
+    if (r.value.availableAt === null) return { ok: true, code: "found", value: null };
+    const ms = new Date(r.value.availableAt).getTime() - new Date(this.ctx.clock()).getTime();
+    return { ok: true, code: "found", value: Math.max(0, ms) };
+  }
+
   async get(jobId: string): Promise<RuntimeResult<RuntimeQueueJob>> {
     return this.repo.getJob(jobId);
   }

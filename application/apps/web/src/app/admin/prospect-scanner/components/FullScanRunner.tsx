@@ -54,7 +54,8 @@ export function FullScanRunner(props: FullScanRunnerProps) {
 
   const [phase, setPhase] = useState<Phase>(TERMINAL.has(props.initialStatus) ? (props.initialStatus === "completed" ? "done" : props.initialStatus === "failed" ? "failed" : "cancelled") : "idle");
   const [progress, setProgress] = useState<Progress>({ currentStage: props.initialStage, completedStages: 0, totalStages: props.totalStages, progress: props.initialProgress });
-  const [turns, setTurns] = useState(0);
+  const [execs, setExecs] = useState(0);
+  const [polls, setPolls] = useState(0);
   const [retryInSec, setRetryInSec] = useState<number | null>(null);
   const [failureCode, setFailureCode] = useState<string | null>(null);
   const [blockedReason, setBlockedReason] = useState<string | null>(null);
@@ -93,7 +94,8 @@ export function FullScanRunner(props: FullScanRunnerProps) {
       const r = data as AutoRunResponse;
       if (startedAt.current !== null) setElapsedMs(Date.now() - startedAt.current);
       setProgress({ currentStage: r.currentStage, completedStages: r.completedStages, totalStages: r.totalStages, progress: r.progress });
-      setTurns((prev) => prev + r.turnsExecuted);
+      setExecs((prev) => prev + r.stageExecutions);
+      setPolls((prev) => prev + r.polls);
       setFailureCode(r.failureCode);
 
       if (r.nextAction === "continue") {
@@ -146,7 +148,7 @@ export function FullScanRunner(props: FullScanRunnerProps) {
 
   return (
     <OperationalPanel>
-      <SectionRule index="01" label="Run full scan" meta={active ? "running…" : phase} />
+      <SectionRule index="01" label="Run full scan" meta={active ? "AUTOMATIC · CHECKPOINTED" : phase} />
 
       <div className={styles.controls}>
         <div className={[styles.stageCallout, active ? null : styles.stageCalloutMuted].filter(Boolean).join(" ")}>
@@ -198,7 +200,8 @@ export function FullScanRunner(props: FullScanRunnerProps) {
         <Badge status={props.providerEnabled ? "active" : "pending"}>Provider {props.providerEnabled ? "on" : "off"}</Badge>
         <span className={styles.mono}>{progress.completedStages}/{progress.totalStages} stages</span>
         {active ? <span className={styles.mono}>{Math.round(elapsedMs / 1000)}s elapsed</span> : null}
-        {turns > 0 ? <span className={styles.mono}>{turns} turns</span> : null}
+        {execs > 0 ? <span className={styles.mono}>{execs} execution{execs === 1 ? "" : "s"}</span> : null}
+        {polls > 0 ? <span className={styles.mono}>{polls} wait{polls === 1 ? "" : "s"}</span> : null}
       </div>
 
       {phase === "waiting" && retryInSec !== null ? (

@@ -250,6 +250,13 @@ export interface JobQueueRepository {
    * before deciding whether a turn is worth running.
    */
   queueDepth(jobType: string, clientId: string | null, now: string): Promise<RuntimeResult<QueueDepthCounts>>;
+  /**
+   * Non-mutating: the earliest `available_at` among QUEUED jobs for (jobType,
+   * clientId), or null when none are queued. Lets a caller compute the exact
+   * backoff to wait for the next eligible turn instead of polling on a fixed
+   * interval. Does not lease, does not mutate.
+   */
+  queueNextAvailableAt(jobType: string, clientId: string | null): Promise<RuntimeResult<{ availableAt: string | null }>>;
 }
 
 /** Counts returned by `queueDepth`. */
