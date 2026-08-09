@@ -1795,3 +1795,44 @@ the root cause of `reasoning rejected`: the Anthropic output was **truncated at 
   SEPARATE from persistence; #91 addresses the truncation, #92 restores the telemetry to diagnose
   any recurrence. Gate `pnpm turbo run typecheck lint test build` **36/36 green**; CI `db-verify`
   green (drift 0); ZERO live provider calls in CI (fake transport; the live diagnostic was one turn).
+
+Also merged in this line of work: **safe provider-failure observability** (PR #94, `7b65ab9`) — the
+adapter attaches SAFE telemetry (`stopReason`/`parserOutcome`/`providerErrorCode`/`responseLength`/
+tokens/latency) to `ProviderExecutionError`; the orchestrator carries it in the new
+`executionOutcome.failureTelemetry`; `persistAttempt` surfaces it in the `runtime.provider.attempted`
+event payload (jsonb, no new columns); and the reasoning executor replaces opaque `reasoning rejected`
+with structured codes (`reasoning_output_truncated` / `_invalid_json` / `_non_object_json` /
+`_provider_refused` / `_transport_failure` / `_timeout` / `_schema_invalid`). Classification + counts
+ONLY — never raw output.
+
+## 26. One-Click Execution — "Run Full Scan" (branch `feat/one-click-scan`, PR open)
+
+Turns the operator UX from "click one queue turn at a time" into a single **Run Full Scan** that
+drives the whole 13-stage pipeline automatically with live progress. **Reuses the existing runtime
+end to end — no new engine, no queue bypass, no direct stage-executor calls.** Full doc:
+`docs/runtime/one-click-execution.md`.
+
+- **Bounded server loop** `apps/web/src/lib/auto-run.ts` (`runUntilWait`): repeats the EXISTING
+  one-turn `driver.runQueueTurn` while the last turn `advanced`; stops on the first wait/terminal/
+  blocked outcome or when the bounded window (≤12 turns / ≤8s, ceilings 25 / 9s — under the
+  serverless timeout) is spent. Pure + injected clock ⇒ exhaustively unit-tested with a fake driver.
+  `classifyAutoRunOutcome` maps each `DriverOutcome`→ continue/wait/terminal/blocked;
+  `buildAutoRunResponse` maps to the safe `AutoRunResponse` DTO (a terminal run is always `done`).
+- **Endpoint** `POST /api/internal/runtime/run-until-wait`: SAME guard as `run-once` (internal actor
+  + `transformation.executions.write`; client roles denied; caller's RLS session, no service-role
+  bypass). Loads the run to scope turns to its `clientId`, computes the exact `retryAfterMs` from the
+  queue's `available_at` on a scheduled retry, and emits best-effort `runtime.autorun.started/waiting/
+  completed` markers (text `event_type` → no migration; never duplicates stage events).
+- **Client** `FullScanRunner.tsx`: single-in-flight polling (in-flight ref + `AbortController`),
+  backoff between polls, **resume-on-mount** when the run is `running` (survives refresh/navigation;
+  never restarts from Discovery), cancel (tears down the loop + submits the existing cancel action),
+  and a live progress panel (active/completed stages, elapsed, crawler/provider badges, retry state,
+  completion/failure). The manual one-stage `ScanControls` moves under an **Advanced** `<details>`.
+- **Runtime untouched:** queue lease (`SKIP LOCKED`), retry/backoff/dead-letter, checkpoints, artifact
+  immutability, budgeting, idempotency, RLS all still apply — every turn is exactly `run-once`; the
+  queue lease also makes concurrent polls harmless (no double-execution).
+- **Tests:** `auto-run.test.ts` (+14) — decision truth table, bounded loop (continue/wait/blocked/
+  turn-bound/time-bound/ceiling clamp) with a fake driver, response mapping (continue/backoff/done/
+  blocked/failed/completed-stages). Gate green. **Known limit:** the authenticated one-click browser
+  walkthrough (13 stages live, refresh-resume, cancel) runs only on a preview/prod deploy with auth +
+  DB — not in this sandbox (§9).

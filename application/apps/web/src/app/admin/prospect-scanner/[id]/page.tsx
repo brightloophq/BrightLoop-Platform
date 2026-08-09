@@ -10,6 +10,7 @@ import { requireSurface } from "@/lib/auth";
 import { loadScanWorkspace } from "@/lib/scanner-data";
 import { buildTimelineRows } from "@/lib/prospect-scanner";
 import { ScanHeader } from "../components/ScanHeader";
+import { FullScanRunner } from "../components/FullScanRunner";
 import { ScanControls } from "../components/ScanControls";
 import { StageReadiness } from "../components/StageReadiness";
 import { DiscoverySummary } from "../components/DiscoverySummary";
@@ -123,19 +124,36 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
 
       <ScanHeader scan={scan} identity={identity} next={next} flags={flags} latestEvent={latestEvent} />
 
-      <ScanControls
+      <FullScanRunner
         runId={scan.id}
         clientId={scan.clientId}
-        next={next}
-        readiness={readiness}
-        flags={flags}
+        initialStatus={scan.lifecycle}
+        initialStage={scan.currentStage}
+        initialProgress={scan.progress}
+        totalStages={next.total}
+        crawlerEnabled={flags.crawlerEnabled}
+        providerEnabled={flags.providerEnabled}
         canCancel={canCancel}
-        canRetry={canRetry}
         cancelAction={cancelProspectScanForm}
-        retryAction={retryProspectScanForm}
       />
 
-      <StageReadiness next={next} />
+      <details className={styles.advanced}>
+        <summary>Advanced · run one stage at a time (debugging)</summary>
+        <div style={{ marginTop: "var(--space-3)", display: "flex", flexDirection: "column", gap: "var(--space-4)" }}>
+          <ScanControls
+            runId={scan.id}
+            clientId={scan.clientId}
+            next={next}
+            readiness={readiness}
+            flags={flags}
+            canCancel={canCancel}
+            canRetry={canRetry}
+            cancelAction={cancelProspectScanForm}
+            retryAction={retryProspectScanForm}
+          />
+          <StageReadiness next={next} />
+        </div>
+      </details>
       <DiscoverySummary discovery={discovery} crawlerEnabled={flags.crawlerEnabled} />
       <PageEvidenceTable pages={discovery.pages} />
       <ReasoningReadiness readiness={readiness} flags={flags} />

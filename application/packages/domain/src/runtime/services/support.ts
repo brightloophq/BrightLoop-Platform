@@ -93,6 +93,10 @@ export const RUNTIME_EVENTS = {
   jobReleased: "runtime.queue.released",
   budgetExhausted: "runtime.budget.exhausted",
   deadlineExceeded: "runtime.deadline.exceeded",
+  // One-click auto-run session markers (never duplicate the stage events above).
+  autorunStarted: "runtime.autorun.started",
+  autorunWaiting: "runtime.autorun.waiting",
+  autorunCompleted: "runtime.autorun.completed",
 } as const;
 
 export type RuntimeEventName = (typeof RUNTIME_EVENTS)[keyof typeof RUNTIME_EVENTS];
