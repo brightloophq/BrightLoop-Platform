@@ -120,12 +120,32 @@ executor `outputSchemaId`), never by forking a second uncontrolled path.
 | # | Increment | Status |
 |---|---|---|
 | 1 | Competitor Discovery producer (pure domain + tests) | **landed** |
-| 2 | Commercial workflow engine (separate scheduler, new `jobType`, enqueue at scan completion, idempotent/resumable/checkpointed) + competitor stage executor persisting a revised `competitor_snapshot` | next |
-| 3 | Coherent commercial status model + competitor UX | next |
+| 2 | Commercial workflow engine — separate `CommercialCoordinator`, `commercial_intelligence` queue jobType, idempotent enqueue-on-completion, competitor stage executor persisting a revised `competitor_snapshot` | **landed** |
+| 3 | Orchestration trigger (enqueue at scan completion + server-side drive) + coherent commercial status model + competitor UX | next |
 | 4 | Human-review gate scaffolding (lifecycle + version persistence) | next |
 | 5 | Proposal wiring (AIS-004; pricing → `needs_pricing`) | later PR |
 | 6 | Narrative wiring (AIS-001, deterministic-first) | later PR |
 | 7 | Prospect → lead/client conversion | later PR (deferred; no auto-convert) |
+
+## Workflow engine (increment 2) — how it attaches
+
+`CommercialCoordinator` (`@brightloop/domain` → `runtime/commercial/`) runs on the
+same Postgres queue as the core runtime, under jobType `commercial_intelligence`
+with a free-text `stage`. It is a **separate scheduler** — it never calls the core
+coordinator's `runOnce`/`enqueueNext` (those are hardwired to `pipeline.nextStage`).
+
+- **Trigger (increment 3):** when the core run completes, the driver calls
+  `commercial.enqueueForCompletedRun({runId, scanId, clientId})`. Idempotent on
+  `(jobType, runId, stage)` — a refresh/replay of completion converges on one job.
+- **Drive:** `commercial.runCommercialOnce(owner)` performs one turn (lease →
+  execute → complete → enqueue next stage / emit completion), server-side, mirroring
+  the core `runUntilWait` loop. Not browser-driven.
+- **Persistence:** the competitor stage revises `competitor_snapshot` only when
+  discovery verifies something new; an unchanged unavailable outcome is recorded via
+  the `runtime.commercial.competitor_discovered` event, avoiding version churn.
+- **Observability:** `runtime.commercial.{enqueued,stage_completed,completed,
+  competitor_discovered}` (status + counts only, never entities). No migration
+  (event_type is text; queue stage/jobType/payload are flexible).
 
 Non-negotiables throughout: no fabricated competitors/evidence/pricing/ROI, no
 auto-send, no auto-convert, no weakened RLS/queue/idempotency, no raised provider
