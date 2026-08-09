@@ -1836,3 +1836,36 @@ end to end — no new engine, no queue bypass, no direct stage-executor calls.**
   blocked/failed/completed-stages). Gate green. **Known limit:** the authenticated one-click browser
   walkthrough (13 stages live, refresh-resume, cancel) runs only on a preview/prod deploy with auth +
   DB — not in this sandbox (§9).
+
+## 27. Post-Scan Commercial Intelligence (branch `feat/prospect-commercial-intelligence`, PR #98 draft)
+
+Turns a completed scan into an evidence-grounded, reviewable **prospect package** —
+competitor intelligence → proposal draft → client narrative → **human review gate** —
+without touching the stable 13-stage core. Full detail: `docs/engineering/post-scan-commercial-intelligence.md`.
+
+- **Boundary:** a SEPARATE `CommercialCoordinator` (`@brightloop/domain` → `runtime/commercial/`) on
+  the same Postgres queue under jobType `commercial_intelligence`; `COMMERCIAL_STAGE_ORDER =
+  competitor_intelligence → proposal_generation → narrative_generation`. Attached at run completion;
+  the core coordinator is untouched. One click drives it server-side (`commercial-run.ts` from
+  `run-until-wait`), bounded + idempotent, not browser-driven.
+- **Compose, don't fabricate:** the rich AIS-004/AIS-001 builders were deliberately NOT wired — their
+  inputs (`findingIds`, `tier`, `timeHorizon`, a reconstructed report) are absent from the persisted
+  evidence and could only be satisfied by fabricating non-evidence fields. Instead the proposal/narrative
+  stages COMPOSE verified intelligence (C9 proposal snapshot + report projection + C8 competitor
+  snapshot) into compact, traceable artifacts. Pure/deterministic — **no LLM path added.**
+- **Pricing rule:** never invented — `commercialState = needs_pricing`, `pricing = null`, still
+  `draft_ready`. **Narrative:** presentation-only, six client sections, each carrying `supportingArtifacts`.
+- **Review gate:** `generated → needs_review → approved | revision_requested | rejected`, as append-only
+  `runtime.review.*` events (NO new table/migration); current decision is a last-writer-wins fold.
+  Package readiness (`computeProspectPackage`, pure): competitor `insufficient_evidence` and missing
+  pricing do NOT block; a generated package is `ready_for_review`, never silently approved.
+- **Persistence:** `proposal_versions` / `narrative_versions` (previously-unwired tables + adapters),
+  content-addressed, superseding versions. **No migration; no RLS change.** Reads need `transformation.read`;
+  the decision needs `transformation.approve` (owner/admin); clients denied at API + RLS.
+- **UI:** `ProspectPackagePanel` command center + `PackageReviewActions`; route
+  `POST /api/internal/runtime/package-review`.
+- **Tests:** +34 (domain workflow/assemblers 15, application package-readiness/review 14, web views 5);
+  full gate green (typecheck/lint/test/build 17/17). **Known limit:** no authenticated live walkthrough in
+  this sandbox — verification is deterministic unit/integration proof, and migrations are authored-not-applied.
+- **Deferred (documented):** prospect→lead/client conversion (no auto-convert); commercial pricing/quote
+  editing; rich AIS-004/AIS-001 builder wiring.
