@@ -97,6 +97,12 @@ export const RUNTIME_EVENTS = {
   autorunStarted: "runtime.autorun.started",
   autorunWaiting: "runtime.autorun.waiting",
   autorunCompleted: "runtime.autorun.completed",
+  // Post-scan commercial workflow (a SEPARATE scheduler over the same queue).
+  commercialEnqueued: "runtime.commercial.enqueued",
+  commercialStageCompleted: "runtime.commercial.stage_completed",
+  commercialCompleted: "runtime.commercial.completed",
+  /** Competitor discovery outcome — carries status + counts only, never entities. */
+  commercialCompetitorDiscovered: "runtime.commercial.competitor_discovered",
 } as const;
 
 export type RuntimeEventName = (typeof RUNTIME_EVENTS)[keyof typeof RUNTIME_EVENTS];
