@@ -37,6 +37,9 @@ export * from "./competitor-intelligence/index.js";
 /* ---- competitor discovery (post-scan commercial workflow) ---- */
 export * from "./competitor-discovery/index.js";
 
+export * from "./commercial-proposal/index.js";
+export * from "./client-narrative/index.js";
+
 /* ---- proposal intelligence engine (Sprint 11) ---- */
 export * from "./proposal-intelligence/index.js";
 

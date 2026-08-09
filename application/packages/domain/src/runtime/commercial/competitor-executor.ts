@@ -14,25 +14,10 @@
 import { evidenceBundleSchema, type RuntimeQueueJob } from "@brightloop/schema";
 import { runCompetitorDiscovery } from "../../scan-engine/competitor-discovery/index.js";
 import { normalizeDomain } from "../../scan-engine/competitor-intelligence/candidate.js";
-import type { ArtifactService } from "../services/artifact.service.js";
-import type { EventService } from "../services/event.service.js";
 import { err, type RuntimeResult } from "../results.js";
-import { RUNTIME_EVENTS, type RuntimeServiceContext } from "../services/support.js";
+import { RUNTIME_EVENTS } from "../services/support.js";
 import type { CommercialStageStatus } from "./stages.js";
-
-export interface CommercialStageDeps {
-  artifacts: ArtifactService;
-  events: EventService;
-  ctx: RuntimeServiceContext;
-}
-
-export interface CommercialStageResult {
-  stage: "competitor_intelligence";
-  status: CommercialStageStatus;
-  /** Whether a new artifact version was written, or an identical one replayed. */
-  persisted: "created" | "revised" | "replayed";
-  counts: { discovered: number; validated: number; ambiguous: number; rejectedOrExcluded: number };
-}
+import type { CommercialStageDeps, CommercialStageResult } from "./types.js";
 
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
 

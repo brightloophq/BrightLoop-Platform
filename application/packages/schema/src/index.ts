@@ -21,6 +21,7 @@ export * from "./pipeline.js";
 export * from "./recommendation.js";
 export * from "./competitor.js";
 export * from "./competitor-intelligence.js";
+export * from "./commercial.js";
 export * from "./proposal.js";
 export * from "./proposal-intelligence.js";
 export * from "./transformation-execution.js";

@@ -16,8 +16,14 @@
 /** The queue job type the whole commercial workflow runs under. */
 export const COMMERCIAL_JOB_TYPE = "commercial_intelligence";
 
-/** The ordered commercial stages. Extend as proposal/narrative/review land. */
-export const COMMERCIAL_STAGE_ORDER = ["competitor_intelligence"] as const;
+/**
+ * The ordered commercial stages, run one per queue turn AFTER the core scan.
+ * Order matters: competitor evidence and the proposal both feed the narrative.
+ * The human REVIEW gate is deliberately NOT a stage — it is a human decision the
+ * workflow terminates in front of (see the review route + package readiness), so
+ * nothing is auto-approved or sent.
+ */
+export const COMMERCIAL_STAGE_ORDER = ["competitor_intelligence", "proposal_generation", "narrative_generation"] as const;
 export type CommercialStage = (typeof COMMERCIAL_STAGE_ORDER)[number];
 
 export function isCommercialStage(stage: string): stage is CommercialStage {

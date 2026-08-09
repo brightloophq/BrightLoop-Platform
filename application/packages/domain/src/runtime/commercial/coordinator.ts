@@ -18,13 +18,19 @@ import { err, type RuntimeResult } from "../results.js";
 import type { ArtifactService } from "../services/artifact.service.js";
 import type { EventService } from "../services/event.service.js";
 import type { QueueService } from "../services/queue.service.js";
+import type { ProposalService, NarrativeService } from "../services/derived.services.js";
 import { RUNTIME_EVENTS, type RuntimeServiceContext } from "../services/support.js";
-import { runCompetitorCommercialStage, type CommercialStageDeps, type CommercialStageResult } from "./competitor-executor.js";
+import { runCompetitorCommercialStage } from "./competitor-executor.js";
+import { runProposalCommercialStage } from "./proposal-executor.js";
+import { runNarrativeCommercialStage } from "./narrative-executor.js";
 import { COMMERCIAL_JOB_TYPE, COMMERCIAL_STAGE_ORDER, isCommercialStage, nextCommercialStage } from "./stages.js";
+import type { CommercialStageDeps, CommercialStageResult } from "./types.js";
 
 export interface CommercialCoordinatorServices {
   queue: QueueService;
   artifacts: ArtifactService;
+  proposals: ProposalService;
+  narratives: NarrativeService;
   events: EventService;
 }
 
@@ -43,7 +49,7 @@ export class CommercialCoordinator {
     private readonly svc: CommercialCoordinatorServices,
     ctx: RuntimeServiceContext,
   ) {
-    this.stageDeps = { artifacts: svc.artifacts, events: svc.events, ctx };
+    this.stageDeps = { artifacts: svc.artifacts, proposals: svc.proposals, narratives: svc.narratives, events: svc.events, ctx };
   }
 
   /**
@@ -114,6 +120,10 @@ export class CommercialCoordinator {
     switch (job.stage) {
       case "competitor_intelligence":
         return runCompetitorCommercialStage(this.stageDeps, job);
+      case "proposal_generation":
+        return runProposalCommercialStage(this.stageDeps, job);
+      case "narrative_generation":
+        return runNarrativeCommercialStage(this.stageDeps, job);
       default:
         return Promise.resolve(err("check_violation", `no commercial executor for stage '${job.stage ?? "null"}'`));
     }
@@ -147,6 +157,20 @@ export class CommercialCoordinator {
 
     await this.svc.events.emit({
       eventType: RUNTIME_EVENTS.commercialCompleted,
+      aggregateType: "intelligence_run",
+      aggregateId: job.runId!,
+      clientId: job.clientId,
+      runId: job.runId,
+      scanId: job.scanId,
+      payload: {},
+    });
+
+    // The workflow terminates IN FRONT OF the human review gate — nothing is
+    // auto-approved or sent. This marker says the prospect package is assembled
+    // and awaiting review; package readiness itself is computed deterministically
+    // from the persisted artifacts at read time.
+    await this.svc.events.emit({
+      eventType: RUNTIME_EVENTS.commercialReadyForReview,
       aggregateType: "intelligence_run",
       aggregateId: job.runId!,
       clientId: job.clientId,

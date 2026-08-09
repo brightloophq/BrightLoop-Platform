@@ -99,7 +99,7 @@ export function createRuntimeServices(deps: RuntimeServicesDeps): RuntimeService
     { runs, pipeline, checkpoints, artifacts, queue, events },
     ctx,
   );
-  const commercial = new CommercialCoordinator({ queue, artifacts, events }, ctx);
+  const commercial = new CommercialCoordinator({ queue, artifacts, proposals, narratives, events }, ctx);
 
   return {
     runs, pipeline, checkpoints, artifacts, queue, reasoning, providerAttempts,

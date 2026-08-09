@@ -7,5 +7,8 @@
  * ========================================================================== */
 
 export * from "./stages.js";
+export * from "./types.js";
 export * from "./competitor-executor.js";
+export * from "./proposal-executor.js";
+export * from "./narrative-executor.js";
 export * from "./coordinator.js";
