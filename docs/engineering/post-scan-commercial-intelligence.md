@@ -127,16 +127,34 @@ exist; **missing pricing does not block review readiness**. A generated package 
 
 ## One-click orchestration, failure & resume
 
-`run-until-wait`, on `lifecycle === "completed"`, calls `triggerCommercialWorkflow`
-(`apps/web/.../commercial-run.ts`): a **server-side**, bounded, idempotent drive of
-`enqueueForCompletedRun` + `runCommercialOnce` (up to `COMMERCIAL_STAGE_ORDER.length
-+ 3` turns) in the same request, so the browser's post-completion refresh already
-sees the package. Not browser-driven; best-effort (a commercial failure never fails
-the completed core run). Idempotent on `(jobType, runId, stage)`: a refresh/replay
-re-enqueues stage 0, but completed jobs are not re-leased, so no stage re-runs and no
-duplicate artifact is written (each artifact is content-addressed and superseded, not
-rewritten). A failed stage dead-letters via the queue's normal policy; the package
-surfaces `blocked` with the stopping point. Partial workflows resume from the queue.
+Kickoff is **separated from draining** — the single synchronous trigger that a live
+preview proved unreliable (a completed core scan whose final request never enqueued
+anything) is gone.
+
+- **Durable kickoff** — `CommercialCoordinator.ensureStarted` is the
+  server-authoritative seam: it enqueues the first commercial job *iff* absent
+  (idempotent on `(jobType, runId, firstStage)`) and surfaces an enqueue failure as
+  `runtime.commercial.enqueue_failed` — never swallowed. It drives no stages. It is
+  called from **two** entry points so kickoff never depends on one request surviving:
+  (1) `run-until-wait` on `lifecycle === "completed"` (a fast head-start enqueue,
+  not a drain); (2) the continuation endpoint below (so a refresh repairs a missed
+  kickoff).
+- **Bounded resumable drive** — `POST /api/internal/runtime/run-commercial-until-wait`
+  ensures kickoff, then drives the SAME durable queue in bounded, time-boxed turns
+  (`driveCommercialUntilWait`, ≤ `COMMERCIAL_STAGE_ORDER.length + 3` turns / ≤ 6s,
+  well under the serverless limit) and returns `{status, currentStage, nextAction,
+  retryAfterMs}`. The browser never enqueues — it only asks the server to take turns.
+- **Resume on refresh** — the client `CommercialRunner` mounts on any completed scan
+  whose package is not yet terminal and polls the continuation endpoint to completion,
+  then refreshes. Opening/closing/reloading the page all recover the workflow; this is
+  the exact fix for the single-shot defect.
+
+Idempotent on `(jobType, runId, stage)`: a refresh/replay re-ensures stage 0, but
+completed jobs are not re-leased, so no stage re-runs and no duplicate artifact is
+written (each artifact is content-addressed and superseded, not rewritten). A failed
+stage emits `runtime.commercial.stage_failed` and dead-letters via the queue's normal
+policy; the package surfaces `blocked`/`failed` with the stopping point. Partial
+workflows resume from the queue.
 
 ## Authorization / RLS
 
@@ -148,11 +166,13 @@ roles are denied at the API boundary *and* by RLS (the `intelligence_artifacts`,
 
 ## Observability
 
-`runtime.commercial.{enqueued, stage_completed, competitor_discovered,
-proposal_generated, narrative_generated, completed, ready_for_review}` and
-`runtime.review.{approved, revision_requested, rejected}` — status, counts and safe
-flags only (needsPricing, reviewStatus), never entities, evidence bodies, or raw
-provider output. No migration (`event_type` is text).
+`runtime.commercial.{enqueued, enqueue_failed, stage_completed, stage_failed,
+competitor_discovered, proposal_generated, narrative_generated, completed,
+ready_for_review}` and `runtime.review.{approved, revision_requested, rejected}` —
+status, counts and safe flags only (needsPricing, reviewStatus, failure code), never
+entities, evidence bodies, or raw provider output. `enqueue_failed`/`stage_failed`
+make a stuck workflow diagnosable instead of silently reverting to the old empty UI.
+No migration (`event_type` is text).
 
 ## AI cost control
 

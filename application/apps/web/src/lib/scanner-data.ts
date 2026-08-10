@@ -205,7 +205,11 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const packageReviewDecision: PackageReviewDecision = packageReviewDto?.decision ?? "pending";
   const commercialStageSet = new Set<string>(COMMERCIAL_STAGE_ORDER);
   const commercialEnqueued = (timeline ?? []).some((e) => e.type === "runtime.commercial.enqueued");
-  const commercialFailed = (timeline ?? []).some((e) => e.type === "runtime.queue.dead_lettered" && e.stage !== null && commercialStageSet.has(e.stage));
+  const commercialFailed = (timeline ?? []).some(
+    (e) =>
+      e.type === "runtime.commercial.enqueue_failed" ||
+      (e.type === "runtime.queue.dead_lettered" && e.stage !== null && commercialStageSet.has(e.stage)),
+  );
   const prospectPackage = buildProspectPackageView({
     scanCompleted,
     reportPresent: reportArtifact !== null,

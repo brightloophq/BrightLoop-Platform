@@ -24,6 +24,7 @@ import { CompetitorIntelligencePanel } from "../components/CompetitorIntelligenc
 import { ProposalIntelligencePanel } from "../components/ProposalIntelligencePanel";
 import { NarrativePanel } from "../components/NarrativePanel";
 import { ProspectPackagePanel } from "../components/ProspectPackagePanel";
+import { CommercialRunner } from "../components/CommercialRunner";
 import { ProspectSummary } from "../components/ProspectSummary";
 import { assessProspectForm, cancelProspectScanForm, retryProspectScanForm } from "../scanner-actions";
 import styles from "../scanner.module.css";
@@ -193,6 +194,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
       <ProposalIntelligencePanel proposal={proposalIntelligence} />
       <NarrativePanel narrative={narrative} />
       <ProposalReview view={proposal} />
+      <CommercialRunner runId={scan.id} coreCompleted={scan.lifecycle === "completed"} packageState={prospectPackage.state} />
       <ProspectPackagePanel pkg={prospectPackage} runId={scan.id} />
       <ProspectSummary summary={summary} />
     </>

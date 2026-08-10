@@ -99,7 +99,11 @@ export const RUNTIME_EVENTS = {
   autorunCompleted: "runtime.autorun.completed",
   // Post-scan commercial workflow (a SEPARATE scheduler over the same queue).
   commercialEnqueued: "runtime.commercial.enqueued",
+  /** Kickoff could not enqueue the workflow — surfaced, never swallowed. */
+  commercialEnqueueFailed: "runtime.commercial.enqueue_failed",
   commercialStageCompleted: "runtime.commercial.stage_completed",
+  /** A commercial stage returned an error (before the queue's dead-letter). */
+  commercialStageFailed: "runtime.commercial.stage_failed",
   commercialCompleted: "runtime.commercial.completed",
   /** Competitor discovery outcome — carries status + counts only, never entities. */
   commercialCompetitorDiscovered: "runtime.commercial.competitor_discovered",

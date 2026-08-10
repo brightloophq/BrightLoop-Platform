@@ -53,11 +53,18 @@ export class CommercialCoordinator {
   }
 
   /**
-   * Enqueue the commercial workflow for a run whose core scan has COMPLETED.
-   * Idempotent — the queue key is (jobType, runId, firstStage), so a duplicate
-   * completion (replay, refresh, re-drive) converges on the same single job.
+   * Ensure the commercial workflow is STARTED for a run whose core scan has
+   * COMPLETED. This is the durable, server-authoritative kickoff seam — safe to
+   * call repeatedly from any entry point (core completion, a completed-scan page
+   * refresh, the continuation endpoint). It NEVER duplicates work: the queue key is
+   * `(jobType, runId, firstStage)`, so a second call converges on the same single
+   * job (a `replayed` outcome), and once the workflow has advanced past the first
+   * stage that first-stage row is `completed` and is never re-leased.
+   *
+   * Unlike the previous best-effort trigger, an enqueue FAILURE is surfaced as a
+   * `commercial.enqueue_failed` event and returned to the caller — never swallowed.
    */
-  async enqueueForCompletedRun(input: EnqueueCommercialInput): Promise<RuntimeResult<RuntimeQueueJob>> {
+  async ensureStarted(input: EnqueueCommercialInput): Promise<RuntimeResult<RuntimeQueueJob>> {
     const job = await this.svc.queue.enqueue({
       jobType: COMMERCIAL_JOB_TYPE,
       clientId: input.clientId,
@@ -66,7 +73,24 @@ export class CommercialCoordinator {
       stage: COMMERCIAL_STAGE_ORDER[0],
       payload: input.manualCompetitorDomains ? { manualCompetitorDomains: input.manualCompetitorDomains } : {},
     });
-    if (job.ok && job.code === "created") {
+    if (!job.ok) {
+      // Kickoff could not enqueue — make it observable instead of silently falling
+      // back to the "old" empty UI. Best-effort event; the failure is still returned.
+      await this.svc.events
+        .emit({
+          eventType: RUNTIME_EVENTS.commercialEnqueueFailed,
+          aggregateType: "intelligence_run",
+          aggregateId: input.runId,
+          clientId: input.clientId,
+          runId: input.runId,
+          scanId: input.scanId,
+          stage: COMMERCIAL_STAGE_ORDER[0],
+          payload: { code: job.code },
+        })
+        .catch(() => undefined);
+      return job;
+    }
+    if (job.code === "created") {
       await this.svc.events.emit({
         eventType: RUNTIME_EVENTS.commercialEnqueued,
         aggregateType: "intelligence_run",
@@ -79,6 +103,11 @@ export class CommercialCoordinator {
       });
     }
     return job;
+  }
+
+  /** @deprecated Use {@link ensureStarted} — the durable, failure-surfacing kickoff. */
+  async enqueueForCompletedRun(input: EnqueueCommercialInput): Promise<RuntimeResult<RuntimeQueueJob>> {
+    return this.ensureStarted(input);
   }
 
   /**
@@ -106,6 +135,20 @@ export class CommercialCoordinator {
 
     const executed = await this.dispatch(job);
     if (!executed.ok) {
+      // Surface the stage failure (safe: stage + code only) BEFORE the queue decides
+      // retry-vs-dead-letter, so a stuck workflow is diagnosable, not silent.
+      await this.svc.events
+        .emit({
+          eventType: RUNTIME_EVENTS.commercialStageFailed,
+          aggregateType: "intelligence_run",
+          aggregateId: job.runId,
+          clientId: job.clientId,
+          runId: job.runId,
+          scanId: job.scanId,
+          stage: job.stage,
+          payload: { code: executed.code },
+        })
+        .catch(() => undefined);
       await this.svc.queue.fail(job, owner, executed.message);
       return executed;
     }

@@ -262,3 +262,91 @@ describe("CommercialCoordinator — full workflow", () => {
     expect(narr.ok && narr.value.version).toBe(1);
   });
 });
+
+/* ---------------------------------------------------------------------------
+ * Durable kickoff (resume-on-refresh) — regression for the live-preview defect:
+ * a completed core scan whose single synchronous trigger never enqueued anything.
+ * ------------------------------------------------------------------------- */
+describe("CommercialCoordinator — durable kickoff", () => {
+  it("recovers when the completion request MISSED the kickoff: a refresh ensures exactly one job + one enqueued event, then the workflow completes", async () => {
+    const { svc, repo } = harness();
+    const { runId } = await seedCompletedScan(svc, ["https://rival.com/"]);
+
+    // Reproduce the live failure: the core run is completed but NOTHING commercial
+    // was enqueued (no synchronous trigger fired).
+    expect(repo.allJobs().filter((j) => j.jobType === "commercial_intelligence")).toHaveLength(0);
+    expect(repo.allEvents().filter((e) => e.eventType === "runtime.commercial.enqueued")).toHaveLength(0);
+
+    // The refresh / continuation endpoint calls the server-authoritative seam.
+    const started = await svc.commercial.ensureStarted({ runId, scanId: START.scanId, clientId: START.clientId });
+    expect(started).toMatchObject({ ok: true, code: "created" });
+    expect(repo.allJobs().filter((j) => j.jobType === "commercial_intelligence")).toHaveLength(1);
+    expect(repo.allEvents().filter((e) => e.eventType === "runtime.commercial.enqueued")).toHaveLength(1);
+
+    // …and the workflow then progresses to completion.
+    const results = await drainCommercial(svc);
+    expect(results.map((r) => r.stage)).toEqual([...COMMERCIAL_STAGE_ORDER]);
+    expect(repo.allEvents().filter((e) => e.eventType === "runtime.commercial.ready_for_review")).toHaveLength(1);
+  });
+
+  it("ensureStarted is idempotent — repeated refreshes never duplicate the job or the enqueued event", async () => {
+    const { svc, repo } = harness();
+    const { runId } = await seedCompletedScan(svc, ["https://rival.com/"]);
+
+    const a = await svc.commercial.ensureStarted({ runId, scanId: START.scanId, clientId: START.clientId });
+    const b = await svc.commercial.ensureStarted({ runId, scanId: START.scanId, clientId: START.clientId });
+    const c = await svc.commercial.ensureStarted({ runId, scanId: START.scanId, clientId: START.clientId });
+    expect(a).toMatchObject({ ok: true, code: "created" });
+    expect(b).toMatchObject({ ok: true, code: "replayed" });
+    expect(c).toMatchObject({ ok: true, code: "replayed" });
+    expect(repo.allJobs().filter((j) => j.jobType === "commercial_intelligence")).toHaveLength(1);
+    expect(repo.allEvents().filter((e) => e.eventType === "runtime.commercial.enqueued")).toHaveLength(1);
+  });
+
+  it("ensureStarted after the workflow has advanced does not restart or duplicate it", async () => {
+    const { svc } = harness();
+    const { runId } = await seedCompletedScan(svc, ["https://rival.com/"]);
+    await svc.commercial.ensureStarted({ runId, scanId: START.scanId, clientId: START.clientId });
+    await drainCommercial(svc); // full workflow completes
+
+    // A later refresh must not re-run any stage or add versions.
+    const again = await svc.commercial.ensureStarted({ runId, scanId: START.scanId, clientId: START.clientId });
+    expect(again).toMatchObject({ ok: true, code: "replayed" });
+    const redrive = await drainCommercial(svc);
+    expect(redrive).toHaveLength(0);
+
+    const prop = await svc.proposals.latest(runId);
+    expect(prop.ok && prop.value.version).toBe(1);
+    const narr = await svc.narratives.latest(runId, "client");
+    expect(narr.ok && narr.value.version).toBe(1);
+  });
+
+  it("surfaces a stage failure as commercial.stage_failed instead of failing silently", async () => {
+    const { svc, repo } = harness();
+    // Seed a COMPLETED scan that is missing the internal_intelligence_report, so the
+    // proposal stage errs after competitor succeeds.
+    const run = await svc.runs.createRun(START);
+    if (!run.ok) throw new Error("run");
+    const runId = run.value.id;
+    const base = { runId, clientId: START.clientId, scanId: START.scanId, version: 1 as const };
+    const pages = [page(HOME, ["https://rival.com/"]), page(SERVICES, ["https://rival.com/"])];
+    const items = [pageEvidence("ev_home", HOME), pageEvidence("ev_services", SERVICES)];
+    await svc.artifacts.persist({ ...base, kind: "discovery_manifest", envelope: manifestEnvelope(pages) });
+    await svc.artifacts.persist({ ...base, kind: "evidence_bundle", envelope: { scanId: START.scanId, items } });
+    const v1 = runCompetitorIntelligence({ scanId: START.scanId, evidence: items, now: T0 });
+    await svc.artifacts.persist({ ...base, kind: "competitor_snapshot", envelope: v1 as unknown as Record<string, unknown>, checksum: v1.checksum });
+    await svc.artifacts.persist({ ...base, kind: "proposal", envelope: proposalSnapshotEnvelope(true) });
+    // (no internal_intelligence_report on purpose)
+    await svc.runs.completeRun(runId);
+
+    await svc.commercial.ensureStarted({ runId, scanId: START.scanId, clientId: START.clientId });
+    const competitor = await svc.commercial.runCommercialOnce("cw");
+    expect(competitor.ok && competitor.value?.stage).toBe("competitor_intelligence");
+    const proposal = await svc.commercial.runCommercialOnce("cw");
+    expect(proposal.ok).toBe(false); // the stage errored (report missing)
+
+    const failed = repo.allEvents().filter((e) => e.eventType === "runtime.commercial.stage_failed");
+    expect(failed).toHaveLength(1);
+    expect(failed[0]?.stage).toBe("proposal_generation");
+  });
+});
