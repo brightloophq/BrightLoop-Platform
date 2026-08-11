@@ -33,6 +33,44 @@ const pricedProposalContent = {
   },
 };
 
+describe("§09 pricing editor visibility — the view inputs that drive the workspace", () => {
+  // The workspace renders its editable pricing grid whenever `present` is true, one
+  // row per `workItems` entry. These assert the exact view state that makes the
+  // editor appear for an authorized admin on a needs_pricing draft (the live gap
+  // was a STALE preview: the editor is wired at page.tsx → CommercialProposalWorkspace).
+  const draftContent = {
+    id: "cp1", scanId: "s", clientId: null, status: "draft_ready", reason: null, commercialState: "needs_pricing", pricing: null,
+    executiveSummary: "…", observedSituation: "…", keyIssues: [], opportunities: [],
+    recommendedWork: [1, 2, 3, 4, 5].map((n) => ({ sourceId: `w${n}`, title: `Item ${n}`, solution: `Do ${n}`, priority: "medium", effort: "Medium", evidenceIds: [`e${n}`] })),
+    competitorContext: null, proposedNextStep: "…", supportingEvidenceIds: [], confidence: { value: 60, band: "moderate" },
+    reviewRequired: true, sourceArtifacts: [], checksum: "x", generatedAt: "t",
+  };
+  const dto = (content: unknown): ArtifactDTO => ({ id: "cp1", kind: "proposal", version: 1, status: "valid", createdAt: "t", content: content as Record<string, unknown> });
+
+  it("a needs_pricing draft exposes present + draftReady + all five editable work items", () => {
+    const v = buildCommercialProposalView(dto(draftContent));
+    expect(v.present).toBe(true); // → the workspace renders its editor (not the "Not drafted" fallback)
+    expect(v.draftReady).toBe(true);
+    expect(v.needsPricing).toBe(true);
+    expect(v.workItems).toHaveLength(5); // → five editable rows, sourced from the commercial proposal
+    expect(v.workItems.every((w) => w.sourceId !== "" && w.amountMinor === null)).toBe(true); // unpriced, ready to edit
+  });
+
+  it("a persisted price line pre-fills the editor for that item and marks the proposal priced", () => {
+    const priced = { ...draftContent, commercialState: "priced", pricing: { currency: "USD", items: [{ sourceId: "w1", pricingType: "recurring", amountMinor: 30000, cadence: "monthly", quantity: 1, optional: false, adminNotes: "" }], discountMinor: 0, subtotalOneTimeMinor: 0, totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 30000, validUntil: null, commercialNotes: "", pricedBy: "u", pricedAt: "t" } };
+    const v = buildCommercialProposalView(dto(priced));
+    expect(v.currency).toBe("USD");
+    const w1 = v.workItems.find((w) => w.sourceId === "w1")!;
+    expect(w1.amountMinor).toBe(30000);
+    expect(w1.pricingType).toBe("recurring");
+    expect(v.needsPricing).toBe(false); // → §09 shows "Pricing complete"
+  });
+
+  it("an absent proposal yields the not-present view (workspace shows the 'Not drafted' fallback, no editor)", () => {
+    expect(buildCommercialProposalView(null).present).toBe(false);
+  });
+});
+
 describe("buildProposalPreview — deterministic client-facing composition", () => {
   const identity = { businessName: "ZeEvents", websiteUrl: "https://zeevents.xyz" };
 

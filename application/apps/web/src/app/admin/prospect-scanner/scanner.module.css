@@ -727,3 +727,10 @@
 }
 .previewWorkRow > div { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
 .previewPrice { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+
+.pricingHeading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}

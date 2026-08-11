@@ -126,6 +126,15 @@ export function CommercialProposalWorkspace({ runId, proposal }: { runId: string
 
       {proposal.summary ? <p className={styles.stageReason} style={{ marginBottom: "var(--space-4)" }}>{proposal.summary}</p> : null}
 
+      <div className={styles.pricingHeading}>
+        <span className={styles.previewH2}>Set pricing · {proposal.workItemCount} recommended item{proposal.workItemCount === 1 ? "" : "s"}</span>
+        <span className={styles.stageReason}>
+          {proposal.needsPricing
+            ? "Assign a price to each item, then Save. Pricing is admin-owned — never AI-generated."
+            : "All required items are priced. Edit any amount and Save to create a new version."}
+        </span>
+      </div>
+
       <div className={styles.pricingScope}>
         {proposal.workItems.map((w) => {
           const l = lines[w.sourceId]!;
