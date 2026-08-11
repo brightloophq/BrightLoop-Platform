@@ -116,7 +116,7 @@ export function CommercialProposalWorkspace({ runId, proposal }: { runId: string
 
   return (
     <OperationalPanel tone="anchor">
-      <SectionRule index="09" label="Proposal" meta="internal workspace · admin pricing" />
+      <SectionRule index="09" label="Proposal · pricing workspace" meta="admin pricing editor · v2" />
 
       <div className={styles.badgeRow} style={{ marginBottom: "var(--space-3)" }}>
         <Badge status={proposal.draftReady ? "active" : commercialBadgeStatus(proposal.status)}>{proposal.generationLabel}</Badge>
