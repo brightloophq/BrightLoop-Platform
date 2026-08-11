@@ -1013,6 +1013,8 @@ export interface ProspectPackageView {
   canReview: boolean;
   /** True when the proposal still needs pricing — an approval is NOT client-ready. */
   pricingRequired: boolean;
+  /** Derived: approved AND priced AND narrative present — safe to send to a prospect. */
+  clientReady: boolean;
 }
 
 const PACKAGE_STATE_LABEL: Record<ProspectPackageState, string> = {
@@ -1047,6 +1049,9 @@ export interface PackageViewInput {
 
 /** Fold the commercial components + review decision into the command-center view. */
 export function buildProspectPackageView(input: PackageViewInput): ProspectPackageView {
+  // Pricing is complete only when the mutation moved the draft to `priced` (the
+  // generator never sets it). Derived, not client-trusted.
+  const pricingComplete = input.proposal.commercialState === "priced";
   const pkg = computeProspectPackage({
     scanCompleted: input.scanCompleted,
     reportPresent: input.reportPresent,
@@ -1056,13 +1061,14 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
     commercialFailed: input.commercialFailed,
     commercialEnqueued: input.commercialEnqueued,
     reviewDecision: input.reviewDecision,
+    pricingComplete,
   });
 
   const components: PackageComponentView[] = [
     { key: "core", label: "Core assessment", status: input.scanCompleted ? "complete" : "running", statusLabel: input.scanCompleted ? "Complete" : "Running", note: null },
     { key: "report", label: "Report", status: input.reportPresent ? "complete" : "running", statusLabel: input.reportPresent ? "Ready" : "Pending", note: null },
     { key: "competitor", label: "Competitor intelligence", status: input.competitor.status, statusLabel: input.competitor.statusLabel, note: null },
-    { key: "proposal", label: "Proposal", status: input.proposal.status, statusLabel: input.proposal.status === "needs_review" ? "Draft ready" : input.proposal.statusLabel, note: input.proposal.needsPricing ? "Pricing required" : null },
+    { key: "proposal", label: "Proposal", status: input.proposal.status, statusLabel: input.proposal.status === "needs_review" ? "Draft ready" : input.proposal.statusLabel, note: input.proposal.needsPricing ? "Pricing required" : pricingComplete ? "Pricing complete" : null },
     { key: "narrative", label: "Narrative", status: input.narrative.status, statusLabel: input.narrative.status === "needs_review" ? "Generated" : input.narrative.statusLabel, note: input.narrative.status === "needs_review" ? "Review required" : null },
   ];
 
@@ -1071,7 +1077,11 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
   // approved state and reason with the outstanding pricing requirement.
   const pricingRequired = input.proposal.needsPricing;
   const approvedButUnpriced = pkg.state === "approved" && pricingRequired;
-  const stateLabel = approvedButUnpriced ? "Approved · pricing required" : PACKAGE_STATE_LABEL[pkg.state];
+  const stateLabel = pkg.clientReady
+    ? "Client ready"
+    : approvedButUnpriced
+      ? "Approved · pricing required"
+      : PACKAGE_STATE_LABEL[pkg.state];
   const reason = approvedButUnpriced
     ? "The intelligence is approved, but commercial pricing is still required before this proposal can be sent."
     : pkg.reason;
@@ -1079,12 +1089,13 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
   return {
     state: pkg.state,
     stateLabel,
-    badge: PACKAGE_STATE_BADGE[pkg.state],
+    badge: pkg.clientReady ? "completed" : PACKAGE_STATE_BADGE[pkg.state],
     reason,
     components,
     reviewDecision: input.reviewDecision,
     canReview: pkg.componentsReady,
     pricingRequired,
+    clientReady: pkg.clientReady,
   };
 }
 

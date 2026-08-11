@@ -43,6 +43,8 @@ export interface ProspectPackageInput {
   /** The commercial workflow has been enqueued (so absence = still running, not "never"). */
   commercialEnqueued: boolean;
   reviewDecision: PackageReviewDecision;
+  /** All REQUIRED proposal work items carry authoritative admin pricing. */
+  pricingComplete: boolean;
 }
 
 export interface ProspectPackage {
@@ -51,6 +53,13 @@ export interface ProspectPackage {
   reason: string;
   /** True only when every required component is present and terminal-good. */
   componentsReady: boolean;
+  /**
+   * A DERIVED gate (never a persisted state): the proposal is safe to put in front
+   * of a prospect. Requires human approval AND complete pricing AND a client
+   * narrative AND no commercial failure. Approval alone is NOT client-ready when
+   * pricing is still required.
+   */
+  clientReady: boolean;
 }
 
 const TERMINAL = new Set<ComponentStatus>(["ready", "needs_review", "insufficient_evidence"]);
@@ -62,27 +71,30 @@ export function computeProspectPackage(input: ProspectPackageInput): ProspectPac
   const proposalOk = PRESENT.has(input.proposal); // a draft must exist
   const narrativeOk = PRESENT.has(input.narrative); // content must exist
   const componentsReady = input.scanCompleted && input.reportPresent && competitorOk && proposalOk && narrativeOk;
+  // Client-ready is a strict superset of approval: pricing must ALSO be complete and
+  // the narrative present. Approval with pricing still required is NOT client-ready.
+  const clientReady = input.reviewDecision === "approved" && input.pricingComplete && proposalOk && narrativeOk && !input.commercialFailed;
 
   // A recorded human decision is authoritative and overrides the generated state.
-  if (input.reviewDecision === "approved") return { state: "approved", reason: "The prospect package was approved.", componentsReady };
-  if (input.reviewDecision === "rejected") return { state: "rejected", reason: "The prospect package was rejected.", componentsReady };
-  if (input.reviewDecision === "revision_requested") return { state: "revision_requested", reason: "A revision was requested for the prospect package.", componentsReady };
+  if (input.reviewDecision === "approved") return { state: "approved", reason: clientReady ? "The prospect package is approved and client-ready." : "Approved — pricing is still required before this can be sent.", componentsReady, clientReady };
+  if (input.reviewDecision === "rejected") return { state: "rejected", reason: "The prospect package was rejected.", componentsReady, clientReady: false };
+  if (input.reviewDecision === "revision_requested") return { state: "revision_requested", reason: "A revision was requested for the prospect package.", componentsReady, clientReady: false };
 
-  if (!input.scanCompleted) return { state: "not_started", reason: "The core scan has not completed yet.", componentsReady: false };
-  if (input.commercialFailed) return { state: "blocked", reason: "A commercial stage failed — see the workflow status.", componentsReady };
-  if (componentsReady) return { state: "ready_for_review", reason: "The prospect package is complete and awaiting review.", componentsReady };
+  if (!input.scanCompleted) return { state: "not_started", reason: "The core scan has not completed yet.", componentsReady: false, clientReady: false };
+  if (input.commercialFailed) return { state: "blocked", reason: "A commercial stage failed — see the workflow status.", componentsReady, clientReady: false };
+  if (componentsReady) return { state: "ready_for_review", reason: "The prospect package is complete and awaiting review.", componentsReady, clientReady: false };
 
   // Not yet ready. If the workflow is in flight (or a required piece is missing but
   // the workflow was enqueued) that is "running"; otherwise a required piece is
   // genuinely missing/insufficient → blocked when the workflow already finished.
   const anyRunning = input.competitor === "running" || input.proposal === "running" || input.narrative === "running";
   if (anyRunning || (input.commercialEnqueued && !componentsReady && !insufficientTerminal(input))) {
-    return { state: "running", reason: "The commercial workflow is still running.", componentsReady };
+    return { state: "running", reason: "The commercial workflow is still running.", componentsReady, clientReady: false };
   }
   if (insufficientTerminal(input)) {
-    return { state: "blocked", reason: blockedReason(input), componentsReady };
+    return { state: "blocked", reason: blockedReason(input), componentsReady, clientReady: false };
   }
-  return { state: "not_started", reason: "The commercial workflow has not run yet.", componentsReady };
+  return { state: "not_started", reason: "The commercial workflow has not run yet.", componentsReady, clientReady: false };
 }
 
 /** A required component finished but produced no usable artifact. */
