@@ -80,6 +80,18 @@ export const proposalPricingSchema = z.object({
 });
 export type ProposalPricing = z.infer<typeof proposalPricingSchema>;
 
+/** The pricing INPUT a caller supplies — price lines only. Server derives all totals,
+ * `pricedBy`/`pricedAt`, and completeness; none of those are client-trusted. */
+export const setProposalPricingInputSchema = z.object({
+  currency: currencyCodeSchema,
+  items: z.array(proposalItemPricingSchema).max(32),
+  discountMinor: amountMinorSchema.default(0),
+  validUntil: z.string().max(40).nullable().default(null),
+  commercialNotes: z.string().max(1000).default(""),
+});
+export type SetProposalPricingInput = z.input<typeof setProposalPricingInputSchema>;
+export type SetProposalPricingParsed = z.infer<typeof setProposalPricingInputSchema>;
+
 /* ---- shared ----------------------------------------------------------------- */
 const commercialConfidenceSchema = z.object({
   value: z.number().min(0).max(100),
