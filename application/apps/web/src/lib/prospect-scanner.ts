@@ -930,6 +930,19 @@ export function buildCompetitorIntelligenceView(content: unknown, context?: Comp
 
 /* ---- Commercial Proposal + Client Narrative + Package (post-scan commercial) --- */
 
+/** A recommended work item, with any admin price line already set for it. */
+export interface CommercialWorkItemView {
+  sourceId: string;
+  title: string;
+  priority: string;
+  reason: string;
+  /** The persisted price line for this item (null until an admin prices it). */
+  pricingType: "one_time" | "recurring" | null;
+  amountMinor: number | null;
+  cadence: "monthly" | null;
+  optional: boolean;
+}
+
 export interface CommercialProposalView {
   present: boolean;
   status: CommercialStatus;
@@ -945,10 +958,33 @@ export interface CommercialProposalView {
   needsPricing: boolean;
   workItemCount: number;
   summary: string;
+  /** The recommended work items + any admin pricing already set (for the editor). */
+  workItems: CommercialWorkItemView[];
+  /** Persisted proposal-level pricing fields (null/defaults until priced). */
+  currency: string | null;
+  discountMinor: number;
+  validUntil: string | null;
+  commercialNotes: string;
+  totalOneTimeMinor: number;
+  totalRecurringMonthlyMinor: number;
 }
 
 export function emptyCommercialProposalView(): CommercialProposalView {
-  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet." };
+  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet.", workItems: [], currency: null, discountMinor: 0, validUntil: null, commercialNotes: "", totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 0 };
+}
+
+const readStr = (v: unknown, fallback = ""): string => (typeof v === "string" ? v : fallback);
+const readInt = (v: unknown, fallback = 0): number => (typeof v === "number" && Number.isFinite(v) ? Math.trunc(v) : fallback);
+
+/** Format integer minor units as a currency string (e.g. 45000, "USD" → "$450.00").
+ * Falls back to a plain decimal + code for currencies Intl can't render. */
+export function formatMinor(minor: number, currency: string): string {
+  const major = minor / 100;
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(major);
+  } catch {
+    return `${major.toFixed(2)} ${currency}`;
+  }
 }
 
 /** Build the proposal-draft surface from a persisted proposal_version DTO. */
@@ -959,6 +995,28 @@ export function buildCommercialProposalView(dto: ArtifactDTO | null): Commercial
   const status: CommercialStatus = draftReady ? "needs_review" : "insufficient_evidence";
   const commercialState = typeof c["commercialState"] === "string" ? (c["commercialState"] as string) : null;
   const needsPricing = commercialState === "needs_pricing";
+
+  const work = Array.isArray(c["recommendedWork"]) ? (c["recommendedWork"] as Array<Record<string, unknown>>) : [];
+  const pricing = (c["pricing"] ?? null) as Record<string, unknown> | null;
+  const priceLines = Array.isArray(pricing?.["items"]) ? (pricing!["items"] as Array<Record<string, unknown>>) : [];
+  const lineBySource = new Map<string, Record<string, unknown>>();
+  for (const l of priceLines) lineBySource.set(readStr(l["sourceId"]), l);
+
+  const workItems: CommercialWorkItemView[] = work.map((w) => {
+    const sourceId = readStr(w["sourceId"]);
+    const line = lineBySource.get(sourceId);
+    return {
+      sourceId,
+      title: readStr(w["title"]),
+      priority: readStr(w["priority"]),
+      reason: readStr(w["solution"]),
+      pricingType: line ? (line["pricingType"] === "recurring" ? "recurring" : "one_time") : null,
+      amountMinor: line ? readInt(line["amountMinor"]) : null,
+      cadence: line && line["cadence"] === "monthly" ? "monthly" : null,
+      optional: line?.["optional"] === true,
+    };
+  });
+
   return {
     present: true,
     status,
@@ -968,8 +1026,92 @@ export function buildCommercialProposalView(dto: ArtifactDTO | null): Commercial
     commercialState,
     commercialStateLabel: commercialState === null ? null : needsPricing ? "Pricing required" : "Priced",
     needsPricing,
-    workItemCount: Array.isArray(c["recommendedWork"]) ? (c["recommendedWork"] as unknown[]).length : 0,
-    summary: typeof c["executiveSummary"] === "string" ? (c["executiveSummary"] as string) : "",
+    workItemCount: work.length,
+    summary: readStr(c["executiveSummary"]),
+    workItems,
+    currency: pricing ? readStr(pricing["currency"], "USD") : null,
+    discountMinor: pricing ? readInt(pricing["discountMinor"]) : 0,
+    validUntil: pricing && typeof pricing["validUntil"] === "string" ? (pricing["validUntil"] as string) : null,
+    commercialNotes: pricing ? readStr(pricing["commercialNotes"]) : "",
+    totalOneTimeMinor: pricing ? readInt(pricing["totalOneTimeMinor"]) : 0,
+    totalRecurringMonthlyMinor: pricing ? readInt(pricing["totalRecurringMonthlyMinor"]) : 0,
+  };
+}
+
+/* ---- §Preview — deterministic client-facing proposal composition ------------ */
+
+export interface ProposalPreviewPoint { title: string; detail: string }
+export interface ProposalPreviewWork { title: string; reason: string; priceLabel: string | null; optional: boolean }
+
+export interface ProposalPreviewView {
+  present: boolean;
+  prospectName: string;
+  website: string | null;
+  executiveSummary: string;
+  observedSituation: string;
+  keyIssues: ProposalPreviewPoint[];
+  opportunities: ProposalPreviewPoint[];
+  work: ProposalPreviewWork[];
+  currency: string | null;
+  oneTimeLabel: string | null;
+  monthlyLabel: string | null;
+  validUntil: string | null;
+  commercialNotes: string;
+  nextStep: string;
+  /** True when every required item is priced — otherwise the preview flags it. */
+  pricingComplete: boolean;
+}
+
+/**
+ * Compose the CLIENT-FACING proposal deterministically from the persisted commercial
+ * proposal (the intelligence producer) + admin pricing + the prospect identity.
+ * PRESENTATION ONLY — it introduces no new facts, generates no AI copy, and invents
+ * no numbers: every field is copied from an already-persisted artifact. A prospect
+ * name falls back to the website, then the scan id — never a fabricated business name.
+ */
+export function buildProposalPreview(content: unknown, identity: { businessName: string | null; websiteUrl: string | null }, scanId: string): ProposalPreviewView {
+  const empty: ProposalPreviewView = {
+    present: false, prospectName: identity.businessName ?? identity.websiteUrl ?? scanId, website: identity.websiteUrl,
+    executiveSummary: "", observedSituation: "", keyIssues: [], opportunities: [], work: [],
+    currency: null, oneTimeLabel: null, monthlyLabel: null, validUntil: null, commercialNotes: "", nextStep: "", pricingComplete: false,
+  };
+  if (content === null || typeof content !== "object") return empty;
+  const view = buildCommercialProposalView({ id: "", kind: "proposal", version: 1, status: "valid", createdAt: "", content: content as Record<string, unknown> });
+  if (!view.draftReady) return empty;
+  const c = content as Record<string, unknown>;
+
+  const points = (key: string): ProposalPreviewPoint[] =>
+    (Array.isArray(c[key]) ? (c[key] as Array<Record<string, unknown>>) : []).slice(0, 6).map((p) => ({ title: readStr(p["title"]), detail: readStr(p["detail"]) }));
+
+  const currency = view.currency ?? null;
+  const work: ProposalPreviewWork[] = view.workItems.map((w) => ({
+    title: w.title,
+    reason: w.reason,
+    priceLabel:
+      w.amountMinor === null || currency === null
+        ? null
+        : w.pricingType === "recurring"
+          ? `${formatMinor(w.amountMinor, currency)}/mo`
+          : formatMinor(w.amountMinor, currency),
+    optional: w.optional,
+  }));
+
+  return {
+    present: true,
+    prospectName: identity.businessName ?? identity.websiteUrl ?? scanId,
+    website: identity.websiteUrl,
+    executiveSummary: view.summary,
+    observedSituation: readStr(c["observedSituation"]),
+    keyIssues: points("keyIssues"),
+    opportunities: points("opportunities"),
+    work,
+    currency,
+    oneTimeLabel: currency && view.totalOneTimeMinor > 0 ? formatMinor(view.totalOneTimeMinor, currency) : null,
+    monthlyLabel: currency && view.totalRecurringMonthlyMinor > 0 ? `${formatMinor(view.totalRecurringMonthlyMinor, currency)}/mo` : null,
+    validUntil: view.validUntil,
+    commercialNotes: view.commercialNotes,
+    nextStep: readStr(c["proposedNextStep"]),
+    pricingComplete: view.commercialState === "priced",
   };
 }
 

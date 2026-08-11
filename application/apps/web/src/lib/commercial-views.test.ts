@@ -5,10 +5,70 @@ import {
   buildCommercialProposalView,
   buildClientNarrativeView,
   buildCompetitorIntelligenceView,
+  buildProposalPreview,
   buildProspectPackageView,
   emptyCommercialProposalView,
   emptyClientNarrativeView,
 } from "./prospect-scanner";
+
+const pricedProposalContent = {
+  id: "cp1", scanId: "scan-p", clientId: null, status: "draft_ready", reason: null, commercialState: "priced",
+  executiveSummary: "Lift conversion and search reach.", observedSituation: "Slow pages, thin search presence.",
+  keyIssues: [{ title: "Slow pages", detail: "Home page is slow.", evidenceIds: ["e1"] }],
+  opportunities: [{ title: "SEO gap", detail: "Untapped search demand.", evidenceIds: ["e2"] }],
+  recommendedWork: [
+    { sourceId: "w1", title: "Website redesign", solution: "Rebuild core pages", priority: "high", effort: "Large", evidenceIds: ["e1"] },
+    { sourceId: "w2", title: "SEO management", solution: "Ongoing optimization", priority: "medium", effort: "Medium", evidenceIds: ["e2"] },
+  ],
+  competitorContext: null, proposedNextStep: "Review scope and confirm pricing.", supportingEvidenceIds: ["e1", "e2"],
+  confidence: { value: 70, band: "high" }, reviewRequired: true, sourceArtifacts: ["a1"], checksum: "x", generatedAt: "t",
+  pricing: {
+    currency: "USD",
+    items: [
+      { sourceId: "w1", pricingType: "one_time", amountMinor: 120000, cadence: null, quantity: 1, optional: false, adminNotes: "" },
+      { sourceId: "w2", pricingType: "recurring", amountMinor: 30000, cadence: "monthly", quantity: 1, optional: false, adminNotes: "" },
+    ],
+    discountMinor: 0, subtotalOneTimeMinor: 120000, totalOneTimeMinor: 120000, totalRecurringMonthlyMinor: 30000,
+    validUntil: "2026-09-10", commercialNotes: "Payment on milestones.", pricedBy: "u_owner", pricedAt: "t",
+  },
+};
+
+describe("buildProposalPreview — deterministic client-facing composition", () => {
+  const identity = { businessName: "ZeEvents", websiteUrl: "https://zeevents.xyz" };
+
+  it("composes the preview from the PERSISTED commercial pricing (formatted, no invention)", () => {
+    const p = buildProposalPreview(pricedProposalContent, identity, "scan-p");
+    expect(p.present).toBe(true);
+    expect(p.prospectName).toBe("ZeEvents");
+    expect(p.work.map((w) => w.priceLabel)).toEqual(["$1,200.00", "$300.00/mo"]);
+    expect(p.oneTimeLabel).toBe("$1,200.00");
+    expect(p.monthlyLabel).toBe("$300.00/mo");
+    expect(p.pricingComplete).toBe(true);
+    expect(p.nextStep).toMatch(/review scope/i);
+    expect(p.validUntil).toBe("2026-09-10");
+  });
+
+  it("falls back to website then scanId for the name — never a fabricated business name", () => {
+    const p = buildProposalPreview(pricedProposalContent, { businessName: null, websiteUrl: "https://zeevents.xyz" }, "scan-p");
+    expect(p.prospectName).toBe("https://zeevents.xyz");
+    const p2 = buildProposalPreview(pricedProposalContent, { businessName: null, websiteUrl: null }, "scan-p");
+    expect(p2.prospectName).toBe("scan-p");
+  });
+
+  it("an unpriced draft previews with no price labels and flags pricing required", () => {
+    const unpriced = { ...pricedProposalContent, commercialState: "needs_pricing", pricing: null };
+    const p = buildProposalPreview(unpriced, identity, "scan-p");
+    expect(p.present).toBe(true);
+    expect(p.pricingComplete).toBe(false);
+    expect(p.work.every((w) => w.priceLabel === null)).toBe(true);
+    expect(p.oneTimeLabel).toBeNull();
+  });
+
+  it("an insufficient-evidence stub (no real draft) yields a not-present preview", () => {
+    const p = buildProposalPreview({ status: "insufficient_evidence", recommendedWork: [] }, identity, "scan-p");
+    expect(p.present).toBe(false);
+  });
+});
 
 const proposalDto = (status: string, commercialState = "needs_pricing"): ArtifactDTO => ({
   id: "cp1",
