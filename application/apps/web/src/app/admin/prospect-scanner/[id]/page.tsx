@@ -19,10 +19,13 @@ import { EvidenceCoverage } from "../components/EvidenceCoverage";
 import { EvidenceValidationPanel } from "../components/EvidenceValidationPanel";
 import { ReasoningReadiness } from "../components/ReasoningReadiness";
 import { RuntimeTimeline } from "../components/RuntimeTimeline";
-import { InternalReportView, ProposalReview } from "../components/StructuredArtifactView";
+import { InternalReportView } from "../components/StructuredArtifactView";
+import { CommercialProposalPanel } from "../components/CommercialProposalPanel";
 import { CompetitorIntelligencePanel } from "../components/CompetitorIntelligencePanel";
 import { ProposalIntelligencePanel } from "../components/ProposalIntelligencePanel";
 import { NarrativePanel } from "../components/NarrativePanel";
+import { ProspectPackagePanel } from "../components/ProspectPackagePanel";
+import { CommercialRunner } from "../components/CommercialRunner";
 import { ProspectSummary } from "../components/ProspectSummary";
 import { assessProspectForm, cancelProspectScanForm, retryProspectScanForm } from "../scanner-actions";
 import styles from "../scanner.module.css";
@@ -87,7 +90,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
   }
   if (data === null) notFound();
 
-  const { scan, identity, flags, next, discovery, evidence, evidenceValidation, report, proposal, readiness, summary, competitor, proposalIntelligence, narrative, timeline, reportReviewRequired, canAssess } = data;
+  const { scan, identity, flags, next, discovery, evidence, evidenceValidation, report, commercialProposal, readiness, summary, competitor, proposalIntelligence, narrative, prospectPackage, timeline, reportReviewRequired, canAssess } = data;
   const rows = buildTimelineRows(timeline);
   const latestEvent = rows[0]?.type ?? null;
 
@@ -191,7 +194,9 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
       <CompetitorIntelligencePanel competitor={competitor} />
       <ProposalIntelligencePanel proposal={proposalIntelligence} />
       <NarrativePanel narrative={narrative} />
-      <ProposalReview view={proposal} />
+      <CommercialProposalPanel proposal={commercialProposal} />
+      <CommercialRunner runId={scan.id} coreCompleted={scan.lifecycle === "completed"} packageState={prospectPackage.state} />
+      <ProspectPackagePanel pkg={prospectPackage} runId={scan.id} />
       <ProspectSummary summary={summary} />
     </>
   );

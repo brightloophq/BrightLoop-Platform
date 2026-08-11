@@ -12,7 +12,7 @@
  * ========================================================================== */
 
 import { PIPELINE_STAGE_ORDER } from "@brightloop/domain";
-import type { ScanDTO, TimelineEntryDTO, ArtifactDTO, EvidenceValidationDTO, EvidenceClaimTraceDTO, EvidenceFindingTraceDTO } from "@brightloop/application";
+import { computeProspectPackage, type ScanDTO, type TimelineEntryDTO, type ArtifactDTO, type EvidenceValidationDTO, type EvidenceClaimTraceDTO, type EvidenceFindingTraceDTO, type ProspectPackageState, type PackageReviewDecision } from "@brightloop/application";
 
 /* ---- primitives -------------------------------------------------------------- */
 
@@ -686,7 +686,10 @@ export interface ProspectSummaryView {
   evidenceGaps: string[];
   nextHumanAction: string;
   reportReady: boolean;
-  proposalReady: boolean;
+  /** Commercial-aware proposal status (draft/pricing/approved), NOT the approved-only doc. */
+  proposalStatusLabel: string;
+  /** The overall prospect-package state label (e.g. "Ready for review"). */
+  packageStateLabel: string;
 }
 
 export interface SummaryInput {
@@ -695,7 +698,10 @@ export interface SummaryInput {
   discovery: DiscoveryView;
   evidence: EvidenceView;
   report: StructuredView;
-  proposal: StructuredView;
+  /** The post-scan COMMERCIAL proposal draft (any status) — the admin truth. */
+  commercialProposal: CommercialProposalView;
+  /** The folded prospect-package state. */
+  prospectPackage: ProspectPackageView;
   readiness: ReasoningReadinessView;
   next: NextStageView;
 }
@@ -703,10 +709,48 @@ export interface SummaryInput {
 /* ---- Competitor Intelligence (Phase C · Sprint C8) ------------------------- */
 
 /** A read-only surface for the deterministic competitor snapshot. No redesign. */
+/**
+ * The COHERENT commercial status vocabulary, replacing the overloaded
+ * "Unavailable" that used to mean five different things. Each value is a distinct,
+ * honest operator-facing state:
+ *   not_started         — the post-scan commercial workflow has not run yet;
+ *   running             — it is in flight;
+ *   ready               — produced and requires no review;
+ *   insufficient_evidence — it RAN and verified nothing (a COMPLETED outcome, ≠ not run);
+ *   needs_review        — produced and awaiting human review;
+ *   failed              — the workflow errored.
+ */
+export type CommercialStatus = "not_started" | "running" | "ready" | "insufficient_evidence" | "needs_review" | "failed";
+
+const COMMERCIAL_STATUS_LABEL: Record<CommercialStatus, string> = {
+  not_started: "Not run",
+  running: "Running",
+  ready: "Ready",
+  insufficient_evidence: "Insufficient evidence",
+  needs_review: "Review required",
+  failed: "Failed",
+};
+export function commercialStatusLabel(status: CommercialStatus): string {
+  return COMMERCIAL_STATUS_LABEL[status];
+}
+
+/** A status token whose schema `toneFor` tone matches the commercial status. */
+const COMMERCIAL_STATUS_BADGE: Record<CommercialStatus, string> = {
+  not_started: "not_started", // neutral
+  running: "running", // blue
+  ready: "completed", // success
+  insufficient_evidence: "created", // neutral
+  needs_review: "in_review", // warning
+  failed: "failed", // danger
+};
+export function commercialBadgeStatus(status: CommercialStatus): string {
+  return COMMERCIAL_STATUS_BADGE[status];
+}
+
 export interface CompetitorIntelligenceView {
   present: boolean;
-  /** Available / Unavailable / Review Required — the operator-facing status. */
-  status: "available" | "unavailable" | "review_required";
+  /** The coherent commercial status — see CommercialStatus. */
+  status: CommercialStatus;
   statusLabel: string;
   competitorCount: number;
   evidenceCount: number;
@@ -719,7 +763,19 @@ export interface CompetitorIntelligenceView {
 
 /** The empty view when no competitor snapshot exists yet. */
 export function emptyCompetitorIntelligenceView(): CompetitorIntelligenceView {
-  return { present: false, status: "unavailable", statusLabel: "Not produced yet", competitorCount: 0, evidenceCount: 0, confidence: null, confidenceBand: null, marketPosition: null, reviewRequired: false, summary: "Competitor intelligence has not run yet." };
+  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), competitorCount: 0, evidenceCount: 0, confidence: null, confidenceBand: null, marketPosition: null, reviewRequired: false, summary: "Competitor discovery has not run yet." };
+}
+
+/** Context for deriving the coherent competitor status from the persisted snapshot. */
+export interface CompetitorViewContext {
+  /** True once the core scan has completed. */
+  scanCompleted: boolean;
+  /** True once the commercial competitor-discovery stage has actually run (a
+   * `runtime.commercial.competitor_discovered` event exists) — distinguishes a
+   * genuine "insufficient evidence" outcome from "not run yet". */
+  competitorStageRan?: boolean;
+  /** True when the commercial workflow failed before/at competitor discovery. */
+  commercialFailed?: boolean;
 }
 
 /* ---- Proposal Intelligence (Phase C · Sprint C9) --------------------------- */
@@ -823,13 +879,40 @@ export function buildProposalIntelligenceView(content: unknown): ProposalIntelli
  * Build the operator surface from a persisted `competitor_snapshot` envelope.
  * Everything is DERIVED — no invention. A missing snapshot yields the empty view.
  */
-export function buildCompetitorIntelligenceView(content: unknown): CompetitorIntelligenceView {
+export function buildCompetitorIntelligenceView(content: unknown, context?: CompetitorViewContext): CompetitorIntelligenceView {
   if (content === null || typeof content !== "object") return emptyCompetitorIntelligenceView();
   const c = content as Record<string, unknown>;
-  const rawStatus = c["status"] === "available" ? "available" : "unavailable";
+  const available = c["status"] === "available";
   const reviewRequired = c["reviewRequired"] === true;
-  const status: CompetitorIntelligenceView["status"] = rawStatus === "available" && reviewRequired ? "review_required" : rawStatus;
-  const statusLabel = status === "available" ? "Available" : status === "review_required" ? "Review Required" : "Unavailable";
+  // Distinguish the realities the old "Unavailable" collapsed. An available snapshot
+  // needs review (or is ready). Otherwise the commercial competitor stage either:
+  //   failed        → the workflow errored;
+  //   ran (event) or the scan completed (the stage runs synchronously on a completed
+  //                 render) → insufficient_evidence — a COMPLETED, honest outcome;
+  //   neither       → not_started.
+  const commercialRan = context?.competitorStageRan === true || context?.scanCompleted === true;
+  const status: CommercialStatus = available
+    ? reviewRequired
+      ? "needs_review"
+      : "ready"
+    : context?.commercialFailed
+      ? "failed"
+      : commercialRan
+        ? "insufficient_evidence"
+        : "not_started";
+  const statusLabel = commercialStatusLabel(status);
+  // Derive a COHERENT summary from the commercial status. The persisted C8 snapshot's
+  // own summary reads "Unavailable — no verified competitor evidence"; surfacing that
+  // legacy text on the admin panel re-introduces the very "Unavailable" ambiguity the
+  // status model removed, so an unavailable snapshot's text is replaced, never echoed.
+  const snapshotSummary = typeof c["summary"] === "string" ? (c["summary"] as string) : "";
+  const summary = available
+    ? snapshotSummary || (reviewRequired ? "Verified competitors found — review required." : "Competitor intelligence ready.")
+    : status === "failed"
+      ? "Competitor discovery could not complete — see the workflow status."
+      : status === "insufficient_evidence"
+        ? "Completed — no competitors could be verified from the prospect's own references."
+        : "Competitor discovery has not run yet.";
   const confidence = c["confidence"];
   return {
     present: true,
@@ -841,7 +924,167 @@ export function buildCompetitorIntelligenceView(content: unknown): CompetitorInt
     confidenceBand: confidence !== null && typeof confidence === "object" && typeof (confidence as Record<string, unknown>)["band"] === "string" ? ((confidence as Record<string, unknown>)["band"] as string) : null,
     marketPosition: typeof c["marketPosition"] === "string" ? (c["marketPosition"] as string) : null,
     reviewRequired,
-    summary: typeof c["summary"] === "string" ? (c["summary"] as string) : "",
+    summary,
+  };
+}
+
+/* ---- Commercial Proposal + Client Narrative + Package (post-scan commercial) --- */
+
+export interface CommercialProposalView {
+  present: boolean;
+  status: CommercialStatus;
+  statusLabel: string;
+  /** True when a usable draft was generated (its own artifact status, not the review axis). */
+  draftReady: boolean;
+  /** "Draft ready" | "Insufficient evidence" | "Not drafted" — the GENERATION axis. */
+  generationLabel: string;
+  /** needs_pricing | priced — pricing is NEVER invented; needs_pricing is the honest default. */
+  commercialState: string | null;
+  /** "Pricing required" | "Priced" | null — human-facing pricing axis. */
+  commercialStateLabel: string | null;
+  needsPricing: boolean;
+  workItemCount: number;
+  summary: string;
+}
+
+export function emptyCommercialProposalView(): CommercialProposalView {
+  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet." };
+}
+
+/** Build the proposal-draft surface from a persisted proposal_version DTO. */
+export function buildCommercialProposalView(dto: ArtifactDTO | null): CommercialProposalView {
+  if (dto === null) return emptyCommercialProposalView();
+  const c = dto.content;
+  const draftReady = c["status"] === "draft_ready";
+  const status: CommercialStatus = draftReady ? "needs_review" : "insufficient_evidence";
+  const commercialState = typeof c["commercialState"] === "string" ? (c["commercialState"] as string) : null;
+  const needsPricing = commercialState === "needs_pricing";
+  return {
+    present: true,
+    status,
+    statusLabel: commercialStatusLabel(status),
+    draftReady,
+    generationLabel: draftReady ? "Draft ready" : "Insufficient evidence",
+    commercialState,
+    commercialStateLabel: commercialState === null ? null : needsPricing ? "Pricing required" : "Priced",
+    needsPricing,
+    workItemCount: Array.isArray(c["recommendedWork"]) ? (c["recommendedWork"] as unknown[]).length : 0,
+    summary: typeof c["executiveSummary"] === "string" ? (c["executiveSummary"] as string) : "",
+  };
+}
+
+export interface ClientNarrativeView {
+  present: boolean;
+  status: CommercialStatus;
+  statusLabel: string;
+  sectionCount: number;
+}
+
+export function emptyClientNarrativeView(): ClientNarrativeView {
+  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), sectionCount: 0 };
+}
+
+/** Build the client-narrative surface from a persisted narrative_version DTO. */
+export function buildClientNarrativeView(dto: ArtifactDTO | null): ClientNarrativeView {
+  if (dto === null) return emptyClientNarrativeView();
+  const c = dto.content;
+  const ready = c["status"] === "ready";
+  const status: CommercialStatus = ready ? "needs_review" : "insufficient_evidence";
+  return { present: true, status, statusLabel: commercialStatusLabel(status), sectionCount: Array.isArray(c["sections"]) ? (c["sections"] as unknown[]).length : 0 };
+}
+
+export interface PackageComponentView {
+  key: string;
+  label: string;
+  /** "complete" for the always-terminal core/report rows; else a CommercialStatus. */
+  status: CommercialStatus | "complete";
+  statusLabel: string;
+  note: string | null;
+}
+
+export interface ProspectPackageView {
+  state: ProspectPackageState;
+  stateLabel: string;
+  badge: string;
+  reason: string;
+  components: PackageComponentView[];
+  reviewDecision: PackageReviewDecision;
+  /** True once every required component is present — the review actions unlock. */
+  canReview: boolean;
+  /** True when the proposal still needs pricing — an approval is NOT client-ready. */
+  pricingRequired: boolean;
+}
+
+const PACKAGE_STATE_LABEL: Record<ProspectPackageState, string> = {
+  not_started: "Not started",
+  running: "Running",
+  blocked: "Blocked",
+  ready_for_review: "Ready for review",
+  approved: "Approved",
+  revision_requested: "Revision requested",
+  rejected: "Rejected",
+};
+const PACKAGE_STATE_BADGE: Record<ProspectPackageState, string> = {
+  not_started: "not_started",
+  running: "running",
+  blocked: "failed",
+  ready_for_review: "in_review",
+  approved: "completed",
+  revision_requested: "in_review",
+  rejected: "failed",
+};
+
+export interface PackageViewInput {
+  scanCompleted: boolean;
+  reportPresent: boolean;
+  competitor: CompetitorIntelligenceView;
+  proposal: CommercialProposalView;
+  narrative: ClientNarrativeView;
+  commercialEnqueued: boolean;
+  commercialFailed: boolean;
+  reviewDecision: PackageReviewDecision;
+}
+
+/** Fold the commercial components + review decision into the command-center view. */
+export function buildProspectPackageView(input: PackageViewInput): ProspectPackageView {
+  const pkg = computeProspectPackage({
+    scanCompleted: input.scanCompleted,
+    reportPresent: input.reportPresent,
+    competitor: input.competitor.status,
+    proposal: input.proposal.status,
+    narrative: input.narrative.status,
+    commercialFailed: input.commercialFailed,
+    commercialEnqueued: input.commercialEnqueued,
+    reviewDecision: input.reviewDecision,
+  });
+
+  const components: PackageComponentView[] = [
+    { key: "core", label: "Core assessment", status: input.scanCompleted ? "complete" : "running", statusLabel: input.scanCompleted ? "Complete" : "Running", note: null },
+    { key: "report", label: "Report", status: input.reportPresent ? "complete" : "running", statusLabel: input.reportPresent ? "Ready" : "Pending", note: null },
+    { key: "competitor", label: "Competitor intelligence", status: input.competitor.status, statusLabel: input.competitor.statusLabel, note: null },
+    { key: "proposal", label: "Proposal", status: input.proposal.status, statusLabel: input.proposal.status === "needs_review" ? "Draft ready" : input.proposal.statusLabel, note: input.proposal.needsPricing ? "Pricing required" : null },
+    { key: "narrative", label: "Narrative", status: input.narrative.status, statusLabel: input.narrative.status === "needs_review" ? "Generated" : input.narrative.statusLabel, note: input.narrative.status === "needs_review" ? "Review required" : null },
+  ];
+
+  // Approval honesty: a human may approve the INTELLIGENCE while pricing is still
+  // missing, but the UI must never imply a client-ready proposal. Qualify the
+  // approved state and reason with the outstanding pricing requirement.
+  const pricingRequired = input.proposal.needsPricing;
+  const approvedButUnpriced = pkg.state === "approved" && pricingRequired;
+  const stateLabel = approvedButUnpriced ? "Approved · pricing required" : PACKAGE_STATE_LABEL[pkg.state];
+  const reason = approvedButUnpriced
+    ? "The intelligence is approved, but commercial pricing is still required before this proposal can be sent."
+    : pkg.reason;
+
+  return {
+    state: pkg.state,
+    stateLabel,
+    badge: PACKAGE_STATE_BADGE[pkg.state],
+    reason,
+    components,
+    reviewDecision: input.reviewDecision,
+    canReview: pkg.componentsReady,
+    pricingRequired,
   };
 }
 
@@ -856,7 +1099,7 @@ function firstLine(view: StructuredView, key: string): string | null {
  * value that is not evidenced stays null.
  */
 export function buildProspectSummary(input: SummaryInput): ProspectSummaryView {
-  const { scan, identity, discovery, evidence, report, proposal, readiness, next } = input;
+  const { scan, identity, discovery, evidence, report, commercialProposal, prospectPackage, readiness, next } = input;
 
   const gaps: string[] = [];
   if (evidence.missingSources.length > 0) gaps.push(`No observed evidence for: ${evidence.missingSources.join(", ")}`);
@@ -866,9 +1109,16 @@ export function buildProspectSummary(input: SummaryInput): ProspectSummaryView {
   if (!discovery.present) gaps.push("Discovery has not run yet");
   if (!evidence.present) gaps.push("Evidence has not been normalized yet");
 
+  // §10 proposal status is COMMERCIAL-aware (the admin truth), never the approved-only
+  // document. A real draft is "Draft ready · Pricing required", not "Proposal pending".
+  const proposalStatusLabel = commercialProposal.present
+    ? `${commercialProposal.generationLabel}${commercialProposal.commercialStateLabel ? ` · ${commercialProposal.commercialStateLabel}` : ""}`
+    : "Not drafted";
+
   const nextAction = (): string => {
     if (scan.lifecycle === "cancelled") return "This scan was cancelled. Start a new scan to continue.";
     if (scan.lifecycle === "failed") return `Review the failure at ${stageLabel(scan.failedStage)}, then retry if eligible.`;
+    if (prospectPackage.state === "ready_for_review") return "Review the prospect package, then approve or request a revision.";
     if (report.present) return "Review the report, then prepare outreach with the findings below.";
     if (readiness.state === "ready") return "Run the controlled reasoning turn to produce findings.";
     if (next.support === "supported") return `Execute the next stage: ${next.label}.`;
@@ -886,7 +1136,8 @@ export function buildProspectSummary(input: SummaryInput): ProspectSummaryView {
     evidenceGaps: gaps.slice(0, 6),
     nextHumanAction: nextAction(),
     reportReady: report.present,
-    proposalReady: proposal.present,
+    proposalStatusLabel,
+    packageStateLabel: prospectPackage.stateLabel,
   };
 }
 

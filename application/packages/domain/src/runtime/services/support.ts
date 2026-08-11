@@ -97,6 +97,27 @@ export const RUNTIME_EVENTS = {
   autorunStarted: "runtime.autorun.started",
   autorunWaiting: "runtime.autorun.waiting",
   autorunCompleted: "runtime.autorun.completed",
+  // Post-scan commercial workflow (a SEPARATE scheduler over the same queue).
+  commercialEnqueued: "runtime.commercial.enqueued",
+  /** Kickoff could not enqueue the workflow — surfaced, never swallowed. */
+  commercialEnqueueFailed: "runtime.commercial.enqueue_failed",
+  commercialStageCompleted: "runtime.commercial.stage_completed",
+  /** A commercial stage returned an error (before the queue's dead-letter). */
+  commercialStageFailed: "runtime.commercial.stage_failed",
+  commercialCompleted: "runtime.commercial.completed",
+  /** Competitor discovery outcome — carries status + counts only, never entities. */
+  commercialCompetitorDiscovered: "runtime.commercial.competitor_discovered",
+  /** Proposal draft generated — carries status + needsPricing flag only. */
+  commercialProposalGenerated: "runtime.commercial.proposal_generated",
+  /** Client narrative generated — carries status + reviewStatus only. */
+  commercialNarrativeGenerated: "runtime.commercial.narrative_generated",
+  /** Whole commercial workflow finished and the package is ready for human review. */
+  commercialReadyForReview: "runtime.commercial.ready_for_review",
+  // Human review-gate decisions on the prospect package (append-only audit trail).
+  reviewNeedsReview: "runtime.review.needs_review",
+  reviewApproved: "runtime.review.approved",
+  reviewRevisionRequested: "runtime.review.revision_requested",
+  reviewRejected: "runtime.review.rejected",
 } as const;
 
 export type RuntimeEventName = (typeof RUNTIME_EVENTS)[keyof typeof RUNTIME_EVENTS];

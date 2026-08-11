@@ -19,7 +19,7 @@ export function NarrativePanel({ narrative }: { narrative: NarrativeView }) {
 
   return (
     <OperationalPanel tone="anchor">
-      <SectionRule index="13" label="Narrative" meta="deterministic presentation · evidence-traced" />
+      <SectionRule index="13" label="Narrative intelligence · core" meta="deterministic presentation · evidence-traced" />
 
       <div className={styles.badgeRow} style={{ marginBottom: "var(--space-3)" }}>
         <Badge status={badgeStatus}>{narrative.statusLabel}</Badge>
@@ -40,7 +40,7 @@ export function NarrativePanel({ narrative }: { narrative: NarrativeView }) {
       </div>
 
       <div className={styles.railFoot}>
-        <span>Presentation of structured findings only</span>
+        <span>Core narrative intelligence · the client-facing narrative is in the Prospect package</span>
         <span>No creative writing · no AI text · every sentence traces to evidence</span>
       </div>
     </OperationalPanel>

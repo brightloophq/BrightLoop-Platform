@@ -14,10 +14,12 @@ export * from "./provider-attempt.service.js";
 export * from "./derived.services.js";
 export * from "./execution-engine.js";
 export * from "./coordinator.js";
+export * from "../commercial/index.js";
 export * as runtimeReadModels from "./read-models.js";
 
 import { systemClock, type Clock } from "../../guard.js";
 import type { RuntimeRepository } from "../repository.js";
+import { CommercialCoordinator } from "../commercial/index.js";
 import { ArtifactService } from "./artifact.service.js";
 import { CheckpointService } from "./checkpoint.service.js";
 import { RuntimeCoordinator } from "./coordinator.js";
@@ -52,6 +54,8 @@ export interface RuntimeServices {
   narratives: NarrativeService;
   events: EventService;
   coordinator: RuntimeCoordinator;
+  /** Post-scan commercial workflow scheduler (separate from the core pipeline). */
+  commercial: CommercialCoordinator;
 }
 
 export interface RuntimeServicesDeps {
@@ -95,9 +99,10 @@ export function createRuntimeServices(deps: RuntimeServicesDeps): RuntimeService
     { runs, pipeline, checkpoints, artifacts, queue, events },
     ctx,
   );
+  const commercial = new CommercialCoordinator({ queue, artifacts, proposals, narratives, events }, ctx);
 
   return {
     runs, pipeline, checkpoints, artifacts, queue, reasoning, providerAttempts,
-    findings, recommendations, competitors, proposals, narratives, events, coordinator,
+    findings, recommendations, competitors, proposals, narratives, events, coordinator, commercial,
   };
 }

@@ -9,6 +9,7 @@ import { buildAppContext } from "@/lib/runtime-api";
 import { buildRuntimeDriver } from "@/lib/runtime-driver";
 import { getRuntimeServices } from "@/lib/repositories";
 import { buildAutoRunResponse, runUntilWait, type AutoRunResponse } from "@/lib/auto-run";
+import { ensureCommercialWorkflowStarted } from "@/lib/commercial-run";
 
 /**
  * POST /api/internal/runtime/run-until-wait — bounded one-click auto-run.
@@ -110,6 +111,26 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     await emitAutorunEvents(svc, actor.userId, before, after, response);
+
+    // Core scan complete → durably ENQUEUE the post-scan commercial workflow
+    // (kickoff only — never drained here). Draining is done in bounded turns by the
+    // dedicated `run-commercial-until-wait` continuation, which the client drives and
+    // a completed-scan refresh resumes. Kickoff is idempotent + server-authoritative,
+    // so it does not depend on this single request surviving. A failure is surfaced
+    // by the coordinator (commercial.enqueue_failed) and must NEVER fail the
+    // already-completed core response.
+    if (after.lifecycle === "completed") {
+      try {
+        await ensureCommercialWorkflowStarted(svc.commercial, {
+          runId: body.runId,
+          scanId: after.scanId,
+          clientId: after.clientId,
+        });
+      } catch {
+        // Kickoff is retried by the continuation endpoint / next refresh — never fatal here.
+      }
+    }
+
     return NextResponse.json(response, { status: 200 });
   } catch (error) {
     if (isApplicationError(error)) return NextResponse.json(error.toBody(), { status: error.status });

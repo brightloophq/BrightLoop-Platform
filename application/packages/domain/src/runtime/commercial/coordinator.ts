@@ -1,0 +1,225 @@
+/* =============================================================================
+ * CommercialCoordinator — the post-scan commercial workflow scheduler.
+ *
+ * A SEPARATE scheduler from the core RuntimeCoordinator (whose settle/enqueueNext
+ * is hardwired to the 13-stage `pipeline.nextStage`). It runs on the same durable
+ * queue under the `commercial_intelligence` job type, so enqueue idempotency,
+ * backoff, dead-letter and lease ownership all apply unchanged — but it sequences
+ * COMMERCIAL stages, never core pipeline stages, and touches the core coordinator
+ * not at all.
+ *
+ * `runCommercialOnce` performs exactly one worker turn (lease → execute → settle →
+ * enqueue next) and returns. It starts nothing on its own; the caller decides when
+ * a turn happens, exactly like the core `runOnce`.
+ * ========================================================================== */
+
+import type { RuntimeQueueJob } from "@brightloop/schema";
+import { err, type RuntimeResult } from "../results.js";
+import type { ArtifactService } from "../services/artifact.service.js";
+import type { EventService } from "../services/event.service.js";
+import type { QueueService } from "../services/queue.service.js";
+import type { ProposalService, NarrativeService } from "../services/derived.services.js";
+import { RUNTIME_EVENTS, type RuntimeServiceContext } from "../services/support.js";
+import { runCompetitorCommercialStage } from "./competitor-executor.js";
+import { runProposalCommercialStage } from "./proposal-executor.js";
+import { runNarrativeCommercialStage } from "./narrative-executor.js";
+import { COMMERCIAL_JOB_TYPE, COMMERCIAL_STAGE_ORDER, isCommercialStage, nextCommercialStage } from "./stages.js";
+import type { CommercialStageDeps, CommercialStageResult } from "./types.js";
+
+export interface CommercialCoordinatorServices {
+  queue: QueueService;
+  artifacts: ArtifactService;
+  proposals: ProposalService;
+  narratives: NarrativeService;
+  events: EventService;
+}
+
+export interface EnqueueCommercialInput {
+  runId: string;
+  scanId: string;
+  clientId: string | null;
+  /** Admin-supplied competitor domains, carried on the job payload. */
+  manualCompetitorDomains?: string[];
+}
+
+export class CommercialCoordinator {
+  private readonly stageDeps: CommercialStageDeps;
+
+  constructor(
+    private readonly svc: CommercialCoordinatorServices,
+    ctx: RuntimeServiceContext,
+  ) {
+    this.stageDeps = { artifacts: svc.artifacts, proposals: svc.proposals, narratives: svc.narratives, events: svc.events, ctx };
+  }
+
+  /**
+   * Ensure the commercial workflow is STARTED for a run whose core scan has
+   * COMPLETED. This is the durable, server-authoritative kickoff seam — safe to
+   * call repeatedly from any entry point (core completion, a completed-scan page
+   * refresh, the continuation endpoint). It NEVER duplicates work: the queue key is
+   * `(jobType, runId, firstStage)`, so a second call converges on the same single
+   * job (a `replayed` outcome), and once the workflow has advanced past the first
+   * stage that first-stage row is `completed` and is never re-leased.
+   *
+   * Unlike the previous best-effort trigger, an enqueue FAILURE is surfaced as a
+   * `commercial.enqueue_failed` event and returned to the caller — never swallowed.
+   */
+  async ensureStarted(input: EnqueueCommercialInput): Promise<RuntimeResult<RuntimeQueueJob>> {
+    const job = await this.svc.queue.enqueue({
+      jobType: COMMERCIAL_JOB_TYPE,
+      clientId: input.clientId,
+      runId: input.runId,
+      scanId: input.scanId,
+      stage: COMMERCIAL_STAGE_ORDER[0],
+      payload: input.manualCompetitorDomains ? { manualCompetitorDomains: input.manualCompetitorDomains } : {},
+    });
+    if (!job.ok) {
+      // Kickoff could not enqueue — make it observable instead of silently falling
+      // back to the "old" empty UI. Best-effort event; the failure is still returned.
+      await this.svc.events
+        .emit({
+          eventType: RUNTIME_EVENTS.commercialEnqueueFailed,
+          aggregateType: "intelligence_run",
+          aggregateId: input.runId,
+          clientId: input.clientId,
+          runId: input.runId,
+          scanId: input.scanId,
+          stage: COMMERCIAL_STAGE_ORDER[0],
+          payload: { code: job.code },
+        })
+        .catch(() => undefined);
+      return job;
+    }
+    if (job.code === "created") {
+      await this.svc.events.emit({
+        eventType: RUNTIME_EVENTS.commercialEnqueued,
+        aggregateType: "intelligence_run",
+        aggregateId: input.runId,
+        clientId: input.clientId,
+        runId: input.runId,
+        scanId: input.scanId,
+        stage: COMMERCIAL_STAGE_ORDER[0],
+        payload: {},
+      });
+    }
+    return job;
+  }
+
+  /** @deprecated Use {@link ensureStarted} — the durable, failure-surfacing kickoff. */
+  async enqueueForCompletedRun(input: EnqueueCommercialInput): Promise<RuntimeResult<RuntimeQueueJob>> {
+    return this.ensureStarted(input);
+  }
+
+  /**
+   * One commercial worker turn: lease → execute the stage → account for the job →
+   * enqueue the next commercial stage (or mark the workflow complete). Returns the
+   * stage result, or null when the commercial queue is idle.
+   */
+  async runCommercialOnce(owner: string, options: { leaseSeconds?: number } = {}): Promise<RuntimeResult<CommercialStageResult | null>> {
+    const leased = await this.svc.queue.lease({
+      owner,
+      leaseSeconds: options.leaseSeconds ?? 60,
+      jobType: COMMERCIAL_JOB_TYPE,
+      clientId: null,
+    });
+    if (!leased.ok) {
+      if (leased.code === "no_job_available") return { ok: true, code: "found", value: null };
+      return leased;
+    }
+
+    const job = leased.value;
+    if (job.runId === null || job.stage === null || !isCommercialStage(job.stage)) {
+      await this.svc.queue.fail(job, owner, `commercial job ${job.id} has an unknown stage '${job.stage ?? "null"}'`, { fatal: true });
+      return err("check_violation", `commercial job ${job.id} has an invalid stage`);
+    }
+
+    const executed = await this.dispatch(job);
+    if (!executed.ok) {
+      // Surface the stage failure (safe: stage + code only) BEFORE the queue decides
+      // retry-vs-dead-letter, so a stuck workflow is diagnosable, not silent.
+      await this.svc.events
+        .emit({
+          eventType: RUNTIME_EVENTS.commercialStageFailed,
+          aggregateType: "intelligence_run",
+          aggregateId: job.runId,
+          clientId: job.clientId,
+          runId: job.runId,
+          scanId: job.scanId,
+          stage: job.stage,
+          payload: { code: executed.code },
+        })
+        .catch(() => undefined);
+      await this.svc.queue.fail(job, owner, executed.message);
+      return executed;
+    }
+
+    await this.svc.queue.complete(job.id, owner);
+    await this.settle(job, executed.value);
+    return { ok: true, code: "found", value: executed.value };
+  }
+
+  /** Route a leased commercial job to its stage executor. */
+  private dispatch(job: RuntimeQueueJob): Promise<RuntimeResult<CommercialStageResult>> {
+    switch (job.stage) {
+      case "competitor_intelligence":
+        return runCompetitorCommercialStage(this.stageDeps, job);
+      case "proposal_generation":
+        return runProposalCommercialStage(this.stageDeps, job);
+      case "narrative_generation":
+        return runNarrativeCommercialStage(this.stageDeps, job);
+      default:
+        return Promise.resolve(err("check_violation", `no commercial executor for stage '${job.stage ?? "null"}'`));
+    }
+  }
+
+  /** Enqueue the next commercial stage, or emit completion when exhausted. */
+  private async settle(job: RuntimeQueueJob, result: CommercialStageResult): Promise<void> {
+    await this.svc.events.emit({
+      eventType: RUNTIME_EVENTS.commercialStageCompleted,
+      aggregateType: "intelligence_run",
+      aggregateId: job.runId!,
+      clientId: job.clientId,
+      runId: job.runId,
+      scanId: job.scanId,
+      stage: job.stage,
+      payload: { status: result.status, persisted: result.persisted },
+    });
+
+    const next = nextCommercialStage(result.stage);
+    if (next !== null) {
+      await this.svc.queue.enqueue({
+        jobType: COMMERCIAL_JOB_TYPE,
+        clientId: job.clientId,
+        runId: job.runId!,
+        scanId: job.scanId!,
+        stage: next,
+        payload: job.payload ?? {},
+      });
+      return;
+    }
+
+    await this.svc.events.emit({
+      eventType: RUNTIME_EVENTS.commercialCompleted,
+      aggregateType: "intelligence_run",
+      aggregateId: job.runId!,
+      clientId: job.clientId,
+      runId: job.runId,
+      scanId: job.scanId,
+      payload: {},
+    });
+
+    // The workflow terminates IN FRONT OF the human review gate — nothing is
+    // auto-approved or sent. This marker says the prospect package is assembled
+    // and awaiting review; package readiness itself is computed deterministically
+    // from the persisted artifacts at read time.
+    await this.svc.events.emit({
+      eventType: RUNTIME_EVENTS.commercialReadyForReview,
+      aggregateType: "intelligence_run",
+      aggregateId: job.runId!,
+      clientId: job.clientId,
+      runId: job.runId,
+      scanId: job.scanId,
+      payload: {},
+    });
+  }
+}

@@ -16,6 +16,26 @@ export { getScanProposal } from "./proposal.js";
 export { getScanNarrative, parseAudience } from "./narrative.js";
 export { getScanEvidenceValidation, toEvidenceValidationDTO } from "./evidence-validation.js";
 export {
+  getScanCommercialProposal,
+  getScanClientNarrative,
+  getProspectPackageReview,
+  decideProspectPackage,
+  advanceCommercialWorkflow,
+  type ProspectPackageReviewDTO,
+  type PackageReviewAction,
+  type DecideProspectPackageInput,
+  type CommercialKickoffOutcome,
+  type CommercialAdvance,
+} from "./commercial.js";
+export {
+  computeProspectPackage,
+  type ProspectPackage,
+  type ProspectPackageInput,
+  type ProspectPackageState,
+  type ComponentStatus,
+  type PackageReviewDecision,
+} from "./package-readiness.js";
+export {
   getScanArtifact,
   parseArtifactKind,
   isReadableArtifactKind,
