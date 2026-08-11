@@ -59,7 +59,8 @@ export function ProspectSummary({ summary }: { summary: ProspectSummaryView }) {
 
       <div className={styles.badgeRow} style={{ marginTop: "var(--space-4)" }}>
         <Badge status={summary.reportReady ? "active" : "pending"}>Report {summary.reportReady ? "ready" : "pending"}</Badge>
-        <Badge status={summary.proposalReady ? "active" : "pending"}>Proposal {summary.proposalReady ? "ready" : "pending"}</Badge>
+        <Badge status="idle">Proposal · {summary.proposalStatusLabel}</Badge>
+        <Badge status="idle">Package · {summary.packageStateLabel}</Badge>
       </div>
 
       <div style={{ marginTop: "var(--space-4)" }}>

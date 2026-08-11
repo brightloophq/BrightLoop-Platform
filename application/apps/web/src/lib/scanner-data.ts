@@ -263,7 +263,7 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     report,
     proposal,
     readiness,
-    summary: buildProspectSummary({ scan, identity, discovery, evidence, report, proposal, readiness, next }),
+    summary: buildProspectSummary({ scan, identity, discovery, evidence, report, commercialProposal, prospectPackage, readiness, next }),
     competitor,
     proposalIntelligence,
     narrative,

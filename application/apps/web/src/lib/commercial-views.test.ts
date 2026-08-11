@@ -4,6 +4,7 @@ import type { ArtifactDTO } from "@brightloop/application";
 import {
   buildCommercialProposalView,
   buildClientNarrativeView,
+  buildCompetitorIntelligenceView,
   buildProspectPackageView,
   emptyCommercialProposalView,
   emptyClientNarrativeView,
@@ -32,6 +33,14 @@ describe("commercial proposal view", () => {
     expect(v.status).toBe("needs_review");
     expect(v.needsPricing).toBe(true);
     expect(v.workItemCount).toBe(2);
+  });
+  it("surfaces the generation axis as 'Draft ready' (§09 must NOT say 'Not drafted' when a draft exists)", () => {
+    const v = buildCommercialProposalView(proposalDto("draft_ready"));
+    expect(v.present).toBe(true);
+    expect(v.draftReady).toBe(true);
+    expect(v.generationLabel).toBe("Draft ready");
+    expect(v.commercialStateLabel).toBe("Pricing required");
+    expect(v.statusLabel).toBe("Review required"); // the review axis is distinct from generation
   });
   it("maps an insufficient proposal honestly; empty when absent", () => {
     expect(buildCommercialProposalView(proposalDto("insufficient_evidence")).status).toBe("insufficient_evidence");
@@ -79,5 +88,40 @@ describe("prospect package view", () => {
     });
     expect(pkg.state).toBe("blocked");
     expect(pkg.canReview).toBe(false);
+  });
+
+  const fullInput = (reviewDecision: "pending" | "approved") => ({
+    scanCompleted: true,
+    reportPresent: true,
+    competitor: competitorReady,
+    proposal: buildCommercialProposalView(proposalDto("draft_ready")), // needs_pricing
+    narrative: buildClientNarrativeView(narrativeDto("ready")),
+    commercialEnqueued: true,
+    commercialFailed: false,
+    reviewDecision,
+  });
+
+  it("a generated package (no review event) is ready_for_review, NEVER approved", () => {
+    const pkg = buildProspectPackageView(fullInput("pending"));
+    expect(pkg.state).toBe("ready_for_review");
+    expect(pkg.state).not.toBe("approved");
+  });
+
+  it("only an explicit review.approved decision yields approved — and stays honest about missing pricing", () => {
+    const pkg = buildProspectPackageView(fullInput("approved"));
+    expect(pkg.state).toBe("approved");
+    expect(pkg.pricingRequired).toBe(true);
+    // The UI must never imply a client-ready proposal while pricing is missing.
+    expect(pkg.stateLabel).toBe("Approved · pricing required");
+    expect(pkg.reason).toMatch(/pricing is still required/i);
+  });
+});
+
+describe("competitor commercial status (§11) — completed scan", () => {
+  it("a completed scan with an unavailable snapshot reads Insufficient evidence, NOT the legacy Unavailable", () => {
+    const v = buildCompetitorIntelligenceView({ status: "unavailable", reason: "no_competitor_evidence", competitors: [], evidenceIds: [], summary: "Unavailable — no verified competitor evidence." }, { scanCompleted: true });
+    expect(v.status).toBe("insufficient_evidence");
+    expect(v.statusLabel).toBe("Insufficient evidence");
+    expect(v.statusLabel).not.toBe("Unavailable");
   });
 });

@@ -36,7 +36,7 @@ export function ProspectPackagePanel({ pkg, runId }: { pkg: ProspectPackageView;
       </ul>
 
       <div style={{ marginTop: "var(--space-3)" }}>
-        <Alert tone={pkg.state === "blocked" || pkg.state === "rejected" ? "warning" : "info"} title="Review status">
+        <Alert tone={pkg.state === "blocked" || pkg.state === "rejected" || (pkg.state === "approved" && pkg.pricingRequired) ? "warning" : "info"} title="Review status">
           {pkg.reason}
         </Alert>
       </div>

@@ -686,7 +686,10 @@ export interface ProspectSummaryView {
   evidenceGaps: string[];
   nextHumanAction: string;
   reportReady: boolean;
-  proposalReady: boolean;
+  /** Commercial-aware proposal status (draft/pricing/approved), NOT the approved-only doc. */
+  proposalStatusLabel: string;
+  /** The overall prospect-package state label (e.g. "Ready for review"). */
+  packageStateLabel: string;
 }
 
 export interface SummaryInput {
@@ -695,7 +698,10 @@ export interface SummaryInput {
   discovery: DiscoveryView;
   evidence: EvidenceView;
   report: StructuredView;
-  proposal: StructuredView;
+  /** The post-scan COMMERCIAL proposal draft (any status) — the admin truth. */
+  commercialProposal: CommercialProposalView;
+  /** The folded prospect-package state. */
+  prospectPackage: ProspectPackageView;
   readiness: ReasoningReadinessView;
   next: NextStageView;
 }
@@ -904,15 +910,21 @@ export interface CommercialProposalView {
   present: boolean;
   status: CommercialStatus;
   statusLabel: string;
+  /** True when a usable draft was generated (its own artifact status, not the review axis). */
+  draftReady: boolean;
+  /** "Draft ready" | "Insufficient evidence" | "Not drafted" — the GENERATION axis. */
+  generationLabel: string;
   /** needs_pricing | priced — pricing is NEVER invented; needs_pricing is the honest default. */
   commercialState: string | null;
+  /** "Pricing required" | "Priced" | null — human-facing pricing axis. */
+  commercialStateLabel: string | null;
   needsPricing: boolean;
   workItemCount: number;
   summary: string;
 }
 
 export function emptyCommercialProposalView(): CommercialProposalView {
-  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), commercialState: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet." };
+  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet." };
 }
 
 /** Build the proposal-draft surface from a persisted proposal_version DTO. */
@@ -922,12 +934,16 @@ export function buildCommercialProposalView(dto: ArtifactDTO | null): Commercial
   const draftReady = c["status"] === "draft_ready";
   const status: CommercialStatus = draftReady ? "needs_review" : "insufficient_evidence";
   const commercialState = typeof c["commercialState"] === "string" ? (c["commercialState"] as string) : null;
+  const needsPricing = commercialState === "needs_pricing";
   return {
     present: true,
     status,
     statusLabel: commercialStatusLabel(status),
+    draftReady,
+    generationLabel: draftReady ? "Draft ready" : "Insufficient evidence",
     commercialState,
-    needsPricing: commercialState === "needs_pricing",
+    commercialStateLabel: commercialState === null ? null : needsPricing ? "Pricing required" : "Priced",
+    needsPricing,
     workItemCount: Array.isArray(c["recommendedWork"]) ? (c["recommendedWork"] as unknown[]).length : 0,
     summary: typeof c["executiveSummary"] === "string" ? (c["executiveSummary"] as string) : "",
   };
@@ -971,6 +987,8 @@ export interface ProspectPackageView {
   reviewDecision: PackageReviewDecision;
   /** True once every required component is present — the review actions unlock. */
   canReview: boolean;
+  /** True when the proposal still needs pricing — an approval is NOT client-ready. */
+  pricingRequired: boolean;
 }
 
 const PACKAGE_STATE_LABEL: Record<ProspectPackageState, string> = {
@@ -1024,14 +1042,25 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
     { key: "narrative", label: "Narrative", status: input.narrative.status, statusLabel: input.narrative.status === "needs_review" ? "Generated" : input.narrative.statusLabel, note: input.narrative.status === "needs_review" ? "Review required" : null },
   ];
 
+  // Approval honesty: a human may approve the INTELLIGENCE while pricing is still
+  // missing, but the UI must never imply a client-ready proposal. Qualify the
+  // approved state and reason with the outstanding pricing requirement.
+  const pricingRequired = input.proposal.needsPricing;
+  const approvedButUnpriced = pkg.state === "approved" && pricingRequired;
+  const stateLabel = approvedButUnpriced ? "Approved · pricing required" : PACKAGE_STATE_LABEL[pkg.state];
+  const reason = approvedButUnpriced
+    ? "The intelligence is approved, but commercial pricing is still required before this proposal can be sent."
+    : pkg.reason;
+
   return {
     state: pkg.state,
-    stateLabel: PACKAGE_STATE_LABEL[pkg.state],
+    stateLabel,
     badge: PACKAGE_STATE_BADGE[pkg.state],
-    reason: pkg.reason,
+    reason,
     components,
     reviewDecision: input.reviewDecision,
     canReview: pkg.componentsReady,
+    pricingRequired,
   };
 }
 
@@ -1046,7 +1075,7 @@ function firstLine(view: StructuredView, key: string): string | null {
  * value that is not evidenced stays null.
  */
 export function buildProspectSummary(input: SummaryInput): ProspectSummaryView {
-  const { scan, identity, discovery, evidence, report, proposal, readiness, next } = input;
+  const { scan, identity, discovery, evidence, report, commercialProposal, prospectPackage, readiness, next } = input;
 
   const gaps: string[] = [];
   if (evidence.missingSources.length > 0) gaps.push(`No observed evidence for: ${evidence.missingSources.join(", ")}`);
@@ -1056,9 +1085,16 @@ export function buildProspectSummary(input: SummaryInput): ProspectSummaryView {
   if (!discovery.present) gaps.push("Discovery has not run yet");
   if (!evidence.present) gaps.push("Evidence has not been normalized yet");
 
+  // §10 proposal status is COMMERCIAL-aware (the admin truth), never the approved-only
+  // document. A real draft is "Draft ready · Pricing required", not "Proposal pending".
+  const proposalStatusLabel = commercialProposal.present
+    ? `${commercialProposal.generationLabel}${commercialProposal.commercialStateLabel ? ` · ${commercialProposal.commercialStateLabel}` : ""}`
+    : "Not drafted";
+
   const nextAction = (): string => {
     if (scan.lifecycle === "cancelled") return "This scan was cancelled. Start a new scan to continue.";
     if (scan.lifecycle === "failed") return `Review the failure at ${stageLabel(scan.failedStage)}, then retry if eligible.`;
+    if (prospectPackage.state === "ready_for_review") return "Review the prospect package, then approve or request a revision.";
     if (report.present) return "Review the report, then prepare outreach with the findings below.";
     if (readiness.state === "ready") return "Run the controlled reasoning turn to produce findings.";
     if (next.support === "supported") return `Execute the next stage: ${next.label}.`;
@@ -1076,7 +1112,8 @@ export function buildProspectSummary(input: SummaryInput): ProspectSummaryView {
     evidenceGaps: gaps.slice(0, 6),
     nextHumanAction: nextAction(),
     reportReady: report.present,
-    proposalReady: proposal.present,
+    proposalStatusLabel,
+    packageStateLabel: prospectPackage.stateLabel,
   };
 }
 

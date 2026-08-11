@@ -123,7 +123,26 @@ review decision into one honest state: `not_started | running | blocked |
 ready_for_review | approved | revision_requested | rejected`. Competitor
 `insufficient_evidence` does **not** block; a proposal draft and a narrative must
 exist; **missing pricing does not block review readiness**. A generated package is
-`ready_for_review`, never silently `approved`.
+`ready_for_review`, never silently `approved` — only an explicit `runtime.review.approved`
+event yields `approved`.
+
+**Approval-vs-pricing honesty.** A human may approve the *intelligence* while pricing
+is still missing, but the UI must never imply a client-ready proposal. When the package
+is `approved` and the proposal is `needs_pricing`, the package renders
+**"Approved · pricing required"** with a reason spelling out that pricing is still
+required before sending. No new state — a derived qualifier on the approved state.
+
+**Admin vs client proposal surfaces.** The internal admin **§09 Proposal** panel reads
+the COMMERCIAL draft (`getScanCommercialProposal`, any status) so an admin sees a
+`needs_review`/`needs_pricing` draft; it shows the generation axis (**Draft ready**),
+the review axis (**Review required**) and the commercial axis (**Pricing required**)
+separately. The **§10 Prospect Summary** derives its proposal/package line from the
+commercial proposal + package state (never generic "pending"). The client-facing
+`getScanProposal` reader stays **approved-only** and unchanged — a needs_review draft is
+internal. §11 Competitor and §13 "Narrative intelligence · core" show the deterministic
+CORE C8/C10 snapshots (via `CommercialStatus`, so a completed scan reads
+**Insufficient evidence**, never the legacy "Unavailable"); the client-facing commercial
+narrative lives in the Prospect package.
 
 ## One-click orchestration, failure & resume
 
