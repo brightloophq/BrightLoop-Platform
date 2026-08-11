@@ -768,8 +768,14 @@ export function emptyCompetitorIntelligenceView(): CompetitorIntelligenceView {
 
 /** Context for deriving the coherent competitor status from the persisted snapshot. */
 export interface CompetitorViewContext {
-  /** True once the core scan has completed — i.e. the commercial workflow has run. */
+  /** True once the core scan has completed. */
   scanCompleted: boolean;
+  /** True once the commercial competitor-discovery stage has actually run (a
+   * `runtime.commercial.competitor_discovered` event exists) — distinguishes a
+   * genuine "insufficient evidence" outcome from "not run yet". */
+  competitorStageRan?: boolean;
+  /** True when the commercial workflow failed before/at competitor discovery. */
+  commercialFailed?: boolean;
 }
 
 /* ---- Proposal Intelligence (Phase C · Sprint C9) --------------------------- */
@@ -878,17 +884,35 @@ export function buildCompetitorIntelligenceView(content: unknown, context?: Comp
   const c = content as Record<string, unknown>;
   const available = c["status"] === "available";
   const reviewRequired = c["reviewRequired"] === true;
-  // Distinguish the five realities the old "Unavailable" collapsed: an available
-  // snapshot needs review (or is ready); an unavailable one is insufficient_evidence
-  // ONLY once the commercial workflow has run (scan completed), else not_started.
+  // Distinguish the realities the old "Unavailable" collapsed. An available snapshot
+  // needs review (or is ready). Otherwise the commercial competitor stage either:
+  //   failed        → the workflow errored;
+  //   ran (event) or the scan completed (the stage runs synchronously on a completed
+  //                 render) → insufficient_evidence — a COMPLETED, honest outcome;
+  //   neither       → not_started.
+  const commercialRan = context?.competitorStageRan === true || context?.scanCompleted === true;
   const status: CommercialStatus = available
     ? reviewRequired
       ? "needs_review"
       : "ready"
-    : context?.scanCompleted
-      ? "insufficient_evidence"
-      : "not_started";
+    : context?.commercialFailed
+      ? "failed"
+      : commercialRan
+        ? "insufficient_evidence"
+        : "not_started";
   const statusLabel = commercialStatusLabel(status);
+  // Derive a COHERENT summary from the commercial status. The persisted C8 snapshot's
+  // own summary reads "Unavailable — no verified competitor evidence"; surfacing that
+  // legacy text on the admin panel re-introduces the very "Unavailable" ambiguity the
+  // status model removed, so an unavailable snapshot's text is replaced, never echoed.
+  const snapshotSummary = typeof c["summary"] === "string" ? (c["summary"] as string) : "";
+  const summary = available
+    ? snapshotSummary || (reviewRequired ? "Verified competitors found — review required." : "Competitor intelligence ready.")
+    : status === "failed"
+      ? "Competitor discovery could not complete — see the workflow status."
+      : status === "insufficient_evidence"
+        ? "Completed — no competitors could be verified from the prospect's own references."
+        : "Competitor discovery has not run yet.";
   const confidence = c["confidence"];
   return {
     present: true,
@@ -900,7 +924,7 @@ export function buildCompetitorIntelligenceView(content: unknown, context?: Comp
     confidenceBand: confidence !== null && typeof confidence === "object" && typeof (confidence as Record<string, unknown>)["band"] === "string" ? ((confidence as Record<string, unknown>)["band"] as string) : null,
     marketPosition: typeof c["marketPosition"] === "string" ? (c["marketPosition"] as string) : null,
     reviewRequired,
-    summary: typeof c["summary"] === "string" ? (c["summary"] as string) : "",
+    summary,
   };
 }
 

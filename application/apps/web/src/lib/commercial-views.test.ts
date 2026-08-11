@@ -117,11 +117,45 @@ describe("prospect package view", () => {
   });
 });
 
-describe("competitor commercial status (§11) — completed scan", () => {
-  it("a completed scan with an unavailable snapshot reads Insufficient evidence, NOT the legacy Unavailable", () => {
-    const v = buildCompetitorIntelligenceView({ status: "unavailable", reason: "no_competitor_evidence", competitors: [], evidenceIds: [], summary: "Unavailable — no verified competitor evidence." }, { scanCompleted: true });
+describe("competitor commercial status (§11) — no legacy 'Unavailable' anywhere", () => {
+  const unavailableSnapshot = { status: "unavailable", reason: "no_competitor_evidence", competitors: [], evidenceIds: [], summary: "Unavailable — no verified competitor evidence." };
+
+  it("completed commercial competitor stage + no verified competitors → Insufficient evidence, and the summary never echoes 'Unavailable'", () => {
+    const v = buildCompetitorIntelligenceView(unavailableSnapshot, { scanCompleted: true, competitorStageRan: true });
     expect(v.status).toBe("insufficient_evidence");
     expect(v.statusLabel).toBe("Insufficient evidence");
     expect(v.statusLabel).not.toBe("Unavailable");
+    // The panel renders `summary` too — it must NOT re-introduce the legacy word.
+    expect(v.summary).not.toMatch(/unavailable/i);
+    expect(v.summary).toMatch(/no competitors could be verified/i);
+  });
+
+  it("the stage has NOT run (scan not completed, no discovery event) → Not run", () => {
+    const v = buildCompetitorIntelligenceView(unavailableSnapshot, { scanCompleted: false });
+    expect(v.status).toBe("not_started");
+    expect(v.statusLabel).toBe("Not run");
+    expect(v.summary).not.toMatch(/unavailable/i);
+  });
+
+  it("the commercial workflow failed → Failed (not silently 'insufficient')", () => {
+    const v = buildCompetitorIntelligenceView(unavailableSnapshot, { scanCompleted: true, commercialFailed: true });
+    expect(v.status).toBe("failed");
+    expect(v.statusLabel).toBe("Failed");
+    expect(v.summary).not.toMatch(/unavailable/i);
+  });
+
+  it("the discovery event alone (even before scan flag) proves the stage ran → Insufficient evidence", () => {
+    const v = buildCompetitorIntelligenceView(unavailableSnapshot, { scanCompleted: false, competitorStageRan: true });
+    expect(v.status).toBe("insufficient_evidence");
+  });
+
+  it("verified competitors → Review required, keeping the real snapshot summary", () => {
+    const v = buildCompetitorIntelligenceView(
+      { status: "available", reviewRequired: true, competitors: [{ name: "A" }], evidenceIds: ["ev1"], summary: "Two verified competitors.", confidence: { value: 60, band: "moderate" } },
+      { scanCompleted: true, competitorStageRan: true },
+    );
+    expect(v.status).toBe("needs_review");
+    expect(v.statusLabel).toBe("Review required");
+    expect(v.summary).toBe("Two verified competitors.");
   });
 });

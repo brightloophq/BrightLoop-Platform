@@ -211,26 +211,34 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const reportReviewRequired = reportArtifact === null && assessmentReport !== null;
   const report = buildStructuredView(reportSource, [...REPORT_SECTIONS]);
   const scanCompleted = scan.lifecycle === "completed";
-  const competitor = competitorArtifact ? buildCompetitorIntelligenceView(competitorArtifact.content, { scanCompleted }) : emptyCompetitorIntelligenceView();
+
+  // Commercial workflow signals, read from the append-only event timeline (never
+  // inferred from artifact presence). Computed BEFORE the competitor view so §11 can
+  // honestly distinguish not-run / failed / insufficient-evidence.
+  const events = timeline ?? [];
+  const commercialStageSet = new Set<string>(COMMERCIAL_STAGE_ORDER);
+  const commercialEnqueued = events.some((e) => e.type === "runtime.commercial.enqueued");
+  const commercialFailed =
+    commercialKickoffFailed ||
+    events.some(
+      (e) =>
+        e.type === "runtime.commercial.enqueue_failed" ||
+        (e.type === "runtime.queue.dead_lettered" && e.stage !== null && commercialStageSet.has(e.stage)),
+    );
+  const competitorStageRan = events.some((e) => e.type === "runtime.commercial.competitor_discovered");
+
+  const competitor = competitorArtifact
+    ? buildCompetitorIntelligenceView(competitorArtifact.content, { scanCompleted, competitorStageRan, commercialFailed })
+    : emptyCompetitorIntelligenceView();
   const narrative = narrativeArtifact ? buildNarrativeView(narrativeArtifact.content) : emptyNarrativeView();
   const proposal = buildStructuredView(proposalDocArtifact, [...PROPOSAL_SECTIONS]);
   const proposalIntelligence = proposalArtifact ? buildProposalIntelligenceView(proposalArtifact.content) : emptyProposalIntelligenceView();
 
   // Post-scan commercial package: the DRAFT proposal + client narrative + the
-  // deterministic readiness/review fold. Enqueued/failed are read from the event
-  // timeline (append-only), never inferred from artifact presence alone.
+  // deterministic readiness/review fold.
   const commercialProposal = buildCommercialProposalView(commercialProposalDto ?? null);
   const clientNarrative = buildClientNarrativeView(clientNarrativeDto ?? null);
   const packageReviewDecision: PackageReviewDecision = packageReviewDto?.decision ?? "pending";
-  const commercialStageSet = new Set<string>(COMMERCIAL_STAGE_ORDER);
-  const commercialEnqueued = (timeline ?? []).some((e) => e.type === "runtime.commercial.enqueued");
-  const commercialFailed =
-    commercialKickoffFailed ||
-    (timeline ?? []).some(
-      (e) =>
-        e.type === "runtime.commercial.enqueue_failed" ||
-        (e.type === "runtime.queue.dead_lettered" && e.stage !== null && commercialStageSet.has(e.stage)),
-    );
   const prospectPackage = buildProspectPackageView({
     scanCompleted,
     reportPresent: reportArtifact !== null,
