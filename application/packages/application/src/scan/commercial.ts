@@ -12,9 +12,10 @@
  * Nothing here sends, publishes, or contacts the prospect.
  * ========================================================================== */
 
-import { COMMERCIAL_STAGE_ORDER, RUNTIME_EVENTS, type RuntimeEventName } from "@brightloop/domain";
+import { COMMERCIAL_STAGE_ORDER, RUNTIME_EVENTS, computePricingCompleteness, computeProposalPricingTotals, type RuntimeEventName } from "@brightloop/domain";
+import { commercialProposalSchema, proposalPricingSchema, setProposalPricingInputSchema, type SetProposalPricingInput } from "@brightloop/schema";
 import type { AppContext } from "../context.js";
-import { PACKAGE_REVIEW_CAP, SCAN_READ_CAP } from "../context.js";
+import { PACKAGE_REVIEW_CAP, SCAN_READ_CAP, SCAN_WRITE_CAP } from "../context.js";
 import type { ArtifactDTO, NarrativeDTO } from "../dto.js";
 import { toProposalDTO, toNarrativeDTO } from "../dto.js";
 import { NotFoundError, ValidationError } from "../errors.js";
@@ -81,6 +82,97 @@ export async function getScanClientNarrative(ctx: AppContext, rawRunId: unknown)
   const run = await loadAuthorizedRun(ctx, rawRunId, SCAN_READ_CAP);
   const latest = unwrap(await ctx.services.narratives.latest(run.id, CLIENT_AUDIENCE), { not_found: () => new NotFoundError("client narrative") });
   return toNarrativeDTO(latest);
+}
+
+/* ---- Admin pricing ----------------------------------------------------------
+ * Admin-entered pricing is authoritative — AI never sets a final price. The client
+ * supplies price lines only; the server computes the totals (integer minor units),
+ * derives completeness, and SUPERSEDES the proposal version so history is preserved
+ * and the change is attributed. Pricing NEVER approves the proposal — status is
+ * carried through unchanged; approval remains a separate, explicit human action.
+ * -------------------------------------------------------------------------- */
+
+export type { SetProposalPricingInput };
+
+/**
+ * Persist admin pricing for the latest commercial proposal draft. Requires the
+ * internal scan-write capability (owner/admin/team_member); client roles are denied
+ * by the capability + RLS. Validates every priced line against a real recommended
+ * work item (no phantom pricing), computes totals server-side, sets `commercialState`
+ * from completeness, supersedes the version, and appends a safe audit event.
+ */
+export async function setProposalPricing(ctx: AppContext, rawRunId: unknown, rawInput: unknown): Promise<ArtifactDTO> {
+  const run = await loadAuthorizedRun(ctx, rawRunId, SCAN_WRITE_CAP);
+
+  const parsed = setProposalPricingInputSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    throw new ValidationError("Invalid pricing input", { pricing: parsed.error.issues[0]?.message ?? "invalid" });
+  }
+  const input = parsed.data;
+
+  const prior = unwrap(await ctx.services.proposals.latest(run.id), { not_found: () => new NotFoundError("commercial proposal") });
+  const proposal = commercialProposalSchema.parse(prior.envelope);
+
+  // Pricing only applies to a real draft — an insufficient-evidence stub has no
+  // authoritative work to price.
+  if (proposal.status !== "draft_ready") {
+    throw new ValidationError("This proposal has no draft to price", { status: proposal.status });
+  }
+  // Never price phantom work: every line must reference a real recommended item.
+  const workIds = new Set(proposal.recommendedWork.map((w) => w.sourceId));
+  const unknownIds = input.items.filter((i) => !workIds.has(i.sourceId)).map((i) => i.sourceId);
+  if (unknownIds.length > 0) {
+    throw new ValidationError("Pricing references unknown work items", { sourceIds: unknownIds.join(",") });
+  }
+  // One price line per work item — a duplicate sourceId is ambiguous.
+  const seen = new Set<string>();
+  for (const line of input.items) {
+    if (seen.has(line.sourceId)) throw new ValidationError("Duplicate pricing for a work item", { sourceId: line.sourceId });
+    seen.add(line.sourceId);
+  }
+
+  const totals = computeProposalPricingTotals(input.items, input.discountMinor);
+  const pricing = proposalPricingSchema.parse({
+    currency: input.currency,
+    items: input.items,
+    discountMinor: totals.discountMinor,
+    subtotalOneTimeMinor: totals.subtotalOneTimeMinor,
+    totalOneTimeMinor: totals.totalOneTimeMinor,
+    totalRecurringMonthlyMinor: totals.totalRecurringMonthlyMinor,
+    validUntil: input.validUntil,
+    commercialNotes: input.commercialNotes,
+    pricedBy: ctx.actor.userId,
+    pricedAt: ctx.clock(),
+  });
+  const completeness = computePricingCompleteness(proposal.recommendedWork, pricing);
+
+  // Supersede the version with pricing filled in; STATUS IS CARRIED THROUGH — pricing
+  // never approves. Only `commercialState` moves (needs_pricing → priced when complete).
+  const nextEnvelope: Record<string, unknown> = { ...(prior.envelope as Record<string, unknown>), pricing, commercialState: completeness.state };
+  const saved = unwrap(await ctx.services.proposals.supersede(prior, nextEnvelope, prior.status));
+
+  unwrap(
+    await ctx.services.events.emit({
+      eventType: RUNTIME_EVENTS.proposalPricingUpdated,
+      aggregateType: "intelligence_run",
+      aggregateId: run.id,
+      clientId: run.clientId,
+      runId: run.id,
+      scanId: run.scanId,
+      payload: {
+        by: ctx.actor.userId,
+        proposalVersionId: saved.id,
+        version: saved.version,
+        currency: pricing.currency,
+        pricedItemCount: pricing.items.length,
+        hasRecurring: pricing.totalRecurringMonthlyMinor > 0,
+        hasDiscount: pricing.discountMinor > 0,
+        commercialState: completeness.state,
+      },
+    }),
+  );
+
+  return toProposalDTO(saved);
 }
 
 export interface ProspectPackageReviewDTO {

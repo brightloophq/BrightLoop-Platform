@@ -18,10 +18,79 @@
  * ========================================================================== */
 
 import { z } from "zod";
+import { moneySchema } from "./entities.js";
 import { confidenceBandSchema } from "./evidence.js";
 
 export const COMMERCIAL_PROPOSAL_FORMULA_VERSION = "commercial-proposal-1.0";
 export const CLIENT_NARRATIVE_FORMULA_VERSION = "client-narrative-1.0";
+
+/* ---- Admin pricing (authoritative — NEVER AI-generated) ---------------------
+ * Pricing is entered by an internal admin, never synthesised. All amounts are
+ * INTEGER MINOR UNITS (cents) via the house `moneySchema` — no floating point.
+ * Pricing lives ON the commercial proposal envelope and is versioned through the
+ * existing immutable `proposal_versions` supersede chain, so who/when is audited.
+ * -------------------------------------------------------------------------- */
+
+/** A non-negative integer minor-unit amount (cents). */
+const amountMinorSchema = moneySchema.refine((n) => n >= 0, { message: "amount must be >= 0" });
+
+/** ISO-4217 alphabetic currency code (e.g. USD). */
+export const currencyCodeSchema = z.string().regex(/^[A-Z]{3}$/, "ISO-4217 currency code");
+
+export const proposalPricingTypeSchema = z.enum(["one_time", "recurring"]);
+export type ProposalPricingType = z.infer<typeof proposalPricingTypeSchema>;
+
+/** Recurring cadence. Only MONTHLY today; designed to widen without a rewrite. */
+export const proposalBillingCadenceSchema = z.enum(["monthly"]);
+export type ProposalBillingCadence = z.infer<typeof proposalBillingCadenceSchema>;
+
+/** Per work-item price, keyed to a `recommendedWork` item by its `sourceId`. */
+export const proposalItemPricingSchema = z.object({
+  /** Matches a `recommendedWork[].sourceId` — the work this price is for. */
+  sourceId: z.string().min(1),
+  pricingType: proposalPricingTypeSchema,
+  /** Minor units (cents). */
+  amountMinor: amountMinorSchema,
+  /** Required iff `pricingType === "recurring"`; null for one-time. */
+  cadence: proposalBillingCadenceSchema.nullable().default(null),
+  quantity: z.number().int().positive().max(9999).default(1),
+  /** An optional line does NOT block pricing completeness. */
+  optional: z.boolean().default(false),
+  adminNotes: z.string().max(500).default(""),
+});
+export type ProposalItemPricing = z.infer<typeof proposalItemPricingSchema>;
+
+/** Proposal-level admin pricing. Derived totals are persisted for display but are
+ * always recomputable from `items` + `discountMinor` (see computeProposalPricingTotals). */
+export const proposalPricingSchema = z.object({
+  currency: currencyCodeSchema,
+  items: z.array(proposalItemPricingSchema).max(32),
+  /** A flat one-time discount in minor units, applied to the one-time subtotal. */
+  discountMinor: amountMinorSchema.default(0),
+  /** Derived: one-time subtotal (before discount), one-time total (after), monthly total. */
+  subtotalOneTimeMinor: amountMinorSchema,
+  totalOneTimeMinor: amountMinorSchema,
+  totalRecurringMonthlyMinor: amountMinorSchema,
+  /** ISO date the proposal is valid until (null = unset). */
+  validUntil: z.string().nullable().default(null),
+  commercialNotes: z.string().max(1000).default(""),
+  /** Audit: who set this pricing and when (actor id + ISO timestamp). */
+  pricedBy: z.string().min(1),
+  pricedAt: z.string().min(1),
+});
+export type ProposalPricing = z.infer<typeof proposalPricingSchema>;
+
+/** The pricing INPUT a caller supplies — price lines only. Server derives all totals,
+ * `pricedBy`/`pricedAt`, and completeness; none of those are client-trusted. */
+export const setProposalPricingInputSchema = z.object({
+  currency: currencyCodeSchema,
+  items: z.array(proposalItemPricingSchema).max(32),
+  discountMinor: amountMinorSchema.default(0),
+  validUntil: z.string().max(40).nullable().default(null),
+  commercialNotes: z.string().max(1000).default(""),
+});
+export type SetProposalPricingInput = z.input<typeof setProposalPricingInputSchema>;
+export type SetProposalPricingParsed = z.infer<typeof setProposalPricingInputSchema>;
 
 /* ---- shared ----------------------------------------------------------------- */
 const commercialConfidenceSchema = z.object({
@@ -74,8 +143,10 @@ export const commercialProposalSchema = z.object({
   /** Why insufficient (when status is insufficient_evidence); else null. */
   reason: z.string().max(120).nullable().default(null),
   commercialState: commercialPricingStateSchema,
-  /** Structured pricing is NEVER synthesised by AI; null until authoritative. */
-  pricing: z.null().default(null),
+  /** Authoritative admin pricing — NEVER synthesised by AI. Null until an admin
+   * supplies it (the generator always emits null); filled by the pricing mutation
+   * which supersedes the version. See proposalPricingSchema. */
+  pricing: proposalPricingSchema.nullable().default(null),
   executiveSummary: z.string().max(1000),
   observedSituation: z.string().max(1000),
   keyIssues: z.array(evidencedPointSchema).max(6),

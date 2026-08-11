@@ -640,3 +640,97 @@
   border-radius: var(--radius-lg);
   background: var(--surface-1);
 }
+
+/* ---- §09 commercial proposal pricing workspace ---------------------------- */
+.pricingScope {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.pricingRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding: var(--space-3) 0;
+  border-top: 1px solid var(--bl-border, rgba(255, 255, 255, 0.08));
+}
+.pricingWork {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+.pricingWorkHead {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.pricingControls {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+.pricingField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+.pricingInput {
+  min-width: 6rem;
+  padding: var(--space-2);
+  border-radius: var(--radius-sm, 6px);
+  border: 1px solid var(--bl-border, rgba(255, 255, 255, 0.16));
+  background: var(--bl-surface-2, rgba(255, 255, 255, 0.04));
+  color: inherit;
+  font: inherit;
+}
+.pricingCheck {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+.pricingSummary {
+  display: flex;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+  align-items: flex-end;
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--bl-border, rgba(255, 255, 255, 0.12));
+}
+.previewLink {
+  align-self: center;
+  color: var(--bl-accent, inherit);
+  text-decoration: none;
+  font-weight: 600;
+}
+.previewLink:hover {
+  text-decoration: underline;
+}
+
+/* ---- proposal preview (client-facing composition) ------------------------- */
+.previewBack { margin-bottom: var(--space-3); }
+.previewHead { margin-bottom: var(--space-5); }
+.previewTitle { font-size: 1.5rem; font-weight: 700; margin: 0 0 var(--space-1); }
+.previewSection { margin-bottom: var(--space-5); }
+.previewH2 { font-size: 1rem; font-weight: 700; margin: 0 0 var(--space-2); opacity: 0.85; }
+.previewBody { line-height: 1.6; margin: 0; }
+.previewList { margin: 0; padding-left: var(--space-4); line-height: 1.6; display: flex; flex-direction: column; gap: var(--space-2); }
+.previewScope { display: flex; flex-direction: column; gap: var(--space-2); }
+.previewWorkRow {
+  display: flex; justify-content: space-between; align-items: baseline; gap: var(--space-3);
+  padding: var(--space-2) 0; border-top: 1px solid var(--bl-border, rgba(255, 255, 255, 0.08));
+}
+.previewWorkRow > div { display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; }
+.previewPrice { font-variant-numeric: tabular-nums; font-weight: 600; white-space: nowrap; }
+
+.pricingHeading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}

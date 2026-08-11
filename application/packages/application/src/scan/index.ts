@@ -21,6 +21,8 @@ export {
   getProspectPackageReview,
   decideProspectPackage,
   advanceCommercialWorkflow,
+  setProposalPricing,
+  type SetProposalPricingInput,
   type ProspectPackageReviewDTO,
   type PackageReviewAction,
   type DecideProspectPackageInput,

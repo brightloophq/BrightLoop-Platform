@@ -20,7 +20,7 @@ import { EvidenceValidationPanel } from "../components/EvidenceValidationPanel";
 import { ReasoningReadiness } from "../components/ReasoningReadiness";
 import { RuntimeTimeline } from "../components/RuntimeTimeline";
 import { InternalReportView } from "../components/StructuredArtifactView";
-import { CommercialProposalPanel } from "../components/CommercialProposalPanel";
+import { CommercialProposalWorkspace } from "../components/CommercialProposalWorkspace";
 import { CompetitorIntelligencePanel } from "../components/CompetitorIntelligencePanel";
 import { ProposalIntelligencePanel } from "../components/ProposalIntelligencePanel";
 import { NarrativePanel } from "../components/NarrativePanel";
@@ -194,7 +194,7 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
       <CompetitorIntelligencePanel competitor={competitor} />
       <ProposalIntelligencePanel proposal={proposalIntelligence} />
       <NarrativePanel narrative={narrative} />
-      <CommercialProposalPanel proposal={commercialProposal} />
+      <CommercialProposalWorkspace runId={scan.id} proposal={commercialProposal} />
       <CommercialRunner runId={scan.id} coreCompleted={scan.lifecycle === "completed"} packageState={prospectPackage.state} />
       <ProspectPackagePanel pkg={prospectPackage} runId={scan.id} />
       <ProspectSummary summary={summary} />

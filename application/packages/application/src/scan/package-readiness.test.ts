@@ -11,6 +11,7 @@ const base = (over: Partial<ProspectPackageInput> = {}): ProspectPackageInput =>
   commercialFailed: false,
   commercialEnqueued: true,
   reviewDecision: "pending",
+  pricingComplete: false,
   ...over,
 });
 
@@ -50,5 +51,23 @@ describe("computeProspectPackage", () => {
 
   it("before the core scan completes → not_started", () => {
     expect(computeProspectPackage(base({ scanCompleted: false })).state).toBe("not_started");
+  });
+
+  it("approved but pricing incomplete → NOT client-ready (approval alone is not client-ready)", () => {
+    const p = computeProspectPackage(base({ reviewDecision: "approved", pricingComplete: false }));
+    expect(p.state).toBe("approved");
+    expect(p.clientReady).toBe(false);
+    expect(p.reason).toMatch(/pricing is still required/i);
+  });
+
+  it("approved AND pricing complete → client-ready", () => {
+    const p = computeProspectPackage(base({ reviewDecision: "approved", pricingComplete: true }));
+    expect(p.state).toBe("approved");
+    expect(p.clientReady).toBe(true);
+    expect(p.reason).toMatch(/client-ready/i);
+  });
+
+  it("pricing complete WITHOUT approval is still not client-ready (human approval required)", () => {
+    expect(computeProspectPackage(base({ reviewDecision: "pending", pricingComplete: true })).clientReady).toBe(false);
   });
 });

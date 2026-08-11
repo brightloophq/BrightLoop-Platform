@@ -24,6 +24,7 @@ import { loadAnthropicConfig } from "@brightloop/providers";
 import { buildAppContext } from "./runtime-api";
 import {
   buildCompetitorIntelligenceView,
+  buildProposalPreview,
   buildProposalIntelligenceView,
   buildNarrativeView,
   buildCommercialProposalView,
@@ -52,6 +53,7 @@ import {
   type EvidenceView,
   type EvidenceValidationView,
   type NextStageView,
+  type ProposalPreviewView,
   type ProspectIdentity,
   type ProspectSummaryView,
   type ReasoningReadinessView,
@@ -282,6 +284,22 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     reportReviewRequired,
     canAssess: manifestArtifact !== null,
   };
+}
+
+/**
+ * The deterministic client-facing proposal preview for one scan. Composes the
+ * persisted commercial proposal + admin pricing + prospect identity — no AI, no new
+ * facts. Returns null when unauthenticated; an unbuilt/insufficient proposal yields
+ * an empty (not-present) preview rather than an error.
+ */
+export async function loadProposalPreview(runId: string): Promise<{ runId: string; preview: ProposalPreviewView } | null> {
+  const ctx = await buildAppContext();
+  if (ctx === null) return null;
+  const scan = await getScan(ctx, runId);
+  const identity = readIdentity(scan.metadata);
+  const dto = await optional<ArtifactDTO>(getScanCommercialProposal(ctx, runId));
+  const preview = buildProposalPreview(dto?.content ?? null, { businessName: identity.businessName, websiteUrl: identity.websiteUrl }, scan.scanId);
+  return { runId, preview };
 }
 
 /** Organizations the operator can attach a prospect scan to. */
