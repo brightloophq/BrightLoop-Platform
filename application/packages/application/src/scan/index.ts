@@ -20,9 +20,12 @@ export {
   getScanClientNarrative,
   getProspectPackageReview,
   decideProspectPackage,
+  advanceCommercialWorkflow,
   type ProspectPackageReviewDTO,
   type PackageReviewAction,
   type DecideProspectPackageInput,
+  type CommercialKickoffOutcome,
+  type CommercialAdvance,
 } from "./commercial.js";
 export {
   computeProspectPackage,

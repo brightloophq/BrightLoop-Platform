@@ -1,6 +1,7 @@
 import "server-only";
 
 import {
+  advanceCommercialWorkflow,
   getScan,
   getScanArtifact,
   getScanAssessment,
@@ -159,6 +160,24 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const scan = await getScan(ctx, runId);
   const flags = readRuntimeFlags();
 
+  // DURABLE, SERVER-AUTHORITATIVE ADVANCE. The commercial workflow must not depend
+  // on the completion request's fragile tail (serverless kill) or a client effect
+  // firing after refresh. Whenever a COMPLETED scan is rendered — including the
+  // post-completion refresh — we idempotently ENQUEUE and DRIVE it here,
+  // synchronously, BEFORE reading the artifacts/timeline, so THIS render already
+  // reflects the assembled package. The stages are pure/deterministic (no model
+  // call), so the whole package assembles in a handful of fast turns. Idempotent:
+  // a re-render is a cheap replay; completed jobs are never re-leased. A `failed`
+  // kickoff is surfaced; the page never breaks on a commercial error.
+  let commercialKickoffFailed = false;
+  if (scan.lifecycle === "completed") {
+    try {
+      commercialKickoffFailed = (await advanceCommercialWorkflow(ctx, runId)).kickoff === "failed";
+    } catch {
+      commercialKickoffFailed = true; // never break the page on a commercial error — surface it instead
+    }
+  }
+
   const [timeline, manifestArtifact, ingressArtifact, competitorArtifact, proposalArtifact, narrativeArtifact, reportArtifact, proposalDocArtifact, assessment, evidenceValidationDto, commercialProposalDto, clientNarrativeDto, packageReviewDto] = await Promise.all([
     optional(getScanTimeline(ctx, runId)),
     optional(getScanArtifact(ctx, runId, "discovery_manifest")),
@@ -205,11 +224,13 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const packageReviewDecision: PackageReviewDecision = packageReviewDto?.decision ?? "pending";
   const commercialStageSet = new Set<string>(COMMERCIAL_STAGE_ORDER);
   const commercialEnqueued = (timeline ?? []).some((e) => e.type === "runtime.commercial.enqueued");
-  const commercialFailed = (timeline ?? []).some(
-    (e) =>
-      e.type === "runtime.commercial.enqueue_failed" ||
-      (e.type === "runtime.queue.dead_lettered" && e.stage !== null && commercialStageSet.has(e.stage)),
-  );
+  const commercialFailed =
+    commercialKickoffFailed ||
+    (timeline ?? []).some(
+      (e) =>
+        e.type === "runtime.commercial.enqueue_failed" ||
+        (e.type === "runtime.queue.dead_lettered" && e.stage !== null && commercialStageSet.has(e.stage)),
+    );
   const prospectPackage = buildProspectPackageView({
     scanCompleted,
     reportPresent: reportArtifact !== null,

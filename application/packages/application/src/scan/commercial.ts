@@ -12,7 +12,7 @@
  * Nothing here sends, publishes, or contacts the prospect.
  * ========================================================================== */
 
-import { RUNTIME_EVENTS, type RuntimeEventName } from "@brightloop/domain";
+import { COMMERCIAL_STAGE_ORDER, RUNTIME_EVENTS, type RuntimeEventName } from "@brightloop/domain";
 import type { AppContext } from "../context.js";
 import { PACKAGE_REVIEW_CAP, SCAN_READ_CAP } from "../context.js";
 import type { ArtifactDTO, NarrativeDTO } from "../dto.js";
@@ -24,6 +24,50 @@ import type { PackageReviewDecision } from "./package-readiness.js";
 
 const CLIENT_AUDIENCE = "client";
 const NOTE_MAX = 500;
+
+export type CommercialKickoffOutcome = "created" | "replayed" | "skipped" | "failed";
+
+export interface CommercialAdvance {
+  kickoff: CommercialKickoffOutcome;
+  /** Commercial stage turns executed this call. */
+  turns: number;
+}
+
+/** Turn ceiling for one synchronous advance — one turn per stage, plus a margin. */
+const ADVANCE_MAX_TURNS = COMMERCIAL_STAGE_ORDER.length + 3;
+
+/**
+ * Server-authoritative advance of the post-scan commercial workflow.
+ *
+ * Idempotently ENQUEUES the first commercial job for a COMPLETED run, then DRIVES
+ * the durable queue in bounded turns. This is the durable seam that does NOT depend
+ * on the completion request's fragile tail (serverless kill) or on a client effect
+ * firing after refresh — it runs synchronously wherever a completed scan is read
+ * (the workspace loader on the post-completion refresh). The commercial stages are
+ * pure/deterministic (no model call), so a whole package assembles in a handful of
+ * fast turns during the render itself.
+ *
+ * Fully idempotent + resumable: enqueue is keyed on (jobType, runId, firstStage), a
+ * completed job is never re-leased, and each stage artifact is content-addressed and
+ * superseded — so calling this on every render never duplicates work. Returns the
+ * kickoff outcome so a `failed` enqueue is surfaced, never silently swallowed.
+ */
+export async function advanceCommercialWorkflow(ctx: AppContext, rawRunId: unknown, opts: { maxTurns?: number } = {}): Promise<CommercialAdvance> {
+  const run = await loadAuthorizedRun(ctx, rawRunId, SCAN_READ_CAP);
+  if (run.status !== "completed") return { kickoff: "skipped", turns: 0 }; // only exists after the core scan completes
+
+  const started = await ctx.services.commercial.ensureStarted({ runId: run.id, scanId: run.scanId, clientId: run.clientId });
+  if (!started.ok) return { kickoff: "failed", turns: 0 };
+
+  const owner = `internal:${ctx.actor.userId}`;
+  const max = opts.maxTurns ?? ADVANCE_MAX_TURNS;
+  let turns = 0;
+  for (; turns < max; turns += 1) {
+    const t = await ctx.services.commercial.runCommercialOnce(owner);
+    if (!t.ok || t.value === null) break; // a stage failed (queue owns retry) or the queue is idle
+  }
+  return { kickoff: started.code === "created" ? "created" : "replayed", turns };
+}
 
 /** The latest commercial proposal DRAFT (any status) — for the admin review surface. */
 export async function getScanCommercialProposal(ctx: AppContext, rawRunId: unknown): Promise<ArtifactDTO> {

@@ -127,9 +127,27 @@ exist; **missing pricing does not block review readiness**. A generated package 
 
 ## One-click orchestration, failure & resume
 
-Kickoff is **separated from draining** — the single synchronous trigger that a live
-preview proved unreliable (a completed core scan whose final request never enqueued
-anything) is gone.
+The kickoff is **server-authoritative and cannot be missed**. A live preview proved
+that client-effect / completion-request-tail kickoffs are unreliable (a completed
+core scan produced ZERO commercial jobs across two commits, because those paths
+depend on fragile timing — a serverless kill of the completion request, or a client
+effect firing after `router.refresh()`). The durable seam does not depend on either.
+
+**`advanceCommercialWorkflow(ctx, runId)`** (application use-case) is the single
+authoritative entry point: for a COMPLETED run it idempotently `ensureStarted`
+(enqueue the first job, keyed on `(jobType, runId, firstStage)` — the queue key
+includes the job type, so the run's many core `advance_stage` rows never mask it into
+a false "already started" replay), then DRIVES the durable queue in bounded turns.
+Because the commercial stages are pure/deterministic (no model call), the whole
+package assembles in a handful of fast turns. It runs synchronously in the **scan
+workspace loader** whenever a completed scan is rendered — including the
+post-completion `router.refresh()` — BEFORE the artifacts are read, so that render
+already shows the assembled package. It is also invoked by the continuation endpoint
+and can be driven by the client `CommercialRunner` for long-running future stages.
+
+Kickoff is **separated from draining** at the queue level, and neither is gone — but
+the *authoritative* path is the server-side advance above, not a single synchronous
+trigger inside the completion request.
 
 - **Durable kickoff** — `CommercialCoordinator.ensureStarted` is the
   server-authoritative seam: it enqueues the first commercial job *iff* absent
