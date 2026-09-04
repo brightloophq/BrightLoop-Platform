@@ -49,6 +49,7 @@ function harness(): Harness {
   let counter = 0;
   const ids = (prefix: string) => `${prefix}_${(++counter).toString().padStart(4, "0")}`;
   const repo = new InMemoryRuntimeRepository(now);
+  repo.addLead("lead_acme");
   const services = createRuntimeServices({ repo, ids, clock: now });
   return {
     repo,
@@ -65,8 +66,12 @@ const executor = async (stage: PipelineRunStage): Promise<StageWork> => {
 
 /* ===== validation ============================================================ */
 describe("input validation", () => {
-  it("rejects a create request missing clientId", () => {
+  it("rejects a create request missing a subject", () => {
     expect(() => parseCreateScanRequest({})).toThrow(ValidationError);
+  });
+
+  it("rejects contradictory client and lead ownership", () => {
+    expect(() => parseCreateScanRequest({ clientId: "t_acme", leadId: "lead_acme" })).toThrow(ValidationError);
   });
 
   it("rejects a malformed clientId and a bad deadline", () => {
@@ -87,6 +92,10 @@ describe("input validation", () => {
   it("accepts a well-formed create request", () => {
     const req = parseCreateScanRequest({ clientId: "t_acme", metadata: { k: 1 }, deadline: "2026-07-22T01:00:00.000Z" });
     expect(req).toMatchObject({ clientId: "t_acme", metadata: { k: 1 }, deadline: "2026-07-22T01:00:00.000Z" });
+  });
+
+  it("accepts a well-formed lead-owned request", () => {
+    expect(parseCreateScanRequest({ leadId: "lead_acme" })).toEqual({ leadId: "lead_acme", metadata: undefined, deadline: null });
   });
 });
 
@@ -115,6 +124,38 @@ describe("createScan", () => {
     const h = harness();
     await expect(createScan(h.ctx(TEAM), { clientId: "t_acme" })).resolves.toMatchObject({ lifecycle: "pending" });
     await expect(createScan(h.ctx(CLIENT), { clientId: "t_acme" })).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("creates a lead-owned run without a client and preserves the subject in the DTO", async () => {
+    const h = harness();
+    const dto = await createScan(h.ctx(OWNER), { leadId: "lead_acme" });
+    expect(dto).toMatchObject({ clientId: null, leadId: "lead_acme", lifecycle: "pending" });
+    expect(h.repo.allRuns()[0]).toMatchObject({ clientId: null, leadId: "lead_acme" });
+  });
+
+  it("rejects a nonexistent lead and creates no runtime records", async () => {
+    const h = harness();
+    await expect(createScan(h.ctx(OWNER), { leadId: "lead_missing" })).rejects.toBeInstanceOf(NotFoundError);
+    expect(h.repo.allRuns()).toHaveLength(0);
+    expect(h.repo.allJobs()).toHaveLength(0);
+  });
+
+  it("denies client roles for lead-owned creation and access", async () => {
+    const h = harness();
+    await expect(createScan(h.ctx(CLIENT), { leadId: "lead_acme" })).rejects.toBeInstanceOf(ForbiddenError);
+    const created = await createScan(h.ctx(OWNER), { leadId: "lead_acme" });
+    await expect(getScan(h.ctx(CLIENT), created.id)).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("runs a lead-owned scan through the normal run-id pipeline without duplicating subject fields on artifacts", async () => {
+    const h = harness();
+    const created = await createScan(h.ctx(OWNER), { leadId: "lead_acme" });
+    expect((await h.services.coordinator.runOnce("worker", executor)).ok).toBe(true);
+    expect((await h.services.coordinator.runOnce("worker", executor)).ok).toBe(true);
+    const artifacts = h.repo.allArtifacts();
+    expect(artifacts).toHaveLength(1);
+    expect(artifacts[0]).toMatchObject({ runId: created.id, clientId: null });
+    expect(artifacts[0]).not.toHaveProperty("leadId");
   });
 });
 

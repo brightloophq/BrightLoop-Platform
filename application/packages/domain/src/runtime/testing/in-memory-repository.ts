@@ -91,7 +91,7 @@ class IdempotentStore<T extends { id: string; idempotencyKey: string }> {
 }
 
 export class InMemoryRuntimeRepository implements RuntimeRepository {
-  private readonly runs = new IdempotentStore<RuntimeRun>((r) => JSON.stringify([r.scanId, r.clientId, r.checksum]));
+  private readonly runs = new IdempotentStore<RuntimeRun>((r) => JSON.stringify([r.scanId, r.clientId, r.leadId, r.checksum]));
   /**
    * Fingerprint EXCLUDES status, mirroring the adapter exactly.
    *
@@ -127,6 +127,16 @@ export class InMemoryRuntimeRepository implements RuntimeRepository {
   }
 
   /* ---- runs ------------------------------------------------------------------ */
+  private readonly leadIds = new Set<string>();
+
+  addLead(leadId: string): void {
+    this.leadIds.add(leadId);
+  }
+
+  async leadExists(leadId: string): Promise<RuntimeResult<boolean>> {
+    return ok("found", this.leadIds.has(leadId));
+  }
+
   async createRun(record: RuntimeRun): Promise<RuntimeResult<RuntimeRun>> {
     return this.runs.insert(record);
   }

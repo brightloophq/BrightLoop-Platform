@@ -63,7 +63,7 @@ const toIds = (value: string[] | null): string[] => value ?? [];
 
 /* ---- row → domain ----------------------------------------------------------- */
 export const toRun = (r: RunRow): RuntimeRun => ({
-  id: r.id, clientId: r.client_id, scanId: r.scan_id, status: r.status,
+  id: r.id, clientId: r.client_id, leadId: r.lead_id, scanId: r.scan_id, status: r.status,
   currentStage: r.current_stage, failedStage: r.failed_stage, version: r.version,
   idempotencyKey: r.idempotency_key, metadata: toRecord(r.metadata), checksum: r.checksum,
   deadline: r.deadline, cancelled: r.cancelled, createdBy: r.created_by,
@@ -171,7 +171,7 @@ export const toQueueJob = (r: QueueRow): RuntimeQueueJob => ({
  * match on these fields; anything else with the same key is a CONFLICT.
  * Identity, timestamps and mutable status are deliberately excluded.
  */
-export const runFingerprint = (r: Pick<RuntimeRun, "scanId" | "clientId" | "checksum">) => JSON.stringify([r.scanId, r.clientId, r.checksum]);
+export const runFingerprint = (r: Pick<RuntimeRun, "scanId" | "clientId" | "leadId" | "checksum">) => JSON.stringify([r.scanId, r.clientId, r.leadId, r.checksum]);
 export const stageFingerprint = (r: Pick<RuntimeStage, "runId" | "stage" | "attempt">) => JSON.stringify([r.runId, r.stage, r.attempt]);
 export const checkpointFingerprint = (r: Pick<RuntimeCheckpoint, "runId" | "stage" | "attempt" | "artifactIds">) => JSON.stringify([r.runId, r.stage, r.attempt, [...r.artifactIds].sort()]);
 export const artifactFingerprint = (r: Pick<RuntimeArtifact, "runId" | "kind" | "version" | "checksum">) => JSON.stringify([r.runId, r.kind, r.version, r.checksum]);

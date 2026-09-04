@@ -94,6 +94,7 @@ export interface ListRunsQuery {
 
 /* ---- 1 · runs ---------------------------------------------------------------- */
 export interface IntelligenceRunRepository {
+  leadExists(leadId: string): Promise<RuntimeResult<boolean>>;
   createRun(record: RuntimeRun): Promise<RuntimeResult<RuntimeRun>>;
   getRun(id: string): Promise<RuntimeResult<RuntimeRun>>;
   getRunByIdempotencyKey(key: string): Promise<RuntimeResult<RuntimeRun>>;

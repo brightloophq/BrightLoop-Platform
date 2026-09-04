@@ -19,6 +19,7 @@ import { RUNTIME_EVENTS, runKey, type RuntimeServiceContext } from "./support.js
 
 export interface StartRunInput {
   clientId: string | null;
+  leadId?: string | null;
   scanId: string;
   /** Budget/policy envelope. Not a copy of canonical domain data. */
   metadata?: Record<string, unknown>;
@@ -42,10 +43,15 @@ export class RunService {
    * The `created` event fires only on genuine creation.
    */
   async createRun(input: StartRunInput): Promise<RuntimeResult<RuntimeRun>> {
+    const leadId = input.leadId ?? null;
+    if ((input.clientId === null) === (leadId === null)) {
+      return err("check_violation", "a run must belong to exactly one client or lead");
+    }
     const now = this.ctx.clock();
     const record: RuntimeRun = {
       id: this.ctx.ids("run"),
       clientId: input.clientId,
+      leadId,
       scanId: input.scanId,
       status: "pending",
       currentStage: null,
@@ -70,6 +76,10 @@ export class RunService {
       await this.events.emitRunEvent(RUNTIME_EVENTS.runCreated, result.value, { scanId: input.scanId });
     }
     return result;
+  }
+
+  async leadExists(leadId: string): Promise<RuntimeResult<boolean>> {
+    return this.repo.leadExists(leadId);
   }
 
   async getRun(id: string): Promise<RuntimeResult<RuntimeRun>> {

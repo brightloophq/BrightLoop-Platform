@@ -6009,6 +6009,7 @@ export type Database = {
           failed_stage: string | null
           id: string
           idempotency_key: string
+          lead_id: string | null
           metadata: Json
           scan_id: string
           started_at: string | null
@@ -6030,6 +6031,7 @@ export type Database = {
           failed_stage?: string | null
           id: string
           idempotency_key: string
+          lead_id?: string | null
           metadata?: Json
           scan_id: string
           started_at?: string | null
@@ -6051,6 +6053,7 @@ export type Database = {
           failed_stage?: string | null
           id?: string
           idempotency_key?: string
+          lead_id?: string | null
           metadata?: Json
           scan_id?: string
           started_at?: string | null
@@ -6071,6 +6074,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_runs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
         ]
@@ -12496,4 +12506,3 @@ export const Constants = {
     },
   },
 } as const
-

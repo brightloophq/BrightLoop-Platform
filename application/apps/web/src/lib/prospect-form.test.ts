@@ -11,7 +11,7 @@ import { parseProspectScanForm, MAX_PAGES_MAX, MAX_PAGES_DEFAULT } from "./prosp
 
 function form(overrides: Record<string, string> = {}, omit: string[] = []): FormData {
   const base: Record<string, string> = {
-    clientId: "t_acme",
+    subject: "client:t_acme",
     websiteUrl: "https://example.com",
     businessName: "Example Co",
     maxPages: "5",
@@ -34,6 +34,13 @@ describe("happy path", () => {
     expect(result.ok).toBe(true);
     expect(result.value?.rootUrl).toBe("https://example.com");
     expect(result.value?.clientId).toBe("t_acme");
+  });
+
+  it("accepts an explicit lead subject", () => {
+    const result = parseProspectScanForm(form({ subject: "lead:lead_acme" }));
+    expect(result.ok).toBe(true);
+    expect(result.value).toMatchObject({ leadId: "lead_acme" });
+    expect(result.value).not.toHaveProperty("clientId");
   });
 
   it("adds a missing scheme rather than rejecting", () => {
@@ -141,9 +148,9 @@ describe("field rules", () => {
     expect(parseProspectScanForm(form({ reasoningMode: "wild" })).ok).toBe(false);
   });
 
-  it("requires an organization", () => {
-    const result = parseProspectScanForm(form({}, ["clientId"]));
-    expect(result.fieldErrors?.["clientId"]).toBeDefined();
+  it("requires an explicit client or lead subject", () => {
+    const result = parseProspectScanForm(form({}, ["subject"]));
+    expect(result.fieldErrors?.["subject"]).toBeDefined();
   });
 });
 
