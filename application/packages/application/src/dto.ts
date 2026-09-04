@@ -21,13 +21,18 @@ import { PIPELINE_STAGE_ORDER } from "@brightloop/domain";
 import type { runtimeReadModels } from "@brightloop/domain";
 
 /* ---- requests --------------------------------------------------------------- */
-export interface CreateScanRequest {
-  clientId: string;
+interface CreateScanOptions {
   /** Free-form budget/policy envelope. Not persisted domain data. */
   metadata?: Record<string, unknown>;
   /** ISO-8601. Absolute time after which the run must stop. */
   deadline?: string | null;
 }
+
+/** Exactly one explicit scan subject; existing client-owned callers remain valid. */
+export type CreateScanRequest = CreateScanOptions & (
+  | { clientId: string; leadId?: never }
+  | { clientId?: never; leadId: string }
+);
 
 /* ---- scan status ------------------------------------------------------------ */
 export type ScanLifecycle = "pending" | "running" | "completed" | "failed" | "cancelled" | "blocked";
@@ -35,6 +40,7 @@ export type ScanLifecycle = "pending" | "running" | "completed" | "failed" | "ca
 export interface ScanDTO {
   id: string;
   clientId: string | null;
+  leadId: string | null;
   scanId: string;
   /** Product-facing lifecycle — a coarsening of the 14 runtime statuses. */
   lifecycle: ScanLifecycle;
@@ -201,6 +207,7 @@ export function toScanDTO(run: RuntimeRun): ScanDTO {
   return {
     id: run.id,
     clientId: run.clientId,
+    leadId: run.leadId,
     scanId: run.scanId,
     lifecycle: toLifecycle(run.status),
     status: run.status,

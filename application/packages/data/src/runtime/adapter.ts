@@ -99,11 +99,17 @@ export class SupabaseRuntimeRepository implements RuntimeRepository {
   }
 
   /* ---- runs ---------------------------------------------------------------- */
+  async leadExists(leadId: string): Promise<RuntimeResult<boolean>> {
+    const { data, error } = await this.db.from("leads").select("id").eq("id", leadId).maybeSingle();
+    if (error !== null) return mapDatabaseError(error, "leadExists");
+    return ok("found", data !== null);
+  }
+
   async createRun(r: RuntimeRun): Promise<RuntimeResult<RuntimeRun>> {
     return this.idempotentInsert(
       "createRun",
       () => this.db.from("intelligence_runs").insert({
-        id: r.id, client_id: r.clientId, scan_id: r.scanId, status: r.status,
+        id: r.id, client_id: r.clientId, lead_id: r.leadId, scan_id: r.scanId, status: r.status,
         current_stage: r.currentStage, failed_stage: r.failedStage, version: r.version,
         idempotency_key: r.idempotencyKey, metadata: asJson(r.metadata), checksum: r.checksum,
         deadline: r.deadline, cancelled: r.cancelled, created_by: r.createdBy,

@@ -9,7 +9,7 @@ import styles from "../scanner.module.css";
 const EMPTY: ScannerActionResult = { ok: false };
 
 export interface ProspectScanFormProps {
-  organizations: { id: string; name: string }[];
+  subjects: { id: string; name: string; kind: "client" | "lead" }[];
   crawlerEnabled: boolean;
   providerEnabled: boolean;
   estimatedMaxCostUsd: number | null;
@@ -25,7 +25,7 @@ export interface ProspectScanFormProps {
  * submit button is disabled while a submission is in flight, so one click
  * creates at most one scan.
  */
-export function ProspectScanForm({ organizations, crawlerEnabled, providerEnabled, estimatedMaxCostUsd, action }: ProspectScanFormProps) {
+export function ProspectScanForm({ subjects, crawlerEnabled, providerEnabled, estimatedMaxCostUsd, action }: ProspectScanFormProps) {
   const [state, formAction, pending] = useActionState(action, EMPTY);
   const errors = state.fieldErrors ?? {};
 
@@ -47,18 +47,18 @@ export function ProspectScanForm({ organizations, crawlerEnabled, providerEnable
       <FormSection title="Prospect" description="Who you're scanning. Only the website URL is required.">
         <div className={styles.formGrid}>
           <div className={styles.selectField}>
-            <label className={styles.selectLabel} htmlFor="clientId">
-              Organization
+            <label className={styles.selectLabel} htmlFor="subject">
+              Scan subject
             </label>
-            <select id="clientId" name="clientId" className={styles.select} defaultValue={organizations[0]?.id ?? ""} required>
-              {organizations.length === 0 ? <option value="">No organizations available</option> : null}
-              {organizations.map((o) => (
-                <option key={o.id} value={o.id}>
-                  {o.name}
+            <select id="subject" name="subject" className={styles.select} defaultValue={subjects[0] ? `${subjects[0].kind}:${subjects[0].id}` : ""} required>
+              {subjects.length === 0 ? <option value="">No leads or clients available</option> : null}
+              {subjects.map((subject) => (
+                <option key={`${subject.kind}:${subject.id}`} value={`${subject.kind}:${subject.id}`}>
+                  {subject.kind === "lead" ? "Lead" : "Client"} · {subject.name}
                 </option>
               ))}
             </select>
-            {errors["clientId"] ? <span className={styles.fieldError}>{errors["clientId"]}</span> : null}
+            {errors["subject"] ? <span className={styles.fieldError}>{errors["subject"]}</span> : null}
           </div>
 
           <Input
@@ -145,7 +145,7 @@ export function ProspectScanForm({ organizations, crawlerEnabled, providerEnable
       </FormSection>
 
       <div className={styles.formActions}>
-        <Button type="submit" variant="primary" disabled={pending || organizations.length === 0} loading={pending}>
+        <Button type="submit" variant="primary" disabled={pending || subjects.length === 0} loading={pending}>
           {pending ? "Creating scan…" : "Create prospect scan"}
         </Button>
         <span className={styles.checkHint}>Creating a scan queues the first stage. Nothing executes until you run it.</span>

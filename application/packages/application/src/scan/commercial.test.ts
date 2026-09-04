@@ -32,7 +32,7 @@ function harness() {
 
 /** Seed a COMPLETED core scan with the artifacts + core queue jobs a real run has. */
 async function seedCompletedCoreScan(services: RuntimeServices): Promise<string> {
-  const run = await services.runs.createRun({ clientId: null, scanId: "scan-live" });
+  const run = await services.runs.createRun({ clientId: null, leadId: "lead_live", scanId: "scan-live" });
   if (!run.ok) throw new Error("run");
   const runId = run.value.id;
   const b = { runId, clientId: null, scanId: "scan-live", version: 1 as const };
@@ -55,7 +55,7 @@ async function seedCompletedCoreScan(services: RuntimeServices): Promise<string>
 }
 
 async function seedPackage(services: RuntimeServices): Promise<string> {
-  const run = await services.runs.createRun({ clientId: null, scanId: "scan-x" });
+  const run = await services.runs.createRun({ clientId: null, leadId: "lead_x", scanId: "scan-x" });
   if (!run.ok) throw new Error("run");
   const runId = run.value.id;
   const b = { runId, clientId: null, scanId: "scan-x", version: 1 as const, sourceArtifactIds: ["a1"] };
@@ -170,7 +170,7 @@ describe("advanceCommercialWorkflow — server-authoritative kickoff", () => {
 
   it("skips (no enqueue) when the core run is not completed", async () => {
     const { services, ctx, repo } = harness();
-    const run = await services.runs.createRun({ clientId: null, scanId: "scan-pending" });
+    const run = await services.runs.createRun({ clientId: null, leadId: "lead_pending", scanId: "scan-pending" });
     const runId = run.ok ? run.value.id : "";
     const advance = await advanceCommercialWorkflow(ctx(OWNER), runId);
     expect(advance.kickoff).toBe("skipped");

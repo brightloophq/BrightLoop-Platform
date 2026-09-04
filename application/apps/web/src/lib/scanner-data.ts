@@ -284,10 +284,22 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   };
 }
 
-/** Organizations the operator can attach a prospect scan to. */
-export async function listScanOrganizations(): Promise<{ id: string; name: string }[]> {
+export interface ScanSubjectOption {
+  id: string;
+  name: string;
+  kind: "client" | "lead";
+}
+
+/** Existing clients and pre-client leads available as explicit scan subjects. */
+export async function listScanSubjects(): Promise<ScanSubjectOption[]> {
   const { createClient } = await import("./supabase/server");
   const supabase = await createClient();
-  const { data } = await supabase.from("clients").select("id, company").order("company", { ascending: true }).limit(200);
-  return (data ?? []).map((r) => ({ id: r.id, name: r.company }));
+  const [{ data: clients }, { data: leads }] = await Promise.all([
+    supabase.from("clients").select("id, company").order("company", { ascending: true }).limit(200),
+    supabase.from("leads").select("id, name, company").order("created_at", { ascending: false }).limit(200),
+  ]);
+  return [
+    ...(clients ?? []).map((r) => ({ id: r.id, name: r.company, kind: "client" as const })),
+    ...(leads ?? []).map((r) => ({ id: r.id, name: r.company || r.name, kind: "lead" as const })),
+  ];
 }

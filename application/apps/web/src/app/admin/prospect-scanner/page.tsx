@@ -15,7 +15,7 @@ import {
 } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
-import { listScanOrganizations, loadScannerList, readRuntimeFlags } from "@/lib/scanner-data";
+import { listScanSubjects, loadScannerList, readRuntimeFlags } from "@/lib/scanner-data";
 import { stageLabel, type ProspectIdentity } from "@/lib/prospect-scanner";
 import type { ScanDTO } from "@brightloop/application";
 import { ProspectScanForm } from "./components/ProspectScanForm";
@@ -82,7 +82,7 @@ export default async function ProspectScannerPage({ searchParams }: { searchPara
 }
 
 async function ScannerBody() {
-  const [data, organizations] = await Promise.all([loadScannerList(), listScanOrganizations()]);
+  const [data, subjects] = await Promise.all([loadScannerList(), listScanSubjects()]);
   const flags = data?.flags ?? readRuntimeFlags();
 
   return (
@@ -99,16 +99,16 @@ async function ScannerBody() {
 
       <OperationalPanel>
         <SectionRule index="02" label="New prospect scan" meta="creates a queued run" />
-        {organizations.length === 0 ? (
+        {subjects.length === 0 ? (
           <EmptyWorkspace
             icon="lock"
-            title="No organizations yet"
-            body="A scan is attached to a client organization. Create one before scanning a prospect."
-            action={<Link href="/admin/clients">Go to clients</Link>}
+            title="No scan subjects yet"
+            body="Create a lead or client organization before starting a scan."
+            action={<Link href="/admin/leads">Go to leads</Link>}
           />
         ) : (
           <ProspectScanForm
-            organizations={organizations}
+            subjects={subjects}
             crawlerEnabled={flags.crawlerEnabled}
             providerEnabled={flags.providerEnabled}
             estimatedMaxCostUsd={flags.estimatedMaxCostUsd}
