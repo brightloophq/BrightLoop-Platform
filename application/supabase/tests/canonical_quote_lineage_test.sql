@@ -38,13 +38,18 @@ insert into public.proposal_versions
   (id, run_id, client_id, scan_id, status, version, checksum, idempotency_key, created_by)
 values
   ('pv_qclient', 'run_qclient', 'cli_qline', 'scan_qclient', 'needs_review', 1, 'chk_qclient', 'pv_idem_qclient', 'usr_qowner'),
-  ('pv_qlead', 'run_qlead', null, 'scan_qlead', 'needs_review', 1, 'chk_qlead', 'pv_idem_qlead', 'usr_qowner');
+  ('pv_qlead', 'run_qlead', null, 'scan_qlead', 'needs_review', 1, 'chk_qlead', 'pv_idem_qlead', 'usr_qowner'),
+  ('pv_qboth', 'run_qlead', null, 'scan_qlead', 'needs_review', 2, 'chk_qboth', 'pv_idem_qboth', 'usr_qowner'),
+  ('pv_bad_lead', 'run_qlead', null, 'scan_qlead', 'needs_review', 3, 'chk_bad_lead', 'pv_idem_bad_lead', 'usr_qowner'),
+  ('pv_bad_run', 'run_qlead', null, 'scan_qlead', 'needs_review', 4, 'chk_bad_run', 'pv_idem_bad_run', 'usr_qowner'),
+  ('pv_bad_event', 'run_qlead', null, 'scan_qlead', 'needs_review', 5, 'chk_bad_event', 'pv_idem_bad_event', 'usr_qowner');
 
 insert into public.runtime_events
   (id, event_type, run_id, aggregate_id, aggregate_type, client_id, scan_id, sequence, actor)
 values
   ('evt_qclient', 'runtime.review.approved', 'run_qclient', 'run_qclient', 'intelligence_run', 'cli_qline', 'scan_qclient', 1, 'usr_qowner'),
-  ('evt_qlead', 'runtime.review.approved', 'run_qlead', 'run_qlead', 'intelligence_run', null, 'scan_qlead', 1, 'usr_qowner');
+  ('evt_qlead', 'runtime.review.approved', 'run_qlead', 'run_qlead', 'intelligence_run', null, 'scan_qlead', 1, 'usr_qowner'),
+  ('evt_qboth', 'runtime.review.approved', 'run_qlead', 'run_qlead', 'intelligence_run', null, 'scan_qlead', 2, 'usr_qowner');
 
 -- ---- defaults and mode/ownership constraints --------------------------------
 insert into public.quotes (id, conversation_id, client_id, title, status) values
@@ -82,14 +87,14 @@ select lives_ok(
   $$ insert into public.quotes
        (id, client_id, conversation_id, commercial_mode, source_run_id, source_proposal_version_id, source_review_event_id, status, promotion_key)
      values
-       ('q_proposal_client', 'cli_qline', 'conv_qline', 'proposal_only', 'run_qclient', 'pv_qclient', 'evt_qclient', 'sent', 'promote_qclient') $$,
+       ('q_proposal_client', 'cli_qline', 'conv_qline', 'proposal_only', 'run_qclient', 'pv_qclient', 'evt_qclient', 'draft', 'promote_qclient') $$,
   'proposal_only can retain a client/conversation while remaining internal'
 );
 select lives_ok(
   $$ insert into public.quotes
        (id, client_id, conversation_id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id, status, promotion_key)
      values
-       ('q_proposal_both', 'cli_qline', 'conv_qline', 'proposal_only', 'lead_qline', 'run_qlead', 'pv_qlead', 'evt_qlead', 'sent', 'promote_qboth') $$,
+       ('q_proposal_both', 'cli_qline', 'conv_qline', 'proposal_only', 'lead_qline', 'run_qlead', 'pv_qboth', 'evt_qboth', 'draft', 'promote_qboth') $$,
   'proposal_only accepts retained lead origin plus resolved client'
 );
 select throws_ok(
@@ -104,35 +109,42 @@ select throws_ok(
   $$ insert into public.quotes
        (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id, promotion_key)
      values
-       ('q_duplicate_promotion', 'proposal_only', 'lead_qline', 'run_qlead', 'pv_qlead', 'evt_qlead', 'promote_qlead') $$,
-  '23505', null, 'non-null promotion_key is unique'
+       ('q_duplicate_promotion', 'proposal_only', 'lead_qline', 'run_qlead', 'pv_qlead', 'evt_qlead', 'different_promotion_key') $$,
+  '23505', null, 'one quote per source proposal version is enforced independently of promotion_key'
 );
 select throws_ok(
   $$ insert into public.quotes
-       (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id)
+       (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id, promotion_key)
      values
-       ('q_bad_lead', 'proposal_only', 'lead_missing', 'run_qlead', 'pv_qlead', 'evt_qlead') $$,
+       ('q_duplicate_key', 'proposal_only', 'lead_qline', 'run_qlead', 'pv_bad_lead', 'evt_qlead', 'promote_qclient') $$,
+  '23505', null, 'non-null promotion_key remains independently unique'
+);
+select throws_ok(
+  $$ insert into public.quotes
+       (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id, promotion_key)
+     values
+       ('q_bad_lead', 'proposal_only', 'lead_missing', 'run_qlead', 'pv_bad_lead', 'evt_qlead', 'promote_bad_lead') $$,
   '23503', null, 'invalid lead lineage FK is rejected'
 );
 select throws_ok(
   $$ insert into public.quotes
-       (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id)
+       (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id, promotion_key)
      values
-       ('q_bad_run', 'proposal_only', 'lead_qline', 'run_missing', 'pv_qlead', 'evt_qlead') $$,
+       ('q_bad_run', 'proposal_only', 'lead_qline', 'run_missing', 'pv_bad_run', 'evt_qlead', 'promote_bad_run') $$,
   '23503', null, 'invalid run lineage FK is rejected'
 );
 select throws_ok(
   $$ insert into public.quotes
-       (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id)
+       (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id, promotion_key)
      values
-       ('q_bad_proposal_version', 'proposal_only', 'lead_qline', 'run_qlead', 'pv_missing', 'evt_qlead') $$,
+       ('q_bad_proposal_version', 'proposal_only', 'lead_qline', 'run_qlead', 'pv_missing', 'evt_qlead', 'promote_bad_pv') $$,
   '23503', null, 'invalid proposal-version lineage FK is rejected'
 );
 select throws_ok(
   $$ insert into public.quotes
-       (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id)
+       (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id, promotion_key)
      values
-       ('q_bad_review_event', 'proposal_only', 'lead_qline', 'run_qlead', 'pv_qlead', 'evt_missing') $$,
+       ('q_bad_review_event', 'proposal_only', 'lead_qline', 'run_qlead', 'pv_bad_event', 'evt_missing', 'promote_bad_event') $$,
   '23503', null, 'invalid review-event lineage FK is rejected'
 );
 select throws_ok(

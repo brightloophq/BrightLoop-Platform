@@ -11991,6 +11991,20 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      bl_promote_scanner_package: {
+        Args: {
+          p_promotion_key: string
+          p_proposal_version_id: string
+          p_quote_id: string
+          p_review_event_id: string
+          p_run_id: string
+        }
+        Returns: {
+          item_count: number
+          outcome: string
+          quote_id: string
+        }[]
+      }
       bl_rls_audit: {
         Args: never
         Returns: {
