@@ -8129,9 +8129,14 @@ export type Database = {
           id: string
           label: string
           module_id: string | null
+          optional: boolean
+          pricing_type: string
           quantity: number
           quote_id: string
+          recurrence_cadence: string | null
           sort: number
+          source_evidence_refs: Json
+          source_work_item_id: string | null
           unit_amount: number
         }
         Insert: {
@@ -8140,9 +8145,14 @@ export type Database = {
           id: string
           label: string
           module_id?: string | null
+          optional?: boolean
+          pricing_type?: string
           quantity?: number
           quote_id: string
+          recurrence_cadence?: string | null
           sort?: number
+          source_evidence_refs?: Json
+          source_work_item_id?: string | null
           unit_amount?: number
         }
         Update: {
@@ -8151,9 +8161,14 @@ export type Database = {
           id?: string
           label?: string
           module_id?: string | null
+          optional?: boolean
+          pricing_type?: string
           quantity?: number
           quote_id?: string
+          recurrence_cadence?: string | null
           sort?: number
+          source_evidence_refs?: Json
+          source_work_item_id?: string | null
           unit_amount?: number
         }
         Relationships: [
@@ -8213,17 +8228,23 @@ export type Database = {
       }
       quotes: {
         Row: {
-          client_id: string
+          client_id: string | null
           client_note: string
-          conversation_id: string
+          commercial_mode: string
+          conversation_id: string | null
           created_at: string
           created_by: string | null
           currency: string
           decided_at: string | null
           discount: number
           id: string
+          lead_id: string | null
+          promotion_key: string | null
           proposal_id: string | null
           sent_at: string | null
+          source_proposal_version_id: string | null
+          source_review_event_id: string | null
+          source_run_id: string | null
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number
           title: string
@@ -8232,17 +8253,23 @@ export type Database = {
           valid_until: string | null
         }
         Insert: {
-          client_id: string
+          client_id?: string | null
           client_note?: string
-          conversation_id: string
+          commercial_mode?: string
+          conversation_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           decided_at?: string | null
           discount?: number
           id: string
+          lead_id?: string | null
+          promotion_key?: string | null
           proposal_id?: string | null
           sent_at?: string | null
+          source_proposal_version_id?: string | null
+          source_review_event_id?: string | null
+          source_run_id?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           title?: string
@@ -8251,17 +8278,23 @@ export type Database = {
           valid_until?: string | null
         }
         Update: {
-          client_id?: string
+          client_id?: string | null
           client_note?: string
-          conversation_id?: string
+          commercial_mode?: string
+          conversation_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           decided_at?: string | null
           discount?: number
           id?: string
+          lead_id?: string | null
+          promotion_key?: string | null
           proposal_id?: string | null
           sent_at?: string | null
+          source_proposal_version_id?: string | null
+          source_review_event_id?: string | null
+          source_run_id?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           title?: string
@@ -8289,6 +8322,34 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_source_proposal_version_id_fkey"
+            columns: ["source_proposal_version_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_source_review_event_id_fkey"
+            columns: ["source_review_event_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_source_run_id_fkey"
+            columns: ["source_run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
             referencedColumns: ["id"]
           },
         ]

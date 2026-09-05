@@ -85,6 +85,7 @@ export default async function PortalChatPage() {
       .from("quotes")
       .select("id, title, status, total, client_note, quote_items(id, label, quantity, amount, sort)")
       .eq("conversation_id", conversation.id)
+      .eq("commercial_mode", "legacy_client_quote")
       .order("created_at", { ascending: false });
     quotes = (rawQuotes ?? []).map((q) => ({
       id: q.id, title: q.title, status: q.status, total: q.total, client_note: q.client_note,
