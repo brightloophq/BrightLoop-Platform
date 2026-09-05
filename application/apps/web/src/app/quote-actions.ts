@@ -71,6 +71,7 @@ export async function createQuote(formData: FormData): Promise<QuoteResult> {
       id: quoteId,
       conversation_id: conversationId,
       client_id: clientId,
+      commercial_mode: "legacy_client_quote",
       title,
       status: "draft",
       created_by: meId,
@@ -104,7 +105,7 @@ export async function createQuoteFromConfiguration(formData: FormData): Promise<
 
     const quoteId = id("qte");
     const { error } = await supabase.from("quotes").insert({
-      id: quoteId, conversation_id: conversationId, client_id: clientId, title: "Proposal quote", status: "draft", created_by: meId,
+      id: quoteId, conversation_id: conversationId, client_id: clientId, commercial_mode: "legacy_client_quote", title: "Proposal quote", status: "draft", created_by: meId,
     });
     if (error) return { ok: false, error: error.message };
 
@@ -278,6 +279,9 @@ export async function convertQuoteToProposal(quoteId: string): Promise<QuoteResu
     const { supabase } = await internal();
     const { data: quote } = await supabase.from("quotes").select("*").eq("id", quoteId).maybeSingle();
     if (!quote) return { ok: false, error: "Quote not found" };
+    if (quote.commercial_mode !== "legacy_client_quote" || quote.client_id === null) {
+      return { ok: false, error: "Proposal-only quotes require the canonical proposal issuance flow" };
+    }
     if (quote.status !== "accepted") return { ok: false, error: "Only an accepted quote can be converted" };
 
     const { data: items } = await supabase.from("quote_items").select("*").eq("quote_id", quoteId).order("sort");

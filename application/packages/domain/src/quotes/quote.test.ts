@@ -41,6 +41,12 @@ describe("draft-quote gate (domain mirror of RLS)", () => {
     }
   });
 
+  it("never exposes proposal-only commercial working state", () => {
+    expect(isQuoteVisibleToClient("sent", "proposal_only")).toBe(false);
+    expect(isQuoteVisibleToClient("accepted", "proposal_only")).toBe(false);
+    expect(clientCanActOnQuote("sent", "proposal_only")).toBe(false);
+  });
+
   it("lets the client act only while sent or viewed", () => {
     expect(clientCanActOnQuote("sent")).toBe(true);
     expect(clientCanActOnQuote("viewed")).toBe(true);

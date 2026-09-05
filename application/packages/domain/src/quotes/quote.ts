@@ -15,6 +15,8 @@ export interface QuoteTotals {
   total: number; // cents
 }
 
+export type QuoteCommercialMode = "legacy_client_quote" | "proposal_only";
+
 /** A single line's amount, floored at zero. */
 export function lineAmount(quantity: number, unitAmount: number): number {
   const q = Math.max(0, Math.trunc(quantity));
@@ -40,13 +42,13 @@ export function quoteTotals(items: readonly QuoteItemInput[], discount = 0): Quo
  */
 export const CLIENT_HIDDEN_QUOTE_STATES = ["draft", "internal_review"] as const;
 
-export function isQuoteVisibleToClient(status: string): boolean {
-  return !(CLIENT_HIDDEN_QUOTE_STATES as readonly string[]).includes(status);
+export function isQuoteVisibleToClient(status: string, mode: QuoteCommercialMode = "legacy_client_quote"): boolean {
+  return mode === "legacy_client_quote" && !(CLIENT_HIDDEN_QUOTE_STATES as readonly string[]).includes(status);
 }
 
 /** Quote states in which the CLIENT can still act (accept/reject/revise). */
 export const CLIENT_ACTIONABLE_QUOTE_STATES = ["sent", "viewed"] as const;
 
-export function clientCanActOnQuote(status: string): boolean {
-  return (CLIENT_ACTIONABLE_QUOTE_STATES as readonly string[]).includes(status);
+export function clientCanActOnQuote(status: string, mode: QuoteCommercialMode = "legacy_client_quote"): boolean {
+  return mode === "legacy_client_quote" && (CLIENT_ACTIONABLE_QUOTE_STATES as readonly string[]).includes(status);
 }
