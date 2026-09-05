@@ -7,6 +7,7 @@ select no_plan();
 
 insert into public.clients (id, company) values ('cli_promo', 'Promotion Client');
 insert into public.leads (id, name, company, email) values ('lead_promo', 'Lead', 'Promotion Lead', 'lead-promo@example.test');
+insert into public.conversations (id, client_id, subject) values ('conv_promo_collision', 'cli_promo', 'Collision fixture');
 insert into auth.users (id) values
   ('30000000-0000-0000-0000-000000000001'),
   ('30000000-0000-0000-0000-000000000002');
@@ -20,7 +21,8 @@ insert into public.intelligence_runs (id, lead_id, scan_id, status, idempotency_
   ('run_promo_superseded', 'lead_promo', 'scan_promo_superseded', 'completed', 'idem_promo_superseded', 'usr_promo_owner'),
   ('run_promo_rejected', 'lead_promo', 'scan_promo_rejected', 'completed', 'idem_promo_rejected', 'usr_promo_owner'),
   ('run_promo_missing', 'lead_promo', 'scan_promo_missing', 'completed', 'idem_promo_missing', 'usr_promo_owner'),
-  ('run_promo_rollback', 'lead_promo', 'scan_promo_rollback', 'completed', 'idem_promo_rollback', 'usr_promo_owner');
+  ('run_promo_rollback', 'lead_promo', 'scan_promo_rollback', 'completed', 'idem_promo_rollback', 'usr_promo_owner'),
+  ('run_promo_pk_collision', 'lead_promo', 'scan_promo_pk_collision', 'completed', 'idem_promo_pk_collision', 'usr_promo_owner');
 insert into public.intelligence_runs (id, client_id, scan_id, status, idempotency_key, created_by) values
   ('run_promo_client', 'cli_promo', 'scan_promo_client', 'completed', 'idem_promo_client', 'usr_promo_owner');
 
@@ -46,7 +48,9 @@ values
   ('pv_promo_missing', 'run_promo_missing', null, 'scan_promo_missing', 'needs_review', 4, 'checksum-missing',
    '{"status":"draft_ready","recommendedWork":[{"sourceId":"w","title":"Work","solution":"Do it","evidenceIds":["e"]}]}'::jsonb, 'idem_pv_missing', 'usr_promo_owner'),
   ('pv_promo_rollback', 'run_promo_rollback', null, 'scan_promo_rollback', 'needs_review', 1, 'checksum-rollback',
-   '{"status":"draft_ready","recommendedWork":[{"sourceId":"w","title":"Work","solution":"Do it","evidenceIds":["e"]}]}'::jsonb, 'idem_pv_rollback', 'usr_promo_owner');
+   '{"status":"draft_ready","recommendedWork":[{"sourceId":"w","title":"Work","solution":"Do it","evidenceIds":["e"]}]}'::jsonb, 'idem_pv_rollback', 'usr_promo_owner'),
+  ('pv_promo_pk_collision', 'run_promo_pk_collision', null, 'scan_promo_pk_collision', 'needs_review', 1, 'checksum-pk-collision',
+   '{"status":"draft_ready","recommendedWork":[{"sourceId":"w","title":"Collision work","solution":"Do it","evidenceIds":["e"]}]}'::jsonb, 'idem_pv_pk_collision', 'usr_promo_owner');
 
 insert into public.runtime_events
   (id, event_type, run_id, aggregate_id, aggregate_type, client_id, scan_id, sequence, payload, actor)
@@ -63,7 +67,8 @@ values
   ('evt_not_review', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 4, '{"proposalVersionId":"pv_promo_not_review","proposalChecksum":"checksum-not-review"}', 'usr_promo_owner'),
   ('evt_not_ready', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 5, '{"proposalVersionId":"pv_promo_not_ready","proposalChecksum":"checksum-not-ready"}', 'usr_promo_owner'),
   ('evt_empty', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 6, '{"proposalVersionId":"pv_promo_empty","proposalChecksum":"checksum-empty"}', 'usr_promo_owner'),
-  ('evt_promo_rollback', 'runtime.review.approved', 'run_promo_rollback', 'run_promo_rollback', 'intelligence_run', null, 'scan_promo_rollback', 1, '{"proposalVersionId":"pv_promo_rollback","proposalChecksum":"checksum-rollback"}', 'usr_promo_owner');
+  ('evt_promo_rollback', 'runtime.review.approved', 'run_promo_rollback', 'run_promo_rollback', 'intelligence_run', null, 'scan_promo_rollback', 1, '{"proposalVersionId":"pv_promo_rollback","proposalChecksum":"checksum-rollback"}', 'usr_promo_owner'),
+  ('evt_promo_pk_collision', 'runtime.review.approved', 'run_promo_pk_collision', 'run_promo_pk_collision', 'intelligence_run', null, 'scan_promo_pk_collision', 1, '{"proposalVersionId":"pv_promo_pk_collision","proposalChecksum":"checksum-pk-collision"}', 'usr_promo_owner');
 
 select set_config('request.jwt.claims', '{"sub":"30000000-0000-0000-0000-000000000001","app_metadata":{"role":"owner"}}', true);
 set local role authenticated;
@@ -136,6 +141,23 @@ select results_eq(
   're-approval cannot duplicate the same proposal version'
 );
 
+insert into public.proposal_versions
+  (id, run_id, client_id, scan_id, status, version, checksum, envelope, idempotency_key, created_by)
+values
+  ('pv_promo_lead_v2', 'run_promo_lead', null, 'scan_promo_lead', 'needs_review', 2, 'checksum-lead-v2',
+   '{"status":"draft_ready","recommendedWork":[{"sourceId":"work:v2","title":"New version work","solution":"Deliver the new scope","evidenceIds":["ev:v2"]}]}'::jsonb,
+   'idem_pv_lead_v2', 'usr_promo_owner');
+insert into public.runtime_events (id,event_type,run_id,aggregate_id,aggregate_type,scan_id,sequence,payload,actor)
+values ('evt_promo_lead_v2','runtime.review.approved','run_promo_lead','run_promo_lead','intelligence_run','scan_promo_lead',4,'{"proposalVersionId":"pv_promo_lead_v2","proposalChecksum":"checksum-lead-v2"}','usr_promo_owner');
+select results_eq(
+  $$ select outcome, quote_id, item_count from public.bl_promote_scanner_package('run_promo_lead','pv_promo_lead_v2','evt_promo_lead_v2','promo:run_promo_lead:pv_promo_lead_v2:evt_promo_lead_v2','qte_promo_lead_v2') $$,
+  $$ values ('created'::text, 'qte_promo_lead_v2'::text, 1::integer) $$,
+  'a new immutable proposal version on the same run creates a second quote'
+);
+select is((select source_run_id from public.quotes where id='qte_promo_lead_v2'), 'run_promo_lead', 'second quote retains the same source run');
+select isnt((select source_proposal_version_id from public.quotes where id='qte_promo_lead'), (select source_proposal_version_id from public.quotes where id='qte_promo_lead_v2'), 'same-run quotes pin different proposal versions');
+select is((select count(*)::int from public.quotes where source_run_id='run_promo_lead'), 2, 'both same-run promoted quotes persist');
+
 select results_eq(
   $$ select outcome, quote_id, item_count from public.bl_promote_scanner_package('run_promo_client','pv_promo_client','evt_promo_client','promo:run_promo_client:pv_promo_client:evt_promo_client','qte_promo_client') $$,
   $$ values ('created'::text, 'qte_promo_client'::text, 1::integer) $$,
@@ -183,6 +205,19 @@ values ('evt_promoted_' || md5('promo:run_promo_rollback:pv_promo_rollback:evt_p
 select throws_ok($$ select * from public.bl_promote_scanner_package('run_promo_rollback','pv_promo_rollback','evt_promo_rollback','promo:run_promo_rollback:pv_promo_rollback:evt_promo_rollback','qte_rollback') $$, '23505', null, 'audit append failure is not swallowed');
 select is((select count(*)::int from public.quotes where id='qte_rollback'), 0, 'audit append failure rolls back quote');
 select is((select count(*)::int from public.quote_items where quote_id='qte_rollback'), 0, 'audit append failure rolls back items');
+
+-- A real simultaneous-session convergence branch cannot be deterministically
+-- orchestrated in this single-session pgTAP harness. Its safety rests on the two
+-- DB uniqueness invariants plus PostgreSQL READ COMMITTED visibility. This covers
+-- the independently testable handler branch: an unrelated unique violation must
+-- be re-raised rather than misreported as already_promoted.
+insert into public.quotes (id,conversation_id,client_id,title,status)
+values ('qte_pk_collision','conv_promo_collision','cli_promo','Unrelated legacy quote','draft');
+select throws_ok(
+  $$ select * from public.bl_promote_scanner_package('run_promo_pk_collision','pv_promo_pk_collision','evt_promo_pk_collision','promo:run_promo_pk_collision:pv_promo_pk_collision:evt_promo_pk_collision','qte_pk_collision') $$,
+  '23505', null, 'unrelated quote-id unique violation is re-raised'
+);
+select is((select count(*)::int from public.quotes where source_proposal_version_id='pv_promo_pk_collision'), 0, 're-raised collision creates no promoted quote');
 
 reset role;
 select set_config('request.jwt.claims', '{"sub":"30000000-0000-0000-0000-000000000002","app_metadata":{"role":"client_admin","client_id":"cli_promo"}}', true);

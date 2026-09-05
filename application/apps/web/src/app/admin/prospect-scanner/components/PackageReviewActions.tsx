@@ -19,6 +19,7 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
 
   const decide = useCallback(
     async (action: "approve" | "request_revision" | "reject") => {
+      setPromotion(null);
       setBusy(action);
       setError(null);
       try {
@@ -58,6 +59,7 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
         return;
       }
       setPromotion({ quoteId: body.quoteId, itemCount: body.itemCount ?? 0, outcome: body.outcome ?? "created" });
+      router.refresh();
     } catch {
       setError("The approved package could not be promoted.");
     } finally {
