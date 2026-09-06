@@ -12042,6 +12042,7 @@ export type Database = {
           item_count: number
           optional_one_time_total: number
           optional_recurring_total: number
+          persisted_items: Json
           pricing_complete: boolean
           quote_id: string
           recurring_cadence: string

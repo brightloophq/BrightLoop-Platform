@@ -25,7 +25,7 @@ const context = { params: Promise.resolve({ id: "qte_1" }) };
 describe("canonical quote commercial save route", () => {
   beforeEach(() => {
     state.rpc.mockReset();
-    state.rpc.mockResolvedValue({ data: [{ quote_id: "qte_1", updated_at: "2026-09-06T00:01:00Z", subtotal: 0, discount: 0, total: 0, recurring_total: 0, recurring_cadence: null, optional_one_time_total: 0, optional_recurring_total: 0, pricing_complete: false, item_count: 1 }], error: null });
+    state.rpc.mockResolvedValue({ data: [{ quote_id: "qte_1", updated_at: "2026-09-06T00:01:00Z", subtotal: 0, discount: 0, total: 0, recurring_total: 0, recurring_cadence: null, optional_one_time_total: 0, optional_recurring_total: 0, pricing_complete: false, item_count: 1, persisted_items: [{ ...validBody.items[0], id: "qit_persisted", unit_amount: null, amount: null, sort: 0, pricing_type: "one_time", recurrence_cadence: null, source_work_item_id: null, source_evidence_refs: [] }] }], error: null });
   });
 
   it("requires authentication", async () => {
@@ -62,6 +62,12 @@ describe("canonical quote commercial save route", () => {
     }));
     expect(JSON.stringify(state.rpc.mock.calls[0])).not.toContain("sourceWorkItemId");
     expect(JSON.stringify(state.rpc.mock.calls[0])).not.toContain("subtotal");
+    expect(await response.json()).toMatchObject({
+      updatedAt: "2026-09-06T00:01:00Z",
+      items: [{ id: "qit_persisted" }],
+      pricingComplete: false,
+      total: 0,
+    });
   });
 
   it("maps optimistic concurrency conflicts to 409", async () => {

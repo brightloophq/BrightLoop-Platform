@@ -35,6 +35,13 @@ values ('qit_edit_legacy', 'qte_edit_legacy', 'Legacy item', 1, 100, 100);
 select is((select commercial_mode from public.quotes where id='qte_edit_legacy'), 'legacy_client_quote', 'legacy mode remains unchanged');
 select is((select unit_amount from public.quote_items where id='qit_edit_source'), null, 'proposal-only scanner item starts unpriced');
 select is((select amount from public.quote_items where id='qit_edit_source'), null, 'unpriced amount is null');
+select is(
+  (select count(*)::int from public.quote_items qi join public.quotes q on q.id=qi.quote_id
+   where q.commercial_mode='proposal_only' and qi.source_work_item_id is not null
+     and qi.unit_amount=0 and qi.amount=0),
+  0,
+  'clean migration replay leaves no scanner-sourced proposal item in ambiguous placeholder 0/0 state'
+);
 
 select set_config('request.jwt.claims', '{"sub":"40000000-0000-0000-0000-000000000001","app_metadata":{"role":"owner"}}', true);
 set local role authenticated;
@@ -55,6 +62,17 @@ select is((select amount from public.quote_items where id='qit_edit_source'), 20
 select is((select source_work_item_id from public.quote_items where id='qit_edit_source'), 'work:edit', 'existing scanner item updates in place with work lineage');
 select is((select source_evidence_refs from public.quote_items where id='qit_edit_source'), '["ev:edit"]'::jsonb, 'existing scanner evidence lineage remains intact');
 select is((select count(*)::int from public.quote_items where quote_id='qte_edit' and source_work_item_id is null), 4, 'operator-created items have no scanner work lineage');
+select is(
+  (select persisted_items->0->>'id' from public.bl_save_quote_commercial(
+    'qte_edit', (select updated_at from public.quotes where id='qte_edit'), 'Priced scope', 'Commercial note', 'USD', 2000, '2026-12-31',
+    (select jsonb_agg(jsonb_build_object(
+      'id',id,'label',label,'description',description,'quantity',quantity,'unitAmount',unit_amount,
+      'pricingType',pricing_type,'recurrenceCadence',recurrence_cadence,'optional',optional
+    ) order by sort) from public.quote_items where quote_id='qte_edit')
+  )),
+  (select id from public.quote_items where quote_id='qte_edit' order by sort limit 1),
+  'RPC returns authoritative persisted item identities'
+);
 
 select throws_ok(
   $$ select * from public.bl_save_quote_commercial('qte_edit','2026-01-01T00:00:00Z','Stale','', 'USD',0,null,'[]'::jsonb) $$,
@@ -76,6 +94,11 @@ select throws_ok(
   $$ select * from public.bl_save_quote_commercial('qte_edit',(select updated_at from public.quotes where id='qte_edit'),'Currency','', 'EUR',0,null,'[]'::jsonb) $$,
   '23514', 'Quote currency cannot change after pricing begins', 'currency is immutable after any item is priced'
 );
+select throws_ok(
+  $$ update public.quotes set currency='EUR' where id='qte_edit' $$,
+  '23514', 'Quote currency cannot change after pricing begins', 'direct owner update cannot bypass priced currency immutability'
+);
+select is((select currency from public.quotes where id='qte_edit'), 'USD', 'failed direct currency update leaves currency unchanged');
 
 select throws_ok($$ insert into public.quote_items(id,quote_id,label,quantity,unit_amount,amount) values ('bad_qty','qte_edit','Bad',0,0,0) $$, '23514', null, 'quantity lower bound is enforced');
 select throws_ok($$ insert into public.quote_items(id,quote_id,label,quantity,unit_amount,amount) values ('bad_qty_hi','qte_edit','Bad',10000,0,0) $$, '23514', null, 'quantity upper bound is enforced');
@@ -90,12 +113,79 @@ select lives_ok(
 );
 select is((select total from public.quotes where id='qte_edit_legacy'), 200::bigint, 'legacy totals remain compatible');
 
+create temp table legacy_free_response as
+select * from public.bl_save_quote_commercial(
+  'qte_edit_legacy', (select updated_at from public.quotes where id='qte_edit_legacy'),
+  'Free scope', '', 'USD', 0, null,
+  '[{"label":"Free required work","description":"","quantity":1,"unitAmount":0,"pricingType":"one_time","recurrenceCadence":null,"optional":false}]'::jsonb
+);
+select ok((select pricing_complete from legacy_free_response), 'a deliberately free required item is pricing-complete');
+select is((select subtotal from legacy_free_response), 0::bigint, 'free required item keeps subtotal zero');
+select is((select total from legacy_free_response), 0::bigint, 'free required item keeps total zero');
+select is((select unit_amount from public.quote_items where quote_id='qte_edit_legacy'), 0::bigint, 'free item persists zero unit amount');
+select is((select amount from public.quote_items where quote_id='qte_edit_legacy'), 0::bigint, 'free item persists zero amount');
+select is((select persisted_items->0->>'id' from legacy_free_response), (select id from public.quote_items where quote_id='qte_edit_legacy'), 'new item response contains its persisted id');
+
+create temp table legacy_unpriced_response as
+select * from public.bl_save_quote_commercial(
+  'qte_edit_legacy', (select updated_at from public.quotes where id='qte_edit_legacy'),
+  'Unpriced scope', '', 'USD', 0, null,
+  jsonb_build_array(jsonb_build_object(
+    'id',(select persisted_items->0->>'id' from legacy_free_response),
+    'label','Free required work','description','','quantity',1,'unitAmount',null,
+    'pricingType','one_time','recurrenceCadence',null,'optional',false
+  ))
+);
+select isnt((select persisted_items->0->>'id' from legacy_unpriced_response), null, 'second save returns the persisted item id');
+select is((select persisted_items->0->>'id' from legacy_unpriced_response), (select persisted_items->0->>'id' from legacy_free_response), 'second save updates the same persisted item identity');
+select is((select count(*)::int from public.quote_items where quote_id='qte_edit_legacy'), 1, 'second save does not insert or replace the item');
+select isnt((select pricing_complete from legacy_unpriced_response), true, 'required NULL price is incomplete');
+select is((select unit_amount from public.quote_items where quote_id='qte_edit_legacy'), null, 'unpriced item persists NULL unit amount');
+select is((select amount from public.quote_items where quote_id='qte_edit_legacy'), null, 'unpriced item persists NULL amount');
+
+create temp table legacy_empty_response as
+select * from public.bl_save_quote_commercial(
+  'qte_edit_legacy', (select updated_at from public.quotes where id='qte_edit_legacy'),
+  'Empty scope', '', 'USD', 999, null, '[]'::jsonb
+);
+select is((select count(*)::int from public.quote_items where quote_id='qte_edit_legacy'), 0, 'empty save removes all quote items atomically');
+select is((select item_count from legacy_empty_response), 0, 'empty quote returns zero item count');
+select isnt((select pricing_complete from legacy_empty_response), true, 'empty quote is incomplete');
+select results_eq(
+  $$ select subtotal,discount,total,recurring_total,optional_one_time_total,optional_recurring_total,recurring_cadence from legacy_empty_response $$,
+  $$ values (0::bigint,0::bigint,0::bigint,0::bigint,0::bigint,0::bigint,null::text) $$,
+  'empty quote resets all aggregates, clamps discount, and clears cadence'
+);
+
 -- Required scope may remain unpriced while review proceeds; completeness is derived.
 select lives_ok(
   $$ select * from public.bl_save_quote_commercial('qte_edit',(select updated_at from public.quotes where id='qte_edit'),'Incomplete','', 'USD',0,null,'[{"id":"qit_edit_source","label":"Required","description":"","quantity":1,"unitAmount":null,"pricingType":"one_time","recurrenceCadence":null,"optional":false}]'::jsonb) $$,
   'required scope may be saved unpriced while still draft'
 );
 select lives_ok($$ update public.quotes set status='internal_review' where id='qte_edit' $$, 'proposal-only internal review is not blocked by incomplete pricing');
+
+insert into public.quote_items (
+  id, quote_id, label, description, quantity, unit_amount, amount, sort,
+  source_work_item_id, source_evidence_refs
+) values (
+  'qit_edit_source_keep', 'qte_edit', 'Retained scanner scope', '', 1, null, null, 1,
+  'work:keep', '["ev:keep"]'::jsonb
+);
+select lives_ok(
+  $$ select * from public.bl_save_quote_commercial(
+    'qte_edit',(select updated_at from public.quotes where id='qte_edit'),'Reduced scope','', 'USD',0,null,
+    '[{"id":"qit_edit_source_keep","label":"Retained scanner scope","description":"","quantity":1,"unitAmount":100,"pricingType":"one_time","recurrenceCadence":null,"optional":false}]'::jsonb
+  ) $$,
+  'explicit sourced-item removal succeeds without a lineage mutation error'
+);
+select is((select count(*)::int from public.quote_items where id='qit_edit_source'), 0, 'omitted sourced item is deleted');
+select is((select source_work_item_id from public.quote_items where id='qit_edit_source_keep'), 'work:keep', 'remaining sourced item retains work-item lineage');
+select is((select source_evidence_refs from public.quote_items where id='qit_edit_source_keep'), '["ev:keep"]'::jsonb, 'remaining sourced item retains evidence lineage');
+select results_eq(
+  $$ select subtotal,total from public.quotes where id='qte_edit' $$,
+  $$ values (100::bigint,100::bigint) $$,
+  'totals are recalculated after explicit sourced-item removal'
+);
 
 reset role;
 select set_config('request.jwt.claims', '{"sub":"40000000-0000-0000-0000-000000000003","app_metadata":{"role":"team_member"}}', true);

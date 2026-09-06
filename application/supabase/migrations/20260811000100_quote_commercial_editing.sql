@@ -11,11 +11,17 @@ alter table public.quote_items
 
 -- Increment 3 seeded proposal-only items with zero placeholders. No commercial
 -- editor existed yet, so these values are unpriced rather than deliberately free.
+-- Production release gate: record this population before applying, then verify
+-- it is zero afterward:
+-- select count(*) from public.quote_items qi join public.quotes q on q.id=qi.quote_id
+-- where q.commercial_mode='proposal_only' and qi.source_work_item_id is not null
+--   and qi.unit_amount=0 and qi.amount=0;
 update public.quote_items qi
 set unit_amount = null, amount = null
 from public.quotes q
 where q.id = qi.quote_id
   and q.commercial_mode = 'proposal_only'
+  and qi.source_work_item_id is not null
   and qi.unit_amount = 0
   and qi.amount = 0;
 
@@ -149,7 +155,8 @@ returns table (
   optional_one_time_total bigint,
   optional_recurring_total bigint,
   pricing_complete boolean,
-  item_count integer
+  item_count integer,
+  persisted_items jsonb
 )
 language plpgsql
 security invoker
@@ -179,6 +186,7 @@ declare
   v_complete boolean;
   v_item_count integer;
   v_updated_at timestamptz;
+  v_persisted_items jsonb;
 begin
   if public.bl_role() not in ('owner', 'admin') then
     raise exception 'Commercial quote editing requires clients.update' using errcode = '42501';
@@ -290,9 +298,27 @@ begin
     updated_at = v_updated_at
   where id = p_quote_id;
 
+  select coalesce(jsonb_agg(jsonb_build_object(
+    'id', qi.id,
+    'label', qi.label,
+    'description', qi.description,
+    'quantity', qi.quantity,
+    'unit_amount', qi.unit_amount,
+    'amount', qi.amount,
+    'sort', qi.sort,
+    'pricing_type', qi.pricing_type,
+    'recurrence_cadence', qi.recurrence_cadence,
+    'optional', qi.optional,
+    'source_work_item_id', qi.source_work_item_id,
+    'source_evidence_refs', qi.source_evidence_refs
+  ) order by qi.sort, qi.id), '[]'::jsonb)
+  into v_persisted_items
+  from public.quote_items qi
+  where qi.quote_id = p_quote_id;
+
   return query select p_quote_id, v_updated_at, v_subtotal, v_discount, v_total,
     v_recurring_total, v_recurring_cadence, v_optional_one_time_total,
-    v_optional_recurring_total, v_complete, v_item_count;
+    v_optional_recurring_total, v_complete, v_item_count, v_persisted_items;
 end;
 $$;
 

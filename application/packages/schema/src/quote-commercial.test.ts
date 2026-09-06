@@ -20,6 +20,7 @@ describe("quote commercial save schema", () => {
     expect(quoteCommercialSaveSchema.safeParse({ ...base, currency: "usd", items: [item] }).success).toBe(false);
     expect(quoteCommercialSaveSchema.safeParse({ ...base, items: [{ ...item, quantity: 0 }] }).success).toBe(false);
     expect(quoteCommercialSaveSchema.safeParse({ ...base, items: [{ ...item, unitAmount: -1 }] }).success).toBe(false);
+    expect(quoteCommercialSaveSchema.safeParse({ ...base, discount: -1, items: [item] }).success).toBe(false);
     expect(quoteCommercialSaveSchema.safeParse({ ...base, items: [{ ...item, pricingType: "recurring" }] }).success).toBe(false);
   });
 });

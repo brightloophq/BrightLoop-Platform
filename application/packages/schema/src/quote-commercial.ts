@@ -25,7 +25,7 @@ export const quoteCommercialSaveSchema = z.object({
   title: z.string().trim().min(1).max(200),
   clientNote: z.string().max(5000),
   currency: z.string().regex(/^[A-Z]{3}$/),
-  discount: z.number().int(),
+  discount: z.number().int().nonnegative(),
   validUntil: z.string().date().nullable(),
   items: z.array(quoteCommercialItemSchema).max(250),
 });

@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   lineAmount,
-  quoteTotals,
   isQuoteVisibleToClient,
   clientCanActOnQuote,
   commercialQuoteSummary,
@@ -15,19 +14,6 @@ describe("quote totals", () => {
     expect(lineAmount(1.9, 1000)).toBe(1000); // truncates
   });
 
-  it("sums a subtotal and subtracts a clamped discount", () => {
-    const items = [
-      { quantity: 2, unitAmount: 150000 }, // 300000
-      { quantity: 1, unitAmount: 80000 }, //   80000
-    ];
-    expect(quoteTotals(items)).toEqual({ subtotal: 380000, total: 380000 });
-    expect(quoteTotals(items, 50000)).toEqual({ subtotal: 380000, total: 330000 });
-  });
-
-  it("never lets a discount push the total below zero", () => {
-    const items = [{ quantity: 1, unitAmount: 10000 }];
-    expect(quoteTotals(items, 99999)).toEqual({ subtotal: 10000, total: 0 });
-  });
 });
 
 describe("canonical commercial quote pricing", () => {
@@ -56,6 +42,15 @@ describe("canonical commercial quote pricing", () => {
     expect(commercialQuoteSummary([
       { quantity: 1, unitAmount: null, pricingType: "one_time", recurrenceCadence: null, optional: false },
     ]).complete).toBe(false);
+  });
+
+  it("distinguishes a deliberately free required item from an unpriced one", () => {
+    expect(commercialQuoteSummary([
+      { quantity: 1, unitAmount: 0, pricingType: "one_time", recurrenceCadence: null, optional: false },
+    ])).toMatchObject({ subtotal: 0, total: 0, complete: true });
+    expect(commercialQuoteSummary([
+      { quantity: 1, unitAmount: null, pricingType: "one_time", recurrenceCadence: null, optional: false },
+    ])).toMatchObject({ subtotal: 0, total: 0, complete: false });
   });
 
   it("rejects mixed or missing recurring cadences", () => {

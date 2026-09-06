@@ -5,16 +5,6 @@
  * on floating point. Rendering to dollars is the UI's job.
  * ========================================================================== */
 
-export interface QuoteItemInput {
-  quantity: number;
-  unitAmount: number; // minor units
-}
-
-export interface QuoteTotals {
-  subtotal: number; // minor units
-  total: number; // minor units
-}
-
 export type QuotePricingType = "one_time" | "recurring";
 export type QuoteRecurrenceCadence = "weekly" | "monthly" | "quarterly" | "annual";
 
@@ -44,16 +34,6 @@ export function lineAmount(quantity: number, unitAmount: number): number {
   const q = Math.max(0, Math.trunc(quantity));
   const u = Math.max(0, Math.trunc(unitAmount));
   return q * u;
-}
-
-/**
- * Subtotal = sum of line amounts; total = subtotal − discount, never negative.
- * Discount is clamped to the subtotal so a quote can't total below zero.
- */
-export function quoteTotals(items: readonly QuoteItemInput[], discount = 0): QuoteTotals {
-  const subtotal = items.reduce((sum, it) => sum + lineAmount(it.quantity, it.unitAmount), 0);
-  const clampedDiscount = Math.min(Math.max(0, Math.trunc(discount)), subtotal);
-  return { subtotal, total: subtotal - clampedDiscount };
 }
 
 /** Canonical quote-owned pricing aggregates. Unpriced items contribute zero. */

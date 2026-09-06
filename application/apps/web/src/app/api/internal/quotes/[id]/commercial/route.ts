@@ -46,5 +46,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     optionalRecurringTotal: result.optional_recurring_total,
     pricingComplete: result.pricing_complete,
     itemCount: result.item_count,
+    items: result.persisted_items,
   });
 }
