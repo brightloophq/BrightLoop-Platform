@@ -214,6 +214,12 @@ export async function addQuoteRevisionNote(formData: FormData): Promise<QuoteRes
 /* ---- admin: status moves (guarded) ---------------------------------------- */
 
 async function moveQuote(quoteId: string, to: string, patch?: Record<string, unknown>): Promise<QuoteResult> {
+  if (["sent", "viewed", "revision_requested", "revised", "accepted", "rejected", "expired"].includes(to)) {
+    const { supabase } = await internal();
+    const { data: quote, error } = await supabase.from("quotes").select("commercial_mode").eq("id", quoteId).maybeSingle();
+    if (error || quote === null) return { ok: false, error: "Quote not found" };
+    if (quote.commercial_mode === "proposal_only") return { ok: false, error: "Proposal-only quotes are internal and cannot enter client-facing states" };
+  }
   const res = await performTransition({
     table: "quotes",
     machine: "quote",

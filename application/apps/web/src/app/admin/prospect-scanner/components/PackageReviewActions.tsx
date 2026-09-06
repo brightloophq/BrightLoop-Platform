@@ -15,9 +15,11 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [promotion, setPromotion] = useState<{ quoteId: string; itemCount: number; outcome: string } | null>(null);
 
   const decide = useCallback(
     async (action: "approve" | "request_revision" | "reject") => {
+      setPromotion(null);
       setBusy(action);
       setError(null);
       try {
@@ -41,6 +43,29 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
     },
     [runId, note, router],
   );
+
+  const promote = useCallback(async () => {
+    setBusy("promote");
+    setError(null);
+    try {
+      const res = await fetch("/api/internal/runtime/package-promotion", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ runId }),
+      });
+      const body = await res.json() as { quoteId?: string; itemCount?: number; outcome?: string };
+      if (!res.ok || body.quoteId === undefined) {
+        setError("The approved package could not be promoted.");
+        return;
+      }
+      setPromotion({ quoteId: body.quoteId, itemCount: body.itemCount ?? 0, outcome: body.outcome ?? "created" });
+      router.refresh();
+    } catch {
+      setError("The approved package could not be promoted.");
+    } finally {
+      setBusy(null);
+    }
+  }, [runId]);
 
   return (
     <div className={styles.reviewActions}>
@@ -67,6 +92,18 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
           {busy === "reject" ? "Rejecting…" : "Reject"}
         </Button>
       </div>
+      {decision === "approved" ? (
+        <div className={styles.badgeRow}>
+          <Button variant="secondary" onClick={promote} disabled={busy !== null}>
+            {busy === "promote" ? "Creating draft…" : "Create draft quote"}
+          </Button>
+        </div>
+      ) : null}
+      {promotion !== null ? (
+        <Alert tone="info" title={promotion.outcome === "already_promoted" ? "Already promoted" : "Draft quote created"}>
+          Quote ID: {promotion.quoteId}. Promoted items: {promotion.itemCount}.
+        </Alert>
+      ) : null}
       {decision !== "pending" ? <span className={styles.stageReason}>Current decision: {decision.replace("_", " ")}. A new decision supersedes it.</span> : null}
       {error !== null ? (
         <Alert tone="warning" title="Could not record the decision">

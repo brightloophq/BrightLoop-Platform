@@ -102,6 +102,20 @@ describe("commercial package — review gate", () => {
     expect(decided.decision).toBe("approved");
     expect(decided.decidedBy).toBe("u_owner");
     expect(decided.note).toBe("looks good");
+    expect(decided.proposalVersionId).toMatch(/^prop_/);
+    expect(decided.proposalChecksum).toBe("cp1");
+    expect(decided.narrativeVersionId).toMatch(/^narr_/);
+  });
+
+  it("review decisions remain valid without proposal or narrative artifacts", async () => {
+    const { services, ctx } = harness();
+    const run = await services.runs.createRun({ clientId: null, leadId: "lead_empty", scanId: "scan-empty" });
+    if (!run.ok) throw new Error("run");
+    const decided = await decideProspectPackage(ctx(OWNER), run.value.id, { action: "approve" });
+    expect(decided.decision).toBe("approved");
+    expect(decided.proposalVersionId).toBeNull();
+    expect(decided.proposalChecksum).toBeNull();
+    expect(decided.narrativeVersionId).toBeNull();
   });
 
   it("the fold is last-writer-wins — a later revision request supersedes an approval", async () => {

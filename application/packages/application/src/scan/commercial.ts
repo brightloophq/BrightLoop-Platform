@@ -85,6 +85,10 @@ export async function getScanClientNarrative(ctx: AppContext, rawRunId: unknown)
 
 export interface ProspectPackageReviewDTO {
   decision: PackageReviewDecision;
+  reviewEventId: string | null;
+  proposalVersionId: string | null;
+  proposalChecksum: string | null;
+  narrativeVersionId: string | null;
   decidedBy: string | null;
   decidedAt: string | null;
   note: string | null;
@@ -103,10 +107,14 @@ export async function getProspectPackageReview(ctx: AppContext, rawRunId: unknow
   // Latest decision wins (events are monotonically sequenced per aggregate).
   const decisions = events.filter((e) => e.eventType in REVIEW_EVENT_DECISION).sort((a, b) => a.sequence - b.sequence);
   const last = decisions[decisions.length - 1];
-  if (last === undefined) return { decision: "pending", decidedBy: null, decidedAt: null, note: null };
+  if (last === undefined) return { decision: "pending", reviewEventId: null, proposalVersionId: null, proposalChecksum: null, narrativeVersionId: null, decidedBy: null, decidedAt: null, note: null };
   const by = typeof last.payload["by"] === "string" ? (last.payload["by"] as string) : null;
   return {
     decision: REVIEW_EVENT_DECISION[last.eventType]!,
+    reviewEventId: last.id,
+    proposalVersionId: typeof last.payload["proposalVersionId"] === "string" ? last.payload["proposalVersionId"] as string : null,
+    proposalChecksum: typeof last.payload["proposalChecksum"] === "string" ? last.payload["proposalChecksum"] as string : null,
+    narrativeVersionId: typeof last.payload["narrativeVersionId"] === "string" ? last.payload["narrativeVersionId"] as string : null,
     decidedBy: last.actor ?? by,
     decidedAt: last.occurredAt,
     note: typeof last.payload["note"] === "string" ? (last.payload["note"] as string) : null,
@@ -139,6 +147,15 @@ export async function decideProspectPackage(ctx: AppContext, rawRunId: unknown, 
   }
   const note = typeof input.note === "string" ? input.note.slice(0, NOTE_MAX) : null;
 
+  // Artifact provenance enriches new decision events, but review remains valid
+  // when commercial artifacts have not been produced or a lookup is unavailable.
+  const [proposalResult, narrativeResult] = await Promise.all([
+    ctx.services.proposals.latest(run.id),
+    ctx.services.narratives.latest(run.id, CLIENT_AUDIENCE),
+  ]);
+  const proposal = proposalResult.ok ? proposalResult.value : null;
+  const narrative = narrativeResult.ok ? narrativeResult.value : null;
+
   unwrap(
     await ctx.services.events.emit({
       eventType: ACTION_EVENT[action],
@@ -147,7 +164,12 @@ export async function decideProspectPackage(ctx: AppContext, rawRunId: unknown, 
       clientId: run.clientId,
       runId: run.id,
       scanId: run.scanId,
-      payload: { by: ctx.actor.userId, ...(note !== null ? { note } : {}) },
+      payload: {
+        by: ctx.actor.userId,
+        ...(note !== null ? { note } : {}),
+        ...(proposal !== null ? { proposalVersionId: proposal.id, proposalChecksum: proposal.checksum } : {}),
+        ...(narrative !== null ? { narrativeVersionId: narrative.id } : {}),
+      },
     }),
   );
 

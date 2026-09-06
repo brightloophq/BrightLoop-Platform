@@ -37,6 +37,7 @@ export * from "./funnel/configurator.js";
 
 // Quotes — totals + the draft-quote-gate definition shared with RLS.
 export * from "./quotes/quote.js";
+export * from "./quotes/promotion.js";
 
 // Repository ports.
 export * from "./repositories/reputation.js";
