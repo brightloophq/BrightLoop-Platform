@@ -1,0 +1,16 @@
+.layout { display: grid; gap: var(--space-4); }
+.heading { display: flex; justify-content: space-between; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: var(--space-3); margin-top: var(--space-4); }
+.meta label, .note, .controls label { display: grid; gap: var(--space-1); color: var(--text-muted); font-size: var(--fs-xs); }
+.meta input, .note textarea, .item input, .item textarea, .controls select, .controls input { width: 100%; padding: var(--space-2); border: var(--border-hairline); border-radius: var(--radius-sm); background: var(--surface-inset); color: var(--text-primary); font: inherit; }
+.note { margin-top: var(--space-3); }
+.items { display: grid; gap: var(--space-3); margin-top: var(--space-3); }
+.item { display: grid; gap: var(--space-2); padding: var(--space-3); border: var(--border-hairline); border-radius: var(--radius-md); }
+.itemHead { display: flex; justify-content: space-between; gap: var(--space-2); }
+.itemHead button { border: 0; background: transparent; color: var(--text-danger); cursor: pointer; }
+.controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-2); align-items: end; }
+.controls .checkbox { display: flex; align-items: center; gap: var(--space-2); padding-bottom: var(--space-2); }
+.controls .checkbox input { width: auto; }
+.totals { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-2) var(--space-4); margin-bottom: var(--space-3); }
+.actions { display: flex; gap: var(--space-2); flex-wrap: wrap; margin-top: var(--space-3); }
+.source { overflow: auto; max-height: 420px; font-size: var(--fs-xs); }

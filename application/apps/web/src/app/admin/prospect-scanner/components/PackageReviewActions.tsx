@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Alert, Button } from "@brightloop/ui";
 import styles from "../scanner.module.css";
 
@@ -101,7 +102,7 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
       ) : null}
       {promotion !== null ? (
         <Alert tone="info" title={promotion.outcome === "already_promoted" ? "Already promoted" : "Draft quote created"}>
-          Quote ID: {promotion.quoteId}. Promoted items: {promotion.itemCount}.
+          Quote ID: <Link href={`/admin/quotes/${promotion.quoteId}`}>{promotion.quoteId}</Link>. Promoted items: {promotion.itemCount}.
         </Alert>
       ) : null}
       {decision !== "pending" ? <span className={styles.stageReason}>Current decision: {decision.replace("_", " ")}. A new decision supersedes it.</span> : null}
