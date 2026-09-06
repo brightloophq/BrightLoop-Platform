@@ -4,6 +4,7 @@ import {
   quoteTotals,
   isQuoteVisibleToClient,
   clientCanActOnQuote,
+  commercialQuoteSummary,
 } from "./quote.js";
 
 describe("quote totals", () => {
@@ -26,6 +27,45 @@ describe("quote totals", () => {
   it("never lets a discount push the total below zero", () => {
     const items = [{ quantity: 1, unitAmount: 10000 }];
     expect(quoteTotals(items, 99999)).toEqual({ subtotal: 10000, total: 0 });
+  });
+});
+
+describe("canonical commercial quote pricing", () => {
+  it("keeps unpriced, deliberately free, committed and optional money distinct", () => {
+    expect(commercialQuoteSummary([
+      { quantity: 2, unitAmount: 1000, pricingType: "one_time", recurrenceCadence: null, optional: false },
+      { quantity: 1, unitAmount: 0, pricingType: "one_time", recurrenceCadence: null, optional: false },
+      { quantity: 3, unitAmount: 500, pricingType: "recurring", recurrenceCadence: "monthly", optional: false },
+      { quantity: 1, unitAmount: 250, pricingType: "one_time", recurrenceCadence: null, optional: true },
+      { quantity: 2, unitAmount: 300, pricingType: "recurring", recurrenceCadence: "monthly", optional: true },
+      { quantity: 1, unitAmount: null, pricingType: "one_time", recurrenceCadence: null, optional: true },
+    ], 3000)).toEqual({
+      subtotal: 2000,
+      discount: 2000,
+      total: 0,
+      recurringTotal: 1500,
+      recurringCadence: "monthly",
+      optionalOneTimeTotal: 250,
+      optionalRecurringTotal: 600,
+      complete: true,
+    });
+  });
+
+  it("treats a required unpriced item or an empty quote as incomplete", () => {
+    expect(commercialQuoteSummary([]).complete).toBe(false);
+    expect(commercialQuoteSummary([
+      { quantity: 1, unitAmount: null, pricingType: "one_time", recurrenceCadence: null, optional: false },
+    ]).complete).toBe(false);
+  });
+
+  it("rejects mixed or missing recurring cadences", () => {
+    expect(() => commercialQuoteSummary([
+      { quantity: 1, unitAmount: 1, pricingType: "recurring", recurrenceCadence: "monthly", optional: false },
+      { quantity: 1, unitAmount: 1, pricingType: "recurring", recurrenceCadence: "annual", optional: false },
+    ])).toThrow("share one cadence");
+    expect(() => commercialQuoteSummary([
+      { quantity: 1, unitAmount: 1, pricingType: "recurring", recurrenceCadence: null, optional: false },
+    ])).toThrow("share one cadence");
   });
 });
 

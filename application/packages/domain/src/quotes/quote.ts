@@ -7,12 +7,34 @@
 
 export interface QuoteItemInput {
   quantity: number;
-  unitAmount: number; // cents
+  unitAmount: number; // minor units
 }
 
 export interface QuoteTotals {
-  subtotal: number; // cents
-  total: number; // cents
+  subtotal: number; // minor units
+  total: number; // minor units
+}
+
+export type QuotePricingType = "one_time" | "recurring";
+export type QuoteRecurrenceCadence = "weekly" | "monthly" | "quarterly" | "annual";
+
+export interface CommercialQuoteItemInput {
+  quantity: number;
+  unitAmount: number | null;
+  pricingType: QuotePricingType;
+  recurrenceCadence: QuoteRecurrenceCadence | null;
+  optional: boolean;
+}
+
+export interface CommercialQuoteSummary {
+  subtotal: number;
+  discount: number;
+  total: number;
+  recurringTotal: number;
+  recurringCadence: QuoteRecurrenceCadence | null;
+  optionalOneTimeTotal: number;
+  optionalRecurringTotal: number;
+  complete: boolean;
 }
 
 export type QuoteCommercialMode = "legacy_client_quote" | "proposal_only";
@@ -32,6 +54,38 @@ export function quoteTotals(items: readonly QuoteItemInput[], discount = 0): Quo
   const subtotal = items.reduce((sum, it) => sum + lineAmount(it.quantity, it.unitAmount), 0);
   const clampedDiscount = Math.min(Math.max(0, Math.trunc(discount)), subtotal);
   return { subtotal, total: subtotal - clampedDiscount };
+}
+
+/** Canonical quote-owned pricing aggregates. Unpriced items contribute zero. */
+export function commercialQuoteSummary(
+  items: readonly CommercialQuoteItemInput[],
+  discount = 0,
+): CommercialQuoteSummary {
+  const pricedAmount = (item: CommercialQuoteItemInput) =>
+    item.unitAmount === null ? 0 : lineAmount(item.quantity, item.unitAmount);
+  const sum = (pricingType: QuotePricingType, optional: boolean) => items
+    .filter((item) => item.pricingType === pricingType && item.optional === optional)
+    .reduce((total, item) => total + pricedAmount(item), 0);
+
+  const subtotal = sum("one_time", false);
+  const clampedDiscount = Math.min(Math.max(0, Math.trunc(discount)), subtotal);
+  const cadences = new Set(items
+    .filter((item) => item.pricingType === "recurring")
+    .map((item) => item.recurrenceCadence));
+  if (cadences.size > 1 || cadences.has(null)) {
+    throw new Error("Recurring quote items must share one cadence");
+  }
+
+  return {
+    subtotal,
+    discount: clampedDiscount,
+    total: subtotal - clampedDiscount,
+    recurringTotal: sum("recurring", false),
+    recurringCadence: (cadences.values().next().value as QuoteRecurrenceCadence | undefined) ?? null,
+    optionalOneTimeTotal: sum("one_time", true),
+    optionalRecurringTotal: sum("recurring", true),
+    complete: items.length > 0 && items.every((item) => item.optional || item.unitAmount !== null),
+  };
 }
 
 /**

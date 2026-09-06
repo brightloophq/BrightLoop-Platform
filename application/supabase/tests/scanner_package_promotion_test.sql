@@ -106,9 +106,9 @@ select results_eq(
 select results_eq(
   $$ select label, description, sort, source_work_item_id, source_evidence_refs, quantity, unit_amount, amount, pricing_type, recurrence_cadence, optional, module_id from public.quote_items where quote_id='qte_promo_lead' order by sort $$,
   $$ values
-    ('Improve conversion'::text,'Simplify checkout'::text,0,'work:one'::text,'["ev:1","ev:2"]'::jsonb,1,0::bigint,0::bigint,'one_time'::text,null::text,false,null::text),
-    ('Improve discovery'::text,'Add search'::text,1,'work:two'::text,'["ev:3"]'::jsonb,1,0::bigint,0::bigint,'one_time'::text,null::text,false,null::text) $$,
-  'recommendedWork maps exactly to zero-priced canonical quote items'
+    ('Improve conversion'::text,'Simplify checkout'::text,0,'work:one'::text,'["ev:1","ev:2"]'::jsonb,1,null::bigint,null::bigint,'one_time'::text,null::text,false,null::text),
+    ('Improve discovery'::text,'Add search'::text,1,'work:two'::text,'["ev:3"]'::jsonb,1,null::bigint,null::bigint,'one_time'::text,null::text,false,null::text) $$,
+  'recommendedWork maps exactly to unpriced canonical quote items'
 );
 select is((select bool_and(jsonb_typeof(source_evidence_refs)='array') from public.quote_items where quote_id='qte_promo_lead'), true, 'evidence references remain JSON arrays');
 select results_eq($$ select subtotal,discount,total from public.quotes where id='qte_promo_lead' $$, $$ values (0::bigint,0::bigint,0::bigint) $$, 'quote totals remain zero');

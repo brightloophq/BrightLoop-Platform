@@ -42,6 +42,7 @@ export * from "./narrative-intelligence.js";
 export * from "./prospect-intelligence.js";
 export * from "./runtime.js";
 export * from "./reputation.js";
+export * from "./quote-commercial.js";
 // `catalog` re-exports the Discipline type that originates in `reputation`;
 // export the rest explicitly to avoid an ambiguous duplicate re-export.
 export {

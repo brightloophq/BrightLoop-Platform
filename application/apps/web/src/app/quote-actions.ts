@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { assertCapability, quoteTotals } from "@brightloop/domain";
+import { assertCapability } from "@brightloop/domain";
 import { PLACEHOLDER_MODULES } from "@brightloop/data";
 import { getActor } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -43,17 +43,36 @@ async function internal() {
   return { actor, supabase, meId: me?.id ?? null };
 }
 
-/** Recompute stored subtotal/total from the current line items + discount. */
-async function recompute(supabase: Awaited<ReturnType<typeof createClient>>, quoteId: string) {
-  const [{ data: items }, { data: q }] = await Promise.all([
-    supabase.from("quote_items").select("quantity, unit_amount").eq("quote_id", quoteId),
-    supabase.from("quotes").select("discount").eq("id", quoteId).maybeSingle(),
+type CommercialItem = {
+  id: string | null; label: string; description: string; quantity: number;
+  unitAmount: number | null; pricingType: "one_time" | "recurring";
+  recurrenceCadence: "weekly" | "monthly" | "quarterly" | "annual" | null;
+  optional: boolean;
+};
+
+async function editCommercialQuote(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  quoteId: string,
+  edit: (snapshot: { title: string; clientNote: string; currency: string; discount: number; validUntil: string | null; items: CommercialItem[] }) => void,
+): Promise<string | null> {
+  const [{ data: quote, error: quoteError }, { data: rows, error: itemError }] = await Promise.all([
+    supabase.from("quotes").select("title,client_note,currency,discount,valid_until,updated_at").eq("id", quoteId).maybeSingle(),
+    supabase.from("quote_items").select("id,label,description,quantity,unit_amount,pricing_type,recurrence_cadence,optional,sort").eq("quote_id", quoteId).order("sort"),
   ]);
-  const totals = quoteTotals(
-    (items ?? []).map((i) => ({ quantity: i.quantity, unitAmount: i.unit_amount })),
-    q?.discount ?? 0,
-  );
-  await supabase.from("quotes").update({ subtotal: totals.subtotal, total: totals.total, updated_at: new Date().toISOString() }).eq("id", quoteId);
+  if (quoteError || itemError || !quote) return quoteError?.message ?? itemError?.message ?? "Quote not found";
+  const snapshot = {
+    title: quote.title, clientNote: quote.client_note, currency: quote.currency,
+    discount: quote.discount, validUntil: quote.valid_until,
+    items: (rows ?? []).map((item) => ({ id: item.id, label: item.label, description: item.description, quantity: item.quantity, unitAmount: item.unit_amount, pricingType: item.pricing_type, recurrenceCadence: item.recurrence_cadence, optional: item.optional })),
+  };
+  edit(snapshot);
+  const { error } = await supabase.rpc("bl_save_quote_commercial", {
+    p_quote_id: quoteId, p_expected_updated_at: quote.updated_at,
+    p_title: snapshot.title, p_client_note: snapshot.clientNote,
+    p_currency: snapshot.currency, p_discount: snapshot.discount,
+    p_valid_until: snapshot.validUntil, p_items: snapshot.items,
+  });
+  return error?.message ?? null;
 }
 
 /* ---- admin: build ---------------------------------------------------------- */
@@ -116,7 +135,8 @@ export async function createQuoteFromConfiguration(formData: FormData): Promise<
         return { id: id("qit"), quote_id: quoteId, label: m.name, description: "", module_id: mid, quantity: 1, unit_amount: unit, amount: unit, sort: i };
       });
       await supabase.from("quote_items").insert(rows);
-      await recompute(supabase, quoteId);
+      const saveError = await editCommercialQuote(supabase, quoteId, () => {});
+      if (saveError) return { ok: false, error: saveError };
     }
 
     revalidatePath(`/admin/conversations/${conversationId}`);
@@ -137,19 +157,11 @@ export async function addQuoteItem(formData: FormData): Promise<QuoteResult> {
     const unitAmount = Math.max(0, Math.round(Number(formData.get("unitDollars") ?? 0) * 100));
     if (!quoteId || !label) return { ok: false, error: "Label is required" };
 
-    const { error } = await supabase.from("quote_items").insert({
-      id: id("qit"),
-      quote_id: quoteId,
-      label,
-      description,
-      module_id: String(formData.get("moduleId") ?? "") || null,
-      quantity,
-      unit_amount: unitAmount,
-      amount: quantity * unitAmount,
-      sort: Math.trunc(Number(formData.get("sort") ?? 0)),
-    });
-    if (error) return { ok: false, error: error.message };
-    await recompute(supabase, quoteId);
+    const error = await editCommercialQuote(supabase, quoteId, (snapshot) => snapshot.items.push({
+      id: null, label, description, quantity, unitAmount, pricingType: "one_time",
+      recurrenceCadence: null, optional: false,
+    }));
+    if (error) return { ok: false, error };
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
@@ -161,9 +173,10 @@ export async function removeQuoteItem(formData: FormData): Promise<QuoteResult> 
     const { supabase } = await internal();
     const itemId = String(formData.get("itemId") ?? "").trim();
     const quoteId = String(formData.get("quoteId") ?? "").trim();
-    const { error } = await supabase.from("quote_items").delete().eq("id", itemId);
-    if (error) return { ok: false, error: error.message };
-    await recompute(supabase, quoteId);
+    const error = await editCommercialQuote(supabase, quoteId, (snapshot) => {
+      snapshot.items = snapshot.items.filter((item) => item.id !== itemId);
+    });
+    if (error) return { ok: false, error };
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
@@ -174,15 +187,13 @@ export async function updateQuoteMeta(formData: FormData): Promise<QuoteResult> 
   try {
     const { supabase } = await internal();
     const quoteId = String(formData.get("quoteId") ?? "").trim();
-    const patch: Record<string, unknown> = {};
-    if (formData.has("title")) patch.title = String(formData.get("title") ?? "").trim() || "Proposal quote";
-    if (formData.has("clientNote")) patch.client_note = String(formData.get("clientNote") ?? "");
-    if (formData.has("discountDollars")) patch.discount = Math.max(0, Math.round(Number(formData.get("discountDollars") ?? 0) * 100));
-    if (formData.has("validUntil")) patch.valid_until = String(formData.get("validUntil") ?? "") || null;
-    patch.updated_at = new Date().toISOString();
-    const { error } = await supabase.from("quotes").update(patch).eq("id", quoteId);
-    if (error) return { ok: false, error: error.message };
-    await recompute(supabase, quoteId); // discount may have changed
+    const error = await editCommercialQuote(supabase, quoteId, (snapshot) => {
+      if (formData.has("title")) snapshot.title = String(formData.get("title") ?? "").trim() || "Proposal quote";
+      if (formData.has("clientNote")) snapshot.clientNote = String(formData.get("clientNote") ?? "");
+      if (formData.has("discountDollars")) snapshot.discount = Math.max(0, Math.round(Number(formData.get("discountDollars") ?? 0) * 100));
+      if (formData.has("validUntil")) snapshot.validUntil = String(formData.get("validUntil") ?? "") || null;
+    });
+    if (error) return { ok: false, error };
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
@@ -254,6 +265,7 @@ function revalidatePathForQuote(_quoteId: string) {
   // The admin workspace re-reads on navigation; broad revalidate keeps it simple.
   revalidatePath("/admin/conversations", "layout");
   revalidatePath("/portal/chat");
+  revalidatePath(`/admin/quotes/${_quoteId}`);
 }
 
 /* ---- client: accept / reject / request revision / mark viewed -------------- */

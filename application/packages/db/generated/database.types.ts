@@ -8124,7 +8124,7 @@ export type Database = {
       }
       quote_items: {
         Row: {
-          amount: number
+          amount: number | null
           description: string
           id: string
           label: string
@@ -8137,10 +8137,10 @@ export type Database = {
           sort: number
           source_evidence_refs: Json
           source_work_item_id: string | null
-          unit_amount: number
+          unit_amount: number | null
         }
         Insert: {
-          amount?: number
+          amount?: number | null
           description?: string
           id: string
           label: string
@@ -8153,10 +8153,10 @@ export type Database = {
           sort?: number
           source_evidence_refs?: Json
           source_work_item_id?: string | null
-          unit_amount?: number
+          unit_amount?: number | null
         }
         Update: {
-          amount?: number
+          amount?: number | null
           description?: string
           id?: string
           label?: string
@@ -8169,7 +8169,7 @@ export type Database = {
           sort?: number
           source_evidence_refs?: Json
           source_work_item_id?: string | null
-          unit_amount?: number
+          unit_amount?: number | null
         }
         Relationships: [
           {
@@ -8239,8 +8239,12 @@ export type Database = {
           discount: number
           id: string
           lead_id: string | null
+          optional_one_time_total: number
+          optional_recurring_total: number
           promotion_key: string | null
           proposal_id: string | null
+          recurring_cadence: string | null
+          recurring_total: number
           sent_at: string | null
           source_proposal_version_id: string | null
           source_review_event_id: string | null
@@ -8264,8 +8268,12 @@ export type Database = {
           discount?: number
           id: string
           lead_id?: string | null
+          optional_one_time_total?: number
+          optional_recurring_total?: number
           promotion_key?: string | null
           proposal_id?: string | null
+          recurring_cadence?: string | null
+          recurring_total?: number
           sent_at?: string | null
           source_proposal_version_id?: string | null
           source_review_event_id?: string | null
@@ -8289,8 +8297,12 @@ export type Database = {
           discount?: number
           id?: string
           lead_id?: string | null
+          optional_one_time_total?: number
+          optional_recurring_total?: number
           promotion_key?: string | null
           proposal_id?: string | null
+          recurring_cadence?: string | null
+          recurring_total?: number
           sent_at?: string | null
           source_proposal_version_id?: string | null
           source_review_event_id?: string | null
@@ -12014,6 +12026,31 @@ export type Database = {
         }[]
       }
       bl_role: { Args: never; Returns: string }
+      bl_save_quote_commercial: {
+        Args: {
+          p_client_note: string
+          p_currency: string
+          p_discount: number
+          p_expected_updated_at: string
+          p_items: Json
+          p_quote_id: string
+          p_title: string
+          p_valid_until: string
+        }
+        Returns: {
+          discount: number
+          item_count: number
+          optional_one_time_total: number
+          optional_recurring_total: number
+          pricing_complete: boolean
+          quote_id: string
+          recurring_cadence: string
+          recurring_total: number
+          subtotal: number
+          total: number
+          updated_at: string
+        }[]
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
     }
     Enums: {
