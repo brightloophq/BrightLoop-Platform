@@ -9,11 +9,21 @@
 .close {
   position: relative;
   overflow: hidden;
-  /* svh, not vh: on mobile browsers vh is the tallest viewport, which pushes the
-     CTA under the address bar on first paint. */
-  min-height: 100svh;
   display: grid;
   align-content: center;
+}
+
+/* Only the OPENING stage claims a full viewport. svh, not vh: on mobile browsers
+   vh is the tallest viewport, which pushes the CTA under the address bar on
+   first paint. */
+.stage {
+  min-height: 100svh;
+}
+
+/* The close is a stage, not a second cover — 100svh here plus the hero rhythm's
+   own padding left a screen of emptiness between the CTA and the footer. */
+.close {
+  min-height: 62svh;
 }
 
 /* The stage light. Two soft gold pools plus a fine grid, kept low so the
@@ -43,7 +53,16 @@
 
 .open {
   position: relative;
-  max-width: min(56ch, 100%);
+}
+
+/* The measure applies to the copy only. The headline is sized off the viewport
+   and must be free to use the full container, or .lineMask clips it. */
+.openSub,
+.openNote {
+  max-width: 56ch;
+}
+.openActions {
+  max-width: 56ch;
 }
 
 .openTitle {
@@ -54,6 +73,9 @@
   line-height: 0.92;
   letter-spacing: -0.03em;
   text-wrap: balance;
+  /* Belt and braces against the clipping bug above: if a line ever does exceed
+     the container, break it rather than letting the mask shear it. */
+  overflow-wrap: break-word;
 }
 
 /* Each line rises from behind its own mask (transform-only; the mask is inert

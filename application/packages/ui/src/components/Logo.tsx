@@ -12,6 +12,13 @@ export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, "height"> {
  * Logo — the Auxion identity: a folded metallic ribbon "A" over the AUXION
  * wordmark.
  *
+ * ⚠ STAND-IN, NOT THE FINAL MARK. The geometry below is a reconstruction drawn
+ * from the identity, not the client's own artwork: the real mark's apex is a
+ * ROUNDED ribbon fold (not a mitred point), its crossbar is a folded-back tab,
+ * and the upper-right slash is a detached parallelogram. Replace this with the
+ * supplied asset — see "Brand B.4" in ENGINEERING_CONTEXT.md — and do not
+ * redraw the mark by hand again.
+ *
  * GEOMETRY. The mark is one continuous ribbon that enters at the lower left,
  * crosses the apex and OVERSHOOTS to the upper right (`RIBBON`), tucked against
  * a shorter right leg folding in behind it (`LEG`) and joined by a crossbar that

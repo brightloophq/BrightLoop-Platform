@@ -4,7 +4,9 @@
 .rail {
   position: fixed;
   inset-block: 0;
-  left: 0;
+  /* Inset from the edge. Flush at 0 the folds touched the window frame and read
+     as an accident rather than as the gutter rail they are. */
+  left: 24px;
   width: 40px;
   z-index: var(--z-raised);
   pointer-events: none;
