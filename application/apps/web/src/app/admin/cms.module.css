@@ -71,6 +71,17 @@
   overflow: hidden;
 }
 
+/* Per-row Edit / Delete. Sits in the row's BODY column so the opened form and
+   the delete confirmation get the full width — the controls column beside it is
+   sized for a select and two toggles. */
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
 .controls {
   display: flex;
   align-items: center;
