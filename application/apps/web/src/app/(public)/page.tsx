@@ -1,12 +1,23 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { DISCIPLINE_SLUGS, type Discipline } from "@brightloop/schema";
-import { PLACEHOLDER_DISCIPLINE_COPY, PLACEHOLDER_TRUST_BAR } from "@brightloop/data";
-import { Alert, Button, CTASection, CaseStudyCard, Container, Eyebrow, Marquee, Section, ServiceCard, Stars, Testimonial } from "@brightloop/ui";
+import { PLACEHOLDER_DISCIPLINE_COPY } from "@brightloop/data";
+import {
+  Alert,
+  Button,
+  CaseStudyCard,
+  Container,
+  Eyebrow,
+  Marquee,
+  Section,
+  Stars,
+  Testimonial,
+} from "@brightloop/ui";
 import { CountUp, HeroSequence, Reveal } from "@brightloop/ui/motion";
 import { getCatalogRepository, getReputationRepository } from "@/lib/repositories";
 import { TransformationJourney } from "./_sections/TransformationJourney";
 import { PlatformShowcase } from "./_sections/PlatformShowcase";
+import { RibbonRail } from "./_sections/RibbonRail";
 import styles from "./home.module.css";
 
 /**
@@ -42,20 +53,28 @@ export const metadata: Metadata = {
     "One connected loop — Brand, Build, Automate, Grow — for small businesses that want to look established and run like it.",
 };
 
-const LOOP_NODES: { discipline: Discipline; position: string }[] = [
-  { discipline: "Brand", position: "nodeTop" },
-  { discipline: "Build", position: "nodeRight" },
-  { discipline: "Automate", position: "nodeBottom" },
-  { discipline: "Grow", position: "nodeLeft" },
-];
+/** The disciplines in loop order, which is also their chapter order. */
+const LOOP_ORDER: readonly Discipline[] = ["Brand", "Build", "Automate", "Grow"];
 
 /**
- * Homepage (handoff §05).
+ * Homepage.
  *
- * All proof is pulled through the reputation repository, which publish-gates it.
- * The featured case study and testimonials are whatever is published — if
- * nothing is, the page degrades to an honest empty state rather than inventing
- * proof (handoff §15: "falls back gracefully if none published").
+ * THE STRUCTURE. A cinematic single-column descent on the identity's black
+ * ground: a full-viewport opening stage, an honest ledger, the capability
+ * ticker, the loop told as four numbered chapters, the platform, proof, what
+ * clients said, and a closing stage. The <RibbonRail> draws the logo's own
+ * folded strap down the left gutter as you scroll, so the page's through-line
+ * IS the mark.
+ *
+ * THE INTEGRITY RULES ARE UNCHANGED, and they are what shapes the content:
+ * every piece of proof still comes through the reputation repository, which
+ * publish-gates it, and each block degrades to an honest empty state rather
+ * than inventing proof. The opening ledger counts only things that are real —
+ * the four disciplines, the modules actually in the catalog, and reviews only
+ * once some are published. It replaces a strip of INVENTED client names
+ * (PLACEHOLDER_TRUST_BAR), which was the one piece of fabricated social proof
+ * on the page; nothing about the new brand made that safe to keep, and a
+ * landing page whose first claim is a lie is a worse landing page.
  */
 export default async function HomePage() {
   const reputation = await getReputationRepository();
@@ -77,107 +96,142 @@ export default async function HomePage() {
   const moduleCountFor = (discipline: Discipline) =>
     modules.filter((m) => m.stage === discipline).length;
 
+  const slugFor = (discipline: Discipline) =>
+    Object.entries(DISCIPLINE_SLUGS).find(([, d]) => d === discipline)?.[0] ?? "";
+
+  /** The four chapters, composed server-side so the story and the catalog agree. */
+  const chapters = LOOP_ORDER.map((discipline, i) => {
+    const count = moduleCountFor(discipline);
+    return {
+      discipline,
+      n: String(i + 1).padStart(2, "0"),
+      outcome: PLACEHOLDER_DISCIPLINE_COPY[discipline]?.outcome ?? "",
+      blurb: PLACEHOLDER_DISCIPLINE_COPY[discipline]?.blurb ?? "",
+      href: `/services/${slugFor(discipline)}`,
+      meta: `${count} ${count === 1 ? "module" : "modules"}`,
+    };
+  });
+
   return (
     <>
-      {/* ---- Hero ---- */}
-      <Section rhythm="hero" tone="dark" className={styles.hero}>
-        <div className={styles.heroGlow} aria-hidden="true" />
+      <RibbonRail />
+
+      {/* ---- Opening stage ---- */}
+      <Section rhythm="hero" tone="dark" className={styles.stage}>
+        <div className={styles.stageWash} aria-hidden="true" />
         <Container width="wide">
-          <HeroSequence className={styles.heroGrid}>
-            <div>
-              <div data-hero="eyebrow">
-                <Eyebrow>Brand · Build · Automate · Grow</Eyebrow>
-              </div>
-              <span className={styles.titleMask}>
-                <h1 className={styles.heroTitle} data-hero="title">
-                  Four disciplines. <span className={styles.heroAccent}>One loop.</span>
-                </h1>
-              </span>
-              <p className={styles.heroSub} data-hero="sub">
-                Most agencies hand you a logo, a site, or a campaign — then leave the gaps to you.
-                Auxion connects all four so your brand, website, operations and marketing compound
-                instead of competing.
-              </p>
-              <div className={styles.heroActions} data-hero="actions">
-                <Button variant="primary" size="lg" asChild>
-                  <Link href="/assessment">Start the Health Assessment</Link>
-                </Button>
-                <Button variant="secondary" size="lg" asChild>
-                  <Link href="/contact">Book a Strategy Call</Link>
-                </Button>
-              </div>
-              <p className={styles.heroNote} data-hero="note">
-                Free assessment · No card required · Takes about 5 minutes
-              </p>
+          <HeroSequence className={styles.open}>
+            <div data-hero="eyebrow">
+              <Eyebrow>Brand · Build · Automate · Grow</Eyebrow>
             </div>
 
-            {/* The loop visual — the four disciplines as one cycle. */}
-            <div className={styles.loop} aria-hidden="true">
-              <div className={styles.loopRing} data-hero="loopRing" />
-              {LOOP_NODES.map((node) => (
-                <div
-                  key={node.discipline}
-                  className={`${styles.loopNode} ${styles[node.position]}`}
-                  data-hero="loopNode"
-                >
-                  <span className={styles.loopNodeLabel}>{node.discipline}</span>
-                </div>
-              ))}
-              <div className={styles.loopCore} data-hero="loopCore">
-                Auxion
-              </div>
+            {/* Each line gets its own mask so they rise in sequence, the way a
+                title card resolves — one <h1> for the document outline. */}
+            <h1 className={styles.openTitle}>
+              <span className={styles.lineMask}>
+                <span className={styles.line} data-hero="title">
+                  Four disciplines.
+                </span>
+              </span>
+              <span className={styles.lineMask}>
+                <span className={`${styles.line} ${styles.lineMetal}`} data-hero="title">
+                  One loop.
+                </span>
+              </span>
+            </h1>
+
+            <p className={styles.openSub} data-hero="sub">
+              Most agencies hand you a logo, a site, or a campaign — then leave the gaps to you.
+              Auxion connects all four so your brand, website, operations and marketing compound
+              instead of competing.
+            </p>
+
+            <div className={styles.openActions} data-hero="actions">
+              <Button variant="primary" size="lg" asChild>
+                <Link href="/assessment">Start the Health Assessment</Link>
+              </Button>
+              <Button variant="secondary" size="lg" asChild>
+                <Link href="/contact">Book a Strategy Call</Link>
+              </Button>
             </div>
+
+            <p className={styles.openNote} data-hero="note">
+              Free assessment · No card required · Takes about 5 minutes
+            </p>
           </HeroSequence>
         </Container>
       </Section>
 
-      {/* ---- Trust bar (PLACEHOLDER company names — open decision 14) ---- */}
-      <div className={styles.trust}>
-        <Container width="wide" className={styles.trustInner}>
-          <span className={styles.trustLabel}>Sample client names</span>
-          {PLACEHOLDER_TRUST_BAR.map((name) => (
-            <span key={name} className={styles.trustLogo}>
-              {name}
-            </span>
-          ))}
+      {/* ---- Ledger: only things that are true ---- */}
+      <div className={styles.ledger}>
+        <Container width="wide">
+          <Reveal className={styles.ledgerRow} as="dl">
+            <div className={styles.ledgerItem}>
+              <dt className={styles.ledgerLabel}>Disciplines</dt>
+              <dd className={styles.ledgerValue}>{LOOP_ORDER.length}</dd>
+            </div>
+            <div className={styles.ledgerItem}>
+              <dt className={styles.ledgerLabel}>Modules in the catalog</dt>
+              <dd className={styles.ledgerValue}>{modules.length}</dd>
+            </div>
+            {/* Ratings appear only once reviews are published — never a zero, and
+                never a placeholder figure standing in for one. */}
+            {aggregate.count > 0 ? (
+              <>
+                <div className={styles.ledgerItem}>
+                  <dt className={styles.ledgerLabel}>Verified reviews</dt>
+                  <dd className={styles.ledgerValue}>{aggregate.count}</dd>
+                </div>
+                <div className={styles.ledgerItem}>
+                  <dt className={styles.ledgerLabel}>Average rating</dt>
+                  <dd className={styles.ledgerValue}>{aggregate.overall.toFixed(1)}</dd>
+                </div>
+              </>
+            ) : null}
+          </Reveal>
         </Container>
       </div>
 
-      {/* ---- Capability marquee ---- */}
+      {/* ---- Capability ticker ---- */}
       <Marquee items={CAPABILITY_MARQUEE} label="What Auxion does" />
 
-      {/* ---- The four disciplines ---- */}
-      <Section>
+      {/* ---- The loop, as four chapters ---- */}
+      <Section className={styles.chapters}>
         <Container width="wide">
-          <Reveal className={styles.head}>
+          <Reveal className={styles.chaptersHead}>
             <Eyebrow>The framework</Eyebrow>
-            <h2 className={styles.title}>Everything a small business needs, in the right order</h2>
+            <h2 className={styles.sectionTitle}>
+              Everything a small business needs, in the right order
+            </h2>
             <p className={styles.lede}>
               Each discipline stands alone. Together they form the loop — brand earns the click,
               build converts it, automation catches it, and growth compounds it.
             </p>
           </Reveal>
 
-          <Reveal className={styles.serviceGrid}>
-            {Object.entries(DISCIPLINE_SLUGS).map(([slug, discipline]) => {
-              const copy = PLACEHOLDER_DISCIPLINE_COPY[discipline];
-              const count = moduleCountFor(discipline);
-              return (
-                <ServiceCard
-                  key={slug}
-                  name={discipline}
-                  outcome={copy?.outcome ?? ""}
-                  blurb={copy?.blurb ?? ""}
-                  href={`/services/${slug}`}
-                  meta={`${count} ${count === 1 ? "module" : "modules"}`}
-                />
-              );
-            })}
-          </Reveal>
+          <ol className={styles.chapterList}>
+            {chapters.map((c) => (
+              // One Reveal per chapter, so each arrives on its own scroll rather
+              // than the whole list animating off a single trigger.
+              <Reveal as="li" className={styles.chapter} key={c.discipline}>
+                <Link href={c.href} className={styles.chapterLink}>
+                  <span className={styles.chapterN} aria-hidden="true">
+                    {c.n}
+                  </span>
+                  <span className={styles.chapterBody}>
+                    <span className={styles.chapterName}>{c.discipline}</span>
+                    <span className={styles.chapterOutcome}>{c.outcome}</span>
+                    <span className={styles.chapterBlurb}>{c.blurb}</span>
+                  </span>
+                  <span className={styles.chapterMeta}>{c.meta}</span>
+                </Link>
+              </Reveal>
+            ))}
+          </ol>
         </Container>
       </Section>
 
-      {/* ---- The transformation journey (scroll story) ---- */}
+      {/* ---- How the loop runs (scroll story) ---- */}
       <TransformationJourney />
 
       {/* ---- The platform, showcased as a product ---- */}
@@ -188,32 +242,32 @@ export default async function HomePage() {
         <Container width="wide">
           <Reveal className={styles.head}>
             <Eyebrow>Proof</Eyebrow>
-            <h2 className={styles.title}>The loop, applied</h2>
+            <h2 className={styles.sectionTitle}>The loop, applied</h2>
           </Reveal>
 
           <Reveal stagger={false}>
-          {marquee ? (
-            <CaseStudyCard
-              name={marquee.name}
-              summary={marquee.summary}
-              industry={marquee.industry}
-              services={marquee.services}
-              href={`/portfolio/${marquee.slug}`}
-              // PROJECT FACTS ONLY — never a business result. Result metrics stay
-              // undisclosed unless the client has approved them.
-              facts={[
-                { label: "Timeline", value: marquee.timeline },
-                { label: "Deliverables", value: String(marquee.deliverablesCount) },
-                { label: "Platform", value: marquee.platform },
-                { label: "Status", value: marquee.projectStatus },
-              ]}
-            />
-          ) : (
-            <Alert tone="neutral" title="No published case studies yet">
-              Work appears here once a project is published in the Reputation CMS. Nothing is shown
-              until it is real and client-approved.
-            </Alert>
-          )}
+            {marquee ? (
+              <CaseStudyCard
+                name={marquee.name}
+                summary={marquee.summary}
+                industry={marquee.industry}
+                services={marquee.services}
+                href={`/portfolio/${marquee.slug}`}
+                // PROJECT FACTS ONLY — never a business result. Result metrics stay
+                // undisclosed unless the client has approved them.
+                facts={[
+                  { label: "Timeline", value: marquee.timeline },
+                  { label: "Deliverables", value: String(marquee.deliverablesCount) },
+                  { label: "Platform", value: marquee.platform },
+                  { label: "Status", value: marquee.projectStatus },
+                ]}
+              />
+            ) : (
+              <Alert tone="neutral" title="No published case studies yet">
+                Work appears here once a project is published in the Reputation CMS. Nothing is
+                shown until it is real and client-approved.
+              </Alert>
+            )}
           </Reveal>
         </Container>
       </Section>
@@ -223,7 +277,7 @@ export default async function HomePage() {
         <Container width="wide">
           <Reveal className={`${styles.head} ${styles.headCentered}`}>
             <Eyebrow>What clients say</Eyebrow>
-            <h2 className={styles.title}>Rated by the businesses we build for</h2>
+            <h2 className={styles.sectionTitle}>Rated by the businesses we build for</h2>
             {aggregate.count > 0 ? (
               <div className={styles.ratingRow}>
                 <Stars value={aggregate.overall} showValue />
@@ -257,26 +311,29 @@ export default async function HomePage() {
         </Container>
       </Section>
 
-      {/* ---- Closing CTA ---- */}
-      <Section rhythm="tight">
+      {/* ---- Closing stage: where the ribbon finishes ---- */}
+      <Section rhythm="hero" tone="dark" className={styles.close}>
+        <div className={styles.stageWash} aria-hidden="true" />
         <Container width="wide">
-          <Reveal stagger={false}>
-          <CTASection
-            eyebrow="Start here"
-            title="Find out where your business actually stands"
-            body="Answer five questions and get a Business Health Score across Brand, Build, Automate and Grow — plus a recommended path built from your answers, not a template."
-            actions={
-              <>
-                <Button variant="primary" size="lg" asChild>
-                  <Link href="/assessment">Start the Health Assessment</Link>
-                </Button>
-                <Button variant="secondary" size="lg" asChild>
-                  <Link href="/packages">See packages</Link>
-                </Button>
-              </>
-            }
-            note="Free · No card required · About 5 minutes"
-          />
+          <Reveal className={styles.closeInner}>
+            <Eyebrow>Start here</Eyebrow>
+            <h2 className={styles.closeTitle}>
+              Find out where your business{" "}
+              <span className={styles.lineMetal}>actually stands</span>
+            </h2>
+            <p className={styles.closeBody}>
+              Answer five questions and get a Business Health Score across Brand, Build, Automate
+              and Grow — plus a recommended path built from your answers, not a template.
+            </p>
+            <div className={styles.openActions}>
+              <Button variant="primary" size="lg" asChild>
+                <Link href="/assessment">Start the Health Assessment</Link>
+              </Button>
+              <Button variant="secondary" size="lg" asChild>
+                <Link href="/packages">See packages</Link>
+              </Button>
+            </div>
+            <p className={styles.openNote}>Free · No card required · About 5 minutes</p>
           </Reveal>
         </Container>
       </Section>

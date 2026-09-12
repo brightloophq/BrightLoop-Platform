@@ -35,6 +35,8 @@
   width: 100%;
   height: 100%;
   border-radius: inherit;
-  background: var(--grad-loop);
+  /* The identity's metal, not the pale --grad-loop tint — this 2px bar is the
+     first gold the visitor sees, so it should be the real thing. */
+  background: var(--grad-metal);
   transform-origin: left center;
 }

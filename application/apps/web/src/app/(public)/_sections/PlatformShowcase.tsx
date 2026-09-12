@@ -76,9 +76,7 @@ export function PlatformShowcase() {
           <Parallax className={styles.floatA} distance={18}>
             <Reveal stagger={false}>
               <div className={styles.card} aria-hidden="true">
-                <span className={styles.cardKicker}>
- Signal
-                </span>
+                <span className={styles.cardKicker}>Signal</span>
                 <span className={styles.cardTitle}>Momentum shifting</span>
                 <span className={styles.spark} />
               </div>
@@ -89,9 +87,7 @@ export function PlatformShowcase() {
           <Parallax className={styles.floatB} distance={26}>
             <Reveal stagger={false}>
               <div className={styles.card} aria-hidden="true">
-                <span className={styles.cardKicker}>
- Recommendation
-                </span>
+                <span className={styles.cardKicker}>Recommendation</span>
                 <span className={styles.cardTitle}>Next best move</span>
                 <span className={styles.pill}>Approve</span>
               </div>

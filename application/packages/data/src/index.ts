@@ -273,7 +273,6 @@ export { SupabaseRuntimeRepository } from "./runtime/adapter.js";
 export {
   PLACEHOLDER_PROJECTS,
   PLACEHOLDER_TESTIMONIALS,
-  PLACEHOLDER_TRUST_BAR,
 } from "./placeholder/reputation.dataset.js";
 export {
   PLACEHOLDER_MODULES,

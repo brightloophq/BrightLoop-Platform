@@ -104,9 +104,6 @@
     color-mix(in srgb, var(--signal) 55%, transparent) 50%,
     transparent 100%
   ); /* @kind color */
-  /* Signature wash for the ONE accented hero headline word. Resolves from the
-     gold ramp so it stays legible on the black hero field and on paper. */
-  --grad-signal: var(--grad-gold-soft); /* @kind color */
 
   /* ---- Semantic (state) — kept clear of the gold axis so "caution" can never
      be read as "brand". ---- */
@@ -177,6 +174,18 @@
   --brand-4: var(--gold-300); /* sheen band */
   --focus-ring:     var(--signal);
 
+
+  /* The metallic TEXT gradient — for the ONE accented headline phrase, never
+     body copy. Unlike --grad-gold / --grad-metal, which sweep through a pale
+     sheen band and so cannot carry text at all, every stop here clears AA
+     against its own theme's canvas (paper: 8.4:1 / 5.9:1). That is the whole
+     reason it is defined per theme instead of once in :root. */
+  --grad-signal: linear-gradient(
+    100deg,
+    var(--gold-900) 0%,
+    var(--gold-700) 50%,
+    var(--gold-900) 100%
+  );
   /* legacy status aliases → canon */
   --success: var(--positive);
   --warning: var(--caution);
@@ -254,6 +263,15 @@
   --brand-4: var(--gold-050);
   --focus-ring:     var(--signal);
 
+
+  /* Metallic headline text on the black ground — the bright span of the ramp
+     (8.5:1 / 14:1). See the light block for why this is per theme. */
+  --grad-signal: linear-gradient(
+    100deg,
+    var(--gold-300) 0%,
+    var(--gold-050) 50%,
+    var(--gold-300) 100%
+  );
   --success: var(--positive);
   --warning: var(--caution);
   --danger:  var(--critical);
