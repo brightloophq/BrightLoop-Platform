@@ -53,7 +53,6 @@ export default async function ServicesPage() {
                   name={discipline}
                   outcome={copy?.outcome ?? ""}
                   blurb={copy?.blurb ?? ""}
-                  icon={copy?.icon ?? "sparkles"}
                   href={`/services/${slug}`}
                   meta={`${count} ${count === 1 ? "module" : "modules"}`}
                 />

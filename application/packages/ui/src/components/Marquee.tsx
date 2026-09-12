@@ -15,19 +15,16 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { MARQUEE } from "../motion/public.config";
-import { Icon } from "./Icon";
 import styles from "./Marquee.module.css";
 
 export interface MarqueeProps {
   items: readonly string[];
   /** Accessible name for the region. */
   label?: string;
-  /** Separator icon between items. */
-  icon?: string;
   className?: string;
 }
 
-export function Marquee({ items, label = "Capabilities", icon = "sparkles", className }: MarqueeProps) {
+export function Marquee({ items, label = "Capabilities", className }: MarqueeProps) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [durationS, setDurationS] = useState<number | null>(null);
 
@@ -51,7 +48,7 @@ export function Marquee({ items, label = "Capabilities", icon = "sparkles", clas
       {items.map((item, i) => (
         <span className={styles.item} key={`${item}-${i}`}>
           <span className={styles.text}>{item}</span>
-          <Icon name={icon} size={14} className={styles.sep} />
+          <span className={styles.sep} aria-hidden="true" />
         </span>
       ))}
     </div>

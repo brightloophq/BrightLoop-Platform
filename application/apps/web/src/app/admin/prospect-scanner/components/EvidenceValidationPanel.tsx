@@ -68,7 +68,6 @@ export function EvidenceValidationPanel({ view }: { view: EvidenceValidationView
       <OperationalPanel>
         <SectionRule index="07" label="Evidence validation" meta="not run" />
         <EmptyWorkspace
-          icon="layers"
           title="Nothing validated yet"
           body="Run the pipeline through finding synthesis. Every conclusion is then traced back to the evidence collected from the website — no unsupported claims."
         />
@@ -82,11 +81,11 @@ export function EvidenceValidationPanel({ view }: { view: EvidenceValidationView
       <p className={styles.stageReason}>{view.summary}</p>
 
       <div className={styles.metrics}>
-        <MetricCard label="Evidence items" value={view.evidenceCount} icon="layers" />
-        <MetricCard label="Findings" value={view.findings.length} icon="check-circle" emphasis="hero" />
-        {view.providerAttempted ? <MetricCard label="Claims validated" value={view.surviving} icon="check-circle" /> : null}
-        {view.providerAttempted ? <MetricCard label="Rejected" value={view.unsupported + view.contradicted} icon="x" /> : null}
-        {view.providerAttempted ? <MetricCard label="Avg confidence" value={view.averageConfidence} icon="bell" /> : null}
+        <MetricCard label="Evidence items" value={view.evidenceCount} />
+        <MetricCard label="Findings" value={view.findings.length} emphasis="hero" />
+        {view.providerAttempted ? <MetricCard label="Claims validated" value={view.surviving} /> : null}
+        {view.providerAttempted ? <MetricCard label="Rejected" value={view.unsupported + view.contradicted} /> : null}
+        {view.providerAttempted ? <MetricCard label="Avg confidence" value={view.averageConfidence} /> : null}
       </div>
 
       {view.contradicted > 0 ? (

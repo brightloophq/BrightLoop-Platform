@@ -2,7 +2,6 @@
 
 import { useTransition } from "react";
 import { PUBLISH, PUBLISH_STATES } from "@brightloop/schema";
-import { Icon } from "@brightloop/ui";
 import { moderateProject, moderateTestimonial } from "../reputation-actions";
 import styles from "../cms.module.css";
 
@@ -62,7 +61,6 @@ export function ModerationControls({
           aria-pressed={pinned}
           title="Pinned reviews sort first on the public wall"
         >
-          <Icon name="star" size={13} />
           Pin
         </button>
       ) : null}
@@ -75,7 +73,6 @@ export function ModerationControls({
         aria-pressed={featuredOnHome}
         title="Featured items surface on the homepage automatically"
       >
-        <Icon name="heart" size={13} />
         Home
       </button>
 

@@ -62,7 +62,6 @@ export default async function LeadsPage() {
 
         {leads.length === 0 ? (
           <EmptyState
-            icon="route"
             title="No leads yet"
             body="Add your first lead to start the pipeline."
           />

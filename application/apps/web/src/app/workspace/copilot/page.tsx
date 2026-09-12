@@ -18,7 +18,7 @@ const first = (v: string | string[] | undefined): string | undefined => (Array.i
 export default async function CopilotPage({ searchParams }: { searchParams: Promise<RawParams> }) {
   const activeParam = first((await searchParams)["c"]);
   const boot = await loadCopilotBoot(activeParam);
-  if (boot === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (boot === null) return <EmptyState title="Session expired" body="Please sign in again." />;
 
   return (
     <>

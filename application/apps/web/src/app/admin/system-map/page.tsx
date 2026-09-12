@@ -22,7 +22,7 @@ export default async function SystemMapPage() {
     if (err instanceof AuthorizationError) {
       return (
         <div style={{ padding: "var(--gutter)" }}>
-          <EmptyState icon="lock" title="Not authorized" body="Your role can't view the transformation System Map." />
+          <EmptyState title="Not authorized" body="Your role can't view the transformation System Map." />
         </div>
       );
     }
@@ -50,7 +50,6 @@ export default async function SystemMapPage() {
         <SystemMapExplorer data={data} />
       ) : (
         <EmptyState
-          icon="route"
           title="Your System Map is still assembling"
           body="Run a Business Scan to bring your seven domains online. Once domains have activity, this map comes alive — hover, click, search and filter across your whole operating system."
         />

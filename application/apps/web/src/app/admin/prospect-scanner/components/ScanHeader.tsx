@@ -53,10 +53,10 @@ export function ScanHeader({ scan, identity, next, flags, latestEvent }: ScanHea
       </div>
 
       <div className={styles.metrics} style={{ marginTop: "var(--space-4)" }}>
-        <MetricCard label="Progress" value={`${scan.progress}%`} icon="gauge" />
-        <MetricCard label="Elapsed" value={formatDuration(scan.durationMs)} icon="clock" />
-        <MetricCard label="Started" value={new Date(started).toLocaleString()} icon="activity" />
-        <MetricCard label="Latest event" value={latestEvent ?? "—"} icon="bell" emptyLabel="No events yet" />
+        <MetricCard label="Progress" value={`${scan.progress}%`} />
+        <MetricCard label="Elapsed" value={formatDuration(scan.durationMs)} />
+        <MetricCard label="Started" value={new Date(started).toLocaleString()} />
+        <MetricCard label="Latest event" value={latestEvent ?? "—"} emptyLabel="No events yet" />
       </div>
 
       <div className={styles.railFoot}>

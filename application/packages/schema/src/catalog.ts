@@ -26,7 +26,6 @@ export const estimateRangeSchema = z
 export const assetSchema = z.object({
   key: z.string(),
   label: z.string(),
-  icon: z.string(),
 });
 
 /** A named deliverable: [name, plain-language explanation]. */
@@ -95,7 +94,6 @@ export const planSchema = z.object({
 export const goalSchema = z.object({
   id: z.string(),
   label: z.string(),
-  icon: z.string(),
 });
 
 /** Why an estimate is a range, not a fixed price: [factor, explanation]. */

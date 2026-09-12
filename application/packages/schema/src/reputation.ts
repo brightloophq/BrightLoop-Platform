@@ -96,11 +96,11 @@ export const DISCIPLINES = ["Brand", "Build", "Automate", "Grow"] as const;
 export type Discipline = (typeof DISCIPLINES)[number];
 
 export const AWARDS = {
-  featured_project: { label: "Featured Project", icon: "star" },
-  editors_choice: { label: "Editor's Choice", icon: "award" },
-  most_innovative: { label: "Most Innovative", icon: "lightbulb" },
-  highest_roi: { label: "Highest ROI", icon: "trending-up" },
-  client_favourite: { label: "Client Favourite", icon: "heart" },
+  featured_project: { label: "Featured Project" },
+  editors_choice: { label: "Editor's Choice" },
+  most_innovative: { label: "Most Innovative" },
+  highest_roi: { label: "Highest ROI" },
+  client_favourite: { label: "Client Favourite" },
 } as const;
 
 export type AwardKey = keyof typeof AWARDS;
@@ -110,12 +110,12 @@ export type AwardKey = keyof typeof AWARDS;
  * value exists. There is deliberately no default value for any of these.
  */
 export const METRIC_DEFS = [
-  { key: "leadsGenerated", label: "Leads Generated", icon: "users", unit: "" },
-  { key: "conversionLift", label: "Conversion Improvement", icon: "mouse-pointer-click", unit: "%" },
-  { key: "timeSaved", label: "Time Saved", icon: "clock", unit: "" },
-  { key: "revenueGrowth", label: "Revenue Growth", icon: "trending-up", unit: "%" },
-  { key: "seoLift", label: "SEO Improvement", icon: "search", unit: "" },
-  { key: "automationSavings", label: "Automation Savings", icon: "workflow", unit: "" },
+  { key: "leadsGenerated", label: "Leads Generated", unit: "" },
+  { key: "conversionLift", label: "Conversion Improvement", unit: "%" },
+  { key: "timeSaved", label: "Time Saved", unit: "" },
+  { key: "revenueGrowth", label: "Revenue Growth", unit: "%" },
+  { key: "seoLift", label: "SEO Improvement", unit: "" },
+  { key: "automationSavings", label: "Automation Savings", unit: "" },
 ] as const;
 
 export type MetricKey = (typeof METRIC_DEFS)[number]["key"];

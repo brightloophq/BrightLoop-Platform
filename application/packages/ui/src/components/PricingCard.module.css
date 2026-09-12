@@ -8,7 +8,7 @@
 
 .recommended {
   border-color: color-mix(in srgb, var(--signal) 40%, transparent);
-  box-shadow: var(--glow-cyan);
+  box-shadow: var(--glow-signal-soft);
 }
 
 .head {
@@ -88,7 +88,12 @@
   color: var(--text-secondary);
 }
 
+/* Included-item marker: a short gold rule in place of the check glyph. The
+   list is already semantically a <ul>, so the marker is decoration only. */
 .check {
-  color: var(--success);
-  margin-top: 2px;
+  width: 12px;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--signal);
+  margin-top: 0.55em;
 }

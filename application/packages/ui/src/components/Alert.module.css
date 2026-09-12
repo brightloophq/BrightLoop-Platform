@@ -21,8 +21,17 @@
   color: var(--text-secondary);
 }
 
-.icon {
-  margin-top: 2px;
+/* The severity WORD that replaced the pictogram. Mono + uppercase so it reads
+   as a system label rather than prose, and it inherits the tone colour set on
+   .alert — so the tint, the border and the word all say the same thing. */
+.tone {
+  margin-top: 1px;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .info {

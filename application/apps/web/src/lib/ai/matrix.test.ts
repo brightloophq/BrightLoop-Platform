@@ -10,7 +10,7 @@ describe("AI route matrix", () => {
 
   it("actionDefs strips server-only meta (no permission/status leak to the client)", () => {
     for (const def of actionDefs("console")) {
-      expect(Object.keys(def).sort()).toEqual(["icon", "key", "kind", "label"]);
+      expect(Object.keys(def).sort()).toEqual(["key", "kind", "label"]);
     }
   });
 

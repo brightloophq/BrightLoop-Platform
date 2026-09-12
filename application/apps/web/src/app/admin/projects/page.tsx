@@ -53,7 +53,6 @@ export default async function ProjectsPage() {
 
         {list.length === 0 ? (
           <EmptyState
-            icon="workflow"
             title="No projects yet"
             body="Projects are created from a client's page. Open a client to add one."
             action={

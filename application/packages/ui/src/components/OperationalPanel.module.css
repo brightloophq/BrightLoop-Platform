@@ -29,11 +29,6 @@
   position: absolute;
   inset: 0 0 auto 0;
   height: 2px;
-  background: linear-gradient(
-    90deg,
-    var(--action-primary) 0%,
-    var(--bl-cyan) 50%,
-    transparent 100%
-  );
+  background: var(--grad-metal);
   opacity: 0.9;
 }

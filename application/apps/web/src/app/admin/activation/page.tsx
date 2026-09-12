@@ -2,19 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthorizationError, assertCoreSurfacesRead, canActivate, buildActivationView } from "@brightloop/domain";
-import {
-  Alert,
-  Badge,
-  Button,
-  EmptyWorkspace,
-  Icon,
-  IndexGauge,
-  OperationalPanel,
-  SectionHeader,
-  SectionRule,
-  SkeletonBlock,
-  SystemMap,
-} from "@brightloop/ui";
+import { Alert, Badge, Button, EmptyWorkspace, IndexGauge, OperationalPanel, SectionHeader, SectionRule, SkeletonBlock, SystemMap } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { getCoreSurfaceRepository } from "@/lib/repositories";
@@ -87,16 +75,13 @@ async function OrgPicker() {
       />
       <OperationalPanel>
         {orgs.length === 0 ? (
-          <EmptyWorkspace icon="lock" title="No organizations yet" body="Create a client organization first." />
+          <EmptyWorkspace title="No organizations yet" body="Create a client organization first." />
         ) : (
           <>
             <SectionRule index="01" label="Choose an organization to activate" meta={`${orgs.length} on file`} />
             <div className={styles.orgGrid}>
               {orgs.map((o) => (
                 <Link key={o.id} href={`/admin/activation?client=${o.id}`} className={styles.orgCard}>
-                  <span className={styles.orgIcon}>
-                    <Icon name="workflow" size={16} />
-                  </span>
                   {o.name}
                 </Link>
               ))}
@@ -135,7 +120,6 @@ async function AssemblyWorkspace({ clientId, canWrite }: { clientId: string; can
         />
         <OperationalPanel>
           <EmptyWorkspace
-            icon="workflow"
             title="Nothing to assemble yet"
             body="Run a Business Scan first to baseline the seven domains, then activate them here."
             action={
@@ -240,7 +224,7 @@ function Unauthorized() {
     <div className={styles.page}>
       <div className={styles.canvas}>
         <OperationalPanel>
-          <EmptyWorkspace icon="lock" title="You don't have access to Activation" body="Your role can't view the transformation command center." />
+          <EmptyWorkspace title="You don't have access to Activation" body="Your role can't view the transformation command center." />
         </OperationalPanel>
       </div>
     </div>

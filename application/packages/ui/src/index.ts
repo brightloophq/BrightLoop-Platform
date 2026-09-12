@@ -16,8 +16,6 @@
 /* ---- Brand ---- */
 export { Logo } from "./components/Logo";
 export type { LogoProps, LogoVariant } from "./components/Logo";
-export { Icon, isIconName } from "./components/Icon";
-export type { IconProps, IconName } from "./components/Icon";
 export { Eyebrow } from "./components/Eyebrow";
 export type { EyebrowProps } from "./components/Eyebrow";
 

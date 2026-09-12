@@ -1,19 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Icon } from "../components/Icon";
 import { Badge } from "../components/Badge";
 import { healthTone, riskTone } from "./logic";
 import type { ExplorerAi, ExplorerNode } from "./types";
 import styles from "./NodeDetailPanel.module.css";
 
-const AI_ACTIONS: { key: keyof ExplorerAi; label: string; icon: string }[] = [
-  { key: "summarize", label: "Summarize", icon: "sparkles" },
-  { key: "explain", label: "Explain", icon: "lightbulb" },
-  { key: "recommend", label: "Recommend", icon: "target" },
-  { key: "predict", label: "Predict", icon: "trending-up" },
-  { key: "risk", label: "Risk analysis", icon: "bell" },
-  { key: "nextAction", label: "Next best action", icon: "arrow-up-right" },
+const AI_ACTIONS: { key: keyof ExplorerAi; label: string }[] = [
+  { key: "summarize", label: "Summarize" },
+  { key: "explain", label: "Explain" },
+  { key: "recommend", label: "Recommend" },
+  { key: "predict", label: "Predict" },
+  { key: "risk", label: "Risk analysis" },
+  { key: "nextAction", label: "Next best action" },
 ];
 
 const STATUS_LABEL: Record<string, string> = {
@@ -78,7 +77,7 @@ export function NodeDetailPanel({ node, connectedLabels, now, onClose }: NodeDet
           <h2 className={styles.title}>{node.label}</h2>
         </div>
         <button type="button" className={styles.close} onClick={onClose} aria-label="Close details">
-          <Icon name="x" size={18} />
+          Close
         </button>
       </header>
 
@@ -89,12 +88,12 @@ export function NodeDetailPanel({ node, connectedLabels, now, onClose }: NodeDet
         {/* Current status */}
         <Section title="Current status">
           <div className={styles.statGrid}>
-            <Stat k="Status" v={STATUS_LABEL[node.status]!} tone={statusTone} icon="activity" />
-            <Stat k="Health" v={node.health === null ? "—" : `${node.health}/100`} tone={healthTone(node.health)} icon="gauge" />
-            <Stat k="Completion" v={`${node.completion}%`} icon="check-circle" />
-            <Stat k="Automation" v={`${node.automation}%`} icon="workflow" />
-            <Stat k="AI confidence" v={`${Math.round(node.aiConfidence * 100)}%`} icon="sparkles" />
-            <Stat k="Risk" v={node.risk} tone={riskTone(node.risk)} icon="bell" />
+            <Stat k="Status" v={STATUS_LABEL[node.status]!} tone={statusTone} />
+            <Stat k="Health" v={node.health === null ? "—" : `${node.health}/100`} tone={healthTone(node.health)} />
+            <Stat k="Completion" v={`${node.completion}%`} />
+            <Stat k="Automation" v={`${node.automation}%`} />
+            <Stat k="AI confidence" v={`${Math.round(node.aiConfidence * 100)}%`} />
+            <Stat k="Risk" v={node.risk} tone={riskTone(node.risk)} />
           </div>
         </Section>
 
@@ -114,7 +113,7 @@ export function NodeDetailPanel({ node, connectedLabels, now, onClose }: NodeDet
                 data-active={ai === a.key}
                 onClick={() => setAi((cur) => (cur === a.key ? null : a.key))}
               >
-                <Icon name={a.icon} size={13} /> {a.label}
+                {a.label}
               </button>
             ))}
           </div>
@@ -162,7 +161,6 @@ export function NodeDetailPanel({ node, connectedLabels, now, onClose }: NodeDet
           <ul className={styles.timeline}>
             {node.activity.map((e, i) => (
               <li key={i} className={styles.tItem}>
-                <span className={styles.tIcon}><Icon name={e.icon} size={13} /></span>
                 <span className={styles.tLabel}>{e.label}</span>
                 <span className={styles.tTime}>{relative(e.at, now)}</span>
               </li>
@@ -198,7 +196,6 @@ export function NodeDetailPanel({ node, connectedLabels, now, onClose }: NodeDet
           <ul className={styles.timeline}>
             {node.history.map((e, i) => (
               <li key={i} className={styles.tItem}>
-                <span className={styles.tIcon}><Icon name={e.icon} size={13} /></span>
                 <span className={styles.tLabel}>{e.label}</span>
                 <span className={styles.tTime}>{relative(e.at, now)}</span>
               </li>
@@ -211,7 +208,7 @@ export function NodeDetailPanel({ node, connectedLabels, now, onClose }: NodeDet
           <ul className={styles.actions}>
             {node.nextActions.map((a) => (
               <li key={a} className={styles.action}>
-                <Icon name="arrow-right" size={13} /> {a}
+{a}
               </li>
             ))}
           </ul>
@@ -230,10 +227,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-function Stat({ k, v, tone, icon }: { k: string; v: string; tone?: string; icon: string }) {
+function Stat({ k, v, tone }: { k: string; v: string; tone?: string }) {
   return (
     <div className={styles.stat} data-tone={tone ?? "neutral"}>
-      <span className={styles.statIcon}><Icon name={icon} size={13} /></span>
       <div>
         <div className={styles.statV}>{v}</div>
         <div className={styles.statK}>{k}</div>

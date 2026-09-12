@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Icon, Logo, ThemeToggle } from "@brightloop/ui";
+import { Logo, ThemeToggle } from "@brightloop/ui";
 import { WORKSPACE_NAV, activeNavKey, breadcrumbs } from "@/lib/workspace/nav";
 import { filterCommands } from "@/lib/workspace/command-palette";
 import type { WorkspaceNotification } from "@/lib/workspace/notifications";
@@ -75,7 +75,6 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
             const count = item.badgeKey ? badges[item.badgeKey] ?? 0 : 0;
             return (
               <Link key={item.key} href={item.href} className={styles.navItem} data-active={active === item.key} aria-current={active === item.key ? "page" : undefined}>
-                <span className={styles.navIcon}><Icon name={item.icon} size={16} /></span>
                 <span className={styles.navLabel}>{item.label}</span>
                 {count > 0 && <span className={styles.navBadge}>{count}</span>}
               </Link>
@@ -83,26 +82,26 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
           })}
         </nav>
         <div className={styles.sidebarFoot}>
-          <button className={styles.topAction} onClick={() => setPaletteOpen(true)}><Icon name="search" size={14} /> Command<kbd>⌘K</kbd></button>
+          <button className={styles.topAction} onClick={() => setPaletteOpen(true)}> Command<kbd>⌘K</kbd></button>
         </div>
       </aside>
 
       <div className={styles.main}>
         <header className={styles.topbar}>
-          <button className={`${styles.iconBtn} ${styles.menuBtn}`} aria-label="Open navigation" onClick={() => setDrawer((v) => !v)}><Icon name="menu" size={18} /></button>
+          <button className={`${styles.iconBtn} ${styles.menuBtn}`} onClick={() => setDrawer((v) => !v)}>Menu</button>
           <nav className={styles.crumbs} aria-label="Breadcrumb">
             {crumbs.map((c, i) => (
               <span key={c.href} style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-2)", minWidth: 0 }}>
-                {i > 0 && <span className={styles.crumbSep}><Icon name="chevron-right" size={14} /></span>}
+                {i > 0 && <span className={styles.crumbSep} aria-hidden="true">/</span>}
                 {i === crumbs.length - 1 ? <span className={styles.crumbCurrent}>{c.label}</span> : <Link href={c.href}>{c.label}</Link>}
               </span>
             ))}
           </nav>
           <span className={styles.topSpacer} />
-          <button className={styles.topAction} onClick={() => setPaletteOpen(true)} aria-label="Search and commands"><Icon name="search" size={14} /> Search<kbd>⌘K</kbd></button>
+          <button className={styles.topAction} onClick={() => setPaletteOpen(true)} aria-label="Search and commands"> Search<kbd>⌘K</kbd></button>
           <ThemeToggle variant="compact" />
           <button className={styles.iconBtn} aria-label={`Notifications (${notifications.length})`} onClick={() => setNotifOpen((v) => !v)}>
-            <Icon name="bell" size={18} />{notifications.length > 0 && <span className={styles.dot} />}
+{notifications.length > 0 && <span className={styles.dot} />}
           </button>
         </header>
 
@@ -134,7 +133,6 @@ export function WorkspaceShell({ workspaces, notifications, approvalsCount, chil
       )}
 
       <Link href="/workspace/copilot" className={styles.copilotFab} aria-label="Ask the Copilot (⌘J)" title="Ask the Copilot (⌘J)">
-        <Icon name="sparkles" size={20} />
       </Link>
 
       {notifOpen && (

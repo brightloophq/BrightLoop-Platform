@@ -2,20 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { DISCIPLINE_SLUGS, type Discipline } from "@brightloop/schema";
 import { PLACEHOLDER_DISCIPLINE_COPY, PLACEHOLDER_TRUST_BAR } from "@brightloop/data";
-import {
-  Alert,
-  Button,
-  CTASection,
-  CaseStudyCard,
-  Container,
-  Eyebrow,
-  Icon,
-  Marquee,
-  Section,
-  ServiceCard,
-  Stars,
-  Testimonial,
-} from "@brightloop/ui";
+import { Alert, Button, CTASection, CaseStudyCard, Container, Eyebrow, Marquee, Section, ServiceCard, Stars, Testimonial } from "@brightloop/ui";
 import { CountUp, HeroSequence, Reveal } from "@brightloop/ui/motion";
 import { getCatalogRepository, getReputationRepository } from "@/lib/repositories";
 import { TransformationJourney } from "./_sections/TransformationJourney";
@@ -55,11 +42,11 @@ export const metadata: Metadata = {
     "One connected loop — Brand, Build, Automate, Grow — for small businesses that want to look established and run like it.",
 };
 
-const LOOP_NODES: { discipline: Discipline; icon: string; position: string }[] = [
-  { discipline: "Brand", icon: "pen-tool", position: "nodeTop" },
-  { discipline: "Build", icon: "layout-grid", position: "nodeRight" },
-  { discipline: "Automate", icon: "workflow", position: "nodeBottom" },
-  { discipline: "Grow", icon: "trending-up", position: "nodeLeft" },
+const LOOP_NODES: { discipline: Discipline; position: string }[] = [
+  { discipline: "Brand", position: "nodeTop" },
+  { discipline: "Build", position: "nodeRight" },
+  { discipline: "Automate", position: "nodeBottom" },
+  { discipline: "Grow", position: "nodeLeft" },
 ];
 
 /**
@@ -133,7 +120,6 @@ export default async function HomePage() {
                   className={`${styles.loopNode} ${styles[node.position]}`}
                   data-hero="loopNode"
                 >
-                  <Icon name={node.icon} size={18} className={styles.loopNodeIcon} />
                   <span className={styles.loopNodeLabel}>{node.discipline}</span>
                 </div>
               ))}
@@ -158,7 +144,7 @@ export default async function HomePage() {
       </div>
 
       {/* ---- Capability marquee ---- */}
-      <Marquee items={CAPABILITY_MARQUEE} label="What Auxion does" icon="sparkles" />
+      <Marquee items={CAPABILITY_MARQUEE} label="What Auxion does" />
 
       {/* ---- The four disciplines ---- */}
       <Section>
@@ -182,7 +168,6 @@ export default async function HomePage() {
                   name={discipline}
                   outcome={copy?.outcome ?? ""}
                   blurb={copy?.blurb ?? ""}
-                  icon={copy?.icon ?? "sparkles"}
                   href={`/services/${slug}`}
                   meta={`${count} ${count === 1 ? "module" : "modules"}`}
                 />

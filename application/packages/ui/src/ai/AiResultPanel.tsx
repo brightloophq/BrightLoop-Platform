@@ -1,4 +1,3 @@
-import { Icon } from "../components/Icon";
 import { canCopy, canRetry, formatConfidence, resultTone } from "./state";
 import type { AiActionOutcome, AiExecutable } from "./types";
 import styles from "./ai.module.css";
@@ -9,14 +8,17 @@ const TONE_VAR: Record<string, string> = {
   critical: "var(--critical)",
   positive: "var(--positive)",
 };
-const KIND_ICON: Record<string, string> = {
-  summary: "book-open",
-  explanation: "lightbulb",
-  risk: "bell",
-  recommendation: "target",
-  comparison: "git-branch",
-  forecast: "trending-up",
-  "action-plan": "route",
+/* The result kind, spelled out. It used to be a pictogram beside the title,
+   which meant the kind was only legible to someone who had learnt the set;
+   as a word it is legible and announced without an aria-label. */
+const KIND_WORD: Record<string, string> = {
+  summary: "Summary",
+  explanation: "Explanation",
+  risk: "Risk",
+  recommendation: "Recommendation",
+  comparison: "Comparison",
+  forecast: "Forecast",
+  "action-plan": "Action plan",
 };
 
 export interface AiResultPanelProps {
@@ -38,7 +40,7 @@ export function AiResultPanel({ outcome, onRetry, onExecute, onCopy, copied }: A
   if (outcome.status === "denied") {
     return (
       <div className={styles.stateCard} role="status">
-        <span className={styles.stateIcon}><Icon name="lock" size={16} /></span>
+        <span className={styles.stateRule} aria-hidden="true" />
         <div className={styles.stateBody}>
           <div className={styles.stateTitle}>Not permitted</div>
           <div className={styles.stateText}>{outcome.message}</div>
@@ -50,7 +52,7 @@ export function AiResultPanel({ outcome, onRetry, onExecute, onCopy, copied }: A
   if (outcome.status === "unavailable") {
     return (
       <div className={styles.stateCard} role="status">
-        <span className={styles.stateIcon}><Icon name="lightbulb" size={16} /></span>
+        <span className={styles.stateRule} aria-hidden="true" />
         <div className={styles.stateBody}>
           <div className={styles.stateTitle}>AI assistance isn’t available here yet</div>
           <div className={styles.stateText}>{outcome.reason}</div>
@@ -59,7 +61,7 @@ export function AiResultPanel({ outcome, onRetry, onExecute, onCopy, copied }: A
           ) : (
             onRetry && (
               <div className={styles.foot}>
-                <button type="button" className={styles.footBtn} onClick={onRetry}><Icon name="activity" size={12} /> Retry</button>
+                <button type="button" className={styles.footBtn} onClick={onRetry}>Retry</button>
               </div>
             )
           )}
@@ -71,13 +73,13 @@ export function AiResultPanel({ outcome, onRetry, onExecute, onCopy, copied }: A
   if (outcome.status === "error") {
     return (
       <div className={styles.stateCard} role="alert">
-        <span className={styles.stateIcon}><Icon name="bell" size={16} /></span>
+        <span className={styles.stateRule} aria-hidden="true" />
         <div className={styles.stateBody}>
           <div className={styles.stateTitle}>Something went wrong</div>
           <div className={styles.stateText}>{outcome.message}</div>
           {onRetry && (
             <div className={styles.foot}>
-              <button type="button" className={styles.footBtn} onClick={onRetry}><Icon name="activity" size={12} /> Retry</button>
+              <button type="button" className={styles.footBtn} onClick={onRetry}>Retry</button>
             </div>
           )}
         </div>
@@ -92,7 +94,7 @@ export function AiResultPanel({ outcome, onRetry, onExecute, onCopy, copied }: A
   return (
     <div className={styles.panel} role="region" aria-live="polite" style={{ ["--panel-accent" as string]: accent }}>
       <div className={styles.head}>
-        <span className={styles.icon}><Icon name={KIND_ICON[r.kind] ?? "sparkles"} size={16} /></span>
+        <span className={styles.kind}>{KIND_WORD[r.kind] ?? "Result"}</span>
         <h4 className={styles.title}>{r.title}</h4>
         <span className={styles.badges}>
           {r.demo && <span className={styles.demoBadge}>Demo</span>}
@@ -103,9 +105,9 @@ export function AiResultPanel({ outcome, onRetry, onExecute, onCopy, copied }: A
       <p className={styles.body}>{r.body}</p>
 
       <div className={styles.meta}>
-        {r.capability && <span className={styles.metaItem}><Icon name="sparkles" size={11} /> {r.capability}</span>}
-        {conf && <span className={styles.metaItem}><Icon name="gauge" size={11} /> {conf}</span>}
-        <span className={styles.metaItem}><Icon name="clock" size={11} /> {new Date(r.generatedAt).toLocaleString()}</span>
+        {r.capability && <span className={styles.metaItem}>Capability: {r.capability}</span>}
+        {conf && <span className={styles.metaItem}>Confidence: {conf}</span>}
+        <span className={styles.metaItem}>Generated {new Date(r.generatedAt).toLocaleString()}</span>
       </div>
 
       {r.evidence.length > 0 && (
@@ -114,7 +116,7 @@ export function AiResultPanel({ outcome, onRetry, onExecute, onCopy, copied }: A
           <ul className={styles.evidenceList}>
             {r.evidence.map((e) => (
               <li key={e.label} className={styles.evidenceItem}>
-                <Icon name="check" size={12} />
+                <span className={styles.evidenceMark} aria-hidden="true" />
                 {e.href ? <a className={styles.evidenceLink} href={e.href}>{e.label}</a> : <span>{e.label}</span>}
               </li>
             ))}
@@ -125,15 +127,15 @@ export function AiResultPanel({ outcome, onRetry, onExecute, onCopy, copied }: A
       <div className={styles.foot}>
         {canCopy(outcome) && onCopy && (
           <button type="button" className={styles.footBtn} onClick={onCopy}>
-            <Icon name={copied ? "check" : "external-link"} size={12} /> {copied ? "Copied" : "Copy"}
+            {copied ? "Copied" : "Copy"}
           </button>
         )}
         {canRetry(outcome) && onRetry && (
-          <button type="button" className={styles.footBtn} onClick={onRetry}><Icon name="activity" size={12} /> Retry</button>
+          <button type="button" className={styles.footBtn} onClick={onRetry}>Retry</button>
         )}
         {r.executable && onExecute && (
           <button type="button" className={`${styles.footBtn} ${styles.executeBtn}`} onClick={() => onExecute(r.executable!)}>
-            <Icon name="arrow-up-right" size={12} /> {r.executable.label}
+            {r.executable.label}
             {r.executable.requiresApproval ? " (needs approval)" : ""}
           </button>
         )}

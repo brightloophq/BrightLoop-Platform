@@ -34,23 +34,23 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   // Agency back-office (existing modules).
   groups.push({
     label: "Overview",
-    items: [{ label: "Home", href: "/admin", icon: "layout-grid", ready: true }],
+    items: [{ label: "Home", href: "/admin", ready: true }],
   });
   groups.push({
     label: "Sales",
     items: [
-      { label: "Leads", href: "/admin/leads", icon: "route", ready: true },
-      { label: "Proposals", href: "/admin/proposals", icon: "search", ready: true },
-      { label: "Contracts", href: "/admin/contracts", icon: "check-circle", ready: true },
+      { label: "Leads", href: "/admin/leads", ready: true },
+      { label: "Proposals", href: "/admin/proposals", ready: true },
+      { label: "Contracts", href: "/admin/contracts", ready: true },
     ],
   });
   groups.push({
     label: "Delivery",
     items: [
-      { label: "Conversations", href: "/admin/conversations", icon: "mail", ready: true },
-      { label: "Clients", href: "/admin/clients", icon: "users", ready: true },
-      { label: "Projects", href: "/admin/projects", icon: "workflow", ready: true },
-      { label: "Deliverables", href: "/admin/deliverables", icon: "check", ready: false },
+      { label: "Conversations", href: "/admin/conversations", ready: true },
+      { label: "Clients", href: "/admin/clients", ready: true },
+      { label: "Projects", href: "/admin/projects", ready: true },
+      { label: "Deliverables", href: "/admin/deliverables", ready: false },
     ],
   });
 
@@ -58,7 +58,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   if (may(actor, "finance.read")) {
     groups.push({
       label: "Finance",
-      items: [{ label: "Invoices", href: "/admin/invoices", icon: "trending-up", ready: true }],
+      items: [{ label: "Invoices", href: "/admin/invoices", ready: true }],
     });
   }
 
@@ -67,23 +67,23 @@ export default async function AdminLayout({ children }: { children: ReactNode })
     groups.push({
       label: "Marketing",
       items: [
-        { label: "Portfolio", href: "/admin/portfolio", icon: "star", ready: true },
-        { label: "Reviews", href: "/admin/reviews", icon: "heart", ready: true },
-        { label: "Media", href: "/admin/media", icon: "palette", ready: false },
-        { label: "Content", href: "/admin/content", icon: "sparkles", ready: false },
+        { label: "Portfolio", href: "/admin/portfolio", ready: true },
+        { label: "Reviews", href: "/admin/reviews", ready: true },
+        { label: "Media", href: "/admin/media", ready: false },
+        { label: "Content", href: "/admin/content", ready: false },
       ],
     });
   }
 
   const ops: AdminNavGroup = { label: "Ops", items: [] };
   if (may(actor, "team.read")) {
-    ops.items.push({ label: "Team", href: "/admin/team", icon: "users", ready: false });
+    ops.items.push({ label: "Team", href: "/admin/team", ready: false });
   }
   if (may(actor, "analytics.read")) {
-    ops.items.push({ label: "Analytics", href: "/admin/analytics", icon: "line-chart", ready: true });
+    ops.items.push({ label: "Analytics", href: "/admin/analytics", ready: true });
   }
   if (may(actor, "automation.read")) {
-    ops.items.push({ label: "Automation", href: "/admin/automation", icon: "workflow", ready: true });
+    ops.items.push({ label: "Automation", href: "/admin/automation", ready: true });
   }
   if (ops.items.length > 0) groups.push(ops);
 

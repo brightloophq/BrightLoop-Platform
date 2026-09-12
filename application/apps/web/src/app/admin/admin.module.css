@@ -1,7 +1,7 @@
 /* =============================================================================
  * Auxion application shell — persistent sidebar (desktop) + off-canvas drawer
  * (mobile). Existing page chrome (.topbar / .content / .topTitle) is preserved
- * unchanged; the responsive model below replaces the old icon-rail with a proper
+ * unchanged; the responsive model below replaces the old collapsed rail with a proper
  * drawer.
  * ========================================================================== */
 

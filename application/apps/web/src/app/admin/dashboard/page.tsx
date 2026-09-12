@@ -11,26 +11,7 @@ import {
   type DashboardScope,
   type DashboardView,
 } from "@brightloop/domain";
-import {
-  Alert,
-  Badge,
-  Button,
-  EmptyState,
-  Icon,
-  SectionHeader,
-  OperationalPanel,
-  KpiCard,
-  PipelineNode,
-  AttentionRow,
-  SkeletonBlock,
-  SystemMap,
-  TrendChart,
-  BarChart,
-  DonutChart,
-  FunnelChart,
-  AiActionBar,
-  type KpiStatus,
-} from "@brightloop/ui";
+import { Alert, Badge, Button, EmptyState, SectionHeader, OperationalPanel, KpiCard, PipelineNode, AttentionRow, SkeletonBlock, SystemMap, TrendChart, BarChart, DonutChart, FunnelChart, AiActionBar, type KpiStatus } from "@brightloop/ui";
 import { MotionProvider, DashboardEntrance, AnimatedMetric, PipelineAnimation } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { getTransformationDashboardRepository, getCoreSurfaceRepository } from "@/lib/repositories";
@@ -43,24 +24,6 @@ import styles from "./dashboard.module.css";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Console · Auxion" };
-
-const METRIC_ICON: Record<string, string> = {
-  health: "gauge",
-  index: "target",
-  "open-signals": "activity",
-  insights: "lightbulb",
-  recommendations: "sparkles",
-  "awaiting-approval": "check-circle",
-  "moves-in-progress": "git-branch",
-  "moves-completed": "check-circle",
-};
-
-const ATTENTION_ICON: Record<string, string> = {
-  "pending-approvals": "check-circle",
-  "critical-risks": "bell",
-  "blocked-executions": "activity",
-  "stale-recommendations": "clock",
-};
 
 const SECTION_FOR_ENTITY: Record<string, string> = {
   signal: "/admin/signals",
@@ -118,7 +81,6 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
   const kpiProps = (m: DashboardView["metrics"][number]) => {
     const x = kpiExtra(m.key);
     return {
-      icon: METRIC_ICON[m.key],
       label: m.label,
       value: m.value,
       suffix: m.suffix,
@@ -245,7 +207,6 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
         ) : (
           <OperationalPanel>
             <EmptyState
-              icon="line-chart"
               title="Executive analytics appear as data accrues"
               body="Revenue, health and pipeline trends chart here once the platform has history to show."
             />
@@ -305,7 +266,6 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
             <SectionHeader index="04" title="Attention required" />
             {view.attentionClear ? (
               <EmptyState
-                icon="check-circle"
                 title="All clear"
                 body="Nothing needs your attention right now — approvals, risks and executions are all healthy."
               />
@@ -317,7 +277,6 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
                       label={item.label}
                       count={item.count}
                       tone={item.tone}
-                      icon={ATTENTION_ICON[item.key]}
                       interactive={Boolean(item.href)}
                     />
                   );
@@ -348,9 +307,6 @@ async function DashboardData({ scope }: { scope: DashboardScope }) {
         <div className={styles.quick}>
           {QUICK.map((q) => (
             <Link key={q.href} href={q.href} className={styles.quickCard}>
-              <span className={styles.quickIcon}>
-                <Icon name={q.icon} size={16} />
-              </span>
               {q.label}
             </Link>
           ))}
@@ -404,7 +360,6 @@ function Activity({ view }: { view: DashboardView }) {
   if (view.activity.length === 0) {
     return (
       <EmptyState
-        icon="clock"
         title="No activity yet"
         body="State transitions across the transformation loop will appear here as work moves."
       />
@@ -439,12 +394,12 @@ function Activity({ view }: { view: DashboardView }) {
 }
 
 const QUICK = [
-  { label: "Signals", href: "/admin/signals", icon: "activity" },
-  { label: "Recommendations", href: "/admin/recommendations", icon: "sparkles" },
-  { label: "Approvals", href: "/admin/approvals", icon: "check-circle" },
-  { label: "Moves", href: "/admin/moves", icon: "git-branch" },
-  { label: "Business Health", href: "/admin/measurements", icon: "gauge" },
-  { label: "Knowledge", href: "/admin/knowledge", icon: "book-open" },
+  { label: "Signals", href: "/admin/signals" },
+  { label: "Recommendations", href: "/admin/recommendations" },
+  { label: "Approvals", href: "/admin/approvals" },
+  { label: "Moves", href: "/admin/moves" },
+  { label: "Business Health", href: "/admin/measurements" },
+  { label: "Knowledge", href: "/admin/knowledge" },
 ] as const;
 
 /* ---- loading / states ----------------------------------------------------- */
@@ -478,7 +433,6 @@ function Unauthorized() {
       <div className={styles.stateWrap}>
         <OperationalPanel>
           <EmptyState
-            icon="lock"
             title="You don't have access to the dashboard"
             body="Your role can't view the transformation command center. If this seems wrong, contact an administrator."
           />

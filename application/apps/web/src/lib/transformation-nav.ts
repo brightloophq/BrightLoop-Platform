@@ -12,16 +12,16 @@ import type { AdminNavGroup } from "@/app/admin/AdminNav";
  * (owner/admin only). RLS is still the real boundary — this only shapes the menu.
  */
 export const TRANSFORMATION_NAV = [
-  { label: "Console", href: "/admin/dashboard", icon: "layout-grid" },
-  { label: "Business Scan", href: "/admin/business-scan", icon: "gauge" },
-  { label: "Activation", href: "/admin/activation", icon: "workflow" },
-  { label: "Signals", href: "/admin/signals", icon: "activity" },
-  { label: "Insights", href: "/admin/insights", icon: "lightbulb" },
-  { label: "Recommendations", href: "/admin/recommendations", icon: "sparkles" },
-  { label: "Approvals", href: "/admin/approvals", icon: "check-circle" },
-  { label: "Moves", href: "/admin/moves", icon: "git-branch" },
-  { label: "Measurements", href: "/admin/measurements", icon: "line-chart" },
-  { label: "Knowledge", href: "/admin/knowledge", icon: "book-open" },
+  { label: "Console", href: "/admin/dashboard" },
+  { label: "Business Scan", href: "/admin/business-scan" },
+  { label: "Activation", href: "/admin/activation" },
+  { label: "Signals", href: "/admin/signals" },
+  { label: "Insights", href: "/admin/insights" },
+  { label: "Recommendations", href: "/admin/recommendations" },
+  { label: "Approvals", href: "/admin/approvals" },
+  { label: "Moves", href: "/admin/moves" },
+  { label: "Measurements", href: "/admin/measurements" },
+  { label: "Knowledge", href: "/admin/knowledge" },
 ] as const;
 
 /**
@@ -36,7 +36,7 @@ export function transformationNavGroup(actor: Actor): AdminNavGroup | null {
     for (const item of TRANSFORMATION_NAV) items.push({ ...item, ready: true });
   }
   if (may(actor, "settings.read")) {
-    items.push({ label: "Settings", href: "/admin/settings", icon: "settings", ready: true });
+    items.push({ label: "Settings", href: "/admin/settings", ready: true });
   }
 
   return items.length > 0 ? { label: "Transformation", items } : null;

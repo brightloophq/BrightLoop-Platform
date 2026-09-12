@@ -52,7 +52,11 @@
   white-space: nowrap;
 }
 
-/* Compact: icon-only, tighter, for dense chrome (topbar / mobile bar). */
+/* Compact: the 3-letter form, tighter, for dense chrome (topbar / mobile bar).
+   Mono + tracked so the three abbreviations align to the same width and the
+   pill row stops shifting as the selection moves. */
 .compact .option {
   padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  letter-spacing: var(--ls-wide);
 }

@@ -47,11 +47,11 @@
 }
 .bubbleMine {
   background: var(--surface-accent, var(--text-accent));
-  color: var(--on-accent, #fff);
+  color: var(--on-signal);
   border-bottom-right-radius: var(--radius-xs);
 }
 .bubbleTheirs {
-  background: var(--surface-2, #f1f1f4);
+  background: var(--surface-2);
   color: var(--text);
   border-bottom-left-radius: var(--radius-xs);
 }
@@ -81,7 +81,7 @@
   resize: none;
 }
 .err {
-  color: var(--text-danger, #c0392b);
+  color: var(--critical);
   font-size: var(--fs-xs);
   margin-top: var(--space-1);
 }
@@ -127,8 +127,8 @@
 
 /* ---- internal notes: visually distinct so they can't be mistaken for client-visible chat ---- */
 .noteZone {
-  background: var(--surface-warning, #fff8e1);
-  border: 1px dashed var(--border-warning, #e0c060);
+  background: color-mix(in srgb, var(--caution) 12%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--caution) 35%, transparent);
   border-radius: var(--radius-md);
   padding: var(--space-3);
 }

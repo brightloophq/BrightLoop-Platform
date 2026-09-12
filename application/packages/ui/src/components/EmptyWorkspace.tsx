@@ -1,9 +1,7 @@
 import type { ReactNode } from "react";
-import { Icon } from "./Icon";
 import styles from "./EmptyWorkspace.module.css";
 
 export interface EmptyWorkspaceProps {
-  icon?: string;
   title: ReactNode;
   /** What this workspace is / what to do — a sentence or two, never fake data. */
   body?: ReactNode;
@@ -20,12 +18,10 @@ export interface EmptyWorkspaceProps {
  * The `aside` slot carries the active constraints + a clear action for the
  * filtered-empty case. Never invents sample rows.
  */
-export function EmptyWorkspace({ icon = "search", title, body, action, aside, className }: EmptyWorkspaceProps) {
+export function EmptyWorkspace({ title, body, action, aside, className }: EmptyWorkspaceProps) {
   return (
     <div className={[styles.wrap, className].filter(Boolean).join(" ")}>
-      <span className={styles.icon}>
-        <Icon name={icon} size={22} />
-      </span>
+      <span className={styles.rule} aria-hidden="true" />
       <h3 className={styles.title}>{title}</h3>
       {body ? <p className={styles.body}>{body}</p> : null}
       {action ? <div className={styles.action}>{action}</div> : null}

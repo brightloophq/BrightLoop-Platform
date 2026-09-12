@@ -18,7 +18,7 @@
  * ========================================================================== */
 
 import { useRef } from "react";
-import { Icon, systemMapGeometry } from "@brightloop/ui";
+import { systemMapGeometry } from "@brightloop/ui";
 import { gsap, useGSAP, registerScrollTrigger, JOURNEY_STAGES } from "@brightloop/ui/motion";
 import styles from "./journey.module.css";
 
@@ -130,7 +130,6 @@ export function TransformationJourney() {
               </span>
               <div className={styles.stepBody}>
                 <span className={styles.stepDiscipline}>
-                  <Icon name={stage.icon} size={16} />
                   {stage.discipline}
                 </span>
                 <h3 className={styles.stepTitle}>{stage.title}</h3>

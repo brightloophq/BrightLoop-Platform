@@ -39,29 +39,27 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const awaiting = (awaitingDeliverables ?? 0) + (awaitingMilestones ?? 0);
 
   const items: PortalNavItem[] = [
-    { label: "Dashboard", href: "/portal", icon: "layout-grid", ready: true },
-    { label: "Project", href: "/portal/project", icon: "workflow", ready: true },
+    { label: "Dashboard", href: "/portal", ready: true },
+    { label: "Project", href: "/portal/project", ready: true },
     {
       label: "Deliverables",
       href: "/portal/deliverables",
-      icon: "check",
       ready: true,
       badge: awaiting || undefined,
     },
-    { label: "Proposals", href: "/portal/proposals", icon: "search", ready: true },
-    { label: "Contracts", href: "/portal/contracts", icon: "check-circle", ready: true },
-    { label: "Invoices", href: "/portal/invoices", icon: "trending-up", ready: true },
+    { label: "Proposals", href: "/portal/proposals", ready: true },
+    { label: "Contracts", href: "/portal/contracts", ready: true },
+    { label: "Invoices", href: "/portal/invoices", ready: true },
     {
       label: "Notifications",
       href: "/portal/notifications",
-      icon: "heart",
       ready: true,
       badge: unread || undefined,
     },
-    { label: "Discovery chat", href: "/portal/chat", icon: "mail", ready: true },
-    { label: "Files", href: "/portal/files", icon: "layout-grid", ready: false },
-    { label: "Meetings", href: "/portal/meetings", icon: "clock", ready: false },
-    { label: "Settings", href: "/portal/settings", icon: "route", ready: false },
+    { label: "Discovery chat", href: "/portal/chat", ready: true },
+    { label: "Files", href: "/portal/files", ready: false },
+    { label: "Meetings", href: "/portal/meetings", ready: false },
+    { label: "Settings", href: "/portal/settings", ready: false },
   ];
 
   return (

@@ -1,4 +1,4 @@
-import type { SVGProps } from "react";
+import type { CSSProperties, SVGProps } from "react";
 
 export type LogoVariant = "mark" | "wordmark" | "lockup";
 
@@ -9,66 +9,134 @@ export interface LogoProps extends Omit<SVGProps<SVGSVGElement>, "height"> {
 }
 
 /**
- * Logo — the Auxion blueprint mark (hexagonal "A") + AUXION wordmark.
+ * Logo — the Auxion identity: a folded metallic ribbon "A" over the AUXION
+ * wordmark.
  *
- * The mark's facet + navy fills are fixed brand colors and read on both the dark
- * navy canvas and the light "paper" theme (the white hairlines and drawn hexagon
- * keep it legible on either). The wordmark uses currentColor so it inherits the
- * surrounding text colour (white on dark headers, navy on paper).
+ * GEOMETRY. The mark is one continuous ribbon that enters at the lower left,
+ * crosses the apex and OVERSHOOTS to the upper right (`RIBBON`), tucked against
+ * a shorter right leg folding in behind it (`LEG`) and joined by a crossbar that
+ * passes behind both (`BAR`). The leg and bar are mitred exactly along the
+ * ribbon's own edges — every shared vertex below is a computed edge intersection,
+ * not an eyeballed one — so the fold reads as a single strap rather than three
+ * overlapping shapes. Painted back-to-front: bar, leg, ribbon, specular.
+ *
+ * COLOUR. Every fill resolves from --brand-1…--brand-4, which are theme-aware:
+ * the ramp samples a darker span on paper and a brighter span on black, so the
+ * mark keeps its metal on either ground without a second asset. The three facets
+ * deliberately take DIFFERENT spans of that ramp — ribbon bright, leg in shadow,
+ * bar mid — because one flat gradient across all three reads as plastic. There
+ * is no off-token hex in this file.
+ *
+ * Token references go through `style`, never a presentation attribute: `var()`
+ * is CSS, and browsers do not evaluate it inside `fill="…"` / `stop-color="…"`.
+ *
+ * Gradient ids are keyed by variant, so two same-variant lockups on one page
+ * emit the same id. That is deliberate and safe — the defs are byte-identical,
+ * so the first wins and both render correctly — and it keeps the component
+ * render-deterministic (a `useId` value contains ":" and cannot appear in
+ * `url(#…)`).
  */
-function Mark({ gradientId }: { gradientId: string }) {
+
+/* --- Ribbon: lower-left → apex → overshoot upper-right (horizontal width 84) --- */
+const RIBBON = "70,530 154,530 500,45 416,45";
+/* --- Leg: lower-right → apex, mitred along the ribbon's left edge --- */
+const LEG = "446,530 530,530 364.7,116.8 310.9,192.3";
+/* --- Crossbar: passes behind both legs, ends mitred to their inner edges --- */
+const BAR = "250,395 392,395 416,455 207,455";
+/* --- Specular: a thin highlight riding the ribbon's left edge --- */
+const SPECULAR = "70,530 88,530 434,45 416,45";
+
+const stop = (token: string): CSSProperties => ({ stopColor: `var(${token})` });
+
+const WORD_STYLE: CSSProperties = {
+  fontFamily: "var(--font-display), 'Space Grotesk', system-ui, sans-serif",
+  fontWeight: 600,
+};
+
+/** Gradient defs. Shared by every variant so the mark and wordmark match exactly. */
+function Defs({ id }: { id: string }) {
+  return (
+    <defs>
+      {/* The ribbon's full sweep: fold → core → sheen → core → fold. */}
+      <linearGradient id={`${id}-ribbon`} x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0" style={stop("--brand-1")} />
+        <stop offset="0.22" style={stop("--brand-3")} />
+        <stop offset="0.5" style={stop("--brand-4")} />
+        <stop offset="0.78" style={stop("--brand-3")} />
+        <stop offset="1" style={stop("--brand-2")} />
+      </linearGradient>
+      {/* The leg sits in the ribbon's shadow — a darker span of the same ramp. */}
+      <linearGradient id={`${id}-leg`} x1="1" y1="1" x2="0" y2="0">
+        <stop offset="0" style={stop("--brand-1")} />
+        <stop offset="0.55" style={stop("--brand-2")} />
+        <stop offset="1" style={stop("--brand-3")} />
+      </linearGradient>
+      {/* The bar is furthest back: mid-ramp, no sheen. */}
+      <linearGradient id={`${id}-bar`} x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" style={stop("--brand-2")} />
+        <stop offset="0.5" style={stop("--brand-3")} />
+        <stop offset="1" style={stop("--brand-1")} />
+      </linearGradient>
+      <linearGradient id={`${id}-word`} x1="0" y1="0" x2="1" y2="0.6">
+        <stop offset="0" style={stop("--brand-2")} />
+        <stop offset="0.42" style={stop("--brand-4")} />
+        <stop offset="1" style={stop("--brand-3")} />
+      </linearGradient>
+    </defs>
+  );
+}
+
+function Mark({ id }: { id: string }) {
   return (
     <>
-      <defs>
-        <linearGradient id={gradientId} x1="0.1" y1="0" x2="0.9" y2="1">
-          <stop offset="0" stopColor="#2a4a86" />
-          <stop offset="1" stopColor="#17274d" />
-        </linearGradient>
-      </defs>
-      <polygon points="300,104 469.7,202 300,300 130.3,202" fill="#c6cfd8" />
-      <polygon points="130.3,202 300,300 300,496 130.3,398" fill="#b1bdc9" />
-      <polygon points="469.7,202 469.7,398 300,496 300,300" fill="#9dabb9" />
-      <polygon points="300,158 272.582,354 327.418,354" fill="#93a1af" stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
-      <polygon points="262,140 300,140 252,470 176,470" fill={`url(#${gradientId})`} stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
-      <polygon points="338,140 300,140 348,470 424,470" fill={`url(#${gradientId})`} stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
-      <polygon points="268.582,356 331.418,356 336.655,392 263.345,392" fill={`url(#${gradientId})`} stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
-      <polygon points="300,404 338,436 300,468 262,436" fill="#95a3b1" stroke="#ffffff" strokeWidth={9} strokeLinejoin="round" />
-      <polygon points="300,44 521.7,172 521.7,428 300,556 78.3,428 78.3,172" fill="none" stroke="#9aa8b6" strokeWidth={15} strokeLinejoin="round" />
+      <polygon points={BAR} fill={`url(#${id}-bar)`} />
+      <polygon points={LEG} fill={`url(#${id}-leg)`} />
+      <polygon points={RIBBON} fill={`url(#${id}-ribbon)`} />
+      <polygon points={SPECULAR} style={{ fill: "var(--brand-4)" }} opacity={0.55} />
     </>
   );
 }
 
+/**
+ * AUXION — display capitals, letterspaced hard as in the identity.
+ */
+function Word({ id, x, y, size, tracking }: { id: string; x: number; y: number; size: number; tracking: number }) {
+  return (
+    <text x={x} y={y} style={WORD_STYLE} fontSize={size} letterSpacing={tracking} fill={`url(#${id}-word)`}>
+      AUXION
+    </text>
+  );
+}
+
 export function Logo({ variant = "lockup", height = 28, ...rest }: LogoProps) {
-  const gradientId = `auxion-mark-${variant}`;
+  const id = `auxion-${variant}`;
 
   if (variant === "mark") {
     return (
       <svg viewBox="0 0 600 600" height={height} width={height} role="img" aria-label="Auxion" xmlns="http://www.w3.org/2000/svg" {...rest}>
-        <Mark gradientId={gradientId} />
+        <Defs id={id} />
+        <Mark id={id} />
       </svg>
     );
   }
 
   if (variant === "wordmark") {
-    // AUXION in Space Grotesk — currentColor so it adapts to the surface.
     return (
-      <svg viewBox="0 0 1000 400" height={height} width={height * 2.5} role="img" aria-label="Auxion" xmlns="http://www.w3.org/2000/svg" {...rest}>
-        <text x="0" y="288" fontFamily="var(--font-display), 'Space Grotesk', system-ui, sans-serif" fontWeight={800} fontSize="240" letterSpacing="8" fill="currentColor">
-          AUXION
-        </text>
+      <svg viewBox="0 0 1060 260" height={height} width={height * (1060 / 260)} role="img" aria-label="Auxion" xmlns="http://www.w3.org/2000/svg" {...rest}>
+        <Defs id={id} />
+        <Word id={id} x={12} y={196} size={190} tracking={46} />
       </svg>
     );
   }
 
-  // lockup: mark + wordmark
+  /* lockup: mark, then wordmark to its right on a shared optical centre. */
   return (
-    <svg viewBox="0 0 1480 400" height={height} width={height * 3.7} role="img" aria-label="Auxion" xmlns="http://www.w3.org/2000/svg" {...rest}>
-      <g transform="translate(10,0) scale(0.6333)">
-        <Mark gradientId={gradientId} />
+    <svg viewBox="0 0 1760 420" height={height} width={height * (1760 / 420)} role="img" aria-label="Auxion" xmlns="http://www.w3.org/2000/svg" {...rest}>
+      <Defs id={id} />
+      <g transform="translate(0,10) scale(0.6667)">
+        <Mark id={id} />
       </g>
-      <text x="450" y="268" fontFamily="var(--font-display), 'Space Grotesk', system-ui, sans-serif" fontWeight={800} fontSize="210" letterSpacing="6" fill="currentColor">
-        AUXION
-      </text>
+      <Word id={id} x={470} y={292} size={196} tracking={48} />
     </svg>
   );
 }

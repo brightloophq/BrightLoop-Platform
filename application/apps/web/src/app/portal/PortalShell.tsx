@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon, Logo, ThemeToggle } from "@brightloop/ui";
+import { Logo, ThemeToggle } from "@brightloop/ui";
 import { useDrawerSlide } from "@brightloop/ui/motion";
 import { signOut } from "../(auth)/actions";
 import { PortalNav, type PortalNavItem } from "./PortalNav";
@@ -67,7 +67,6 @@ export function PortalShell({
           aria-controls="portal-nav"
           onClick={() => setOpen(true)}
         >
-          <Icon name="menu" size={20} />
         </button>
         <Link href="/portal" className={styles.brand}>
           <Logo variant="mark" height={20} />
@@ -104,7 +103,6 @@ export function PortalShell({
             aria-label="Close navigation"
             onClick={() => setOpen(false)}
           >
-            <Icon name="x" size={18} />
           </button>
         </div>
 

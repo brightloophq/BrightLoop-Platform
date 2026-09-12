@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { canWriteSignals } from "@brightloop/domain";
-import { Alert, EmptyWorkspace, Icon, OperationalPanel, SectionHeader } from "@brightloop/ui";
+import { Alert, EmptyWorkspace, OperationalPanel, SectionHeader } from "@brightloop/ui";
 import { requireSurface } from "@/lib/auth";
 import { getSignalsRepository } from "@/lib/repositories";
 import { SignalForm } from "../SignalForm";
@@ -18,12 +18,11 @@ export default async function NewSignalPage() {
         <div className={styles.canvas}>
           <OperationalPanel>
             <EmptyWorkspace
-              icon="lock"
               title="You can't create signals"
               body="Your role has read-only access to the transformation command center."
               action={
                 <Link href="/admin/signals" className={styles.backLink}>
-                  <Icon name="arrow-left" size={16} /> Back to signals
+ Back to signals
                 </Link>
               }
             />
@@ -40,7 +39,7 @@ export default async function NewSignalPage() {
     <div className={styles.page}>
       <div className={styles.canvas}>
         <Link href="/admin/signals" className={styles.backLink}>
-          <Icon name="arrow-left" size={16} /> Back to signals
+ Back to signals
         </Link>
         <SectionHeader
           as="h1"

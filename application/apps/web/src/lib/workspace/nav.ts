@@ -11,27 +11,25 @@ export interface WorkspaceNavItem {
   key: string;
   label: string;
   href: string;
-  /** lucide icon name resolved by the shell. */
-  icon: string;
   /** Optional live badge count key the shell fills from read-model data. */
   badgeKey?: "approvals" | "notifications";
 }
 
 /** The primary sidebar of the client Workspace Experience. */
 export const WORKSPACE_NAV: readonly WorkspaceNavItem[] = [
-  { key: "dashboard", label: "Dashboard", href: "/workspace", icon: "layout-grid" },
-  { key: "projects", label: "Projects", href: "/workspace/projects", icon: "route" },
-  { key: "ai-team", label: "AI Team", href: "/workspace/ai-team", icon: "users" },
-  { key: "copilot", label: "Copilot", href: "/workspace/copilot", icon: "sparkles" },
-  { key: "automations", label: "Automations", href: "/workspace/automations", icon: "workflow" },
-  { key: "deployments", label: "Deployments", href: "/workspace/deployments", icon: "rocket" },
-  { key: "runtimes", label: "Runtimes", href: "/workspace/runtimes", icon: "git-branch" },
-  { key: "integrations", label: "Integrations", href: "/workspace/integrations", icon: "plug" },
-  { key: "executions", label: "Executions", href: "/workspace/executions", icon: "gauge" },
-  { key: "reports", label: "Reports", href: "/workspace/reports", icon: "line-chart" },
-  { key: "approvals", label: "Approvals", href: "/workspace/approvals", icon: "check-circle", badgeKey: "approvals" },
-  { key: "activity", label: "Activity", href: "/workspace/activity", icon: "activity" },
-  { key: "settings", label: "Settings", href: "/workspace/settings", icon: "settings" },
+  { key: "dashboard", label: "Dashboard", href: "/workspace" },
+  { key: "projects", label: "Projects", href: "/workspace/projects" },
+  { key: "ai-team", label: "AI Team", href: "/workspace/ai-team" },
+  { key: "copilot", label: "Copilot", href: "/workspace/copilot" },
+  { key: "automations", label: "Automations", href: "/workspace/automations" },
+  { key: "deployments", label: "Deployments", href: "/workspace/deployments" },
+  { key: "runtimes", label: "Runtimes", href: "/workspace/runtimes" },
+  { key: "integrations", label: "Integrations", href: "/workspace/integrations" },
+  { key: "executions", label: "Executions", href: "/workspace/executions" },
+  { key: "reports", label: "Reports", href: "/workspace/reports" },
+  { key: "approvals", label: "Approvals", href: "/workspace/approvals", badgeKey: "approvals" },
+  { key: "activity", label: "Activity", href: "/workspace/activity" },
+  { key: "settings", label: "Settings", href: "/workspace/settings" },
 ];
 
 /** The nav key whose href is the longest prefix of the current path (or dashboard). */

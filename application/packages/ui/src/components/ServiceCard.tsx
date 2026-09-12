@@ -1,16 +1,20 @@
 import Link from "next/link";
 import { Card } from "./Card";
-import { Icon } from "./Icon";
 import styles from "./ServiceCard.module.css";
 
 export interface ServiceCardProps {
   name: string;
   outcome: string;
   blurb: string;
-  icon: string;
   href: string;
   /** e.g. "3 modules" — supplied by the caller from catalog data. */
   meta?: string;
+  /**
+   * Position in the sequence, e.g. "01". The disciplines are an ORDERED loop
+   * (Brand → Build → Automate → Grow), so a numeral says something true about
+   * the card that the pictogram it replaced never did.
+   */
+  index?: string;
   exploreLabel?: string;
 }
 
@@ -19,26 +23,21 @@ export function ServiceCard({
   name,
   outcome,
   blurb,
-  icon,
   href,
   meta,
+  index,
   exploreLabel = "Explore",
 }: ServiceCardProps) {
   return (
     <Card interactive flush>
       <Link href={href} className={styles.card} style={{ padding: "var(--space-5)" }}>
-        <span className={styles.icon}>
-          <Icon name={icon} size={22} />
-        </span>
+        {index ? <span className={styles.index}>{index}</span> : <span className={styles.rule} aria-hidden="true" />}
         <h3 className={styles.name}>{name}</h3>
         <p className={styles.outcome}>{outcome}</p>
         <p className={styles.blurb}>{blurb}</p>
         <span className={styles.foot}>
           {meta ? <span className={styles.meta}>{meta}</span> : <span />}
-          <span className={styles.explore}>
-            {exploreLabel}
-            <Icon name="arrow-right" size={14} className={styles.arrow} />
-          </span>
+          <span className={styles.explore}>{exploreLabel}</span>
         </span>
       </Link>
     </Card>

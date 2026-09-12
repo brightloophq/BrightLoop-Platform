@@ -15,6 +15,17 @@
   line-height: var(--lh-snug);
 }
 
+/* A short caution-toned dash where the pictogram was. The bar already says
+   "Preview — sample content", so this is decoration with no meaning of its own. */
+.rule {
+  width: 18px;
+  height: 2px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: currentColor;
+  opacity: 0.8;
+}
+
 .text {
   color: var(--warning);
 }

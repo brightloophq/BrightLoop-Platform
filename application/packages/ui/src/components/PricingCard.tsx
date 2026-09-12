@@ -1,7 +1,6 @@
 import type { ReactNode } from "react";
 import { Badge } from "./Badge";
 import { Card } from "./Card";
-import { Icon } from "./Icon";
 import styles from "./PricingCard.module.css";
 
 export interface PricingCardProps {
@@ -62,7 +61,7 @@ export function PricingCard({
       <ul className={styles.list}>
         {includes.map((item) => (
           <li key={item} className={styles.item}>
-            <Icon name="check" size={14} className={styles.check} />
+            <span className={styles.check} aria-hidden="true" />
             <span>{item}</span>
           </li>
         ))}

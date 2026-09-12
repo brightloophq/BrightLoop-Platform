@@ -56,7 +56,6 @@ export default async function ClientsPage() {
 
         {clients.length === 0 ? (
           <EmptyState
-            icon="users"
             title="No clients yet"
             body="Create a client organisation, or convert a won lead."
           />

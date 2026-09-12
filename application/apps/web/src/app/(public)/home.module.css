@@ -135,12 +135,14 @@
   display: grid;
   place-items: center;
   text-align: center;
-  background: var(--grad-loop);
-  color: var(--bl-white);
+  /* --grad-loop is a pale tint; white text on it failed on paper. The canon's
+     own signal/on-signal pair clears AA in both themes (5.5:1 / 11.2:1). */
+  background: var(--signal);
+  color: var(--on-signal);
   font-family: var(--font-display);
   font-weight: var(--fw-bold);
   font-size: var(--fs-sm);
-  box-shadow: var(--glow-blue);
+  box-shadow: var(--glow-signal);
 }
 
 /* ---- Trust bar ---- */
@@ -169,7 +171,7 @@
   font-family: var(--font-display);
   font-weight: var(--fw-bold);
   font-size: var(--fs-lg);
-  color: var(--slate-600);
+  color: var(--text-muted);
   letter-spacing: var(--ls-wide);
 }
 

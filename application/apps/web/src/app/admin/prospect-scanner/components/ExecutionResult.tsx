@@ -53,18 +53,17 @@ export function ExecutionResult({ execution }: { execution: ExecutionView }) {
       </div>
 
       <div className={styles.execGrid}>
-        <MetricCard label="Turn duration" value={formatDuration(execution.durationMs)} icon="clock" />
-        <MetricCard label="Provider latency" value={execution.latencyMs === null ? null : formatDuration(execution.latencyMs)} icon="activity" emptyLabel="n/a" />
+        <MetricCard label="Turn duration" value={formatDuration(execution.durationMs)} />
+        <MetricCard label="Provider latency" value={execution.latencyMs === null ? null : formatDuration(execution.latencyMs)} emptyLabel="n/a" />
         <MetricCard
           label="Input tokens"
           value={execution.inputTokens}
-          icon="layers"
           emptyLabel="n/a"
           caption={execution.usageEstimated === null ? undefined : execution.usageEstimated ? "estimated" : "actual"}
         />
-        <MetricCard label="Output tokens" value={execution.outputTokens} icon="layers" emptyLabel="n/a" />
-        <MetricCard label="Artifacts" value={execution.artifactIds.length} icon="check-circle" />
-        <MetricCard label="Downstream job" value={execution.downstreamJobId === null ? null : "queued"} icon="activity" emptyLabel="none" />
+        <MetricCard label="Output tokens" value={execution.outputTokens} emptyLabel="n/a" />
+        <MetricCard label="Artifacts" value={execution.artifactIds.length} />
+        <MetricCard label="Downstream job" value={execution.downstreamJobId === null ? null : "queued"} emptyLabel="none" />
       </div>
 
       {execution.blockedReason ? (

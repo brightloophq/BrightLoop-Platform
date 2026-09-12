@@ -1,19 +1,21 @@
 "use client";
 
 import { useRef, type KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Icon } from "../components/Icon";
 import { THEME_CHOICES, type ThemeChoice } from "./theme";
 import { useTheme } from "./ThemeProvider";
 import styles from "./ThemeToggle.module.css";
 
-const META: Record<ThemeChoice, { label: string; icon: string; hint: string }> = {
-  light: { label: "Light", icon: "sun", hint: "Light theme" },
-  dark: { label: "Dark", icon: "moon", hint: "Dark theme" },
-  system: { label: "System", icon: "monitor", hint: "Match your device" },
+/* `short` is what the compact variant shows in place of the sun/moon/monitor
+   pictograms — three letters, so the control still fits tight chrome while
+   saying which theme it is in characters rather than a glyph. */
+const META: Record<ThemeChoice, { label: string; short: string; hint: string }> = {
+  light: { label: "Light", short: "Lgt", hint: "Light theme" },
+  dark: { label: "Dark", short: "Drk", hint: "Dark theme" },
+  system: { label: "System", short: "Sys", hint: "Match your device" },
 };
 
 export interface ThemeToggleProps {
-  /** `segmented` shows icon+label pills; `compact` shows icon-only (tight chrome). */
+  /** `segmented` shows full-word pills; `compact` shows the 3-letter form (tight chrome). */
   variant?: "segmented" | "compact";
   /** Accessible group label. Defaults to "Theme". */
   label?: string;
@@ -27,7 +29,9 @@ export interface ThemeToggleProps {
  * Arrow keys move and select; the choice is applied instantly (no reload) and
  * persisted by the provider. Selection is conveyed by `aria-checked` + a filled
  * pill (not color alone), the focus ring is always visible, and all transitions
- * are CSS-only so `prefers-reduced-motion` is honored automatically.
+ * are CSS-only so `prefers-reduced-motion` is honored automatically. Both
+ * variants label themselves in text — there is no icon-only state — so the
+ * control never depends on a glyph the user has to learn.
  *
  * `system` shows a subtle "· dark"/"· light" resolved hint so the user can tell
  * what System currently maps to.
@@ -84,8 +88,9 @@ export function ThemeToggle({ variant = "segmented", label = "Theme", className 
             aria-label={choice === "system" ? `${meta.label} theme, currently ${resolvedTheme}` : `${meta.label} theme`}
             onClick={() => setTheme(choice)}
           >
-            <Icon name={meta.icon} size={variant === "compact" ? 16 : 15} />
-            {variant === "segmented" && <span className={styles.optionLabel}>{meta.label}</span>}
+            <span className={styles.optionLabel}>
+              {variant === "compact" ? meta.short : meta.label}
+            </span>
           </button>
         );
       })}

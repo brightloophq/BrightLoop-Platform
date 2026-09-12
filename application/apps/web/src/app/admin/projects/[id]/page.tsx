@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Badge, Card, EmptyState, Icon, Progress } from "@brightloop/ui";
+import { Badge, Card, EmptyState, Progress } from "@brightloop/ui";
 import { createClient } from "@/lib/supabase/server";
 import {
   moveDeliverableStatus,
@@ -57,7 +57,6 @@ export default async function ProjectDetailPage({ params }: PageProps) {
           href="/admin/projects"
           style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", color: "var(--text-muted)", textDecoration: "none", fontSize: "var(--fs-sm)", marginBottom: "var(--space-5)" }}
         >
-          <Icon name="arrow-left" size={14} />
           All projects
         </Link>
 
@@ -97,7 +96,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         </div>
 
         {ms.length === 0 ? (
-          <EmptyState icon="check" title="No milestones yet" body="Add milestones to structure the delivery." />
+          <EmptyState title="No milestones yet" body="Add milestones to structure the delivery." />
         ) : (
           <div className={styles.rows}>
             {ms.map((m) => (
@@ -138,7 +137,7 @@ export default async function ProjectDetailPage({ params }: PageProps) {
         </div>
 
         {dv.length === 0 ? (
-          <EmptyState icon="search" title="No deliverables yet" body="Add deliverables and submit them for approval." />
+          <EmptyState title="No deliverables yet" body="Add deliverables and submit them for approval." />
         ) : (
           <div className={styles.rows}>
             {dv.map((d) => (

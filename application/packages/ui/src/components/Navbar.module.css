@@ -81,11 +81,26 @@
   color: var(--text-primary);
 }
 
-.chevron {
+/* Disclosure caret, drawn from two hairline borders rather than an imported
+   chevron. It points down closed, up open — the flip is the state, and
+   aria-expanded carries the same fact to assistive tech. */
+.caret {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-right: 1px solid currentColor;
+  border-bottom: 1px solid currentColor;
+  transform: translateY(-2px) rotate(45deg);
   transition: transform var(--dur-fast) var(--ease-out);
 }
-.chevronOpen {
-  transform: rotate(180deg);
+.caretOpen {
+  transform: translateY(1px) rotate(-135deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .caret {
+    transition: none;
+  }
 }
 
 /* ---- Mega menu ---- */
@@ -131,15 +146,26 @@
   border-color: var(--border-subtle);
 }
 
-.megaIcon {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  display: grid;
-  place-items: center;
-  background: color-mix(in srgb, var(--signal) 10%, transparent);
-  color: var(--text-accent);
+/* Left rail in place of the per-item pictogram: a hairline that lights to gold
+   on hover, so the row still has a leading anchor to scan down. */
+.megaRail {
+  width: 2px;
+  align-self: stretch;
+  min-height: 34px;
+  border-radius: var(--radius-pill);
+  background: var(--line-strong);
   flex: none;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.megaItem:hover .megaRail,
+.megaItem:focus-visible .megaRail {
+  background: var(--grad-metal);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .megaRail {
+    transition: none;
+  }
 }
 
 .megaLabel {
@@ -164,16 +190,22 @@
 }
 
 /* ---- Mobile ---- */
+/* The hamburger is now a labelled button: "Menu" / "Close". Wider than the old
+   44px square, still at least 44px tall for the touch target. */
 .burger {
   display: none;
-  width: 44px;
+  min-width: 44px;
   height: 44px;
+  padding-inline: var(--space-3);
   align-items: center;
   justify-content: center;
   background: none;
   border: var(--border-hairline);
   border-radius: var(--radius-sm);
   color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-medium);
   cursor: pointer;
 }
 

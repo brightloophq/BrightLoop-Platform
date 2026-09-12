@@ -2,17 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthorizationError, assertCapability } from "@brightloop/domain";
-import {
-  Alert,
-  Badge,
-  EmptyWorkspace,
-  OperationalPanel,
-  OperationalTable,
-  SectionHeader,
-  SectionRule,
-  SkeletonBlock,
-  type OperationalColumn,
-} from "@brightloop/ui";
+import { Alert, Badge, EmptyWorkspace, OperationalPanel, OperationalTable, SectionHeader, SectionRule, SkeletonBlock, type OperationalColumn } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { listScanSubjects, loadScannerList, readRuntimeFlags } from "@/lib/scanner-data";
@@ -101,7 +91,6 @@ async function ScannerBody() {
         <SectionRule index="02" label="New prospect scan" meta="creates a queued run" />
         {subjects.length === 0 ? (
           <EmptyWorkspace
-            icon="lock"
             title="No scan subjects yet"
             body="Create a lead or client organization before starting a scan."
             action={<Link href="/admin/leads">Go to leads</Link>}
@@ -127,7 +116,7 @@ function ScanList({ rows }: { rows: Row[] }) {
     return (
       <OperationalPanel>
         <SectionRule index="03" label="Recent scans" meta="none" />
-        <EmptyWorkspace icon="search" title="No scans yet" body="Create your first prospect scan above. Nothing runs until you execute a stage." />
+        <EmptyWorkspace title="No scans yet" body="Create your first prospect scan above. Nothing runs until you execute a stage." />
       </OperationalPanel>
     );
   }
@@ -180,7 +169,7 @@ function Unauthorized() {
     <div className={styles.page}>
       <div className={styles.canvas}>
         <OperationalPanel>
-          <EmptyWorkspace icon="lock" title="You don't have access to the Prospect Scanner" body="Your role can't create or run prospect scans." />
+          <EmptyWorkspace title="You don't have access to the Prospect Scanner" body="Your role can't create or run prospect scans." />
         </OperationalPanel>
       </div>
     </div>

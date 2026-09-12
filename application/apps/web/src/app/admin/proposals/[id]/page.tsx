@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Icon } from "@brightloop/ui";
 import { createClient } from "@/lib/supabase/server";
 import { SalesFlow, type FlowContract, type FlowInvoice } from "../SalesFlow";
 import shell from "../../admin.module.css";
@@ -36,7 +35,7 @@ export default async function AdminProposalDetail({ params }: PageProps) {
       <div className={shell.topbar}><h1 className={shell.topTitle}>{company}</h1></div>
       <div className={shell.content}>
         <Link href="/admin/proposals" style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", color: "var(--text-muted)", textDecoration: "none", fontSize: "var(--fs-sm)", marginBottom: "var(--space-5)" }}>
-          <Icon name="arrow-left" size={14} /> All proposals
+ All proposals
         </Link>
         <div style={{ maxWidth: 560 }}>
           <SalesFlow

@@ -4,7 +4,7 @@
  */
 
 import Link from "next/link";
-import { Badge, EmptyState, Icon } from "@brightloop/ui";
+import { Badge, EmptyState } from "@brightloop/ui";
 import { loadRuntimeDetail } from "@/lib/runtime-data";
 import { RuntimeControls } from "./RuntimeControls";
 import styles from "../../pages.module.css";
@@ -14,14 +14,14 @@ export const dynamic = "force-dynamic";
 export default async function RuntimeDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const data = await loadRuntimeDetail(id);
-  if (data === null) return <EmptyState icon="lock" title="Runtime not found" body="It may have been removed, or you may not have access." />;
+  if (data === null) return <EmptyState title="Runtime not found" body="It may have been removed, or you may not have access." />;
   const { runtime, health, capabilities } = data;
 
   return (
     <>
       <div className={styles.pageHead}>
         <div>
-          <Link href="/workspace/runtimes" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="arrow-left" size={13} /> Runtimes</Link>
+          <Link href="/workspace/runtimes" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}> Runtimes</Link>
           <h1 className={styles.pageTitle}>{runtime.displayName}</h1>
           <p className={styles.pageSub}>{runtime.provider} · {runtime.environment} · last checked {runtime.lastHealthCheckAt ?? "never"}</p>
         </div>

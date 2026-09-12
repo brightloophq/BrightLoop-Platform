@@ -65,7 +65,6 @@ export default async function AdminPortfolioPage() {
 
         {projects.length === 0 ? (
           <EmptyState
-            icon="star"
             title="No case studies yet"
             body="Add your first one. It saves as a draft — nothing reaches the public site until you publish it."
             action={

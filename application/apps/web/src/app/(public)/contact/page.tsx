@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Alert, Card, Container, Eyebrow, Icon, Section } from "@brightloop/ui";
+import { Alert, Card, Container, Eyebrow, Section } from "@brightloop/ui";
 import { ContactForm } from "./ContactForm";
 import home from "../home.module.css";
 import styles from "./contact.module.css";
@@ -58,15 +58,12 @@ export default function ContactPage() {
             <Card>
               <ul className={styles.detailList}>
                 <li className={styles.detail}>
-                  <Icon name="mail" size={16} className={styles.detailIcon} />
                   <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
                 </li>
                 <li className={styles.detail}>
-                  <Icon name="clock" size={16} className={styles.detailIcon} />
                   <span>We reply within one business day.</span>
                 </li>
                 <li className={styles.detail}>
-                  <Icon name="map-pin" size={16} className={styles.detailIcon} />
                   <span>
                     Jamaica — working with businesses across the Caribbean, US, UK and Canada.
                   </span>

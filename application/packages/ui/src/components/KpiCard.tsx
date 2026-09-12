@@ -1,4 +1,3 @@
-import { Icon } from "./Icon";
 import { Sparkline } from "../charts/Sparkline";
 import styles from "./KpiCard.module.css";
 
@@ -18,7 +17,6 @@ export interface KpiCardProps {
   /** null renders an honest empty state instead of a fabricated 0. */
   readonly value: number | string | null;
   readonly suffix?: string;
-  readonly icon?: string;
   readonly emphasis?: "default" | "hero";
   /** Trend vs the previous period. */
   readonly delta?: KpiDelta;
@@ -41,20 +39,23 @@ const STATUS_COLOR: Record<KpiStatus, string> = {
   info: "var(--info)",
   neutral: "var(--chart-1)",
 };
-const DELTA_ARROW = { up: "arrow-up-right", down: "arrow-up-right", flat: "arrow-right" } as const;
+/* Direction as a WORD, not an arrow. The delta text itself ("+6.2%") already
+   carries the sign; this states which way that is meant to be read, and tone
+   (good/bad for THIS metric) stays in the colour. */
+const DELTA_WORD = { up: "Up", down: "Down", flat: "Flat" } as const;
 
 /**
  * KpiCard — the executive KPI (PX.1c). Beyond a bare figure it communicates the
  * TREND: value + direction + delta vs previous + confidence + a mini sparkline +
  * a status accent + one line of context ("why care"). Token-only (theme-aware),
- * accessible (delta announced with words, arrow decorative), and a null value
- * shows an honest empty state — never a fabricated zero.
+ * accessible (direction is a word, so it is never carried by glyph or colour
+ * alone), and a null value shows an honest empty state — never a fabricated
+ * zero.
  */
 export function KpiCard({
   label,
   value,
   suffix,
-  icon,
   emphasis = "default",
   delta,
   previous,
@@ -73,11 +74,6 @@ export function KpiCard({
       style={{ ["--kpi-accent" as string]: accent }}
     >
       <header className={styles.head}>
-        {icon && (
-          <span className={styles.icon} aria-hidden="true">
-            <Icon name={icon} size={emphasis === "hero" ? 18 : 15} />
-          </span>
-        )}
         <span className={styles.label}>{label}</span>
         {typeof confidence === "number" && (
           <span className={styles.confidence} title="AI/data confidence">
@@ -105,11 +101,7 @@ export function KpiCard({
       <footer className={styles.foot}>
         {delta && !empty && (
           <span className={[styles.delta, styles[`delta_${delta.tone}`]].join(" ")}>
-            <Icon
-              name={DELTA_ARROW[delta.direction]}
-              size={13}
-              className={delta.direction === "down" ? styles.arrowDown : undefined}
-            />
+            <span className={styles.deltaWord}>{DELTA_WORD[delta.direction]}</span>
             {delta.text}
           </span>
         )}

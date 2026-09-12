@@ -12,7 +12,7 @@ interface Event { at: string; type: string; text: string }
 
 export default async function ActivityPage() {
   const data = await loadWorkspaceDashboard();
-  if (data === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (data === null) return <EmptyState title="Session expired" body="Please sign in again." />;
 
   const events: Event[] = [
     ...data.missions.map((m) => ({ at: m.updatedAt, type: "Mission", text: `${m.title} — ${m.status.replace(/_/g, " ")}` })),
@@ -23,7 +23,7 @@ export default async function ActivityPage() {
   return (
     <>
       <div className={styles.pageHead}><div><h1 className={styles.pageTitle}>Activity</h1><p className={styles.pageSub}>Everything happening across your workspace.</p></div></div>
-      {events.length === 0 ? <EmptyState icon="activity" title="No activity yet" body="Strategy, plans, reports and agent actions will stream here as your workspace comes to life." />
+      {events.length === 0 ? <EmptyState title="No activity yet" body="Strategy, plans, reports and agent actions will stream here as your workspace comes to life." />
         : <div className={styles.timeline}>{events.slice(0, 60).map((e, i) => (
             <div key={i} className={styles.tlRow}><span className={styles.tlDot} /><div className={styles.tlBody}><div className={styles.tlType}>{e.type}</div><div className={styles.tlText}>{e.text}</div></div></div>))}</div>}
     </>

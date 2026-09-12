@@ -18,7 +18,7 @@ export default async function PortalContractsPage() {
       <div className={shell.topbar}><h1 className={shell.topTitle}>Contracts</h1></div>
       <div className={shell.content}>
         {contracts.length === 0 ? (
-          <EmptyState icon="check-circle" title="No contracts yet" body="Once you accept a proposal, your Statement of Work appears here to sign." />
+          <EmptyState title="No contracts yet" body="Once you accept a proposal, your Statement of Work appears here to sign." />
         ) : (
           <ContractSign contracts={contracts} />
         )}

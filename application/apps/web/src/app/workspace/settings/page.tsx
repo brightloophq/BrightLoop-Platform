@@ -11,7 +11,7 @@ import styles from "../pages.module.css";
 
 export default async function SettingsPage() {
   const actor = await getActor();
-  if (actor === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (actor === null) return <EmptyState title="Session expired" body="Please sign in again." />;
   const workspaces = await resolveWorkspaces();
 
   return (

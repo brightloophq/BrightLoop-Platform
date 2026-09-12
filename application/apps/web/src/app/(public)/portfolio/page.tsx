@@ -100,7 +100,6 @@ export default async function PortfolioPage({ searchParams }: PageProps) {
             </>
           ) : (
             <EmptyState
-              icon="search"
               title={hasFilters ? "No projects match those filters" : "No published projects yet"}
               body={
                 hasFilters

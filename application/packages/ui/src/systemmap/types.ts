@@ -19,7 +19,6 @@ export interface ExplorerRec {
 export interface ExplorerEvent {
   readonly label: string;
   readonly at: string; // ISO
-  readonly icon: string;
 }
 export interface ExplorerMetric {
   readonly label: string;

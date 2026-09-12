@@ -10,16 +10,14 @@
   background: var(--surface-inset);
 }
 
-.icon {
+/* Holds the optical position the pictogram used to occupy, as a short metallic
+   hairline. Geometry, not a glyph — it says nothing the heading does not. */
+.rule {
   width: 48px;
-  height: 48px;
+  height: 2px;
   border-radius: var(--radius-pill);
-  display: grid;
-  place-items: center;
-  background: var(--surface-card);
-  border: var(--border-hairline);
-  color: var(--text-muted);
-  margin-bottom: var(--space-1);
+  background: var(--grad-metal);
+  margin-bottom: var(--space-2);
 }
 
 .title {

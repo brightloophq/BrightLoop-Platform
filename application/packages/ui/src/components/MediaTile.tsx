@@ -1,4 +1,3 @@
-import { Icon } from "./Icon";
 import styles from "./MediaTile.module.css";
 
 export interface MediaTileProps {
@@ -8,16 +7,6 @@ export interface MediaTileProps {
   /** Image-slot id. Present means "real asset outstanding for this slot". */
   slot?: string;
 }
-
-const KIND_ICON: Record<string, string> = {
-  image: "layout-grid",
-  video: "mouse-pointer-click",
-  youtube: "mouse-pointer-click",
-  loom: "mouse-pointer-click",
-  audio: "mouse-pointer-click",
-  pdf: "search",
-  website: "external-link",
-};
 
 /**
  * MediaTile — a gallery/media item.
@@ -36,10 +25,7 @@ export function MediaTile({ kind, label, url, slot }: MediaTileProps) {
   return (
     <figure className={styles.tile}>
       <div className={styles.frame}>
-        <span className={styles.kind}>
-          <Icon name={KIND_ICON[kind] ?? "layout-grid"} size={14} />
-          {kind}
-        </span>
+        <span className={styles.kind}>{kind}</span>
         <span className={styles.pending}>
           {slot ? `Asset pending — slot “${slot}”` : "Asset pending"}
         </span>
@@ -49,7 +35,6 @@ export function MediaTile({ kind, label, url, slot }: MediaTileProps) {
         {isExternal ? (
           <a href={url} className={styles.link} target="_blank" rel="noopener noreferrer">
             Open
-            <Icon name="external-link" size={12} />
           </a>
         ) : null}
       </figcaption>

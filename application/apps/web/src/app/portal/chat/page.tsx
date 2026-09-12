@@ -103,7 +103,6 @@ export default async function PortalChatPage() {
         {!conversation ? (
           <Card>
             <EmptyState
-              icon="mail"
               title="Talk to your Auxion strategist"
               body="Start a conversation and a real member of our team will pick it up — no bots. They'll already have your assessment and recommended plan in front of them."
             />

@@ -19,19 +19,11 @@ const MEGA_DESCRIPTIONS: Record<Discipline, string> = {
   Grow: "Measurement, presence and campaigns that compound.",
 };
 
-const MEGA_ICONS: Record<Discipline, string> = {
-  Brand: "pen-tool",
-  Build: "layout-grid",
-  Automate: "workflow",
-  Grow: "trending-up",
-};
-
 export const SERVICES_MEGA: readonly MegaMenuItem[] = Object.entries(DISCIPLINE_SLUGS).map(
   ([slug, discipline]) => ({
     label: discipline,
     description: MEGA_DESCRIPTIONS[discipline],
     href: `/services/${slug}`,
-    icon: MEGA_ICONS[discipline],
   }),
 );
 

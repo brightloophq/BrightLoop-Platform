@@ -58,7 +58,6 @@ export default async function AutomationPage() {
           </Card>
         ) : automations.length === 0 ? (
           <EmptyState
-            icon="workflow"
             title="No automations registered yet"
             body="Automations appear here once workflows (intake, dunning, review requests, approval nudges) are registered and start reporting status."
           />

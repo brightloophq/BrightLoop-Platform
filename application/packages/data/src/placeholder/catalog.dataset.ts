@@ -149,14 +149,14 @@ export const PLACEHOLDER_MODULES: readonly ServiceModule[] = [
 
 /** Capabilities the client may already own (configurator inventory step). */
 export const PLACEHOLDER_ASSETS: readonly Asset[] = [
-  { key: "logo", label: "Logo", icon: "pen-tool" },
-  { key: "colors", label: "Brand colors", icon: "palette" },
-  { key: "website", label: "Website", icon: "layout-grid" },
-  { key: "social", label: "Social media pages", icon: "share-2" },
-  { key: "gbp", label: "Google Business Profile", icon: "map-pin" },
-  { key: "crm", label: "CRM", icon: "route" },
-  { key: "email", label: "Email marketing", icon: "mail" },
-  { key: "analytics", label: "Analytics", icon: "line-chart" },
+  { key: "logo", label: "Logo" },
+  { key: "colors", label: "Brand colors" },
+  { key: "website", label: "Website" },
+  { key: "social", label: "Social media pages" },
+  { key: "gbp", label: "Google Business Profile" },
+  { key: "crm", label: "CRM" },
+  { key: "email", label: "Email marketing" },
+  { key: "analytics", label: "Analytics" },
 ];
 
 export const PLACEHOLDER_PLANS: readonly Plan[] = [
@@ -215,11 +215,11 @@ export const PLACEHOLDER_PLANS: readonly Plan[] = [
 ];
 
 export const PLACEHOLDER_GOALS: readonly Goal[] = [
-  { id: "launch", label: "Launch a new business", icon: "rocket" },
-  { id: "leads", label: "Get more qualified leads", icon: "trending-up" },
-  { id: "automate", label: "Automate my operations", icon: "workflow" },
-  { id: "rebrand", label: "Modernize my brand", icon: "sparkles" },
-  { id: "scale", label: "Scale what's working", icon: "line-chart" },
+  { id: "launch", label: "Launch a new business" },
+  { id: "leads", label: "Get more qualified leads" },
+  { id: "automate", label: "Automate my operations" },
+  { id: "rebrand", label: "Modernize my brand" },
+  { id: "scale", label: "Scale what's working" },
 ];
 
 /**
@@ -282,9 +282,9 @@ export const PLACEHOLDER_ASSESSMENT = [
 
 /** The client's per-service choice → what Auxion will do (handoff onboarding). */
 export const PLACEHOLDER_CHOICES = [
-  { id: "have" as const, label: "Already have it", status: "Keep", icon: "check-circle", note: "We'll review your existing asset and confirm it meets professional standards." },
-  { id: "upgrade" as const, label: "Upgrade existing", status: "Improve", icon: "arrow-up-right", note: "You have this — Auxion will improve or redesign it to a professional standard." },
-  { id: "need" as const, label: "Build it for me", status: "Create", icon: "sparkles", note: "You don't have this yet — Auxion will create it from scratch." },
+  { id: "have" as const, label: "Already have it", status: "Keep", note: "We'll review your existing asset and confirm it meets professional standards." },
+  { id: "upgrade" as const, label: "Upgrade existing", status: "Improve", note: "You have this — Auxion will improve or redesign it to a professional standard." },
+  { id: "need" as const, label: "Build it for me", status: "Create", note: "You don't have this yet — Auxion will create it from scratch." },
 ];
 
 /** Status → tone/description for the Keep/Improve/Replace/Create summary. */
@@ -550,30 +550,26 @@ export const PLACEHOLDER_CONTENT: Readonly<Record<string, ModuleContent>> = {
  * messaging from the product owner.
  */
 export const PLACEHOLDER_DISCIPLINE_COPY: Readonly<
-  Record<string, { eyebrow: string; outcome: string; blurb: string; icon: string }>
+  Record<string, { eyebrow: string; outcome: string; blurb: string }>
 > = {
   Brand: {
     eyebrow: "Discipline 01",
     outcome: "Be chosen before you're contacted",
     blurb: "Identity, voice and guidelines that make a small business look established and trusted.",
-    icon: "pen-tool",
   },
   Build: {
     eyebrow: "Discipline 02",
     outcome: "Turn attention into booked calls",
     blurb: "Conversion-first websites and landing pages built to be found, understood and acted on.",
-    icon: "layout-grid",
   },
   Automate: {
     eyebrow: "Discipline 03",
     outcome: "Stop losing leads to admin",
     blurb: "CRM, follow-up and workflow automation so nothing slips and response takes minutes.",
-    icon: "workflow",
   },
   Grow: {
     eyebrow: "Discipline 04",
     outcome: "Make the pipeline predictable",
     blurb: "Measurement, presence and campaigns that compound into repeatable demand.",
-    icon: "trending-up",
   },
 };

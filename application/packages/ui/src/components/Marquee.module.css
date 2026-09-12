@@ -56,9 +56,15 @@
   text-transform: uppercase;
 }
 
+/* Item separator: a small gold lozenge turned on its point. Geometry, so the
+   ticker carries the brand's one chromatic voice without a glyph. */
 .sep {
-  color: var(--signal);
-  opacity: 0.7;
+  flex: none;
+  width: 5px;
+  height: 5px;
+  background: var(--signal);
+  transform: rotate(45deg);
+  opacity: 0.75;
 }
 
 @media (prefers-reduced-motion: reduce) {

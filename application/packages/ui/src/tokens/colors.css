@@ -1,95 +1,137 @@
-/* Auxion — Color tokens (canonical, per docs/design/source/00-Design-System.pdf
-   + 08-Auxion-DNA.pdf + 09-Rebrand-Migration-Handoff.pdf).
+/* Auxion — Color tokens (canonical).
 
-   Quiet surfaces, one signal. Light mode is architectural paper; dark mode is a
-   precision command center — IDENTICAL hierarchy. Ink carries structure; a single
-   AMBER --signal carries system state (never decoration). Every token resolves in
-   both [data-theme="light"] and [data-theme="dark"]; never hardcode a hex.
+   THE BRAND: a metallic gold ribbon monogram on absolute black. Gold is the
+   only chromatic voice in the system. Everything else is a warm neutral that
+   gets out of its way.
+
+   Quiet surfaces, one signal. Light mode is warm architectural paper; dark mode
+   is black-field instrumentation — IDENTICAL hierarchy. Ink carries structure;
+   a single GOLD --signal carries system state (never decoration). Every token
+   resolves in both [data-theme="light"] and [data-theme="dark"]; never hardcode
+   a hex.
+
+   Contrast is computed, not eyeballed. Every text-bearing pair below clears
+   WCAG AA (4.5:1) at body size in its own theme:
+     light  --ink/--bg 15.6:1 · --ink-3/--bg 5.0:1 · --signal/--bg 4.9:1
+            --on-signal(white)/--signal 5.5:1 · --text-accent/--bg 5.9:1
+     dark   --ink/--bg 15.9:1 · --ink-3/--bg 5.0:1 · --signal/--bg 11.0:1
+            --on-signal(near-black)/--signal 11.2:1
 
    MIGRATION NOTE (adapt-first): the canonical token set below is authoritative.
-   The legacy primitive scales (--bl-*, --navy-*, --blue-*, --cyan-*, --slate-*)
-   and the legacy semantic aliases (--surface-card, --text-primary, …) are RETAINED
-   and re-pointed to canon values so existing components keep working during the
-   migration. Direct references to the legacy primitives are purged per-surface and
-   finally in Phase 5. Do not add new references to the legacy primitives. */
+   The legacy BrightLoop PRIMITIVE scales (--bl-*, --navy-*, --blue-*, --cyan-*,
+   --slate-*) are GONE — every reference to them across @brightloop/ui and the web
+   app was repointed at a canon token, so there is no longer a blue or navy value
+   anywhere in the system to leak back in (canon-tokens.test.ts guards this).
+   The legacy semantic ALIASES (--surface-card, --text-primary, …) are still
+   RETAINED and re-pointed to canon values so existing components keep working;
+   they are deleted in Phase 5. Do not add new references to them. */
 
 :root {
+  /* ======================================================================
+     THE GOLD RAMP — sampled from the identity's metallic sweep, deep bronze
+     shadow through core gold to the pale champagne highlight. This ramp is a
+     PRIMITIVE scale: reach for the semantic tokens (--signal, --text-accent,
+     --grad-gold…) in components, not these steps.
+     ====================================================================== */
+  --gold-950: #241804; /* deepest shadow in the ribbon fold */
+  --gold-900: #3F2A0B;
+  --gold-800: #5E410F;
+  --gold-700: #7A5616; /* accent TEXT on paper */
+  --gold-600: #96691C;
+  --gold-500: #8A6218; /* THE signal on paper (white text clears AA) */
+  --gold-400: #B0832A;
+  --gold-300: #C9A24B; /* core gold — the ribbon's body */
+  --gold-200: #D9BB72; /* THE signal on black */
+  --gold-100: #E8D3A0; /* champagne */
+  --gold-050: #F2E6C6; /* pale highlight — the sheen band */
+
   /* ======================================================================
      CANONICAL AUXION TOKENS — the source of truth (light values here;
      dark overrides in [data-theme="dark"] below).
      ====================================================================== */
 
-  /* ---- Neutrals ---- */
-  --bg:          #F3F1EC; /* page canvas — architectural paper */
-  --surface:     #FBFAF8; /* cards & panels */
-  --surface-2:   #EDEAE3; /* recessed / chips / core */
-  --ink:         #16181D; /* primary text */
-  --ink-2:       #55585F; /* secondary text */
-  --ink-3:       #676A71; /* muted / meta — darkened for WCAG AA (4.8:1 on --bg; was #8A8D94 = 2.94:1) */
-  --line:        rgba(22, 24, 29, 0.11);  /* hairline — 11% ink */
-  --line-strong: rgba(22, 24, 29, 0.20);  /* strong border — 20% ink */
+  /* ---- Neutrals — warm, so gold sits in the same family ---- */
+  --bg:          #F5F2EA; /* page canvas — warm architectural paper */
+  --surface:     #FCFAF4; /* cards & panels */
+  --surface-2:   #EBE6D9; /* recessed / chips / core */
+  --ink:         #14120D; /* primary text — warm near-black */
+  --ink-2:       #55514A; /* secondary text */
+  --ink-3:       #6B675E; /* muted / meta — 5.04:1 on --bg */
+  --line:        rgba(20, 18, 13, 0.11); /* hairline — 11% ink */
+  --line-strong: rgba(20, 18, 13, 0.20); /* strong border — 20% ink */
 
   /* ---- Action & signal ---- */
-  --action-bg:   #16181D; /* primary action fill (ink) */
-  --action-fg:   #FBFAF8; /* text/icon on the primary action */
-  --signal:      #B4571A; /* THE accent — amber, system state only */
+  --action-bg:   #14120D; /* primary action fill (ink) */
+  --action-fg:   #FCFAF4; /* text on the primary action */
+  --signal:      var(--gold-500); /* THE accent — gold, system state only */
   --signal-tint: color-mix(in srgb, var(--signal) 12%, transparent); /* active fill — 12% signal */
-  --on-signal:   #FFFFFF; /* text/icon on a signal fill */
-  /* Signature amber wash for a hero headline accent — a legible amber sheen that
-     resolves from --signal, so it stays high-contrast on the dark hero field and
-     on paper. Reserved for the ONE accented headline word, never body text. */
-  --grad-signal: linear-gradient(
-    115deg,
-    var(--signal) 0%,
-    color-mix(in srgb, var(--signal) 58%, white) 100%
-  ); /* @kind color */
+  --on-signal:   #FFFFFF; /* text on a signal fill — 5.47:1 */
 
-  /* ---- Semantic (state) ---- */
-  --positive:    #1F7A54; /* Operating / healthy */
-  --caution:     #B07514; /* Degraded / needs attention */
+  /* ---- Metallic gradients (the identity's sweep, expressed in CSS) ----
+     --grad-gold   the full ribbon: bronze → gold → sheen → gold → bronze.
+                   For brand moments only (the mark, a hero accent word, a rule).
+     --grad-metal  the same sweep read edge-on — a thin machined highlight.
+     --grad-gold-soft  a calmer three-stop for headline accents and text fills.
+     --grad-sheen  a hairline sweep that fades at both ends (dividers, top rules).
+     NEVER put body text on a metallic fill; use --text-accent instead. */
+  --grad-gold: linear-gradient(
+    100deg,
+    var(--gold-800) 0%,
+    var(--gold-600) 16%,
+    var(--gold-300) 38%,
+    var(--gold-050) 50%,
+    var(--gold-300) 62%,
+    var(--gold-600) 84%,
+    var(--gold-800) 100%
+  ); /* @kind color */
+  --grad-metal: linear-gradient(
+    90deg,
+    var(--gold-900) 0%,
+    var(--gold-400) 22%,
+    var(--gold-050) 50%,
+    var(--gold-400) 78%,
+    var(--gold-900) 100%
+  ); /* @kind color */
+  --grad-gold-soft: linear-gradient(
+    115deg,
+    var(--gold-700) 0%,
+    var(--gold-400) 52%,
+    var(--gold-200) 100%
+  ); /* @kind color */
+  --grad-sheen: linear-gradient(
+    90deg,
+    transparent 0%,
+    color-mix(in srgb, var(--signal) 55%, transparent) 50%,
+    transparent 100%
+  ); /* @kind color */
+  /* Signature wash for the ONE accented hero headline word. Resolves from the
+     gold ramp so it stays legible on the black hero field and on paper. */
+  --grad-signal: var(--grad-gold-soft); /* @kind color */
+
+  /* ---- Semantic (state) — kept clear of the gold axis so "caution" can never
+     be read as "brand". ---- */
+  --positive:    #1C7350; /* Operating / healthy */
+  --caution:     #9C4E0E; /* Degraded / needs attention — burnt orange, not gold */
   --critical:    #B23B3B; /* Fault / risk */
-  --info:        #3C5C8C; /* informational */
+  --info:        #4A5568; /* informational — warm slate */
 
   /* ---- Categorical chart palette (PX.1c) — fixed order, never cycled.
-     Computationally validated (CVD-safe, lightness band, chroma floor,
-     contrast) for the light chart surface; dark steps overridden below.
-     chart-1 is the brand amber. Text/labels use ink tokens, not these. ---- */
-  --chart-1: #B4571A; /* amber (brand signal) */
-  --chart-2: #2F6DB5; /* blue */
-  --chart-3: #1E9E6A; /* green */
-  --chart-4: #8A5CC2; /* purple */
-  --chart-5: #C64A4A; /* red */
-  --chart-6: #0FA3B1; /* teal (pair with a label — 2.97:1 on paper) */
+     Gold-anchored: chart-1 is the brand signal, the rest are desaturated so the
+     gold stays the hero while remaining mutually distinguishable (hue-spread,
+     lightness band, chroma floor). Text/labels use ink tokens, not these. ---- */
+  --chart-1: #8A6218; /* gold (brand signal) */
+  --chart-2: #35608F; /* slate blue */
+  --chart-3: #1E7F5C; /* green */
+  --chart-4: #7A4E9C; /* plum */
+  --chart-5: #B0452F; /* terracotta */
+  --chart-6: #157E8C; /* teal (pair with a label) */
   --chart-grid: var(--line);            /* recessive gridlines */
   --chart-axis: var(--ink-3);           /* axis text */
   --chart-track: var(--surface-2);      /* empty track behind bars/donut */
 
-  /* ======================================================================
-     LEGACY PRIMITIVE SCALES — retained for backwards-compat during
-     migration. DO NOT reference in new code; purged in Phase 5.
-     ====================================================================== */
-  --bl-navy:  #152238;
-  --bl-blue:  #1B54E4;
-  --bl-cyan:  #5B83EF;
-  --bl-white: #FFFFFF;
-  --bl-slate: #69707C;
-  --bl-soft:  #FBFCFD;
-
-  --navy-950: #0E1626; --navy-900: #152238; --navy-850: #1A2B45; --navy-800: #1C3055;
-  --navy-700: #223C5C; --navy-600: #274A7C; --navy-500: #345C93;
-
-  --blue-50: #EAF0FE; --blue-100: #D3E0FD; --blue-200: #B0C6FB; --blue-300: #85A5F4;
-  --blue-400: #5B83EF; --blue-500: #1B54E4; --blue-600: #153FC4; --blue-700: #123AA0; --blue-800: #143282;
-
-  --cyan-50: #EDF2FE; --cyan-100: #DAE4FD; --cyan-200: #BACDFB; --cyan-300: #8FADF3;
-  --cyan-400: #5B83EF; --cyan-500: #3E6AEA; --cyan-600: #1B54E4;
-
-  --slate-50: #FBFCFD; --slate-100: #F2F4F7; --slate-200: #E1E5EC; --slate-300: #C4CCD7;
-  --slate-400: #98A6B6; --slate-500: #69707C; --slate-600: #4C5563; --slate-700: #3B4557;
-  --slate-800: #26303F; --slate-900: #141B26;
 }
 
-/* ---- Semantic aliases: LIGHT (architectural paper) — the DEFAULT ----
+/* ---- Semantic aliases: LIGHT (warm architectural paper) — the DEFAULT ----
    Both themes are first-class with identical hierarchy; light is the default
    canvas.
 
@@ -117,13 +159,22 @@
   --text-primary:   var(--ink);
   --text-secondary: var(--ink-2);
   --text-muted:     var(--ink-3);
-  /* Accent/link TEXT uses a deeper amber than the --signal fill so body-size text
-     clears WCAG AA on paper (5.06:1 on --bg; raw --signal #B4571A is only 4.31:1).
+  /* Accent/link TEXT uses a deeper gold than the --signal fill so body-size text
+     clears WCAG AA on paper with headroom (5.93:1 vs --signal's 4.89:1).
      Fills / borders / focus keep --signal — this darkens the text role only. */
-  --text-accent:    #A44E12;
-  --text-link:      #A44E12;
+  --text-accent:    var(--gold-700);
+  --text-link:      var(--gold-700);
   --text-on-accent: var(--action-fg);
 
+
+  /* ---- Identity metal — the four stops the Logo's gradients resolve from.
+     The gold ramp itself is theme-invariant, but the MARK has to stay legible on
+     both grounds, so the lockup samples a darker span of the ramp on paper and a
+     brighter span on black. Only <Logo> should reference these. ---- */
+  --brand-1: var(--gold-900); /* deepest fold */
+  --brand-2: var(--gold-700);
+  --brand-3: var(--gold-600); /* core */
+  --brand-4: var(--gold-300); /* sheen band */
   --focus-ring:     var(--signal);
 
   /* legacy status aliases → canon */
@@ -136,46 +187,49 @@
   --action-primary-hover: var(--action-bg);
   --action-primary-press: var(--action-bg);
 
-  /* restrained, de-blued brand gradients (retained for existing consumers) */
+  /* Restrained brand washes (retained for existing consumers). These are TINTS,
+     not metal — they sit behind content and never carry text of their own. The
+     metallic fills live in --grad-gold / --grad-metal. */
   --grad-loop:      linear-gradient(135deg, var(--surface-2) 0%, var(--signal-tint) 100%);
   --grad-loop-soft: linear-gradient(135deg, var(--surface-2) 0%, var(--signal-tint) 100%);
 }
 
-/* ---- Semantic aliases: DARK (precision command center) — co-equal ---- */
+/* ---- Semantic aliases: DARK (black-field instrumentation) — co-equal ----
+   This is the identity's native ground: the mark is drawn on absolute black. */
 [data-theme="dark"],
 .bl-theme-dark {
   /* native form controls, scrollbars & UA surfaces follow the theme */
   color-scheme: dark;
 
   /* canon token dark overrides */
-  --bg:          #0B0C0F;
-  --surface:     #14161B;
-  --surface-2:   #1C1F26;
-  --ink:         #ECEDEF;
-  --ink-2:       #A2A6AE;
-  --ink-3:       #7A7E87; /* muted / meta — lightened for WCAG AA (4.8:1 on dark --bg; was #6C7079 = 3.94:1) */
-  --line:        rgba(255, 255, 255, 0.09);
-  --line-strong: rgba(255, 255, 255, 0.18);
+  --bg:          #050505; /* the identity's ground */
+  --surface:     #0D0D0C;
+  --surface-2:   #171613;
+  --ink:         #EDEAE3; /* warm off-white */
+  --ink-2:       #A8A49A;
+  --ink-3:       #817D74; /* muted / meta — 4.97:1 on dark --bg */
+  --line:        rgba(233, 225, 205, 0.10); /* warm hairline */
+  --line-strong: rgba(233, 225, 205, 0.20);
 
-  --action-bg:   #ECEDEF;
-  --action-fg:   #0B0C0F;
-  --signal:      #E8912F;
-  --signal-tint: rgba(232, 145, 47, 0.16);
-  --on-signal:   #17130A;
+  --action-bg:   #EDEAE3;
+  --action-fg:   #050505;
+  --signal:      var(--gold-200);
+  --signal-tint: color-mix(in srgb, var(--signal) 16%, transparent);
+  --on-signal:   #120D02;
 
-  --positive:    #46B98A;
-  --caution:     #E0A93C;
+  --positive:    #4FBE92;
+  --caution:     #E08A45;
   --critical:    #E06767;
-  --info:        #6E93C9;
+  --info:        #8D96A8;
 
-  /* categorical chart palette — dark steps (validated against the dark surface;
+  /* categorical chart palette — dark steps (validated against the black surface;
      not an auto-flip of the light values) */
-  --chart-1: #D07E2A;
-  --chart-2: #4E82C6;
-  --chart-3: #33A074;
-  --chart-4: #9670CA;
-  --chart-5: #CE5858;
-  --chart-6: #1E9AAE;
+  --chart-1: #D9BB72;
+  --chart-2: #6E9BD6;
+  --chart-3: #45B589;
+  --chart-4: #A985D6;
+  --chart-5: #D8735A;
+  --chart-6: #3FAEBE;
 
   /* legacy aliases re-resolve through the overridden canon tokens above */
   --bg-base:       var(--bg);
@@ -192,6 +246,12 @@
   --text-link:      var(--signal);
   --text-on-accent: var(--action-fg);
 
+
+  /* identity metal — brighter span of the ramp, for the mark's native black ground */
+  --brand-1: var(--gold-800);
+  --brand-2: var(--gold-600);
+  --brand-3: var(--gold-300);
+  --brand-4: var(--gold-050);
   --focus-ring:     var(--signal);
 
   --success: var(--positive);
