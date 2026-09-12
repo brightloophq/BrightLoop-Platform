@@ -6,7 +6,6 @@ import {
   DEFAULT_THEME_CHOICE,
   THEME_ATTRIBUTE,
   THEME_STORAGE_KEY,
-  initialChoice,
   normalizeChoice,
   type ResolvedTheme,
   type ThemeChoice,
@@ -26,25 +25,19 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-const DARK_QUERY = "(prefers-color-scheme: dark)";
-
-function prefersDark(): boolean {
-  return typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(DARK_QUERY).matches;
-}
-
 /**
  * The theme to start from: a stored choice if there is a valid one, otherwise
- * the OS preference. A previously-stored "system" is no longer valid and falls
- * through to the OS, which is the same thing it used to resolve to — so nobody
- * is moved off the theme they were already getting.
+ * the default (dark). The OS preference is not consulted — see
+ * DEFAULT_THEME_CHOICE. A previously-stored "system" is no longer valid and
+ * lands on the default like any first visit.
  */
 function readInitialChoice(): ThemeChoice {
   if (typeof window === "undefined") return DEFAULT_THEME_CHOICE;
   try {
-    return normalizeChoice(window.localStorage.getItem(THEME_STORAGE_KEY), initialChoice(prefersDark()));
+    return normalizeChoice(window.localStorage.getItem(THEME_STORAGE_KEY));
   } catch {
-    // Storage blocked (private mode) — the OS preference is still readable.
-    return initialChoice(prefersDark());
+    // Storage blocked (private mode) — the choice simply does not persist.
+    return DEFAULT_THEME_CHOICE;
   }
 }
 
@@ -62,12 +55,11 @@ function applyResolved(resolved: ResolvedTheme): void {
  * causes a visual flash: it renders children immediately and only RE-applies the
  * attribute when the user changes the choice.
  *
- * The OS preference is consulted ONLY while no explicit choice is stored. Once
- * the user picks a side it is theirs and an OS flip does not override it — which
- * is the behaviour a two-state control implies. (The previous tri-state runtime
- * tracked `prefers-color-scheme` live to drive a "System" option; with that
- * option gone, continuing to follow the OS would silently undo an explicit
- * choice.)
+ * The OS preference is never consulted: dark is the brand's intended first
+ * impression, and once the user picks a side it is theirs. (The original
+ * tri-state runtime tracked `prefers-color-scheme` live to drive a "System"
+ * option; with that option gone, following the OS would only have meant
+ * overriding an explicit choice or randomising the first one.)
  *
  * Hydration safety: the first client render initializes from the DEFAULT so it
  * matches the server render exactly; a mount effect then reconciles with the

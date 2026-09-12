@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   isThemeChoice,
-  initialChoice,
   normalizeChoice,
   buildThemeScript,
   THEME_SCRIPT,
@@ -25,10 +24,14 @@ describe("isThemeChoice", () => {
   });
 });
 
-describe("initialChoice", () => {
-  it("follows the OS when there is nothing stored", () => {
-    expect(initialChoice(true)).toBe("dark");
-    expect(initialChoice(false)).toBe("light");
+describe("the default is unconditional", () => {
+  it("does not depend on the OS preference", () => {
+    // The runtime deliberately exposes no OS-derived entry point: dark is the
+    // brand's first impression, not a per-device coin flip. If a future change
+    // reintroduces prefers-color-scheme, this is the test that should stop it.
+    expect(DEFAULT_THEME_CHOICE).toBe("dark");
+    expect(THEME_SCRIPT).not.toContain("prefers-color-scheme");
+    expect(THEME_SCRIPT).not.toContain("matchMedia");
   });
 });
 
@@ -42,11 +45,15 @@ describe("normalizeChoice", () => {
     expect(normalizeChoice(null)).toBe(DEFAULT_THEME_CHOICE);
     expect(normalizeChoice(undefined)).toBe(DEFAULT_THEME_CHOICE);
   });
-  it("takes an explicit fallback, which is how a retired 'system' migrates", () => {
+  it("takes an explicit fallback, and a valid stored choice always beats it", () => {
     expect(normalizeChoice("system", "light")).toBe("light");
-    expect(normalizeChoice("system", initialChoice(true))).toBe("dark");
-    // A valid stored choice always beats the fallback.
+    expect(normalizeChoice(null, "light")).toBe("light");
     expect(normalizeChoice("light", "dark")).toBe("light");
+    expect(normalizeChoice("dark", "light")).toBe("dark");
+  });
+
+  it("lands a retired 'system' on the default, like any first visit", () => {
+    expect(normalizeChoice("system")).toBe(DEFAULT_THEME_CHOICE);
   });
 });
 
@@ -61,10 +68,9 @@ describe("constants", () => {
 });
 
 describe("buildThemeScript / THEME_SCRIPT", () => {
-  it("references the storage key, attribute, and both matchMedia branches", () => {
+  it("references the storage key and attribute, and stamps a concrete theme", () => {
     expect(THEME_SCRIPT).toContain(JSON.stringify(THEME_STORAGE_KEY));
     expect(THEME_SCRIPT).toContain(JSON.stringify(THEME_ATTRIBUTE));
-    expect(THEME_SCRIPT).toContain("prefers-color-scheme: dark");
     // fail-safe: an exception path still stamps a concrete theme
     expect(THEME_SCRIPT).toContain('"dark"');
   });
@@ -79,14 +85,14 @@ describe("buildThemeScript / THEME_SCRIPT", () => {
     expect(s).toContain('"my-key"');
     expect(s).toContain('"data-mode"');
     expect(s).not.toContain("auxion-theme");
-    // The fallback is asserted by BEHAVIOUR rather than by string shape: it is
-    // reached only when nothing is stored and the OS cannot be asked, and a
-    // previous version of this test pinned the exact expression instead, so it
-    // broke on a refactor that kept the semantics intact.
+    // The fallback is asserted by BEHAVIOUR rather than by string shape: an
+    // earlier version of this test pinned the exact expression, so it broke on
+    // a refactor that kept the semantics intact.
+    expect(runThemeScript(s, { stored: null })).toBe("light");
     expect(runThemeScript(s, { stored: null, noMatchMedia: true })).toBe("light");
   });
 
-  it("uses the fallback when nothing is stored and matchMedia is unavailable", () => {
+  it("needs no matchMedia at all", () => {
     expect(runThemeScript(THEME_SCRIPT, { stored: null, noMatchMedia: true })).toBe(
       DEFAULT_THEME_CHOICE,
     );
@@ -97,14 +103,23 @@ describe("buildThemeScript / THEME_SCRIPT", () => {
     expect(applied).toBe("light");
   });
 
-  it("treats a legacy stored 'system' as unset and follows the OS", () => {
-    expect(runThemeScript(THEME_SCRIPT, { stored: "system", prefersDark: true })).toBe("dark");
-    expect(runThemeScript(THEME_SCRIPT, { stored: "system", prefersDark: false })).toBe("light");
+  it("applies a stored 'dark' as-is", () => {
+    expect(runThemeScript(THEME_SCRIPT, { stored: "dark", prefersDark: false })).toBe("dark");
   });
 
-  it("follows the OS when nothing is stored", () => {
+  it("treats a legacy stored 'system' as unset and uses the default", () => {
+    expect(runThemeScript(THEME_SCRIPT, { stored: "system", prefersDark: true })).toBe("dark");
+    expect(runThemeScript(THEME_SCRIPT, { stored: "system", prefersDark: false })).toBe("dark");
+  });
+
+  it("uses the default when nothing is stored, whatever the OS prefers", () => {
+    // Both OS states must give dark — that is the whole point of the change.
     expect(runThemeScript(THEME_SCRIPT, { stored: null, prefersDark: true })).toBe("dark");
-    expect(runThemeScript(THEME_SCRIPT, { stored: null, prefersDark: false })).toBe("light");
+    expect(runThemeScript(THEME_SCRIPT, { stored: null, prefersDark: false })).toBe("dark");
+  });
+
+  it("still honours an explicit 'light' over the default", () => {
+    expect(runThemeScript(THEME_SCRIPT, { stored: "light", prefersDark: true })).toBe("light");
   });
 
   it("fails safe to the default when localStorage throws", () => {

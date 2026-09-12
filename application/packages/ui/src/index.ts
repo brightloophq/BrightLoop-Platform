@@ -193,6 +193,5 @@ export {
   THEME_STORAGE_KEY,
   DEFAULT_THEME_CHOICE,
   isThemeChoice,
-  initialChoice,
 } from "./theme/theme";
 export type { ThemeChoice, ResolvedTheme } from "./theme/theme";
