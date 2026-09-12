@@ -589,7 +589,7 @@ mark as an oversized `.stageMark` watermark at 9% opacity, bleeding off the
 right edge to fill the half the copy does not use (hidden on phones, where
 there is no spare half). The Footer's top margin is dropped via `:has()` when a
 page ends on a dark band, or it shows a stripe of the page ground between two
-dark surfaces. Light/Dark/System still governs — only
+dark surfaces. The theme is two-state and DARK BY DEFAULT (§13 PX.1a) — only
 the opening and closing stages and `PlatformShowcase` commit to `tone="dark"`,
 so choosing Light does not yield a mostly-black page.
 
@@ -606,6 +606,37 @@ never in a hardcoded array.
 absence of the retired `--bl-*`/`--navy-*`/`--blue-*`/`--cyan-*`/`--slate-*`
 scales and of any retired blue hex anywhere in `@brightloop/ui`. A reintroduced
 scale fails the suite, because those names outlive whatever value they point at.
+
+**B.9 — Work is a client index; Packages is three cards, not four.** Two
+commercial pages were rebuilt on the same principle — the thing being sold gets
+the page, and the chrome gets out of the way.
+
+`(public)/portfolio/` is now a client index rather than a catalogue browser:
+two large tiles per row, each led by a 16/10 image band with the caption
+underneath (numeral, client, disciplines, year, rating). `WorkTile.tsx` wraps the
+whole tile in exactly ONE link, so it is a single large hit target with one
+accessible name, and the summary is in the DOM at all times behind an opacity
+scrim revealed on hover and `:focus-visible` — the reveal is decoration, never
+the only route to the copy. A project with no photography yet draws the client's
+monogram on the gold field; it uses `--grad-signal` (never `--grad-gold`, whose
+pale sheen band vanishes on paper — B.3) and is `aria-hidden` decoration at
+display scale, so no reader has to resolve it. Image sources come from
+`resolveEmbed`, not from the row's `kind`, which is what keeps an arbitrary host
+out of an `<img>`. The 260px sticky facet rail is gone: the same rail renders in
+the drawer behind one Filters button at every width, because it was costing the
+work a fifth of the page on a six-project index.
+
+`(public)/packages/` declared `repeat(4, …)` tracks while the catalog has only
+ever returned three plans, so every card rendered a quarter-width beside a
+quarter of dead space; the track count now matches the plan count, and below
+1024px it drops to ONE centred column rather than two (three cards in two tracks
+reproduces the same hole). The card's action is a stretched link in the card
+HEAD, directly under the plan name — not a button in its foot: the head's rows
+are each one line tall, so all three actions land on the same baseline no matter
+how much copy follows them, and a reader meets the action before the feature
+list instead of after it. The recommended plan is marked by a gold top edge on
+the card, not by a louder control inside it. That file carries no inline
+`style` props.
 
 ### Business Intelligence Engine — Phase A build (Sprints 1–12, all merged)
 

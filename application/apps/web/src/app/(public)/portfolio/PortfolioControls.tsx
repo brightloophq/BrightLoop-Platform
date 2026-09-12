@@ -40,12 +40,17 @@ const SORT_LABELS: Record<SortOrder, string> = {
 const DEFAULT_OPEN: readonly FacetName[] = ["industry", "service"];
 
 /**
- * Portfolio controls — search, sort, facet rail, active-filter chips.
+ * Work controls — search, sort, active-filter chips, and the facet drawer.
  *
  * All state lives in the URL: every interaction pushes a new URL and the SERVER
  * re-renders the results. There is no client-side copy of the project list, so
  * the publish gate is applied server-side on every single request — a filter can
  * never surface something the server didn't send.
+ *
+ * The facets live in the DRAWER AT EVERY WIDTH. They used to also occupy a 260px
+ * sticky rail on desktop, which cost the work itself a fifth of the page for a
+ * control most visitors never touch on a six-project index. Nothing was removed:
+ * the same rail renders inside the drawer, one button away.
  */
 export function PortfolioControls({ state, counts, total, children }: Props) {
   const router = useRouter();
@@ -124,36 +129,34 @@ export function PortfolioControls({ state, counts, total, children }: Props) {
         </span>
       </div>
 
-      <div className={styles.chips}>
-        {chips.map(({ facet, value }) => (
-          <button
-            key={`${facet}:${value}`}
-            type="button"
-            className={styles.chip}
-            onClick={() => onToggle(facet, value)}
-            aria-label={`Remove filter ${FACET_LABELS[facet]}: ${value}`}
-          >
-            <span className={styles.chipFacet}>{FACET_LABELS[facet]}:</span>
-            {value}
-          </button>
-        ))}
-        {hasFilters ? (
-          <button type="button" className={styles.clearAll} onClick={() => go(clearAllFilters(state))}>
-            Clear all
-          </button>
-        ) : null}
+      <div className={styles.status}>
+        <div className={styles.chips}>
+          {chips.map(({ facet, value }) => (
+            <button
+              key={`${facet}:${value}`}
+              type="button"
+              className={styles.chip}
+              onClick={() => onToggle(facet, value)}
+              aria-label={`Remove filter ${FACET_LABELS[facet]}: ${value}`}
+            >
+              <span className={styles.chipFacet}>{FACET_LABELS[facet]}:</span>
+              {value}
+            </button>
+          ))}
+          {hasFilters ? (
+            <button type="button" className={styles.clearAll} onClick={() => go(clearAllFilters(state))}>
+              Clear all
+            </button>
+          ) : null}
+        </div>
+
+        <p className={styles.count} aria-live="polite">
+          {total} {total === 1 ? "project" : "projects"}
+        </p>
       </div>
 
-      <p className={styles.count} aria-live="polite">
-        {total} {total === 1 ? "project" : "projects"}
-      </p>
-
-      <div className={styles.layout}>
-        {/* Desktop rail; hidden <900px in favour of the drawer below. */}
-        <div className={styles.rail}>{rail}</div>
-        {/* Server-rendered results grid. */}
-        <div>{children}</div>
-      </div>
+      {/* Server-rendered results grid — full measure, no rail beside it. */}
+      {children}
 
       <Drawer
         open={drawerOpen}

@@ -20,10 +20,14 @@ export const metadata: Metadata = {
  * REAL — confirmed by the product owner. This resolves the "support email"
  * line of the "Company facts" placeholder list in handoff §13.
  *
+ * On the Auxion domain, not the old free-mail address: the address a prospect
+ * sees is part of whether they believe the rest of the page, and this one is
+ * the same brand as the site they are standing on.
+ *
  * Still outstanding on that list: business address, social links, phone, and the
  * booking calendar.
  */
-const CONTACT_EMAIL = "brightloopofficial@gmail.com";
+const CONTACT_EMAIL = "info@auxion.xyz";
 
 export default function ContactPage() {
   return (
@@ -61,7 +65,7 @@ export default function ContactPage() {
                   <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
                 </li>
                 <li className={styles.detail}>
-                  <span>We reply within one business day.</span>
+                  <span>We read every enquiry and reply as soon as we can.</span>
                 </li>
                 <li className={styles.detail}>
                   <span>
