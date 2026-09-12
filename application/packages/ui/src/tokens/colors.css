@@ -45,12 +45,6 @@
   --gold-100: #E8D3A0; /* champagne */
   --gold-050: #F2E6C6; /* pale highlight — the sheen band */
 
-  /* The identity's own ground, fixed in BOTH themes. The supplied artwork is
-     gold-on-dark and measures ~2.3:1 against the light theme's paper, so a mark
-     placed on a light surface carries this with it (see Logo.module.css). It is
-     deliberately NOT --bg: --bg flips with the theme, and this must not. */
-  --ground: #050505;
-
   /* ======================================================================
      CANONICAL AUXION TOKENS — the source of truth (light values here;
      dark overrides in [data-theme="dark"] below).

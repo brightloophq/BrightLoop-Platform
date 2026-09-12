@@ -149,15 +149,15 @@ export default async function HomePage() {
 
             <div className={styles.openActions} data-hero="actions">
               <Button variant="primary" size="lg" asChild>
-                <Link href="/assessment">Start the Health Assessment</Link>
+                <Link href="/assessment">Run the Business Diagnostic</Link>
               </Button>
               <Button variant="secondary" size="lg" asChild>
-                <Link href="/contact">Book a Strategy Call</Link>
+                <Link href="/contact">Speak With a Strategist</Link>
               </Button>
             </div>
 
             <p className={styles.openNote} data-hero="note">
-              Free assessment · No card required · Takes about 5 minutes
+              No cost · No card required · About 5 minutes
             </p>
           </HeroSequence>
         </Container>
@@ -328,13 +328,13 @@ export default async function HomePage() {
             </p>
             <div className={styles.openActions}>
               <Button variant="primary" size="lg" asChild>
-                <Link href="/assessment">Start the Health Assessment</Link>
+                <Link href="/assessment">Run the Business Diagnostic</Link>
               </Button>
               <Button variant="secondary" size="lg" asChild>
-                <Link href="/packages">See packages</Link>
+                <Link href="/packages">View Packages</Link>
               </Button>
             </div>
-            <p className={styles.openNote}>Free · No card required · About 5 minutes</p>
+            <p className={styles.openNote}>No cost · No card required · About 5 minutes</p>
           </Reveal>
         </Container>
       </Section>

@@ -34,7 +34,7 @@ export const PRIMARY_NAV: readonly NavLink[] = [
   { label: "Contact", href: "/contact" },
 ];
 
-export const PRIMARY_CTA = { label: "Book a Strategy Call", href: "/contact" };
+export const PRIMARY_CTA = { label: "Request a Consultation", href: "/contact" };
 
 export const FOOTER_COLUMNS = [
   {
@@ -56,9 +56,9 @@ export const FOOTER_COLUMNS = [
   {
     title: "Get started",
     links: [
-      { label: "Business Health Assessment", href: "/assessment" },
+      { label: "Business Diagnostic", href: "/assessment" },
       { label: "Package Configurator", href: "/configurator" },
-      { label: "Book a Strategy Call", href: "/contact" },
+      { label: "Request a Consultation", href: "/contact" },
     ],
   },
 ] as const;

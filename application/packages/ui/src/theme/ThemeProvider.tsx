@@ -6,19 +6,20 @@ import {
   DEFAULT_THEME_CHOICE,
   THEME_ATTRIBUTE,
   THEME_STORAGE_KEY,
+  initialChoice,
   normalizeChoice,
-  resolveTheme,
   type ResolvedTheme,
   type ThemeChoice,
 } from "./theme";
 
 interface ThemeContextValue {
-  /** What the user has chosen (may be "system"). */
+  /** The active theme. Always concrete — "light" or "dark". */
   theme: ThemeChoice;
-  /** What is actually applied right now ("system" resolved against the OS). */
+  /**
+   * What is applied to the document. Identical to `theme` now that there is no
+   * "system" state to resolve; retained so consumers that read it keep working.
+   */
   resolvedTheme: ResolvedTheme;
-  /** Whether the OS currently prefers dark (drives "system"). */
-  systemPrefersDark: boolean;
   /** Persist + apply a new choice. Switches instantly, no reload. */
   setTheme: (choice: ThemeChoice) => void;
 }
@@ -31,29 +32,42 @@ function prefersDark(): boolean {
   return typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(DARK_QUERY).matches;
 }
 
-function readStoredChoice(): ThemeChoice {
+/**
+ * The theme to start from: a stored choice if there is a valid one, otherwise
+ * the OS preference. A previously-stored "system" is no longer valid and falls
+ * through to the OS, which is the same thing it used to resolve to — so nobody
+ * is moved off the theme they were already getting.
+ */
+function readInitialChoice(): ThemeChoice {
   if (typeof window === "undefined") return DEFAULT_THEME_CHOICE;
   try {
-    return normalizeChoice(window.localStorage.getItem(THEME_STORAGE_KEY));
+    return normalizeChoice(window.localStorage.getItem(THEME_STORAGE_KEY), initialChoice(prefersDark()));
   } catch {
-    return DEFAULT_THEME_CHOICE;
+    // Storage blocked (private mode) — the OS preference is still readable.
+    return initialChoice(prefersDark());
   }
 }
 
-/** Apply the resolved theme to <html> (mirrors what the pre-paint script does). */
+/** Apply the theme to <html> (mirrors what the pre-paint script does). */
 function applyResolved(resolved: ResolvedTheme): void {
   if (typeof document === "undefined") return;
   document.documentElement.setAttribute(THEME_ATTRIBUTE, resolved);
 }
 
 /**
- * ThemeProvider — the runtime for Light / Dark / System.
+ * ThemeProvider — the runtime for Light / Dark.
  *
  * Wraps the whole app (in the root layout). The pre-paint `ThemeScript` has
  * already stamped the correct `data-theme` on <html>, so this provider never
  * causes a visual flash: it renders children immediately and only RE-applies the
- * attribute when the user changes the choice or the OS preference changes under
- * "system".
+ * attribute when the user changes the choice.
+ *
+ * The OS preference is consulted ONLY while no explicit choice is stored. Once
+ * the user picks a side it is theirs and an OS flip does not override it — which
+ * is the behaviour a two-state control implies. (The previous tri-state runtime
+ * tracked `prefers-color-scheme` live to drive a "System" option; with that
+ * option gone, continuing to follow the OS would silently undo an explicit
+ * choice.)
  *
  * Hydration safety: the first client render initializes from the DEFAULT so it
  * matches the server render exactly; a mount effect then reconciles with the
@@ -63,35 +77,21 @@ function applyResolved(resolved: ResolvedTheme): void {
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<ThemeChoice>(DEFAULT_THEME_CHOICE);
-  const [systemPrefersDark, setSystemPrefersDark] = useState<boolean>(false);
   const mounted = useRef(false);
 
-  // Mount: adopt the persisted choice + current OS preference. Runs once.
+  // Mount: adopt the stored choice, or the OS preference on a first visit.
   useEffect(() => {
     mounted.current = true;
-    const stored = readStoredChoice();
-    const dark = prefersDark();
-    setThemeState(stored);
-    setSystemPrefersDark(dark);
-    applyResolved(resolveTheme(stored, dark));
+    const initial = readInitialChoice();
+    setThemeState(initial);
+    applyResolved(initial);
   }, []);
 
-  // Track OS theme changes so "System" follows the OS live, no reload.
-  useEffect(() => {
-    if (typeof window === "undefined" || !window.matchMedia) return;
-    const mql = window.matchMedia(DARK_QUERY);
-    const onChange = (e: MediaQueryListEvent) => {
-      setSystemPrefersDark(e.matches);
-    };
-    mql.addEventListener("change", onChange);
-    return () => mql.removeEventListener("change", onChange);
-  }, []);
-
-  // Re-apply whenever the resolved theme changes after mount (choice or OS).
+  // Re-apply whenever the choice changes after mount.
   useEffect(() => {
     if (!mounted.current) return;
-    applyResolved(resolveTheme(theme, systemPrefersDark));
-  }, [theme, systemPrefersDark]);
+    applyResolved(theme);
+  }, [theme]);
 
   const setTheme = useCallback((choice: ThemeChoice) => {
     setThemeState(choice);
@@ -100,17 +100,12 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     } catch {
       /* storage blocked (private mode) — the choice still applies for this session */
     }
-    applyResolved(resolveTheme(choice, prefersDark()));
+    applyResolved(choice);
   }, []);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({
-      theme,
-      resolvedTheme: resolveTheme(theme, systemPrefersDark),
-      systemPrefersDark,
-      setTheme,
-    }),
-    [theme, systemPrefersDark, setTheme],
+    () => ({ theme, resolvedTheme: theme, setTheme }),
+    [theme, setTheme],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

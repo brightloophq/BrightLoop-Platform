@@ -58,6 +58,8 @@ export type { MarqueeProps } from "./components/Marquee";
 export { ProjectCard } from "./components/ProjectCard";
 export type { ProjectCardProps } from "./components/ProjectCard";
 export { MediaTile } from "./components/MediaTile";
+export { resolveEmbed } from "./components/mediaEmbed";
+export type { Embed, EmbedKind } from "./components/mediaEmbed";
 export type { MediaTileProps } from "./components/MediaTile";
 export { CategoryRatings } from "./components/CategoryRatings";
 export type { CategoryRatingsProps } from "./components/CategoryRatings";
@@ -191,6 +193,6 @@ export {
   THEME_STORAGE_KEY,
   DEFAULT_THEME_CHOICE,
   isThemeChoice,
-  resolveTheme,
+  initialChoice,
 } from "./theme/theme";
 export type { ThemeChoice, ResolvedTheme } from "./theme/theme";

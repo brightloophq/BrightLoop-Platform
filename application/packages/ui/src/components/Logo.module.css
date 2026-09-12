@@ -1,27 +1,19 @@
-/* Logo — the supplied artwork, plus the plate that makes gold-on-dark artwork
-   legible on the light theme's paper. See Logo.tsx for the measurements.
+/* Logo — the supplied artwork, at the size the component computes.
 
-   CASCADE ORDER MATTERS and is deliberate. The plate is the DEFAULT and dark
-   removes it, rather than light adding it: the alternative
-   (`:root:not([data-theme="dark"]) .logo`) is (0,4,0) specific and would have
-   beaten the `[data-theme="dark"] .logo` override at (0,2,0), so a tone="dark"
-   Section sitting inside a light page — the hero, the footer — would have kept
-   a black plate floating on black. Default-on also means the SSR HTML and the
-   no-JS case (neither has a data-theme attribute yet) get the plate, which is
-   correct: `:root` in the token sheet is light. */
+   NO PLATE. An earlier revision put the mark on a near-black plate in the light
+   theme, because the artwork is gold-on-dark and measures ~2.3:1 against paper.
+   That reasoning was over-applied: WCAG 1.4.11 (Non-text Contrast) explicitly
+   EXEMPTS logotypes — "part of a logo or brand name has no minimum contrast
+   requirement" — precisely so brand fidelity wins over a ratio. The artwork
+   therefore sits transparent on whatever surface it is given, in both themes,
+   which is also what the client asked for. If a light-ground variant of the
+   artwork is ever supplied, serve that here rather than reintroducing a plate. */
 
 .logo {
   display: inline-flex;
   align-items: center;
   flex: none;
   gap: 0; /* the horizontal lockup's gap is set inline, from its height */
-
-  /* 1. Default: plated, for paper. --logo-pad is set inline from the rendered
-        height, so the plate scales with the mark instead of tracking whatever
-        font-size happens to be inherited. */
-  background: var(--ground); /* the artwork's own ground, fixed in both themes */
-  border-radius: var(--radius-sm);
-  padding: var(--logo-pad, 6px) calc(var(--logo-pad, 6px) * 1.35);
 }
 
 /* The component computes an exact px width/height per variant and sets them as
@@ -32,24 +24,4 @@
 .img {
   display: block;
   max-width: none;
-}
-
-/* 2. Any dark surface already gives the artwork its ground — the document in
-      dark theme, and equally a tone="dark" Section inside a light page. */
-:global([data-theme="dark"]) .logo,
-:global(.bl-theme-dark) .logo {
-  background: none;
-  padding: 0;
-}
-
-/* 3. Explicit opt-out, for a surface the caller knows is dark in both themes. */
-.logo.noPlate {
-  background: none;
-  padding: 0;
-}
-
-/* 4. Explicit opt-in wins over everything above, including rule 2. */
-.logo.forcePlate {
-  background: var(--ground);
-  padding: var(--logo-pad, 6px) calc(var(--logo-pad, 6px) * 1.35);
 }

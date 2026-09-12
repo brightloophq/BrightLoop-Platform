@@ -7,13 +7,6 @@ export interface LogoProps {
   /** Rendered height in px. Width follows the artwork's own aspect ratio. */
   height?: number;
   className?: string;
-  /**
-   * Override the plate. The plate exists because the artwork is gold-on-dark
-   * (see the note below) — pass `false` only for a surface you KNOW is dark in
-   * both themes, and `true` to force it. Default: the stylesheet decides, which
-   * is almost always what you want.
-   */
-  plate?: boolean;
 }
 
 /**
@@ -27,15 +20,13 @@ export interface LogoProps {
  * in ways only a side-by-side comparison revealed. If the artwork changes,
  * replace the source file and re-run the script.
  *
- * THE PLATE, and why it is not optional on paper. The artwork is built for a
- * dark ground. Measured against the light theme's canvas (--bg #F5F2EA) its
- * median luminance gives only ~2.3:1 and its specular highlights ~1.06:1 —
- * far below the 3:1 WCAG 1.4.11 floor for a graphical object, and visibly
- * washed out. Against the dark canvas the same pixels give ~7.9:1. So on a
- * light surface the mark sits on its own near-black plate, which is standard
- * practice for a metallic identity and keeps the artwork untouched. The plate
- * is applied by CSS on the light theme only, so Light/Dark/System still works
- * with one asset.
+ * ONE ASSET, NO PLATE. The artwork is gold-on-dark and measures ~2.3:1 against
+ * the light theme's paper (~7.9:1 against the dark canvas). An earlier revision
+ * put it on a near-black plate on light surfaces for that reason; that was
+ * over-applied, because WCAG 1.4.11 exempts logotypes from any minimum contrast
+ * — brand fidelity is the point. The same transparent asset is now served on
+ * both themes. If a light-ground variant of the artwork arrives, add it here as
+ * a second source rather than bringing the plate back.
  *
  * VARIANTS. `stacked` is the supplied lockup exactly as delivered (mark over
  * wordmark). `lockup` is the horizontal arrangement, composed here from the
@@ -67,19 +58,8 @@ function scaled(art: { w: number; h: number }, height: number) {
   return { width: Math.round((art.w / art.h) * height), height };
 }
 
-/**
- * The plate's padding, derived from the rendered height so it scales with the
- * mark. Passed as a CSS variable because the stylesheet cannot know the height,
- * and an `em` there would track an inherited font-size that has nothing to do
- * with the artwork's size.
- */
-function plateVars(height: number) {
-  return { ["--logo-pad" as string]: `${Math.max(3, Math.round(height * 0.26))}px` };
-}
-
-export function Logo({ variant = "lockup", height = 28, className, plate }: LogoProps) {
-  const plateClass = plate === false ? styles.noPlate : plate === true ? styles.forcePlate : null;
-  const wrap = [styles.logo, plateClass, className].filter(Boolean).join(" ");
+export function Logo({ variant = "lockup", height = 28, className }: LogoProps) {
+  const wrap = [styles.logo, className].filter(Boolean).join(" ");
 
   if (variant === "lockup") {
     const mark = scaled(ART.mark, height);
@@ -88,7 +68,7 @@ export function Logo({ variant = "lockup", height = 28, className, plate }: Logo
     return (
       <span
         className={wrap}
-        style={{ ...plateVars(height), gap: `${Math.round(height * LOCKUP.gap)}px` }}
+        style={{ gap: `${Math.round(height * LOCKUP.gap)}px` }}
         role="img"
         aria-label="Auxion"
       >
@@ -101,7 +81,7 @@ export function Logo({ variant = "lockup", height = 28, className, plate }: Logo
   const art = variant === "mark" ? ART.mark : variant === "wordmark" ? ART.wordmark : ART.stacked;
   const { width } = scaled(art, height);
   return (
-    <span className={wrap} style={plateVars(height)}>
+    <span className={wrap}>
       <img src={art.src} alt="Auxion" width={width} height={height} className={styles.img} />
     </span>
   );

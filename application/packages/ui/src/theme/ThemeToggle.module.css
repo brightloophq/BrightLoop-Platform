@@ -1,4 +1,4 @@
-/* ThemeToggle — segmented Light / Dark / System control. Token-only; themes
+/* ThemeToggle — segmented Light / Dark control. Token-only; themes
    automatically because it consumes the same semantic aliases every component
    does. */
 
@@ -52,11 +52,18 @@
   white-space: nowrap;
 }
 
-/* Compact: the 3-letter form, tighter, for dense chrome (topbar / mobile bar).
-   Mono + tracked so the three abbreviations align to the same width and the
-   pill row stops shifting as the selection moves. */
+/* Compact: the mark alone, for dense chrome (topbar / mobile bar). Square so the
+   two pills are identical widths and the row does not shift as the selection
+   moves; the accessible name comes from each button's aria-label. */
 .compact .option {
-  padding: var(--space-1) var(--space-2);
-  font-family: var(--font-mono);
-  letter-spacing: var(--ls-wide);
+  width: 30px;
+  height: 26px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* The marks sit optically centred and inherit the pill's colour. */
+.option svg {
+  display: block;
+  flex: none;
 }

@@ -138,7 +138,7 @@ function AssessmentStep({ catalog, state, update, onNext }: { catalog: FunnelCat
   return (
     <>
       <div className={styles.head}>
-        <Eyebrow>Step 1 · Business Health Assessment</Eyebrow>
+        <Eyebrow>Step 1 · Business Diagnostic</Eyebrow>
         <h1 className={styles.title}>Where does your business stand?</h1>
         <p className={styles.lede}>Five questions across the loop. Your answers compute a Health Score — no guesswork, no fabricated numbers.</p>
       </div>

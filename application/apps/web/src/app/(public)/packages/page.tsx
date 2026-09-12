@@ -106,7 +106,7 @@ export default async function PackagesPage() {
                   <Link href="/configurator">Open the configurator</Link>
                 </Button>
                 <Button variant="secondary" size="lg" asChild>
-                  <Link href="/contact">Book a Strategy Call</Link>
+                  <Link href="/contact">Request a Consultation</Link>
                 </Button>
               </>
             }

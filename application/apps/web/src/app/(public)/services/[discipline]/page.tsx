@@ -203,10 +203,10 @@ export default async function ServiceDetailPage({ params }: PageProps) {
             actions={
               <>
                 <Button variant="primary" size="lg" asChild>
-                  <Link href="/assessment">Start the Health Assessment</Link>
+                  <Link href="/assessment">Run the Business Diagnostic</Link>
                 </Button>
                 <Button variant="secondary" size="lg" asChild>
-                  <Link href="/contact">Book a Strategy Call</Link>
+                  <Link href="/contact">Request a Consultation</Link>
                 </Button>
               </>
             }

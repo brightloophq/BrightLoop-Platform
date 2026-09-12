@@ -79,13 +79,12 @@
   z-index: 1;
 }
 
-/* The measure applies to the copy only. The headline is sized off the viewport
-   and must be free to use the full container, or .lineMask clips it. */
+/* The measure applies to the PROSE only. The headline is sized off the viewport
+   and must be free to use the full container, or .lineMask clips it — and the
+   button row is not prose either: capping it at 56ch forced the two CTAs to
+   stack once their labels got longer. */
 .openSub,
 .openNote {
-  max-width: 56ch;
-}
-.openActions {
   max-width: 56ch;
 }
 
