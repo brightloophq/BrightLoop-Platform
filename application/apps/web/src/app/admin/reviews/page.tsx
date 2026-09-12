@@ -3,8 +3,9 @@ import { PUBLISH, type PublishStatus } from "@brightloop/schema";
 import { Alert, Badge, Card, EmptyState, Stars } from "@brightloop/ui";
 import { createClient } from "@/lib/supabase/server";
 import { toPortfolioProject, toTestimonial } from "@brightloop/data";
+import { DeleteTestimonial } from "./DeleteTestimonial";
 import { ModerationControls } from "./ModerationControls";
-import { NewTestimonialForm } from "./NewTestimonialForm";
+import { TestimonialForm } from "./TestimonialForm";
 import styles from "../cms.module.css";
 import shell from "../admin.module.css";
 
@@ -53,7 +54,7 @@ export default async function ReviewsPage() {
               toward the aggregate rating.
             </p>
           </div>
-          <NewTestimonialForm projectSlugs={projectSlugs} />
+          <TestimonialForm projectSlugs={projectSlugs} />
         </div>
 
         {tErr ? (
@@ -109,6 +110,13 @@ export default async function ReviewsPage() {
                         Linked to {t.projectSlug}
                       </p>
                     ) : null}
+
+                    <div className={styles.rowActions}>
+                      {/* Editing leaves publish status alone, so correcting a
+                          live review does not pull it off the site. */}
+                      <TestimonialForm projectSlugs={projectSlugs} testimonial={t} />
+                      <DeleteTestimonial id={t.id} author={t.author} />
+                    </div>
                   </div>
 
                   <ModerationControls
