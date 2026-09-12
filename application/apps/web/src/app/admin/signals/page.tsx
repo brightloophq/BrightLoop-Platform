@@ -11,21 +11,7 @@ import {
   SIGNAL_RECENT_DAYS,
   type SignalListQuery,
 } from "@brightloop/domain";
-import {
-  Alert,
-  Badge,
-  Button,
-  EmptyWorkspace,
-  FilterBar,
-  MetricCard,
-  OperationalPanel,
-  OperationalTable,
-  Pagination,
-  SectionHeader,
-  SkeletonBlock,
-  AiActionBar,
-  type OperationalColumn,
-} from "@brightloop/ui";
+import { Alert, Badge, Button, EmptyWorkspace, FilterBar, MetricCard, OperationalPanel, OperationalTable, Pagination, SectionHeader, SkeletonBlock, AiActionBar, type OperationalColumn } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { getSignalsRepository, isDemoMode } from "@/lib/repositories";
@@ -167,10 +153,10 @@ async function SignalsWorkspace({ query, canWrite }: { query: SignalListQuery; c
   return (
     <>
       <div className={styles.summary}>
-        <MetricCard label="Open" value={summary.open} icon="activity" />
-        <MetricCard label="Prioritized" value={summary.prioritized} icon="target" />
-        <MetricCard label={`New (${SIGNAL_RECENT_DAYS}d)`} value={summary.recent} icon="sparkles" />
-        <MetricCard label="Archived" value={summary.archived} icon="check-circle" />
+        <MetricCard label="Open" value={summary.open} />
+        <MetricCard label="Prioritized" value={summary.prioritized} />
+        <MetricCard label={`New (${SIGNAL_RECENT_DAYS}d)`} value={summary.recent} />
+        <MetricCard label="Archived" value={summary.archived} />
       </div>
 
       <OperationalPanel>
@@ -186,7 +172,6 @@ async function SignalsWorkspace({ query, canWrite }: { query: SignalListQuery; c
         {rows.length === 0 ? (
           view.hasConstraints ? (
             <EmptyWorkspace
-              icon="search"
               title="No signals match your filters"
               body="Try a different status or search term, or clear the active filters."
               action={
@@ -197,7 +182,6 @@ async function SignalsWorkspace({ query, canWrite }: { query: SignalListQuery; c
             />
           ) : (
             <EmptyWorkspace
-              icon="activity"
               title="No signals yet"
               body="A Signal is a detected change worth attention — the raw material of a transformation cycle. Capture the first one to begin."
               action={
@@ -250,7 +234,6 @@ function Unauthorized() {
       <div className={styles.canvas}>
         <OperationalPanel>
           <EmptyWorkspace
-            icon="lock"
             title="You don't have access to Signals"
             body="Your role can't view the transformation command center. If this seems wrong, contact an administrator."
           />

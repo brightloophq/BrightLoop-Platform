@@ -1,51 +1,129 @@
-/* ---- Hero ---- */
-.hero {
+/* Homepage — the cinematic descent.
+   Token-only, theme-aware, reduced-motion safe. Every scale below is fluid
+   (clamp) rather than breakpoint-switched, because the type has to hold its
+   proportions from a 360px phone to a 2560px display, not just at three sizes. */
+
+/* ---- Full-viewport stages (opening + closing) ---------------------------- */
+
+.stage,
+.close {
   position: relative;
   overflow: hidden;
+  display: grid;
+  align-content: center;
 }
 
-.heroGlow {
+/* Only the OPENING stage claims a full viewport. svh, not vh: on mobile browsers
+   vh is the tallest viewport, which pushes the CTA under the address bar on
+   first paint. */
+.stage {
+  min-height: 100svh;
+}
+
+/* The close is a stage, not a second cover — 100svh here plus the hero rhythm's
+   own padding left a screen of emptiness between the CTA and the footer. */
+.close {
+  min-height: 62svh;
+}
+
+/* The stage light. Two soft gold pools plus a fine grid, kept low so the
+   headline never competes with its own background. */
+.stageWash {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(60% 60% at 15% 10%, color-mix(in srgb, var(--signal) 18%, transparent), transparent 60%),
-    radial-gradient(50% 50% at 85% 30%, color-mix(in srgb, var(--signal) 10%, transparent), transparent 60%);
+    radial-gradient(58% 52% at 12% 8%, color-mix(in srgb, var(--signal) 14%, transparent), transparent 62%),
+    radial-gradient(46% 46% at 88% 96%, color-mix(in srgb, var(--signal) 9%, transparent), transparent 60%);
+}
+.stageWash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 88px 88px;
+  /* Fades the grid out before it reaches the edges, so it reads as light on a
+     surface rather than as a border. */
+  mask-image: radial-gradient(70% 70% at 50% 45%, #000 0%, transparent 78%);
+  -webkit-mask-image: radial-gradient(70% 70% at 50% 45%, #000 0%, transparent 78%);
+  opacity: 0.6;
 }
 
-.heroGrid {
+/* The mark, oversized and bleeding off the right edge, filling the half of the
+   opening stage the copy does not use. The SUPPLIED artwork, not a redraw — the
+   same file <Logo> serves. Decorative and aria-hidden: the wordmark in the
+   header already names the company, so this repeats nothing.
+
+   The url() is root-relative, so css-loader leaves it alone and it resolves
+   against the app's /public at runtime. */
+.stageMark {
+  position: absolute;
+  top: 50%;
+  right: -6%;
+  width: min(52vw, 720px);
+  aspect-ratio: 553 / 305;
+  transform: translateY(-50%);
+  background: url("/brand/mark.png") center / contain no-repeat;
+  /* Low enough to stay a ground, not a subject: the artwork's median luminance
+     is ~0.36, so ~9% over the black stage reads as a presence rather than an
+     image competing with the headline. */
+  opacity: 0.09;
+  pointer-events: none;
+}
+
+.open {
   position: relative;
-  display: grid;
-  grid-template-columns: 1.05fr 0.95fr;
-  gap: var(--space-7);
-  align-items: center;
+  /* Above the watermark. */
+  z-index: 1;
 }
 
-/* Overflow-hidden wrapper so the headline can rise from behind a mask (the
- * motion is transform-only; the wrapper is inert under reduced motion). */
-.titleMask {
+/* The measure applies to the PROSE only. The headline is sized off the viewport
+   and must be free to use the full container, or .lineMask clips it — and the
+   button row is not prose either: capping it at 56ch forced the two CTAs to
+   stack once their labels got longer. */
+.openSub,
+.openNote {
+  max-width: 56ch;
+}
+
+.openTitle {
+  margin: var(--space-4) 0 var(--space-6);
+  /* The page's largest voice. 0.92 leading so two stacked lines lock together
+     as a title card instead of drifting apart. */
+  font-size: clamp(2.6rem, 8.2vw, 7.5rem);
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  text-wrap: balance;
+  /* Belt and braces against the clipping bug above: if a line ever does exceed
+     the container, break it rather than letting the mask shear it. */
+  overflow-wrap: break-word;
+}
+
+/* Each line rises from behind its own mask (transform-only; the mask is inert
+   under reduced motion because nothing is ever translated in the first place). */
+.lineMask {
   display: block;
   overflow: hidden;
 }
 
-.heroTitle {
-  font-size: var(--fs-display);
-  line-height: var(--lh-tight);
-  letter-spacing: var(--ls-tight);
-  margin: 0 0 var(--space-5);
-  max-width: 15ch;
+.line {
+  display: block;
 }
 
-/* The signature accented word. --grad-loop was a near-invisible surface→tint wash
-   on the dark hero; --grad-signal is a legible, confident amber sheen. */
-.heroAccent {
+/* THE accented phrase — the one metallic moment in the type. --grad-signal is
+   theme-aware precisely so this stays legible on paper as well as on black. */
+.lineMetal {
   background: var(--grad-signal);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  /* Without this the descenders of a clipped gradient get shaved on WebKit. */
+  padding-bottom: 0.06em;
 }
 
-.heroSub {
+.openSub {
   margin: 0 0 var(--space-6);
   font-size: var(--fs-lg);
   color: var(--text-secondary);
@@ -53,127 +131,175 @@
   max-width: 52ch;
 }
 
-.heroActions {
+.openActions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-3);
 }
 
-.heroNote {
+.openNote {
   margin: var(--space-5) 0 0;
   font-size: var(--fs-xs);
   color: var(--text-muted);
 }
 
-/* ---- Loop visual ---- */
-.loop {
-  aspect-ratio: 1;
-  max-width: 440px;
-  margin-inline: auto;
-  width: 100%;
-  display: grid;
-  place-items: center;
-  position: relative;
-}
+/* ---- Ledger --------------------------------------------------------------- */
 
-.loopRing {
-  position: absolute;
-  inset: 8%;
-  border-radius: var(--radius-pill);
-  border: 1px solid var(--border-subtle);
-}
-
-.loopNode {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-3) var(--space-4);
-  background: var(--surface-card);
-  border: var(--border-hairline);
-  border-radius: var(--radius-md);
-  box-shadow: var(--elevation-2);
-  min-width: 104px;
-}
-
-.loopNodeIcon {
-  color: var(--text-accent);
-}
-
-.loopNodeLabel {
-  font-size: var(--fs-sm);
-  font-weight: var(--fw-semibold);
-  color: var(--text-primary);
-}
-
-.nodeTop {
-  top: 0;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.nodeRight {
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-.nodeBottom {
-  bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
-}
-.nodeLeft {
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-.loopCore {
-  width: 96px;
-  height: 96px;
-  border-radius: var(--radius-pill);
-  display: grid;
-  place-items: center;
-  text-align: center;
-  background: var(--grad-loop);
-  color: var(--bl-white);
-  font-family: var(--font-display);
-  font-weight: var(--fw-bold);
-  font-size: var(--fs-sm);
-  box-shadow: var(--glow-blue);
-}
-
-/* ---- Trust bar ---- */
-.trust {
+.ledger {
   border-block: var(--border-hairline);
   background: var(--surface-inset);
-  padding-block: var(--space-5);
+  padding-block: var(--space-6);
 }
 
-.trustInner {
+.ledgerRow {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-5);
+}
+
+.ledgerItem {
+  position: relative;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-6);
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding-left: var(--space-4);
 }
 
-.trustLabel {
+/* A machined hairline per entry — the ribbon's edge, repeated. */
+.ledgerItem::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--grad-metal);
+}
+
+.ledgerLabel {
   font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: var(--ls-eyebrow);
   color: var(--text-muted);
 }
 
-.trustLogo {
+.ledgerValue {
+  margin: 0;
   font-family: var(--font-display);
   font-weight: var(--fw-bold);
-  font-size: var(--fs-lg);
-  color: var(--slate-600);
-  letter-spacing: var(--ls-wide);
+  font-size: clamp(1.75rem, 3.4vw, 2.75rem);
+  line-height: 1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
 
-/* ---- Generic section head ---- */
+/* ---- Chapters ------------------------------------------------------------- */
+
+.chapters {
+  position: relative;
+}
+
+.chaptersHead {
+  max-width: 62ch;
+  margin-bottom: var(--space-8);
+}
+
+.chapterList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: var(--border-hairline);
+}
+
+.chapter {
+  border-bottom: var(--border-hairline);
+}
+
+/* A full-width row, not a card: the disciplines are a sequence you read down,
+   and a 4-up card grid said "pick one" when the whole point is the loop. */
+.chapterLink {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: baseline;
+  gap: clamp(var(--space-4), 4vw, var(--space-8));
+  padding-block: clamp(var(--space-5), 4vw, var(--space-7));
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+}
+
+/* The row lights gold on hover/focus rather than lifting — a lift on a
+   full-width row reads as a glitch. */
+.chapterLink::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 calc(-1 * var(--space-3));
+  width: 2px;
+  background: var(--grad-metal);
+  transform: scaleY(0);
+  transform-origin: top;
+  transition: transform var(--dur-base) var(--ease-precise);
+}
+.chapterLink:hover::before,
+.chapterLink:focus-visible::before {
+  transform: scaleY(1);
+}
+.chapterLink:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+.chapterN {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wide);
+  color: var(--text-accent);
+}
+
+.chapterBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.chapterName {
+  font-family: var(--font-display);
+  font-weight: var(--fw-bold);
+  font-size: clamp(1.85rem, 5vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  transition: color var(--dur-base) var(--ease-precise);
+}
+.chapterLink:hover .chapterName,
+.chapterLink:focus-visible .chapterName {
+  color: var(--text-accent);
+}
+
+.chapterOutcome {
+  font-size: var(--fs-base);
+  font-weight: var(--fw-semibold);
+  color: var(--text-accent);
+}
+
+.chapterBlurb {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
+  max-width: 62ch;
+}
+
+.chapterMeta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ---- Shared section chrome ------------------------------------------------ */
+
 .head {
   max-width: 62ch;
   margin-bottom: var(--space-7);
@@ -184,9 +310,11 @@
   text-align: center;
 }
 
-.title {
+.sectionTitle {
   font-size: var(--fs-h2);
   margin: 0 0 var(--space-4);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 
 .lede {
@@ -194,13 +322,6 @@
   color: var(--text-secondary);
   font-size: var(--fs-lg);
   line-height: var(--lh-body);
-}
-
-/* ---- Grids ---- */
-.serviceGrid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-4);
 }
 
 .testimonialGrid {
@@ -219,42 +340,62 @@
   font-size: var(--fs-sm);
 }
 
+/* ---- Closing stage -------------------------------------------------------- */
+
+.closeInner {
+  position: relative;
+  max-width: 58ch;
+}
+
+.closeTitle {
+  margin: var(--space-4) 0 var(--space-5);
+  font-size: clamp(2.1rem, 5.6vw, 4.5rem);
+  line-height: 0.98;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.closeBody {
+  margin: 0 0 var(--space-6);
+  font-size: var(--fs-lg);
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
+}
+
+/* ---- Narrow ---------------------------------------------------------------- */
+
 @media (max-width: 1023px) {
-  .heroGrid {
-    grid-template-columns: 1fr;
-  }
-  .heroTitle {
-    font-size: var(--fs-h1);
-    max-width: 18ch;
-  }
-  .loop {
-    max-width: 380px;
-  }
-  .serviceGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
   .testimonialGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 767px) {
-  .heroTitle {
-    font-size: var(--fs-h2);
-  }
-  .serviceGrid,
   .testimonialGrid {
     grid-template-columns: 1fr;
   }
-  .loop {
-    max-width: 320px;
+  /* The module count moves under the copy rather than being squeezed into a
+     third column at phone width. */
+  .chapterLink {
+    grid-template-columns: auto 1fr;
+    row-gap: var(--space-3);
   }
-  .loopNode {
-    min-width: 88px;
-    padding: var(--space-2) var(--space-3);
+  .chapterMeta {
+    grid-column: 2;
   }
-  .loopCore {
-    width: 76px;
-    height: 76px;
+  .stageWash::after {
+    background-size: 56px 56px;
+  }
+  /* The phone hero has no spare half to fill — the watermark would sit under
+     the copy rather than beside it. */
+  .stageMark {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chapterLink::before,
+  .chapterName {
+    transition: none;
   }
 }

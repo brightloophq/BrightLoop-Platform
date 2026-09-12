@@ -45,7 +45,7 @@ export default async function AdminConversationsPage() {
         </div>
 
         {rows.length === 0 ? (
-          <EmptyState icon="mail" title="No conversations yet" body="When a prospect starts a discovery chat, it lands here." />
+          <EmptyState title="No conversations yet" body="When a prospect starts a discovery chat, it lands here." />
         ) : (
           <div className={styles.rows}>
             {rows.map((c) => {

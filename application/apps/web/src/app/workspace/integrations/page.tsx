@@ -5,7 +5,7 @@
  */
 
 import Link from "next/link";
-import { Alert, Badge, Button, EmptyState, Icon } from "@brightloop/ui";
+import { Alert, Badge, Button, EmptyState } from "@brightloop/ui";
 import { loadInstalledConnectors } from "@/lib/integration-data";
 import styles from "../pages.module.css";
 
@@ -22,7 +22,7 @@ const CONNECT_MSG: Record<string, { tone: "danger" | "warning"; text: string }> 
 
 export default async function IntegrationsPage({ searchParams }: { searchParams: Promise<{ connect?: string }> }) {
   const data = await loadInstalledConnectors();
-  if (data === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (data === null) return <EmptyState title="Session expired" body="Please sign in again." />;
   const connect = (await searchParams).connect;
   const banner = connect ? CONNECT_MSG[connect] : undefined;
 
@@ -34,15 +34,15 @@ export default async function IntegrationsPage({ searchParams }: { searchParams:
           <h1 className={styles.pageTitle}>Integrations</h1>
           <p className={styles.pageSub}>Connectors installed in this workspace. Auxion stays the system of record — connectors only exchange data.</p>
         </div>
-        <Link href="/workspace/integrations/marketplace"><Button variant="secondary"><Icon name="plug" size={14} /> Browse marketplace</Button></Link>
+        <Link href="/workspace/integrations/marketplace"><Button variant="secondary"> Browse marketplace</Button></Link>
       </div>
 
       {data.installations.length === 0
-        ? <EmptyState icon="plug" title="No connectors yet" body="Install a connector from the marketplace to start exchanging data with an external service." action={<Link href="/workspace/integrations/marketplace"><Button>Browse marketplace</Button></Link>} />
+        ? <EmptyState title="No connectors yet" body="Install a connector from the marketplace to start exchanging data with an external service." action={<Link href="/workspace/integrations/marketplace"><Button>Browse marketplace</Button></Link>} />
         : <div className={styles.list}>{data.installations.map((i) => (
             <Link key={i.id} href={`/workspace/integrations/${i.id}`} className={styles.row}>
               <div className={styles.rowMain}>
-                <div className={styles.rowTitle}><Icon name="plug" size={15} /> {i.displayName}</div>
+                <div className={styles.rowTitle}> {i.displayName}</div>
                 <div className={styles.rowMeta}>{i.connectorId} · {i.authMethod} · {i.triggerKind} · {i.enabledCapabilities.length} capabilities</div>
               </div>
               <div className={styles.rowRight}>

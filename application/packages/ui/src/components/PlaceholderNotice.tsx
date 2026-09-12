@@ -1,4 +1,3 @@
-import { Icon } from "./Icon";
 import styles from "./PlaceholderNotice.module.css";
 
 export interface PlaceholderNoticeProps {
@@ -38,7 +37,7 @@ export function PlaceholderNotice({ reputation, catalog }: PlaceholderNoticeProp
 
   return (
     <div className={styles.bar} role="note">
-      <Icon name="lightbulb" size={14} />
+      <span className={styles.rule} aria-hidden="true" />
       <span className={styles.text}>
         Preview — sample content. <span className={styles.detail}>{detail}</span>
       </span>

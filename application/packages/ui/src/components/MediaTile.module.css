@@ -21,10 +21,64 @@
   text-align: center;
 }
 
+/* The media surface for a REAL asset: no decorative wash behind it, because the
+   asset itself is the content. Black, so letterboxed video and transparent PNGs
+   sit on the identity's own ground rather than on a tinted panel. */
+.media {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* Fills the 16:10 frame. `contain` for images so a portrait shot is letterboxed
+   rather than cropped through someone's face; video and iframes fill. */
+.fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+img.fill {
+  object-fit: contain;
+}
+
+video.fill {
+  object-fit: cover;
+  background: var(--bg);
+}
+
+/* A link tile — live sites and PDFs, which cannot be framed. */
+.linkFrame {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: var(--space-2);
+  text-align: center;
+  text-decoration: none;
+  color: var(--text-secondary);
+  background:
+    radial-gradient(110% 110% at 25% 20%, color-mix(in srgb, var(--signal) 14%, transparent), transparent 60%),
+    var(--surface-inset);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+.linkFrame:hover {
+  color: var(--text-accent);
+}
+
+.linkHost {
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
 .kind {
   display: inline-flex;
   align-items: center;
-  gap: var(--space-2);
+  font-family: var(--font-mono);
   font-size: var(--fs-xs);
   text-transform: uppercase;
   letter-spacing: var(--ls-wide);

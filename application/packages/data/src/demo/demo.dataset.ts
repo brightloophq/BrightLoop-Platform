@@ -482,7 +482,7 @@ type SmStatus = "operating" | "assembling" | "not_operating";
 type SmRisk = "low" | "medium" | "high" | "critical";
 interface SmSignal { readonly title: string; readonly severity: "critical" | "high" | "medium" | "low" }
 interface SmRec { readonly title: string; readonly priority: "high" | "medium" | "low" }
-interface SmEvent { readonly label: string; readonly at: string; readonly icon: string }
+interface SmEvent { readonly label: string; readonly at: string }
 interface SmMetric { readonly label: string; readonly value: string }
 interface SmAi { readonly summarize: string; readonly explain: string; readonly recommend: string; readonly predict: string; readonly risk: string; readonly nextAction: string }
 interface SmNode {
@@ -516,9 +516,9 @@ export function demoSystemMap(now: number): DemoSystemMapData {
       businessImpact: "Primary top-of-funnel: ~62% of new leads originate here. A 1-point conversion gain is worth an estimated $14K/mo in pipeline.",
       signals: [{ title: "Landing page bounce rising on mobile", severity: "medium" }, { title: "Organic traffic up 18% QoQ", severity: "low" }],
       recs: [{ title: "A/B test the pricing page hero", priority: "medium" }],
-      activity: [{ label: "Conversion tracking verified", at: hrs(3), icon: "check-circle" }, { label: "New campaign launched", at: days(2), icon: "rocket" }],
+      activity: [{ label: "Conversion tracking verified", at: hrs(3) }, { label: "New campaign launched", at: days(2) }],
       metrics: [{ label: "Conv. rate", value: "4.2%" }, { label: "Sessions/wk", value: "9.1K" }, { label: "Uptime", value: "99.9%" }],
-      history: [{ label: "Domain went live", at: days(120), icon: "rocket" }, { label: "Automation enabled", at: days(40), icon: "workflow" }],
+      history: [{ label: "Domain went live", at: days(120) }, { label: "Automation enabled", at: days(40) }],
       nextActions: ["Ship the pricing-page test", "Instrument the demo-request flow"],
       ai: {
         summarize: "Digital is healthy and the strongest acquisition channel; the only soft spot is mobile bounce on the pricing page.",
@@ -537,9 +537,9 @@ export function demoSystemMap(now: number): DemoSystemMapData {
       businessImpact: "Directly governs revenue conversion. Tightening follow-up is modeled at +8% close rate.",
       signals: [{ title: "Proposal response time improving", severity: "low" }, { title: "Two stalled enterprise deals", severity: "high" }],
       recs: [{ title: "Automate 3-touch follow-up sequence", priority: "high" }, { title: "Add pipeline stage SLAs", priority: "medium" }],
-      activity: [{ label: "Proposal accepted — $48K", at: hrs(6), icon: "check-circle" }, { label: "Recommendation created", at: days(1), icon: "sparkles" }],
+      activity: [{ label: "Proposal accepted — $48K", at: hrs(6) }, { label: "Recommendation created", at: days(1) }],
       metrics: [{ label: "Win rate", value: "34%" }, { label: "Avg. cycle", value: "26d" }, { label: "Open pipe", value: "$210K" }],
-      history: [{ label: "CRM connected", at: days(90), icon: "plug" }, { label: "Playbook adopted", at: days(30), icon: "book-open" }],
+      history: [{ label: "CRM connected", at: days(90) }, { label: "Playbook adopted", at: days(30) }],
       nextActions: ["Deploy the follow-up automation", "Review the two stalled deals"],
       ai: {
         summarize: "Sales is solid; the biggest upside is disciplined follow-up on warm opportunities.",
@@ -558,9 +558,9 @@ export function demoSystemMap(now: number): DemoSystemMapData {
       businessImpact: "Underpins retention and expansion. Segmented win-back is modeled at +5% repeat revenue.",
       signals: [{ title: "Repeat customers not segmented", severity: "medium" }, { title: "Data completeness at 91%", severity: "low" }],
       recs: [{ title: "Build a returning-customer segment", priority: "medium" }],
-      activity: [{ label: "Contacts synced", at: hrs(9), icon: "users" }, { label: "Dedup run completed", at: days(3), icon: "check" }],
+      activity: [{ label: "Contacts synced", at: hrs(9) }, { label: "Dedup run completed", at: days(3) }],
       metrics: [{ label: "Contacts", value: "12.4K" }, { label: "Complete", value: "91%" }, { label: "Segments", value: "3" }],
-      history: [{ label: "CRM assembled", at: days(75), icon: "plug" }, { label: "Sync automated", at: days(20), icon: "workflow" }],
+      history: [{ label: "CRM assembled", at: days(75) }, { label: "Sync automated", at: days(20) }],
       nextActions: ["Create the win-back segment", "Enrich missing firmographics"],
       ai: {
         summarize: "CRM is operating but under-segmented, capping retention and expansion motions.",
@@ -579,9 +579,9 @@ export function demoSystemMap(now: number): DemoSystemMapData {
       businessImpact: "Manual handoffs slow time-to-value and create avoidable escalations on ~1 in 6 accounts.",
       signals: [{ title: "Manual onboarding handoff losing context", severity: "high" }, { title: "Ticket backlog steady", severity: "medium" }],
       recs: [{ title: "Automate the onboarding checklist", priority: "high" }, { title: "Add handoff SLAs", priority: "medium" }],
-      activity: [{ label: "Workflow drafted", at: hrs(12), icon: "workflow" }, { label: "Signal generated", at: days(1), icon: "activity" }],
+      activity: [{ label: "Workflow drafted", at: hrs(12) }, { label: "Signal generated", at: days(1) }],
       metrics: [{ label: "Cycle time", value: "3.4d" }, { label: "Handoffs", value: "6" }, { label: "Auto", value: "45%" }],
-      history: [{ label: "Assembly started", at: days(35), icon: "workflow" }, { label: "Scan completed", at: days(60), icon: "gauge" }],
+      history: [{ label: "Assembly started", at: days(35) }, { label: "Scan completed", at: days(60) }],
       nextActions: ["Automate onboarding→success handoff", "Cut manual steps from 6 to 3"],
       ai: {
         summarize: "Operations is mid-assembly; the manual onboarding handoff is the top drag on time-to-value.",
@@ -600,9 +600,9 @@ export function demoSystemMap(now: number): DemoSystemMapData {
       businessImpact: "Drives renewals and referrals. Sustained delivery quality correlates with a 22-point NPS lift.",
       signals: [{ title: "On-time delivery at 96%", severity: "low" }],
       recs: [],
-      activity: [{ label: "Milestone reached", at: hrs(4), icon: "check-circle" }, { label: "Deliverable approved", at: days(1), icon: "check" }],
+      activity: [{ label: "Milestone reached", at: hrs(4) }, { label: "Deliverable approved", at: days(1) }],
       metrics: [{ label: "On-time", value: "96%" }, { label: "NPS", value: "62" }, { label: "Reopens", value: "2%" }],
-      history: [{ label: "Domain operating", at: days(85), icon: "rocket" }, { label: "QA automated", at: days(25), icon: "workflow" }],
+      history: [{ label: "Domain operating", at: days(85) }, { label: "QA automated", at: days(25) }],
       nextActions: ["Maintain cadence", "Capture referral asks at milestone close"],
       ai: {
         summarize: "Delivery is the healthiest domain — high on-time rate and satisfaction, nothing urgent.",
@@ -621,9 +621,9 @@ export function demoSystemMap(now: number): DemoSystemMapData {
       businessImpact: "Slow, manual reporting delays reaction to demand shifts and hides margin erosion until close-out.",
       signals: [{ title: "Weekly manual reporting cadence", severity: "high" }, { title: "Margins reconciled only at close", severity: "high" }],
       recs: [{ title: "Automate a daily dashboard", priority: "high" }, { title: "Track committed cost weekly", priority: "high" }],
-      activity: [{ label: "Signal generated", at: hrs(18), icon: "activity" }, { label: "Data source connected", at: days(2), icon: "plug" }],
+      activity: [{ label: "Signal generated", at: hrs(18) }, { label: "Data source connected", at: days(2) }],
       metrics: [{ label: "Freshness", value: "7d" }, { label: "Coverage", value: "63%" }, { label: "Sources", value: "4" }],
-      history: [{ label: "Assembly started", at: days(28), icon: "workflow" }, { label: "Scan completed", at: days(60), icon: "gauge" }],
+      history: [{ label: "Assembly started", at: days(28) }, { label: "Scan completed", at: days(60) }],
       nextActions: ["Connect POS to an automated dashboard", "Move margin tracking to weekly"],
       ai: {
         summarize: "Analytics is the biggest risk — manual, weekly reporting means the business reacts late.",
@@ -642,9 +642,9 @@ export function demoSystemMap(now: number): DemoSystemMapData {
       businessImpact: "Multiplies every other domain. A unified customer record unlocks reliable scoring and forecasting.",
       signals: [{ title: "No unified customer data model", severity: "high" }, { title: "Automation coverage climbing", severity: "low" }],
       recs: [{ title: "Consolidate to one customer record", priority: "high" }, { title: "Pilot model-assisted routing", priority: "medium" }, { title: "AI-assisted proposal drafting", priority: "medium" }],
-      activity: [{ label: "Automation deployed", at: hrs(2), icon: "workflow" }, { label: "Recommendation accepted", at: days(1), icon: "sparkles" }],
+      activity: [{ label: "Automation deployed", at: hrs(2) }, { label: "Recommendation accepted", at: days(1) }],
       metrics: [{ label: "Auto cov.", value: "52%" }, { label: "Runs/mo", value: "88" }, { label: "Models", value: "3" }],
-      history: [{ label: "AI layer assembling", at: days(22), icon: "sparkles" }, { label: "First automation", at: days(15), icon: "workflow" }],
+      history: [{ label: "AI layer assembling", at: days(22) }, { label: "First automation", at: days(15) }],
       nextActions: ["Consolidate the customer data model", "Expand automation to routing"],
       ai: {
         summarize: "The AI layer is progressing but capped by fragmented data — consolidation is the unlock.",

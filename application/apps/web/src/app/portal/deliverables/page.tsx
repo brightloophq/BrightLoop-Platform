@@ -51,7 +51,6 @@ export default async function PortalDeliverablesPage() {
 
         {list.length === 0 ? (
           <EmptyState
-            icon="check"
             title="No deliverables yet"
             body="When your team submits work for review, it appears here for your approval."
           />

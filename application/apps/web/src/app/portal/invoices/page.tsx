@@ -69,7 +69,7 @@ export default async function PortalInvoicesPage() {
             <p className={styles.rowMeta}>Couldn&apos;t load invoices: {error.message}</p>
           </Card>
         ) : invoices.length === 0 ? (
-          <EmptyState icon="trending-up" title="No invoices yet" body="Invoices appear here as your engagement progresses." />
+          <EmptyState title="No invoices yet" body="Invoices appear here as your engagement progresses." />
         ) : (
           <div className={styles.rows}>
             {invoices.map((i) => (

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { toneFor } from "@brightloop/schema";
-import { Alert, Badge, Button, Card, EmptyState, Icon, Progress, Stat } from "@brightloop/ui";
+import { Alert, Badge, Button, Card, EmptyState, Progress, Stat } from "@brightloop/ui";
 import { createClient } from "@/lib/supabase/server";
 import styles from "../admin/cms.module.css";
 import shell from "../admin/admin.module.css";
@@ -123,14 +123,13 @@ export default async function PortalDashboard() {
         ) : null}
 
         {actionCount === 0 ? (
-          <EmptyState icon="check-circle" title="All caught up" body="Nothing needs your decision right now." />
+          <EmptyState title="All caught up" body="Nothing needs your decision right now." />
         ) : (
           <div className={styles.rows}>
             {awaitingDeliverables.map((d) => (
               <Card key={d.id} className={styles.row}>
                 <div className={styles.rowBody}>
                   <div className={styles.rowTop}>
-                    <Icon name="check" size={15} />
                     <span className={styles.rowName}>{d.title}</span>
                     <Badge tone="warning" dot>
                       awaiting approval
@@ -148,7 +147,6 @@ export default async function PortalDashboard() {
               <Card key={m.id} className={styles.row}>
                 <div className={styles.rowBody}>
                   <div className={styles.rowTop}>
-                    <Icon name="workflow" size={15} />
                     <span className={styles.rowName}>{m.title}</span>
                     <Badge tone="warning" dot>
                       milestone approval
@@ -165,7 +163,6 @@ export default async function PortalDashboard() {
               <Card key={i.id} className={styles.row}>
                 <div className={styles.rowBody}>
                   <div className={styles.rowTop}>
-                    <Icon name="trending-up" size={15} />
                     <span className={styles.rowName}>{money(i.amount)} {i.type} invoice</span>
                     <Badge tone={toneFor(i.status)} dot>
                       {i.status}

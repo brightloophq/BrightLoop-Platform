@@ -9,12 +9,12 @@ import styles from "../pages.module.css";
 
 export default async function ReportsPage() {
   const data = await loadReports();
-  if (data === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (data === null) return <EmptyState title="Session expired" body="Please sign in again." />;
 
   return (
     <>
       <div className={styles.pageHead}><div><h1 className={styles.pageTitle}>Reports</h1><p className={styles.pageSub}>Executive reporting — metrics, KPIs, forecasts, insights and narratives.</p></div></div>
-      {data.reports.length === 0 ? <EmptyState icon="line-chart" title="No reports yet" body="Your AI team generates executive reports from your live workspace activity. They’ll appear here." />
+      {data.reports.length === 0 ? <EmptyState title="No reports yet" body="Your AI team generates executive reports from your live workspace activity. They’ll appear here." />
         : <div className={styles.list}>{data.reports.map((r) => (
             <div key={r.id} className={styles.row}>
               <div className={styles.rowMain}><div className={styles.rowTitle}>{r.title}</div><div className={styles.rowMeta}>{r.kind.replace(/_/g, " ")} · {r.period || "—"} · {r.metricCount} metrics · {r.insightCount} insights · {r.forecastCount} forecasts</div></div>

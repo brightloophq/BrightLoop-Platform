@@ -84,7 +84,7 @@ export function SalesFlow({ proposal, contract, invoice }: { proposal: FlowPropo
               <Button variant="primary" size="sm" disabled={busy} onClick={() => run(() => countersignContract(contract.id))}>Countersign &amp; activate</Button>
             </div>
           ) : (
-            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-success, #1a7f4b)" }}>Contract {contract.status.replace(/_/g, " ")}.</p>
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--positive)" }}>Contract {contract.status.replace(/_/g, " ")}.</p>
           )}
         </Card>
       ) : null}
@@ -104,14 +104,14 @@ export function SalesFlow({ proposal, contract, invoice }: { proposal: FlowPropo
               <Button variant="primary" size="sm" disabled={busy} onClick={() => run(() => sendInvoice(invoice.id))}>Send invoice</Button>
             </div>
           ) : invoice.status === "paid" ? (
-            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-success, #1a7f4b)" }}>Deposit paid.</p>
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--positive)" }}>Deposit paid.</p>
           ) : (
             <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>Invoice {invoice.status} — awaiting payment.</p>
           )}
         </Card>
       ) : null}
 
-      {error ? <p style={{ color: "var(--text-danger, #c0392b)", fontSize: "var(--fs-sm)" }}>{error}</p> : null}
+      {error ? <p style={{ color: "var(--critical)", fontSize: "var(--fs-sm)" }}>{error}</p> : null}
     </div>
   );
 }

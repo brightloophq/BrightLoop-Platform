@@ -1,0 +1,27 @@
+/* Logo — the supplied artwork, at the size the component computes.
+
+   NO PLATE. An earlier revision put the mark on a near-black plate in the light
+   theme, because the artwork is gold-on-dark and measures ~2.3:1 against paper.
+   That reasoning was over-applied: WCAG 1.4.11 (Non-text Contrast) explicitly
+   EXEMPTS logotypes — "part of a logo or brand name has no minimum contrast
+   requirement" — precisely so brand fidelity wins over a ratio. The artwork
+   therefore sits transparent on whatever surface it is given, in both themes,
+   which is also what the client asked for. If a light-ground variant of the
+   artwork is ever supplied, serve that here rather than reintroducing a plate. */
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  gap: 0; /* the horizontal lockup's gap is set inline, from its height */
+}
+
+/* The component computes an exact px width/height per variant and sets them as
+   HTML attributes, so CSS must NOT restate them. An earlier `height: 100%` here
+   resolved against this auto-height inline-flex parent and fell back to the
+   artwork's intrinsic size — a 305px mark in a 26px header. `max-width: none`
+   stays, to survive a global `img { max-width: 100% }` reset. */
+.img {
+  display: block;
+  max-width: none;
+}

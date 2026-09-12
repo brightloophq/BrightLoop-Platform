@@ -89,7 +89,7 @@ export function ClientQuotes({ quotes }: { quotes: ClientQuote[] }) {
               <Button variant="ghost" size="sm" disabled={busy} onClick={() => act(q.id, "reject")}>Decline</Button>
             </div>
           ) : q.status === "accepted" ? (
-            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-success, #1a7f4b)", marginTop: "var(--space-2)" }}>You accepted this quote. Your team will follow up with next steps.</p>
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--positive)", marginTop: "var(--space-2)" }}>You accepted this quote. Your team will follow up with next steps.</p>
           ) : q.status === "revision_requested" ? (
             <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>Changes requested — your strategist is revising this quote.</p>
           ) : null}

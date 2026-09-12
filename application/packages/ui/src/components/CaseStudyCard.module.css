@@ -56,25 +56,36 @@
 }
 
 .cta {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: var(--space-1);
+  align-self: flex-start;
+  padding-bottom: 2px;
   margin-top: var(--space-3);
   color: var(--text-link);
   font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);
 }
 
-.ctaArrow {
+/* The travelling arrow is gone; the CTA underlines itself instead. */
+.cta::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
   transition: transform var(--dur-base) var(--ease-precise);
 }
-.card:hover .ctaArrow {
-  transform: translateX(4px);
+.card:hover .cta::after {
+  transform: scaleX(1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card:hover .ctaArrow {
-    transform: none;
+  .cta::after {
+    transition: none;
+    transform: scaleX(1);
   }
 }
 

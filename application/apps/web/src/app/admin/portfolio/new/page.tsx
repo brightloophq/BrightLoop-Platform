@@ -1,6 +1,5 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Icon } from "@brightloop/ui";
 import { createClient } from "@/lib/supabase/server";
 import { ProjectForm } from "../ProjectForm";
 import styles from "../../cms.module.css";
@@ -33,7 +32,6 @@ export default async function NewProjectPage() {
             marginBottom: "var(--space-5)",
           }}
         >
-          <Icon name="arrow-left" size={14} />
           Back to portfolio
         </Link>
 

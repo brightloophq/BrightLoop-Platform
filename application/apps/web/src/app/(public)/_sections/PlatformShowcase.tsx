@@ -12,17 +12,17 @@
  * so it ships no extra client boundary of its own.
  * ========================================================================== */
 
-import { Container, Eyebrow, Icon, Section } from "@brightloop/ui";
+import { Container, Eyebrow, Section } from "@brightloop/ui";
 import { Parallax, Reveal } from "@brightloop/ui/motion";
 import styles from "./platform.module.css";
 
 const SURFACES = [
-  { name: "Console", icon: "gauge" },
-  { name: "Signals", icon: "activity" },
-  { name: "Insights", icon: "lightbulb" },
-  { name: "Recommendations", icon: "sparkles" },
-  { name: "Moves", icon: "workflow" },
-  { name: "Analytics", icon: "line-chart" },
+  { name: "Console" },
+  { name: "Signals" },
+  { name: "Insights" },
+  { name: "Recommendations" },
+  { name: "Moves" },
+  { name: "Analytics" },
 ] as const;
 
 /** Abstract rows for the Console panel — labels only, never claimed numbers. */
@@ -76,9 +76,7 @@ export function PlatformShowcase() {
           <Parallax className={styles.floatA} distance={18}>
             <Reveal stagger={false}>
               <div className={styles.card} aria-hidden="true">
-                <span className={styles.cardKicker}>
-                  <Icon name="activity" size={14} /> Signal
-                </span>
+                <span className={styles.cardKicker}>Signal</span>
                 <span className={styles.cardTitle}>Momentum shifting</span>
                 <span className={styles.spark} />
               </div>
@@ -89,9 +87,7 @@ export function PlatformShowcase() {
           <Parallax className={styles.floatB} distance={26}>
             <Reveal stagger={false}>
               <div className={styles.card} aria-hidden="true">
-                <span className={styles.cardKicker}>
-                  <Icon name="sparkles" size={14} /> Recommendation
-                </span>
+                <span className={styles.cardKicker}>Recommendation</span>
                 <span className={styles.cardTitle}>Next best move</span>
                 <span className={styles.pill}>Approve</span>
               </div>
@@ -103,7 +99,6 @@ export function PlatformShowcase() {
         <Reveal className={styles.surfaces}>
           {SURFACES.map((s) => (
             <span className={styles.surface} key={s.name}>
-              <Icon name={s.icon} size={16} className={styles.surfaceIcon} />
               {s.name}
             </span>
           ))}

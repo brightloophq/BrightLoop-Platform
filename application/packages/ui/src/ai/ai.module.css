@@ -41,7 +41,18 @@
 .action[data-active="true"] { border-color: var(--signal); color: var(--text-accent); background: var(--signal-tint); }
 .action:disabled { opacity: var(--opacity-disabled, 0.5); cursor: default; }
 .action:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
-.spin { display: inline-flex; }
+/* Running indicator. It used to spin an activity glyph; it is now a small gold
+   ring that spins on its own, so nothing has to be imported to show progress.
+   Under reduced motion it holds still and stays visible as a static ring. */
+.spin {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  flex: none;
+  border-radius: 50%;
+  border: 1.5px solid var(--signal-tint);
+  border-top-color: var(--signal);
+}
 @media (prefers-reduced-motion: no-preference) {
   .spin { animation: spin 0.9s linear infinite; }
 }
@@ -67,7 +78,15 @@
   gap: var(--space-2);
   margin-bottom: var(--space-2);
 }
-.icon { display: inline-flex; color: var(--panel-accent, var(--info)); flex: none; }
+.kind {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  color: var(--panel-accent, var(--info));
+}
 .title { font-family: var(--font-display); font-size: var(--fs-lg); color: var(--text-primary); margin: 0; }
 .badges { margin-left: auto; display: inline-flex; gap: var(--space-2); align-items: center; }
 .demoBadge {
@@ -93,7 +112,12 @@
 .evidenceLabel { font-size: var(--fs-xs); color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--ls-eyebrow); margin-bottom: var(--space-2); }
 .evidenceList { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-1); }
 .evidenceItem { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-xs); color: var(--text-secondary); }
-.evidenceItem :global(svg) { color: var(--text-muted); flex: none; }
+.evidenceMark {
+  width: 8px;
+  height: 1px;
+  flex: none;
+  background: var(--signal);
+}
 .evidenceLink { color: var(--text-link); text-decoration: none; }
 .evidenceLink:hover { text-decoration: underline; }
 
@@ -114,7 +138,16 @@
   border: 1px dashed var(--line-strong); border-radius: var(--radius-lg);
   background: var(--surface-inset); padding: var(--space-4);
 }
-.stateIcon { display: inline-flex; flex: none; color: var(--text-muted); margin-top: 1px; }
+/* Leading rule in place of the state pictogram. The state title beside it
+   already names the condition ("Not permitted", "Something went wrong"). */
+.stateRule {
+  width: 14px;
+  height: 2px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--line-strong);
+  margin-top: 7px;
+}
 .stateBody { min-width: 0; }
 .stateTitle { font-size: var(--fs-sm); font-weight: var(--fw-semibold); color: var(--text-primary); }
 .stateText { font-size: var(--fs-xs); color: var(--text-muted); margin-top: 2px; line-height: var(--lh-snug); }

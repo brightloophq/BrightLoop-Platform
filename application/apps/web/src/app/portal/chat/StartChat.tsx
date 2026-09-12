@@ -27,7 +27,7 @@ export function StartChat() {
       >
         {pending ? "Starting…" : "Start a conversation"}
       </Button>
-      {error ? <p style={{ color: "var(--text-danger, #c0392b)", fontSize: "var(--fs-sm)", marginTop: "var(--space-2)" }}>{error}</p> : null}
+      {error ? <p style={{ color: "var(--critical)", fontSize: "var(--fs-sm)", marginTop: "var(--space-2)" }}>{error}</p> : null}
     </div>
   );
 }

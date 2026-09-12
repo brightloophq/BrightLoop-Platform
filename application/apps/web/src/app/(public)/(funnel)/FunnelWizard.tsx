@@ -14,7 +14,7 @@ import {
   type Choice,
   type ConfigModule,
 } from "@brightloop/domain";
-import { Alert, Badge, Button, Card, Container, Eyebrow, Icon } from "@brightloop/ui";
+import { Alert, Badge, Button, Card, Container, Eyebrow } from "@brightloop/ui";
 import {
   EMPTY_FUNNEL,
   loadFunnel,
@@ -25,11 +25,11 @@ import styles from "./funnel.module.css";
 
 export interface FunnelCatalog {
   questions: AssessmentQuestion[];
-  goals: { id: string; label: string; icon: string }[];
+  goals: { id: string; label: string }[];
   plans: { id: string; name: string; tag: string; blurb: string; modules: string[] }[];
   /** Price-free modules — the client never receives cost data (see catalog-data). */
   modules: ConfigModule[];
-  assets: { key: string; label: string; icon: string }[];
+  assets: { key: string; label: string }[];
   disciplines: readonly string[];
 }
 
@@ -138,7 +138,7 @@ function AssessmentStep({ catalog, state, update, onNext }: { catalog: FunnelCat
   return (
     <>
       <div className={styles.head}>
-        <Eyebrow>Step 1 · Business Health Assessment</Eyebrow>
+        <Eyebrow>Step 1 · Business Diagnostic</Eyebrow>
         <h1 className={styles.title}>Where does your business stand?</h1>
         <p className={styles.lede}>Five questions across the loop. Your answers compute a Health Score — no guesswork, no fabricated numbers.</p>
       </div>
@@ -172,7 +172,7 @@ function AssessmentStep({ catalog, state, update, onNext }: { catalog: FunnelCat
                 className={[styles.option, state.goal === g.id ? styles.optionSel : null].filter(Boolean).join(" ")}
                 onClick={() => update({ goal: g.id })}
               >
-                <Icon name={g.icon} size={16} /> {g.label}
+ {g.label}
               </button>
             ))}
           </div>

@@ -9,7 +9,7 @@
 }
 .btn:hover:not(:disabled) { border-color: var(--signal); }
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
-.btnPrimary { background: var(--signal); color: var(--on-signal, #fff); border-color: transparent; }
-.btnDanger { border-color: var(--critical, #c0392b); color: var(--critical, #c0392b); }
-.ok { font-size: var(--fs-xs); color: var(--positive, #2e7d32); }
-.err { font-size: var(--fs-xs); color: var(--critical, #c0392b); }
+.btnPrimary { background: var(--signal); color: var(--on-signal); border-color: transparent; }
+.btnDanger { border-color: var(--critical); color: var(--critical); }
+.ok { font-size: var(--fs-xs); color: var(--positive); }
+.err { font-size: var(--fs-xs); color: var(--critical); }

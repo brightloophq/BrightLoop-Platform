@@ -81,7 +81,7 @@ export function connectionPath(a: Pt, b: Pt, center: Pt = { x: 50, y: 50 }, bow 
   return `M${round(a.x)},${round(a.y)} Q${round(cxp)},${round(cyp)} ${round(b.x)},${round(b.y)}`;
 }
 
-/** Health → semantic tone (never the only signal; pair with label/icon). */
+/** Health → semantic tone (never the only signal; pair with the label). */
 export function healthTone(health: number | null): "positive" | "caution" | "critical" | "neutral" {
   if (health === null) return "neutral";
   if (health >= 75) return "positive";

@@ -7,7 +7,6 @@ export default function SettingsPage() {
   return (
     <ComingSoon
       title="Settings"
-      icon="settings"
       description="Configure your Auxion workspace, team and preferences."
     />
   );

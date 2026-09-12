@@ -1,15 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import {
-  Button,
-  CTASection,
-  Card,
-  Container,
-  Eyebrow,
-  Icon,
-  Section,
-  Tag,
-} from "@brightloop/ui";
+import { Button, CTASection, Card, Container, Eyebrow, Section, Tag } from "@brightloop/ui";
 import { getCatalogRepository } from "@/lib/repositories";
 import home from "../home.module.css";
 import styles from "./packages.module.css";
@@ -60,7 +51,7 @@ export default async function PackagesPage() {
 
                 {plan.timelineWeeks ? (
                   <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
-                    <Icon name="clock" size={14} /> Typically {plan.timelineWeeks[0]}–{plan.timelineWeeks[1]} weeks
+ Typically {plan.timelineWeeks[0]}–{plan.timelineWeeks[1]} weeks
                   </p>
                 ) : null}
 
@@ -70,7 +61,7 @@ export default async function PackagesPage() {
                     <ul style={{ listStyle: "none", padding: 0, margin: "var(--space-2) 0 0" }}>
                       {plan.outcomes.map((o) => (
                         <li key={o} style={{ display: "flex", gap: "var(--space-2)", fontSize: "var(--fs-sm)", padding: "3px 0" }}>
-                          <Icon name="check" size={15} /> <span>{o}</span>
+ <span>{o}</span>
                         </li>
                       ))}
                     </ul>
@@ -115,7 +106,7 @@ export default async function PackagesPage() {
                   <Link href="/configurator">Open the configurator</Link>
                 </Button>
                 <Button variant="secondary" size="lg" asChild>
-                  <Link href="/contact">Book a Strategy Call</Link>
+                  <Link href="/contact">Request a Consultation</Link>
                 </Button>
               </>
             }

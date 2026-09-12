@@ -69,13 +69,13 @@ export function ProposalReview({ proposals }: { proposals: PortalProposal[] }) {
               <Button variant="secondary" size="sm" disabled={busy} onClick={() => act(p.id, "change")}>Request changes</Button>
             </div>
           ) : p.status === "accepted" ? (
-            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-success, #1a7f4b)", marginTop: "var(--space-2)" }}>Accepted — your contract is on the way.</p>
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--positive)", marginTop: "var(--space-2)" }}>Accepted — your contract is on the way.</p>
           ) : p.status === "change_requested" ? (
             <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>Changes requested — your team is revising this.</p>
           ) : null}
         </Card>
       ))}
-      {error ? <p style={{ color: "var(--text-danger, #c0392b)", fontSize: "var(--fs-sm)" }}>{error}</p> : null}
+      {error ? <p style={{ color: "var(--critical)", fontSize: "var(--fs-sm)" }}>{error}</p> : null}
     </div>
   );
 }

@@ -123,7 +123,7 @@
   justify-content: space-between;
   gap: var(--space-3);
   padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--bl-border-subtle, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--line);
 }
 .packageLabel {
   font-weight: 600;
@@ -134,8 +134,8 @@
   gap: var(--space-2);
 }
 .packageNote {
-  font-size: var(--font-size-sm, 0.85rem);
-  color: var(--bl-text-muted, rgba(255, 255, 255, 0.6));
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
 }
 .reviewActions {
   display: flex;
@@ -144,15 +144,15 @@
   margin-top: var(--space-3);
 }
 .reviewNoteLabel {
-  font-size: var(--font-size-sm, 0.85rem);
+  font-size: var(--fs-sm);
   font-weight: 600;
 }
 .reviewNote {
   width: 100%;
   resize: vertical;
-  border-radius: var(--radius-md, 8px);
-  border: 1px solid var(--bl-border-subtle, rgba(255, 255, 255, 0.12));
-  background: var(--bl-surface-sunken, rgba(0, 0, 0, 0.2));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--line-strong);
+  background: var(--surface-inset);
   color: inherit;
   padding: var(--space-2);
   font: inherit;

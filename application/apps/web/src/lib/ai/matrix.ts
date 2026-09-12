@@ -27,23 +27,23 @@ const ANALYTICS = "analytics.read";
 
 export const AI_ROUTES: Readonly<Record<AiRoute, readonly AiActionMeta[]>> = {
   console: [
-    { key: "summarize-today", label: "Summarize today", icon: "book-open", kind: "summary", requiredPermission: READ, status: "advisory" },
-    { key: "explain-health", label: "Explain business health", icon: "gauge", kind: "explanation", requiredPermission: READ, status: "advisory" },
-    { key: "top-risks", label: "Top risks", icon: "bell", kind: "risk", requiredPermission: READ, status: "advisory" },
-    { key: "next-actions", label: "Recommend next actions", icon: "target", kind: "recommendation", requiredPermission: READ, status: "advisory" },
+    { key: "summarize-today", label: "Summarize today", kind: "summary", requiredPermission: READ, status: "advisory" },
+    { key: "explain-health", label: "Explain business health", kind: "explanation", requiredPermission: READ, status: "advisory" },
+    { key: "top-risks", label: "Top risks", kind: "risk", requiredPermission: READ, status: "advisory" },
+    { key: "next-actions", label: "Recommend next actions", kind: "recommendation", requiredPermission: READ, status: "advisory" },
   ],
   signals: [
-    { key: "explain-signal", label: "Explain signal", icon: "lightbulb", kind: "explanation", requiredPermission: READ, status: "future", futureReason: "Signal-level AI reasoning is a future phase — no signals capability is wired on the certified path yet. Enable Demo Mode to preview it." },
-    { key: "action-plan", label: "Generate action plan", icon: "route", kind: "action-plan", requiredPermission: READ, status: "future", futureReason: "Action-plan generation for signals is a future phase. Enable Demo Mode to preview it." },
-    { key: "estimate-impact", label: "Estimate impact", icon: "trending-up", kind: "forecast", requiredPermission: READ, status: "future", futureReason: "Impact estimation for signals is a future phase. Enable Demo Mode to preview it." },
+    { key: "explain-signal", label: "Explain signal", kind: "explanation", requiredPermission: READ, status: "future", futureReason: "Signal-level AI reasoning is a future phase — no signals capability is wired on the certified path yet. Enable Demo Mode to preview it." },
+    { key: "action-plan", label: "Generate action plan", kind: "action-plan", requiredPermission: READ, status: "future", futureReason: "Action-plan generation for signals is a future phase. Enable Demo Mode to preview it." },
+    { key: "estimate-impact", label: "Estimate impact", kind: "forecast", requiredPermission: READ, status: "future", futureReason: "Impact estimation for signals is a future phase. Enable Demo Mode to preview it." },
   ],
   analytics: [
-    { key: "explain-trend", label: "Explain trend", icon: "trending-up", kind: "explanation", requiredPermission: ANALYTICS, status: "future", futureReason: "Analytics AI is a future phase — it will reuse the reporting capability once wired. Enable Demo Mode to preview it." },
-    { key: "summarize-period", label: "Summarize period", icon: "book-open", kind: "summary", requiredPermission: ANALYTICS, status: "future", futureReason: "Period summaries are a future phase. Enable Demo Mode to preview it." },
+    { key: "explain-trend", label: "Explain trend", kind: "explanation", requiredPermission: ANALYTICS, status: "future", futureReason: "Analytics AI is a future phase — it will reuse the reporting capability once wired. Enable Demo Mode to preview it." },
+    { key: "summarize-period", label: "Summarize period", kind: "summary", requiredPermission: ANALYTICS, status: "future", futureReason: "Period summaries are a future phase. Enable Demo Mode to preview it." },
   ],
   approvals: [
-    { key: "summarize-request", label: "Summarize request", icon: "book-open", kind: "summary", requiredPermission: READ, status: "advisory" },
-    { key: "highlight-risks", label: "Highlight risks", icon: "bell", kind: "risk", requiredPermission: READ, status: "advisory" },
+    { key: "summarize-request", label: "Summarize request", kind: "summary", requiredPermission: READ, status: "advisory" },
+    { key: "highlight-risks", label: "Highlight risks", kind: "risk", requiredPermission: READ, status: "advisory" },
   ],
 };
 
@@ -54,7 +54,7 @@ export function lookupAiAction(route: AiRoute, key: string): AiActionMeta | unde
 
 /** The public action defs a page renders (strips server-only meta). */
 export function actionDefs(route: AiRoute): AiActionDef[] {
-  return (AI_ROUTES[route] ?? []).map(({ key, label, icon, kind }) => ({ key, label, icon, kind }));
+  return (AI_ROUTES[route] ?? []).map(({ key, label, kind }) => ({ key, label, kind }));
 }
 
 /**

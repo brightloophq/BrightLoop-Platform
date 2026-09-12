@@ -1,19 +1,34 @@
 .row {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  /* Ratings carry the one amber signal (--star-gold was never defined, so filled
-     stars had been rendering in an inherited fallback colour). */
-  color: var(--signal);
+  gap: var(--space-2);
 }
 
-.empty {
-  color: var(--line-strong);
+/* The rating track: a fixed-width rail so two ratings are comparable at a
+   glance, which five glyphs of varying ink never were. */
+.track {
+  position: relative;
+  display: block;
+  width: 78px;
+  flex: none;
+  border-radius: var(--radius-pill);
+  background: var(--chart-track);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+/* Ratings carry the one gold signal — the brand's only chromatic voice. */
+.fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--grad-metal);
+  border-radius: inherit;
 }
 
 .value {
-  margin-left: var(--space-2);
   color: var(--text-secondary);
+  font-family: var(--font-mono);
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
+  font-variant-numeric: tabular-nums;
 }

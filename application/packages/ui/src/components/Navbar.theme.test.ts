@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 
 /**
  * PX.1g follow-up: the public Navbar must expose the existing Theme Runtime
- * (Light / Dark / System) so the landing page has a visible, keyboard- and
+ * (Light / Dark) so the landing page has a visible, keyboard- and
  * screen-reader-accessible theme control — on desktop AND mobile — while reusing
  * the single shared `ThemeToggle` (no second theme implementation or provider).
  *

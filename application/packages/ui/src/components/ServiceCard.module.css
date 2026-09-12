@@ -6,23 +6,30 @@
   height: 100%;
 }
 
-.icon {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
-  display: grid;
-  place-items: center;
-  background: color-mix(in srgb, var(--signal) 10%, transparent);
+/* The sequence numeral that replaced the pictogram. The disciplines are an
+   ordered loop, so the position is real information. Mono + gold, sized as a
+   label rather than a badge. */
+.index {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wide);
   color: var(--text-accent);
   margin-bottom: var(--space-2);
-  transition:
-    background-color var(--dur-base) var(--ease-precise),
-    transform var(--dur-base) var(--ease-precise);
+  transition: color var(--dur-base) var(--ease-precise);
+}
+
+/* Fallback when no index is supplied: a short metallic rule, same optical slot. */
+.rule {
+  width: 32px;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--grad-metal);
+  margin-bottom: var(--space-3);
 }
 /* Hovering the card (the Link fills it) intensifies the discipline mark. */
-.card:hover .icon {
-  background: color-mix(in srgb, var(--signal) 16%, transparent);
-  transform: translateY(-1px);
+.card:hover .index {
+  color: var(--signal);
 }
 
 .name {
@@ -69,18 +76,30 @@
   font-weight: var(--fw-semibold);
 }
 
-/* The arrow travels toward its destination on hover — the small, deliberate
-   "go" cue premium products share (Linear/Vercel). Reduced motion drops it. */
-.arrow {
+/* The "go" cue is now the link itself: a hairline that grows in from the left
+   edge of the label on hover. It replaces the travelling arrow — same deliberate
+   affordance, no glyph. Reduced motion keeps the underline, drops the travel. */
+.explore {
+  position: relative;
+  padding-bottom: 2px;
+}
+.explore::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
   transition: transform var(--dur-base) var(--ease-precise);
 }
-.card:hover .arrow {
-  transform: translateX(4px);
+.card:hover .explore::after {
+  transform: scaleX(1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card:hover .icon,
-  .card:hover .arrow {
-    transform: none;
+  .explore::after {
+    transition: none;
+    transform: scaleX(1);
   }
 }

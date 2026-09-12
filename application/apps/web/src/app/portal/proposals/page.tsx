@@ -28,7 +28,7 @@ export default async function PortalProposalsPage() {
       <div className={shell.topbar}><h1 className={shell.topTitle}>Proposals</h1></div>
       <div className={shell.content}>
         {proposals.length === 0 ? (
-          <EmptyState icon="search" title="No proposals yet" body="When your strategist sends a proposal, it appears here to review and accept." />
+          <EmptyState title="No proposals yet" body="When your strategist sends a proposal, it appears here to review and accept." />
         ) : (
           <ProposalReview proposals={proposals} />
         )}

@@ -2,7 +2,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { toPortfolioProject } from "@brightloop/data";
-import { Icon } from "@brightloop/ui";
 import { createClient } from "@/lib/supabase/server";
 import { ProjectForm } from "../ProjectForm";
 import { MetricsPanel } from "../MetricsPanel";
@@ -54,7 +53,6 @@ export default async function EditProjectPage({ params }: PageProps) {
             marginBottom: "var(--space-5)",
           }}
         >
-          <Icon name="arrow-left" size={14} />
           Back to portfolio
         </Link>
 

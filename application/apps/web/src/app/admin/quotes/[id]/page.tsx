@@ -13,7 +13,7 @@ export default async function QuoteWorkspacePage({ params }: { params: Promise<{
   try {
     assertCapability(actor, "clients.update");
   } catch (error) {
-    if (error instanceof AuthorizationError) return <EmptyWorkspace icon="lock" title="You don't have access to commercial quotes" body="Commercial scope and pricing require client-management authority." />;
+    if (error instanceof AuthorizationError) return <EmptyWorkspace title="You don't have access to commercial quotes" body="Commercial scope and pricing require client-management authority." />;
     throw error;
   }
 

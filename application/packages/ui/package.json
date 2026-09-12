@@ -19,8 +19,7 @@
   "dependencies": {
     "@brightloop/schema": "workspace:*",
     "@gsap/react": "^2.1.2",
-    "gsap": "^3.12.5",
-    "lucide-react": "^0.469.0"
+    "gsap": "^3.12.5"
   },
   "peerDependencies": {
     "next": "^15.0.0",

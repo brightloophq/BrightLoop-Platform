@@ -12,7 +12,7 @@ import styles from "../pages.module.css";
 
 export default async function SearchPage() {
   const data = await loadWorkspaceDashboard();
-  if (data === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (data === null) return <EmptyState title="Session expired" body="Please sign in again." />;
 
   const index: SearchDoc[] = [
     ...data.workspaces.map((w) => ({ id: w.id, kind: "project" as const, title: w.title, subtitle: "Project", href: `/workspace/projects/${w.id}` })),

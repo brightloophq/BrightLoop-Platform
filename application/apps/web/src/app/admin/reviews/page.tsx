@@ -66,7 +66,7 @@ export default async function ReviewsPage() {
         ) : null}
 
         <div className={styles.notice}>
-          <Alert tone="info" title="Before you publish a review" icon="lock">
+          <Alert tone="info" title="Before you publish a review">
             It must be a real client&apos;s own words, attributed to them, and they must have agreed
             to it being published with their name and company. Everything you enter starts as a
             draft.
@@ -75,7 +75,6 @@ export default async function ReviewsPage() {
 
         {testimonials.length === 0 ? (
           <EmptyState
-            icon="heart"
             title="No reviews yet"
             body="Add a testimonial to get started. It saves as a draft — you decide when it goes public."
           />

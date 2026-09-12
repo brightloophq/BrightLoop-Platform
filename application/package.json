@@ -2,7 +2,7 @@
   "name": "brightloop-platform",
   "version": "0.0.0",
   "private": true,
-  "description": "BrightLoop Business Growth Platform — monorepo (Sprint 0 foundations).",
+  "description": "BrightLoop Business Growth Platform \u2014 monorepo (Sprint 0 foundations).",
   "packageManager": "pnpm@9.15.0",
   "engines": {
     "node": ">=20.0.0"
@@ -16,7 +16,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md,css}\"",
     "check": "turbo run lint typecheck test build",
-    "bootstrap:owner": "node scripts/bootstrap-owner.mjs"
+    "bootstrap:owner": "node scripts/bootstrap-owner.mjs",
+    "brand:assets": "node scripts/build-brand-assets.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -26,6 +27,7 @@
     "turbo": "^2.3.3",
     "typescript": "^5.7.2",
     "typescript-eslint": "^8.18.1",
-    "vitest": "^2.1.8"
+    "vitest": "^2.1.8",
+    "sharp": "^0.34.5"
   }
 }

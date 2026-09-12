@@ -19,19 +19,11 @@ const MEGA_DESCRIPTIONS: Record<Discipline, string> = {
   Grow: "Measurement, presence and campaigns that compound.",
 };
 
-const MEGA_ICONS: Record<Discipline, string> = {
-  Brand: "pen-tool",
-  Build: "layout-grid",
-  Automate: "workflow",
-  Grow: "trending-up",
-};
-
 export const SERVICES_MEGA: readonly MegaMenuItem[] = Object.entries(DISCIPLINE_SLUGS).map(
   ([slug, discipline]) => ({
     label: discipline,
     description: MEGA_DESCRIPTIONS[discipline],
     href: `/services/${slug}`,
-    icon: MEGA_ICONS[discipline],
   }),
 );
 
@@ -42,7 +34,7 @@ export const PRIMARY_NAV: readonly NavLink[] = [
   { label: "Contact", href: "/contact" },
 ];
 
-export const PRIMARY_CTA = { label: "Book a Strategy Call", href: "/contact" };
+export const PRIMARY_CTA = { label: "Request a Consultation", href: "/contact" };
 
 export const FOOTER_COLUMNS = [
   {
@@ -64,9 +56,9 @@ export const FOOTER_COLUMNS = [
   {
     title: "Get started",
     links: [
-      { label: "Business Health Assessment", href: "/assessment" },
+      { label: "Business Diagnostic", href: "/assessment" },
       { label: "Package Configurator", href: "/configurator" },
-      { label: "Book a Strategy Call", href: "/contact" },
+      { label: "Request a Consultation", href: "/contact" },
     ],
   },
 ] as const;

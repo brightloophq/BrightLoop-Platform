@@ -14,7 +14,7 @@ describe("PlaceholderCatalogRepository — modules", () => {
 
   it("lists modules for one discipline", async () => {
     const build = await repo.listModulesByDiscipline("Build");
-    expect(build.map((m) => m.id).sort()).toEqual(["landing-page", "website"]);
+    expect(build.map((m) => m.id).sort()).toEqual(["landing-page", "shopify-store", "website"]);
   });
 
   it("joins a module with its editorial content and a resolved range", async () => {

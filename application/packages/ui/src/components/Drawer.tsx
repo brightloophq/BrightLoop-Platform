@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useRef, type ReactNode } from "react";
-import { Icon } from "./Icon";
 import styles from "./Drawer.module.css";
 
 export interface DrawerProps {
@@ -87,8 +86,8 @@ export function Drawer({ open, onClose, title, side = "right", children, footer 
       >
         <div className={styles.head}>
           <h2 className={styles.title}>{title}</h2>
-          <button type="button" className={styles.close} aria-label={`Close ${title}`} onClick={close}>
-            <Icon name="x" size={20} />
+          <button type="button" className={styles.close} onClick={close}>
+            Close
           </button>
         </div>
         <div className={styles.body}>{children}</div>

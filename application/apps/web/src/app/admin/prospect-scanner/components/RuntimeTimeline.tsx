@@ -14,7 +14,7 @@ export function RuntimeTimeline({ rows }: { rows: TimelineRowView[] }) {
     return (
       <OperationalPanel>
         <SectionRule index="07" label="Timeline" meta="no events" />
-        <EmptyWorkspace icon="activity" title="No runtime events yet" body="Events appear as each stage is executed. Nothing runs on its own." />
+        <EmptyWorkspace title="No runtime events yet" body="Events appear as each stage is executed. Nothing runs on its own." />
       </OperationalPanel>
     );
   }

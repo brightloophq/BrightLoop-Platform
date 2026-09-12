@@ -217,7 +217,7 @@ function Unauthorized() {
     <div className={styles.page}>
       <div className={styles.canvas}>
         <OperationalPanel>
-          <EmptyWorkspace icon="lock" title="You don't have access to the Prospect Scanner" body="Your role can't view or run prospect scans." />
+          <EmptyWorkspace title="You don't have access to the Prospect Scanner" body="Your role can't view or run prospect scans." />
         </OperationalPanel>
       </div>
     </div>

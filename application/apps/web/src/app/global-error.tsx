@@ -10,6 +10,14 @@ import { useEffect } from "react";
  * deliberately minimal, self-contained, brand-consistent last resort; ordinary
  * page failures are handled by the per-segment `error.tsx` boundaries with the
  * full design system. Never leaks a raw error message, stack, or payload.
+ *
+ * THE ONLY FILE ALLOWED LITERAL BRAND HEXES. Nothing here can reference
+ * var(--…) — the token sheet has not loaded — so the values below are copied
+ * from the dark-theme canon in packages/ui/src/tokens/colors.css (--bg, --ink,
+ * --ink-2, --signal/gold-200, --on-signal). It renders on the identity's native
+ * black ground, which also means it needs no theme detection to look right.
+ * Keep these in step with that file; every pair clears WCAG AA (ink 17:1,
+ * secondary 8.2:1, gold eyebrow 11:1, button 10.4:1).
  */
 export default function GlobalError({
   error,
@@ -32,8 +40,8 @@ export default function GlobalError({
           alignItems: "center",
           justifyContent: "center",
           padding: "24px",
-          background: "#F3F1EC",
-          color: "#16181D",
+          background: "#050505", /* --bg (dark) */
+          color: "#EDEAE3", /* --ink (dark) */
           fontFamily:
             "'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif",
           lineHeight: 1.6,
@@ -49,7 +57,7 @@ export default function GlobalError({
               fontSize: "12px",
               letterSpacing: "0.18em",
               textTransform: "uppercase",
-              color: "#8A8D94",
+              color: "#D9BB72", /* --signal (dark) — the gold wordmark */
             }}
           >
             Auxion
@@ -57,7 +65,7 @@ export default function GlobalError({
           <h1 style={{ margin: "0 0 12px", fontSize: "28px", fontWeight: 700 }}>
             Something went wrong
           </h1>
-          <p style={{ margin: "0 0 24px", color: "#55585F" }}>
+          <p style={{ margin: "0 0 24px", color: "#A8A49A" /* --ink-2 (dark) */ }}>
             An unexpected error interrupted the page. You can try again — if it
             keeps happening, please get in touch and we&rsquo;ll look into it.
           </p>
@@ -72,8 +80,8 @@ export default function GlobalError({
               padding: "12px 24px",
               fontSize: "16px",
               fontWeight: 600,
-              background: "#16181D",
-              color: "#FBFAF8",
+              background: "#D9BB72", /* --signal (dark) */
+              color: "#120D02", /* --on-signal (dark) */
             }}
           >
             Try again

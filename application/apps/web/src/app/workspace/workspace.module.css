@@ -149,7 +149,7 @@
   height: 52px;
   border-radius: var(--radius-pill);
   background: var(--signal);
-  color: var(--on-signal, #fff);
+  color: var(--on-signal);
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
   transition: transform var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out);
 }

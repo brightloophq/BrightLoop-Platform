@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { nextStates, toneFor, type MachineName } from "@brightloop/schema";
-import { Badge, Icon } from "@brightloop/ui";
+import { Badge } from "@brightloop/ui";
 import styles from "./cms.module.css";
 
 type MoveAction = (formData: FormData) => Promise<{ ok: boolean; error?: string }>;
@@ -105,7 +105,6 @@ export function StageControl({
               disabled={pending}
               aria-label={`Move to ${target}`}
             >
-              <Icon name="arrow-right" size={13} />
               {pending ? "…" : "Go"}
             </button>
           ) : null}

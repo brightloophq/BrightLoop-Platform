@@ -4,7 +4,6 @@ import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { Button } from "./Button";
 import { Container } from "./Container";
-import { Icon } from "./Icon";
 import { Logo } from "./Logo";
 import { ThemeToggle } from "../theme/ThemeToggle";
 import styles from "./Navbar.module.css";
@@ -13,7 +12,6 @@ export interface MegaMenuItem {
   label: string;
   description: string;
   href: string;
-  icon: string;
 }
 
 export interface NavLink {
@@ -35,7 +33,7 @@ export interface NavbarProps {
  * Navbar — sticky glass header with the Services mega-menu (handoff §01.4).
  *
  * Behaviour:
- *  * transparent over the hero; on scroll >8px gains the navy glass + hairline;
+ *  * transparent over the hero; on scroll >8px gains the paper-glass + hairline;
  *  * mega-menu opens on hover (pointer) and on click/tap (touch + keyboard);
  *  * <1024px collapses to a hamburger → slide-in drawer that traps focus,
  *    closes on Escape and scrim click, and restores focus to its trigger.
@@ -160,10 +158,9 @@ export function Navbar({ links, ctaLabel, ctaHref, pathname }: NavbarProps) {
                     onClick={() => setOpenMega((v) => (v === link.label ? null : link.label))}
                   >
                     {link.label}
-                    <Icon
-                      name="chevron-down"
-                      size={14}
-                      className={[styles.chevron, openMega === link.label ? styles.chevronOpen : null]
+                    <span
+                      aria-hidden="true"
+                      className={[styles.caret, openMega === link.label ? styles.caretOpen : null]
                         .filter(Boolean)
                         .join(" ")}
                     />
@@ -179,9 +176,7 @@ export function Navbar({ links, ctaLabel, ctaHref, pathname }: NavbarProps) {
                             className={styles.megaItem}
                             onClick={() => setOpenMega(null)}
                           >
-                            <span className={styles.megaIcon}>
-                              <Icon name={item.icon} size={18} />
-                            </span>
+                            <span className={styles.megaRail} aria-hidden="true" />
                             <span>
                               <span className={styles.megaLabel}>{item.label}</span>
                               <span className={styles.megaDesc}>{item.description}</span>
@@ -192,7 +187,6 @@ export function Navbar({ links, ctaLabel, ctaHref, pathname }: NavbarProps) {
                       <div className={styles.megaFoot}>
                         <Link href={link.href} className={styles.link} onClick={() => setOpenMega(null)}>
                           All services
-                          <Icon name="arrow-right" size={14} />
                         </Link>
                       </div>
                     </div>
@@ -224,11 +218,10 @@ export function Navbar({ links, ctaLabel, ctaHref, pathname }: NavbarProps) {
               ref={burgerRef}
               type="button"
               className={styles.burger}
-              aria-label="Open menu"
               aria-expanded={drawerOpen}
               onClick={() => setDrawerOpen(true)}
             >
-              <Icon name="menu" size={20} />
+              Menu
             </button>
           </div>
         </Container>
@@ -249,10 +242,9 @@ export function Navbar({ links, ctaLabel, ctaHref, pathname }: NavbarProps) {
               <button
                 type="button"
                 className={styles.burger}
-                aria-label="Close menu"
                 onClick={closeDrawer}
               >
-                <Icon name="x" size={20} />
+                Close
               </button>
             </div>
 

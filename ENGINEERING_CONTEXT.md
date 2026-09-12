@@ -180,7 +180,12 @@ are detailed in §13; the merge log is §11. (The system architecture handbook �
   by pure fail-safe parsers (see `lib/portfolio-params.ts`, `signals` query parser)
   — invalid values default, never throw; Back/Forward + shareable URLs work.
 - "Coming Soon" future modules are real framed pages (`ComingSoon`), not 404s.
-- Icons: string-named via the `Icon` map in `packages/ui` (add new icons there).
+- **No icon set.** The platform ships no pictograms and no icon library (see §13,
+  Brand B.1). A control says what it does in words; where a control genuinely
+  needs a mark (disclosure, dropdown caret, list marker, meter) it is drawn in
+  that component's own stylesheet from the system's rule primitive. Do not
+  reintroduce `lucide-react` or an `Icon` component, and do not add an `icon`
+  prop to a shared component.
 
 ---
 
@@ -203,13 +208,21 @@ are detailed in §13; the merge log is §11. (The system architecture handbook �
 
 ## 7. Design system (`@brightloop/ui`)
 
-- **Tokens only** — never hardcode color/spacing/type. CSS vars: colors `--bl-*`
-  + scales (`--navy-*`, `--blue-*`, `--slate-*`) and semantic aliases
-  (`--bg-base`, `--surface-card`, `--surface-inset`, `--text-primary/secondary/muted`,
-  `--border-hairline/default`, `--action-primary`, `--danger/warning/info`);
-  spacing `--space-0..10` (4px base); radius `--radius-sm..2xl` (3–10px, sharp);
-  type `--fs-*` (Sora display + IBM Plex body/mono); motion `--dur-fast/base/slow`
-  (140/240/420ms), `--ease-out`. Imported once: `import "@brightloop/ui/tokens.css"`.
+- **Tokens only** — never hardcode color/spacing/type. Colors: the `--gold-950…
+  --gold-050` brand ramp; canon semantics `--bg`/`--surface`/`--surface-2`,
+  `--ink`/`--ink-2`/`--ink-3`, `--signal`/`--signal-tint`/`--on-signal`,
+  `--action-bg`/`--action-fg`, `--line`/`--line-strong`,
+  `--positive`/`--caution`/`--critical`/`--info`, `--chart-1…6`; metallic
+  gradients `--grad-gold`/`--grad-metal`/`--grad-gold-soft`/`--grad-sheen` and
+  the theme-aware text gradient `--grad-signal`. The legacy semantic aliases
+  (`--surface-card`, `--text-primary/secondary/muted`, `--action-primary`,
+  `--success/warning/danger`, `--grad-loop`) are retained as **@deprecated**
+  shims re-pointed at canon; the BrightLoop PRIMITIVE scales (`--bl-*`,
+  `--navy-*`, `--blue-*`, `--cyan-*`, `--slate-*`) are **deleted** — do not
+  reintroduce them. Spacing `--space-0..10` (4px base); radius `--radius-sm..2xl`
+  (3–10px, sharp); type `--fs-*` (Space Grotesk display + IBM Plex Sans body +
+  IBM Plex Mono data); motion `--dur-fast/base/slow` (140/240/420ms),
+  `--ease-out`. Imported once: `import "@brightloop/ui/tokens.css"`.
 - **Light-first**, dark opt-in via `data-theme="dark"` / `<Section tone="dark">`.
 - Components are `Component.tsx` + co-located `Component.module.css` (**CSS Modules**,
   not Tailwind). No `cn`/`clsx` util — compose classes with
@@ -217,7 +230,10 @@ are detailed in §13; the merge log is §11. (The system architecture handbook �
 - **Design language = "operational canvas":** layered instrument surfaces on a
   toned backdrop, restrained color, controlled density, compact radii, the
   signature connected-rail/loop motif, meaningful (not decorative) elevation.
-  Litmus test: *"Would it still look like Auxion with the logo removed?"*
+  Litmus test: *"Would it still look like Auxion with the logo removed?"* — with
+  the identity rebase (§13 Brand) the answer is carried by three things: the warm
+  neutral ground, gold as the ONE chromatic voice, and the machined hairline
+  (`--grad-metal`) used as rule, rail and meter.
 - Reusable operational primitives (reuse before adding new): `SectionHeader`,
   `OperationalPanel`, `MetricCard`, `PipelineNode`, `AttentionRow`, `SkeletonBlock`,
   `OperationalTable`, `FilterBar`, `DetailField`/`DetailGrid`, `ActivityTimeline`,
@@ -461,6 +477,135 @@ generated-type/repository/domain-service/capability patterns. Routes:
   cards (System Map + `IndexGauge`), 2-column assembly, mono ledger cells across
   Console / Business Scan / Activation. Presentation only — the primitives (Badge
   neutral-pill, `SystemMap`, tokens) were already canonical from Phase 0.
+
+### Brand — the Auxion gold identity (binding; supersedes the Phase 0 palette)
+
+The visible identity is a **metallic gold ribbon monogram on absolute black**.
+Where this subsection conflicts with an earlier colour statement in §7 or §13,
+this wins; where it conflicts with a `docs/design/source/` PDF on *colour*, this
+wins (the PDFs remain binding on layout, surface model and UX). Architecture,
+token NAMES, the dual-theme structure and the guardrail tests are unchanged — the
+rebase moved values, not shapes.
+
+**B.1 — No icon set.** `Icon.tsx` and `lucide-react` are removed and every
+`icon` prop on a shared component is gone (`ServiceCard`, `MetricCard`,
+`KpiCard`, `MegaMenuItem`, `AiActionDef`, `ExplorerEvent`, `Button`'s
+`leftIcon`/`rightIcon`, and the catalog/demo dataset `icon` fields). The
+replacement is **words first, drawn geometry second**:
+  * A state, severity or direction is TEXT — `Alert`/`Toast`/`AttentionRow` tone
+    words, `KpiCard` direction words, `AiResultPanel` result kinds. This is a
+    net accessibility gain: the same characters now carry the meaning for
+    sighted and assistive users, instead of a glyph plus an `aria-label` only
+    one of them could reach.
+  * A control that genuinely needs a mark draws it in its own stylesheet from
+    the rule primitive — `Accordion`'s plus/minus, `Navbar`'s caret,
+    `PricingCard`'s list rule, `Marquee`'s lozenge, the empty-state hairlines,
+    `Stars`' meter. These are part of the component, not a shared glyph set.
+  * `Stars` is a proportional meter, which is strictly more precise than the
+    five rounded glyphs it replaced (4.6 and 5.0 used to render identically).
+
+**B.2 — The gold ramp and the one signal.** `--gold-950 … --gold-050` is the
+brand primitive scale, sampled from the identity's metallic sweep. `--signal`
+resolves to `--gold-500` (#8A6218) on paper and `--gold-200` (#D9BB72) on black,
+and it remains the system's ONE chromatic voice — system state, never
+decoration. `--caution` is deliberately burnt orange rather than amber so
+"needs attention" can never be misread as "brand"; `--info` is a warm slate, not
+a blue. Neutrals are warm (`--bg` #F5F2EA / #050505 — the identity's own ground)
+so gold sits in the same family. Every text-bearing pair is **computed**, not
+eyeballed, and clears WCAG AA in its own theme; the ratios are recorded in the
+header comment of `colors.css` and must be re-derived if a value moves.
+
+**B.3 — Metallic gradients never carry text.** `--grad-gold` (the full ribbon
+sweep), `--grad-metal` (the machined hairline) and `--grad-gold-soft` pass
+through a pale sheen band, so no single text colour can be proved legible across
+them. They are for marks, rules, rails, borders and meters only. Accented TEXT
+uses `--text-accent`, or `--grad-signal` for the one accented headline phrase —
+and `--grad-signal` is defined **per theme** precisely so that every stop clears
+AA against its own canvas (paper 8.4:1 / 5.9:1, black 8.5:1 / 14:1).
+
+**B.4 — The mark is the SUPPLIED ARTWORK. Never redraw it.** An earlier
+revision of `Logo.tsx` contained a hand-drawn reconstruction; it was wrong in
+three ways a side-by-side comparison made obvious (the real apex is a rounded
+ribbon fold, not a mitred point; the crossbar is a folded-back tab; the
+upper-right slash is a detached parallelogram) and it has been deleted along
+with the hand-authored SVG masters. The pipeline is now:
+
+  * `brand-assets/` holds the client's own files and is THE SOURCE OF TRUTH —
+    `auxion-monogram.png`, `auxion-wordmark.png`, `auxion-logo-transparent[-trimmed].png`
+    (transparent), plus the black-ground raster versions.
+  * `scripts/build-brand-assets.mjs` (`pnpm brand:assets`) derives everything in
+    product using **trim, downscale and composite-onto-a-flat-ground only** — no
+    recolour, no re-trace, no reconstruction. It emits
+    `apps/web/public/brand/{mark,wordmark,lockup-stacked}.png` and the Next file
+    conventions `app/{icon,apple-icon,opengraph-image}.png`. Outputs are
+    committed so a build never runs the script, but they are REGENERATED, never
+    hand-edited.
+  * `Logo.tsx` serves those files as `<img>` with exact per-variant `width`/
+    `height` computed from the artwork's true content dimensions, so every call
+    site is layout-stable with no CLS and no `next/image` dependency in a shared
+    package. CSS must not restate the dimensions: a `height: 100%` there
+    resolved against the auto-height inline-flex wrapper and fell back to the
+    artwork's intrinsic size — a 305px mark in a 26px header.
+  * `variant="stacked"` is the supplied lockup as delivered (mark over wordmark).
+    `variant="lockup"` is a HORIZONTAL arrangement composed from the supplied
+    mark and wordmark as separate elements, because the stacked artwork is
+    ~1.6:1 and unreadable at a 26px header height. Composing from the client's
+    own elements is not redrawing them; that is why they ship as separate files.
+  * No SVG is used or needed. The sources are raster (776px widest), so tracing
+    would gain nothing and would necessarily alter the artwork. The Next PNG
+    icon conventions cover the favicon, touch icon and social card at exact
+    sizes. **If a true vector master ever arrives, that is the moment to
+    revisit** — not before.
+
+**B.4a — The plate, and why it is not optional on paper.** The artwork is built
+for a dark ground. Measured against the light theme's canvas (`--bg` #F5F2EA)
+its median luminance gives ~2.3:1 and its specular highlights ~1.06:1 — far
+below the 3:1 WCAG 1.4.11 floor for a graphical object, and visibly washed out.
+Against the dark canvas the same pixels give ~7.9:1. So on a light surface the
+mark sits on its own near-black plate (`--ground`, a theme-INVARIANT token, not
+`--bg`), which is standard practice for a metallic identity and leaves the
+artwork untouched. The cascade in `Logo.module.css` makes the plate the DEFAULT
+and lets any dark surface remove it, deliberately: the inverse
+(`:root:not([data-theme="dark"]) .logo`) is (0,4,0) specific and would beat the
+`[data-theme="dark"] .logo` override at (0,2,0), leaving a black plate floating
+on black inside a `tone="dark"` Section. Default-on also means the SSR HTML and
+the no-JS case — neither of which has a `data-theme` attribute yet — get the
+plate, which is right, because `:root` in the token sheet is light.
+
+**B.5 — `global-error.tsx` is the only file allowed literal brand hexes**, because
+it replaces the root layout and runs before any token sheet has loaded. Its
+values are copied from the dark canon and annotated as such. (The plate's ground
+is the token `--ground`, not a literal, precisely to keep this rule true.)
+
+**B.6 — The landing page.** `(public)/page.tsx` is a cinematic single-column
+descent: a full-`svh` opening stage, an honest ledger, the capability ticker, the
+loop as four numbered chapters (a full-width row sequence, not a 4-up card grid —
+cards said "pick one" when the point is the loop), the platform, proof,
+testimonials, and a closing stage. `_sections/RibbonRail.tsx` draws the logo's
+own folded strap down the left gutter in proportion to scroll progress, so the
+page's through-line *is* the mark; it renders fully drawn and static with no JS,
+under reduced motion, and below 1280px. The opening stage carries the supplied
+mark as an oversized `.stageMark` watermark at 9% opacity, bleeding off the
+right edge to fill the half the copy does not use (hidden on phones, where
+there is no spare half). The Footer's top margin is dropped via `:has()` when a
+page ends on a dark band, or it shows a stripe of the page ground between two
+dark surfaces. Light/Dark/System still governs — only
+the opening and closing stages and `PlatformShowcase` commit to `tone="dark"`,
+so choosing Light does not yield a mostly-black page.
+
+**B.7 — `PLACEHOLDER_TRUST_BAR` is deleted.** It held five invented company names
+for the old homepage trust bar (open decision 14, "which real logos may be
+shown"). The ledger answers that differently, counting only what is true — the
+four disciplines, the modules actually in the catalog, and review counts only
+once reviews are published. If real, permitted client marks arrive they belong in
+the Reputation CMS behind the same publish gate as every other piece of proof,
+never in a hardcoded array.
+
+**B.8 — Guardrails.** `canon-tokens.test.ts` now asserts the gold ramp, that
+`--signal` resolves to gold in both themes, the metallic gradient set, the
+absence of the retired `--bl-*`/`--navy-*`/`--blue-*`/`--cyan-*`/`--slate-*`
+scales and of any retired blue hex anywhere in `@brightloop/ui`. A reintroduced
+scale fails the suite, because those names outlive whatever value they point at.
 
 ### Business Intelligence Engine — Phase A build (Sprints 1–12, all merged)
 
@@ -882,7 +1027,11 @@ The original PDF-26 surface foundation (still current, underneath the Phase A bu
   (`ModelInvocation`), never chain-of-thought; SSRF guarding is an adapter
   contract; internal proposal tools stay capability-gated behind existing RLS.
 
-Phase 0 detail:
+Phase 0 detail (**the colour values below are SUPERSEDED by the identity rebase
+— see "Brand — the Auxion gold identity" at the end of this section. The token
+NAMES, the dual-theme structure and the guardrail tests are unchanged; only what
+`--signal` and the neutral ramp resolve to has moved from amber-on-paper to
+gold-on-black.**):
 - **Tokens** — canonical dual-theme set in `packages/ui/src/tokens/colors.css`
   (amber `--signal`, `--bg/--surface/--ink` ramp, `--positive/caution/critical/
   info`, `--line`, `--action-bg/fg`, `--on-signal`); role-based radii; amber focus
@@ -1397,7 +1546,10 @@ tested core (`theme.ts`: resolution + persistence + anti-FOUC script), `ThemePro
 accessible `ThemeToggle` (radiogroup, segmented/compact). Wired in the root layout
 (default **System**), `color-scheme` added to the token blocks, `sun`/`moon`/`monitor`
 icons, toggle in admin/portal/workspace shells + login + workspace settings. Additive;
-gate green; `@brightloop/ui` +15 tests.
+gate green; `@brightloop/ui` +15 tests. (**The icons are gone — see §13 Brand B.1.**
+`ThemeToggle` now labels itself in text in both variants: full words when
+segmented, a 3-letter mono form when compact. The runtime, the radiogroup
+semantics and the persistence model are untouched.)
 
 **PX.1b — Demo Mode + Realistic Dataset (branch `feat/px1b-demo-mode`, this PR).** Solves
 the audit's core finding — the platform looks empty because every reader correctly
@@ -1668,7 +1820,10 @@ The 20% of micro-interaction fixes that raise perceived quality: primary Button 
 `--action-fg` (fixes white-on-near-white CTA on dark-token surfaces) + real hover/press;
 `--grad-signal` hero accent (was near-invisible `--grad-loop`); Card `--ease-precise` hover +
 amber edge; ServiceCard/CaseStudyCard arrow/icon feedback; `Stars` `--signal` (fixes undefined
-`--star-gold`); Field hover/focus; CTASection elevation. Token-only, reduced-motion safe, zero
+`--star-gold`); Field hover/focus; CTASection elevation. (**Partly superseded by §13
+Brand:** the accent is gold and `--grad-signal` is now theme-aware; the travelling
+arrows are replaced by a hairline that grows under the link label, and `Stars` is a
+meter. The hover/press, Field and CTASection work stands.) Token-only, reduced-motion safe, zero
 backend. Left open, not merged. Report `engineering-blueprint/px-1/PX.1i-premium-experience-report.md`.
 
 ## 23. LR.1 — Production Readiness & Launch Certification (branch `feat/lr1-production-readiness`, PR open)

@@ -19,10 +19,6 @@
   font-weight: var(--fw-medium);
 }
 
-.icon {
-  color: var(--text-muted);
-}
-
 .value {
   font-family: var(--font-display);
   font-size: var(--fs-h3);

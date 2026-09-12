@@ -73,7 +73,7 @@
   cursor: pointer;
 }
 .chip:hover {
-  border-color: var(--bl-cyan);
+  border-color: var(--signal);
 }
 
 .chipFacet {

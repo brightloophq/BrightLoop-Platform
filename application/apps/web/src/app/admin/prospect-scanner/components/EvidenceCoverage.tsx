@@ -17,7 +17,6 @@ export function EvidenceCoverage({ evidence }: EvidenceCoverageProps) {
       <OperationalPanel>
         <SectionRule index="06" label="Evidence" meta="not normalized" />
         <EmptyWorkspace
-          icon="layers"
           title="No evidence yet"
           body="Run the evidence normalization stage after discovery. Evidence is derived only from pages that were actually fetched."
         />
@@ -45,10 +44,10 @@ export function EvidenceCoverage({ evidence }: EvidenceCoverageProps) {
       <SectionRule index="06" label="Evidence" meta={`${evidence.observed} observed of ${evidence.total}`} />
 
       <div className={styles.metrics}>
-        <MetricCard label="Evidence items" value={evidence.total} icon="layers" />
-        <MetricCard label="Observed" value={evidence.observed} icon="check-circle" emphasis="hero" />
-        <MetricCard label="Unavailable" value={evidence.unavailable} icon="x" />
-        <MetricCard label="Conflicts" value={evidence.conflicts} icon="bell" />
+        <MetricCard label="Evidence items" value={evidence.total} />
+        <MetricCard label="Observed" value={evidence.observed} emphasis="hero" />
+        <MetricCard label="Unavailable" value={evidence.unavailable} />
+        <MetricCard label="Conflicts" value={evidence.conflicts} />
       </div>
 
       <div className={styles.switches} style={{ marginTop: "var(--space-4)" }}>

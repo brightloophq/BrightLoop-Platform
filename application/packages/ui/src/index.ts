@@ -16,8 +16,6 @@
 /* ---- Brand ---- */
 export { Logo } from "./components/Logo";
 export type { LogoProps, LogoVariant } from "./components/Logo";
-export { Icon, isIconName } from "./components/Icon";
-export type { IconProps, IconName } from "./components/Icon";
 export { Eyebrow } from "./components/Eyebrow";
 export type { EyebrowProps } from "./components/Eyebrow";
 
@@ -60,6 +58,8 @@ export type { MarqueeProps } from "./components/Marquee";
 export { ProjectCard } from "./components/ProjectCard";
 export type { ProjectCardProps } from "./components/ProjectCard";
 export { MediaTile } from "./components/MediaTile";
+export { resolveEmbed } from "./components/mediaEmbed";
+export type { Embed, EmbedKind } from "./components/mediaEmbed";
 export type { MediaTileProps } from "./components/MediaTile";
 export { CategoryRatings } from "./components/CategoryRatings";
 export type { CategoryRatingsProps } from "./components/CategoryRatings";
@@ -193,6 +193,5 @@ export {
   THEME_STORAGE_KEY,
   DEFAULT_THEME_CHOICE,
   isThemeChoice,
-  resolveTheme,
 } from "./theme/theme";
 export type { ThemeChoice, ResolvedTheme } from "./theme/theme";

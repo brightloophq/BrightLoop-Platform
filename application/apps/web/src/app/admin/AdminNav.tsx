@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon } from "@brightloop/ui";
 import styles from "./admin.module.css";
 
 export interface AdminNavItem {
   label: string;
   href: string;
-  icon: string;
   /** Route exists and is built. Unbuilt modules render inert with a "soon" tag. */
   ready: boolean;
 }
@@ -55,7 +53,6 @@ export function AdminNav({ groups }: { groups: AdminNavGroup[] }) {
                   .join(" ")}
                 aria-current={isActive(item.href) ? "page" : undefined}
               >
-                <Icon name={item.icon} size={16} />
                 <span className={styles.linkLabel}>{item.label}</span>
               </Link>
             ) : (
@@ -65,7 +62,6 @@ export function AdminNav({ groups }: { groups: AdminNavGroup[] }) {
                 aria-disabled="true"
                 title={`${item.label} — not built yet`}
               >
-                <Icon name={item.icon} size={16} />
                 <span className={styles.linkLabel}>{item.label}</span>
                 <span className={styles.soonTag}>soon</span>
               </span>

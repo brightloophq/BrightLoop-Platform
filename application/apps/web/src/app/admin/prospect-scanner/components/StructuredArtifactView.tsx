@@ -22,7 +22,7 @@ export function StructuredArtifactView({ view, index, label, emptyTitle, emptyBo
     return (
       <OperationalPanel>
         <SectionRule index={index} label={label} meta="unavailable" />
-        <EmptyWorkspace icon="file" title={emptyTitle} body={emptyBody} />
+        <EmptyWorkspace title={emptyTitle} body={emptyBody} />
       </OperationalPanel>
     );
   }

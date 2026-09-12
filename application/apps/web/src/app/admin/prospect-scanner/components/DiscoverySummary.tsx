@@ -14,7 +14,6 @@ export function DiscoverySummary({ discovery, crawlerEnabled }: DiscoverySummary
       <OperationalPanel>
         <SectionRule index="03" label="Discovery" meta="not run" />
         <EmptyWorkspace
-          icon="search"
           title="Discovery hasn't run yet"
           body={
             crawlerEnabled
@@ -31,15 +30,15 @@ export function DiscoverySummary({ discovery, crawlerEnabled }: DiscoverySummary
       <SectionRule index="03" label="Discovery" meta={`${discovery.fetched} of ${discovery.planned} fetched`} />
 
       <div className={styles.metrics}>
-        <MetricCard label="Planned" value={discovery.planned} icon="search" />
-        <MetricCard label="Fetched" value={discovery.fetched} icon="check-circle" emphasis="hero" />
-        <MetricCard label="Excluded" value={discovery.excluded} icon="x" />
-        <MetricCard label="Robots blocked" value={discovery.robotsBlocked} icon="lock" />
-        <MetricCard label="SSRF blocked" value={discovery.ssrfBlocked} icon="lock" />
-        <MetricCard label="Failed" value={discovery.failed} icon="bell" />
-        <MetricCard label="Bytes fetched" value={formatBytes(discovery.bytesFetched)} icon="activity" />
-        <MetricCard label="Redirects" value={discovery.redirectCount} icon="activity" />
-        <MetricCard label="Crawl duration" value={formatDuration(discovery.durationMs)} icon="clock" />
+        <MetricCard label="Planned" value={discovery.planned} />
+        <MetricCard label="Fetched" value={discovery.fetched} emphasis="hero" />
+        <MetricCard label="Excluded" value={discovery.excluded} />
+        <MetricCard label="Robots blocked" value={discovery.robotsBlocked} />
+        <MetricCard label="SSRF blocked" value={discovery.ssrfBlocked} />
+        <MetricCard label="Failed" value={discovery.failed} />
+        <MetricCard label="Bytes fetched" value={formatBytes(discovery.bytesFetched)} />
+        <MetricCard label="Redirects" value={discovery.redirectCount} />
+        <MetricCard label="Crawl duration" value={formatDuration(discovery.durationMs)} />
       </div>
 
       {discovery.contentTypes.length > 0 ? (

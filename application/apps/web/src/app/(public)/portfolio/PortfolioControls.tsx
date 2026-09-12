@@ -9,7 +9,7 @@ import {
   type SortOrder,
 } from "@brightloop/domain";
 import type { FacetName } from "@brightloop/schema";
-import { Button, Drawer, Icon } from "@brightloop/ui";
+import { Button, Drawer } from "@brightloop/ui";
 import {
   clearAllFilters,
   portfolioHref,
@@ -89,9 +89,6 @@ export function PortfolioControls({ state, counts, total, children }: Props) {
     <>
       <div className={styles.toolbar}>
         <div className={styles.searchWrap}>
-          <span className={styles.searchIcon}>
-            <Icon name="search" size={16} />
-          </span>
           <input
             type="search"
             className={styles.search}
@@ -120,7 +117,6 @@ export function PortfolioControls({ state, counts, total, children }: Props) {
           <Button
             variant="secondary"
             size="md"
-            leftIcon={<Icon name="layout-grid" size={15} />}
             onClick={() => setDrawerOpen(true)}
           >
             Filters{chips.length > 0 ? ` (${chips.length})` : ""}
@@ -139,7 +135,6 @@ export function PortfolioControls({ state, counts, total, children }: Props) {
           >
             <span className={styles.chipFacet}>{FACET_LABELS[facet]}:</span>
             {value}
-            <Icon name="x" size={12} />
           </button>
         ))}
         {hasFilters ? (
@@ -206,13 +201,6 @@ function FacetRail({
               onClick={() => toggleGroup(facet)}
             >
               {FACET_LABELS[facet]}
-              <Icon
-                name="chevron-down"
-                size={15}
-                className={[styles.groupChevron, isOpen ? styles.groupOpen : null]
-                  .filter(Boolean)
-                  .join(" ")}
-              />
             </button>
 
             {isOpen ? (

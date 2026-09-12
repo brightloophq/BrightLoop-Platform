@@ -2,7 +2,6 @@
 
 import { useMemo, useRef, useState } from "react";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
-import { Icon } from "../components/Icon";
 import { systemMapGeometry } from "../components/SystemMap";
 import { NodeDetailPanel } from "./NodeDetailPanel";
 import { connectionPath, explorerView } from "./logic";
@@ -80,7 +79,6 @@ export function SystemMapExplorer({ data }: SystemMapExplorerProps) {
         {/* controls */}
         <div className={styles.controls}>
           <label className={styles.search}>
-            <Icon name="search" size={15} />
             <input
               className={styles.searchInput}
               type="search"
@@ -91,16 +89,16 @@ export function SystemMapExplorer({ data }: SystemMapExplorerProps) {
             />
           </label>
           <button type="button" className={styles.filterChip} data-active={filters.status === "operating"} onClick={() => toggle("status", "operating")}>
-            <Icon name="check-circle" size={12} /> Operating
+            Operating
           </button>
           <button type="button" className={styles.filterChip} data-active={filters.minHealth === 70} onClick={() => toggle("minHealth", 70)}>
-            <Icon name="gauge" size={12} /> Health ≥ 70
+            Health ≥ 70
           </button>
           <button type="button" className={styles.filterChip} data-active={filters.risk === "high"} onClick={() => toggle("risk", "high")}>
-            <Icon name="bell" size={12} /> Risk ≥ high
+            Risk ≥ high
           </button>
           <button type="button" className={styles.filterChip} data-active={filters.minAutomation === 50} onClick={() => toggle("minAutomation", 50)}>
-            <Icon name="workflow" size={12} /> Automation ≥ 50%
+            Automation ≥ 50%
           </button>
           <span className={styles.resultCount}>
             {view.searching ? `${view.matchedCount} match${view.matchedCount === 1 ? "" : "es"}` : `${view.visibleCount}/${data.nodes.length} domains`}
@@ -173,7 +171,7 @@ export function SystemMapExplorer({ data }: SystemMapExplorerProps) {
           {hovered && posByKey[hovered.key] && (
             <div className={styles.hoverCard} style={{ left: `${posByKey[hovered.key]!.x}%`, top: `${posByKey[hovered.key]!.y}%` }}>
               <div className={styles.hoverTitle}>
-                <Icon name="activity" size={14} /> {hovered.label}
+                {hovered.label}
               </div>
               <div className={styles.hoverGrid}>
                 <span className={styles.hoverK}>Status</span><span className={styles.hoverV}>{STATUS_LABEL[hovered.status]}</span>

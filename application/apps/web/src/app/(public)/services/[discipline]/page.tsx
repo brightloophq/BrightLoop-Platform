@@ -3,16 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { DISCIPLINE_SLUGS, disciplineFromSlug } from "@brightloop/schema";
 import { PLACEHOLDER_DISCIPLINE_COPY } from "@brightloop/data";
-import {
-  Accordion,
-  Button,
-  CTASection,
-  Card,
-  Container,
-  Eyebrow,
-  Icon,
-  Section,
-} from "@brightloop/ui";
+import { Accordion, Button, CTASection, Card, Container, Eyebrow, Section } from "@brightloop/ui";
 import { getCatalogRepository } from "@/lib/repositories";
 import home from "../../home.module.css";
 import styles from "../service-detail.module.css";
@@ -60,14 +51,10 @@ export default async function ServiceDetailPage({ params }: PageProps) {
       <Section rhythm="hero">
         <Container width="wide">
           <Link href="/services" className={styles.back}>
-            <Icon name="arrow-left" size={14} />
             All services
           </Link>
 
           <div className={home.head}>
-            <span className={styles.heroIcon}>
-              <Icon name={copy?.icon ?? "sparkles"} size={24} />
-            </span>
             <Eyebrow>{copy?.eyebrow ?? "Discipline"}</Eyebrow>
             <h1 className={home.title}>{copy?.outcome ?? discipline}</h1>
             <p className={home.lede}>{copy?.blurb}</p>
@@ -97,7 +84,6 @@ export default async function ServiceDetailPage({ params }: PageProps) {
                     <ul className={styles.deliverables}>
                       {content.deliverables.map(([name, what]) => (
                         <li key={name} className={styles.deliverable}>
-                          <Icon name="check" size={14} className={styles.check} />
                           <span>
                             <span className={styles.deliverableName}>{name}</span>
                             <span className={styles.deliverableWhat}>{what}</span>
@@ -109,7 +95,6 @@ export default async function ServiceDetailPage({ params }: PageProps) {
                     <ul className={styles.deliverables}>
                       {module.includes.map((item) => (
                         <li key={item} className={styles.deliverable}>
-                          <Icon name="check" size={14} className={styles.check} />
                           <span className={styles.deliverableName}>{item}</span>
                         </li>
                       ))}
@@ -218,10 +203,10 @@ export default async function ServiceDetailPage({ params }: PageProps) {
             actions={
               <>
                 <Button variant="primary" size="lg" asChild>
-                  <Link href="/assessment">Start the Health Assessment</Link>
+                  <Link href="/assessment">Run the Business Diagnostic</Link>
                 </Button>
                 <Button variant="secondary" size="lg" asChild>
-                  <Link href="/contact">Book a Strategy Call</Link>
+                  <Link href="/contact">Request a Consultation</Link>
                 </Button>
               </>
             }

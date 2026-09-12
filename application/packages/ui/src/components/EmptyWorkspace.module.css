@@ -9,16 +9,13 @@
   margin-inline: auto;
 }
 
-.icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: var(--radius-xl);
-  background: var(--surface-inset);
-  color: var(--text-accent);
-  margin-bottom: var(--space-1);
+/* See EmptyState.module.css: a metallic hairline in place of the pictogram. */
+.rule {
+  width: 56px;
+  height: 2px;
+  border-radius: var(--radius-pill);
+  background: var(--grad-metal);
+  margin-bottom: var(--space-2);
 }
 
 .title {

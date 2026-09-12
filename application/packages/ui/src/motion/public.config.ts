@@ -132,7 +132,6 @@ export interface JourneyStage {
   readonly discipline: "Brand" | "Build" | "Automate" | "Grow";
   readonly title: string;
   readonly body: string;
-  readonly icon: string;
 }
 
 export const JOURNEY_STAGES: readonly JourneyStage[] = [
@@ -141,27 +140,23 @@ export const JOURNEY_STAGES: readonly JourneyStage[] = [
     discipline: "Brand",
     title: "Earn the click",
     body: "A brand system that makes a small business look established — identity, voice and design that make people choose you before they compare.",
-    icon: "pen-tool",
   },
   {
     n: "02",
     discipline: "Build",
     title: "Convert the visit",
     body: "The website and funnels that turn attention into action — fast, credible, and engineered so the click becomes a customer.",
-    icon: "layout-grid",
   },
   {
     n: "03",
     discipline: "Automate",
     title: "Catch every signal",
     body: "The operations layer that follows up, routes work and never drops a lead — the system running quietly behind the brand.",
-    icon: "workflow",
   },
   {
     n: "04",
     discipline: "Grow",
     title: "Compound the result",
     body: "Analytics and continuous optimisation that turn what worked into what scales — the loop closing and starting again, stronger.",
-    icon: "trending-up",
   },
 ] as const;

@@ -5,6 +5,15 @@
   margin-top: var(--section-y);
 }
 
+/* When the page ENDS on a dark band (a tone="dark" closing stage), that margin
+   is a stripe of the page's own ground showing between two dark surfaces — on
+   the light theme a cream band sandwiched between two blacks. The footer's own
+   padding-top already provides the separation there, so drop the margin.
+   Scoped with :has() so every page that ends on paper keeps its spacing. */
+:global(main:has(> [data-theme="dark"]:last-child)) + .footer {
+  margin-top: 0;
+}
+
 .top {
   display: grid;
   grid-template-columns: 1.4fr repeat(3, minmax(0, 1fr));

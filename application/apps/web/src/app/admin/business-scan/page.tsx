@@ -3,21 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { AuthorizationError, assertCoreSurfacesRead, canWriteScans, buildBusinessScanView } from "@brightloop/domain";
 import { DOMAIN_KEYS, DOMAIN_META } from "@brightloop/schema";
-import {
-  Alert,
-  Badge,
-  Button,
-  EmptyWorkspace,
-  Icon,
-  IndexGauge,
-  OperationalPanel,
-  OperationalTable,
-  SectionHeader,
-  SectionRule,
-  SkeletonBlock,
-  SystemMap,
-  type OperationalColumn,
-} from "@brightloop/ui";
+import { Alert, Badge, Button, EmptyWorkspace, IndexGauge, OperationalPanel, OperationalTable, SectionHeader, SectionRule, SkeletonBlock, SystemMap, type OperationalColumn } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { getCoreSurfaceRepository } from "@/lib/repositories";
@@ -100,16 +86,13 @@ async function OrgPicker() {
       />
       <OperationalPanel>
         {orgs.length === 0 ? (
-          <EmptyWorkspace icon="lock" title="No organizations yet" body="Create a client organization before running a scan." />
+          <EmptyWorkspace title="No organizations yet" body="Create a client organization before running a scan." />
         ) : (
           <>
             <SectionRule index="01" label="Choose an organization to diagnose" meta={`${orgs.length} on file`} />
             <div className={styles.orgGrid}>
               {orgs.map((o) => (
                 <Link key={o.id} href={`/admin/business-scan?client=${o.id}`} className={styles.orgCard}>
-                  <span className={styles.orgIcon}>
-                    <Icon name="gauge" size={16} />
-                  </span>
                   {o.name}
                 </Link>
               ))}
@@ -154,7 +137,6 @@ async function ScanWorkspace({ clientId, canWrite, scanError }: { clientId: stri
             </Alert>
           ) : null}
           <EmptyWorkspace
-            icon="gauge"
             title="No scan yet"
             body="Run a diagnosis to baseline the seven domains and reveal the gaps to close."
             action={
@@ -229,7 +211,7 @@ async function ScanWorkspace({ clientId, canWrite, scanError }: { clientId: stri
         <SectionRule index="02" label="Diagnosis" meta={`${view.gapCount} gaps to close`} />
         <OperationalPanel className={styles.ledgerPanel}>
           {rows.length === 0 ? (
-            <EmptyWorkspace icon="search" title="No findings yet" body="Add a diagnosis finding for a domain below." />
+            <EmptyWorkspace title="No findings yet" body="Add a diagnosis finding for a domain below." />
           ) : (
             <OperationalTable caption="Diagnosis ledger." columns={columns} rows={rows} rowKey={(r) => `${r.domainKey}-${r.finding}`} />
           )}
@@ -281,7 +263,7 @@ function Unauthorized() {
     <div className={styles.page}>
       <div className={styles.canvas}>
         <OperationalPanel>
-          <EmptyWorkspace icon="lock" title="You don't have access to Business Scan" body="Your role can't view the transformation command center." />
+          <EmptyWorkspace title="You don't have access to Business Scan" body="Your role can't view the transformation command center." />
         </OperationalPanel>
       </div>
     </div>

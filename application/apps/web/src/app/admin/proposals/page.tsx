@@ -30,7 +30,7 @@ export default async function AdminProposalsPage() {
           </div>
         </div>
         {rows.length === 0 ? (
-          <EmptyState icon="search" title="No proposals yet" body="Accept a quote in a discovery conversation to create one." />
+          <EmptyState title="No proposals yet" body="Accept a quote in a discovery conversation to create one." />
         ) : (
           <div className={styles.rows}>
             {rows.map((p) => (
