@@ -45,6 +45,12 @@
   --gold-100: #E8D3A0; /* champagne */
   --gold-050: #F2E6C6; /* pale highlight — the sheen band */
 
+  /* The identity's own ground, fixed in BOTH themes. The supplied artwork is
+     gold-on-dark and measures ~2.3:1 against the light theme's paper, so a mark
+     placed on a light surface carries this with it (see Logo.module.css). It is
+     deliberately NOT --bg: --bg flips with the theme, and this must not. */
+  --ground: #050505;
+
   /* ======================================================================
      CANONICAL AUXION TOKENS — the source of truth (light values here;
      dark overrides in [data-theme="dark"] below).
@@ -163,15 +169,6 @@
   --text-link:      var(--gold-700);
   --text-on-accent: var(--action-fg);
 
-
-  /* ---- Identity metal — the four stops the Logo's gradients resolve from.
-     The gold ramp itself is theme-invariant, but the MARK has to stay legible on
-     both grounds, so the lockup samples a darker span of the ramp on paper and a
-     brighter span on black. Only <Logo> should reference these. ---- */
-  --brand-1: var(--gold-900); /* deepest fold */
-  --brand-2: var(--gold-700);
-  --brand-3: var(--gold-600); /* core */
-  --brand-4: var(--gold-300); /* sheen band */
   --focus-ring:     var(--signal);
 
 
@@ -255,12 +252,6 @@
   --text-link:      var(--signal);
   --text-on-accent: var(--action-fg);
 
-
-  /* identity metal — brighter span of the ramp, for the mark's native black ground */
-  --brand-1: var(--gold-800);
-  --brand-2: var(--gold-600);
-  --brand-3: var(--gold-300);
-  --brand-4: var(--gold-050);
   --focus-ring:     var(--signal);
 
 

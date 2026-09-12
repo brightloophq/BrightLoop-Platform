@@ -51,8 +51,32 @@
   opacity: 0.6;
 }
 
+/* The mark, oversized and bleeding off the right edge, filling the half of the
+   opening stage the copy does not use. The SUPPLIED artwork, not a redraw — the
+   same file <Logo> serves. Decorative and aria-hidden: the wordmark in the
+   header already names the company, so this repeats nothing.
+
+   The url() is root-relative, so css-loader leaves it alone and it resolves
+   against the app's /public at runtime. */
+.stageMark {
+  position: absolute;
+  top: 50%;
+  right: -6%;
+  width: min(52vw, 720px);
+  aspect-ratio: 553 / 305;
+  transform: translateY(-50%);
+  background: url("/brand/mark.png") center / contain no-repeat;
+  /* Low enough to stay a ground, not a subject: the artwork's median luminance
+     is ~0.36, so ~9% over the black stage reads as a presence rather than an
+     image competing with the headline. */
+  opacity: 0.09;
+  pointer-events: none;
+}
+
 .open {
   position: relative;
+  /* Above the watermark. */
+  z-index: 1;
 }
 
 /* The measure applies to the copy only. The headline is sized off the viewport
@@ -362,6 +386,11 @@
   }
   .stageWash::after {
     background-size: 56px 56px;
+  }
+  /* The phone hero has no spare half to fill — the watermark would sit under
+     the copy rather than beside it. */
+  .stageMark {
+    display: none;
   }
 }
 

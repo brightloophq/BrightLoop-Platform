@@ -523,20 +523,59 @@ uses `--text-accent`, or `--grad-signal` for the one accented headline phrase �
 and `--grad-signal` is defined **per theme** precisely so that every stop clears
 AA against its own canvas (paper 8.4:1 / 5.9:1, black 8.5:1 / 14:1).
 
-**B.4 — The mark.** `Logo.tsx` draws one continuous ribbon that enters lower
-left, crosses the apex and overshoots upper right, mitred against a folded right
-leg and a crossbar; every shared vertex is a computed edge intersection. The
-three facets take *different* spans of the ramp (ribbon bright, leg in shadow,
-bar mid) because one flat gradient across all three reads as plastic. Fills
-resolve from theme-aware `--brand-1…--brand-4` and are applied via `style`, not
-presentation attributes — `var()` is CSS and browsers do not evaluate it inside
-`fill="…"` or `stop-color="…"`. Vector masters live in `brand-assets/`;
-`apps/web/src/app/icon.svg` is standalone and therefore carries literal hexes
-copied from the dark canon, which must be kept in step with `colors.css`.
+**B.4 — The mark is the SUPPLIED ARTWORK. Never redraw it.** An earlier
+revision of `Logo.tsx` contained a hand-drawn reconstruction; it was wrong in
+three ways a side-by-side comparison made obvious (the real apex is a rounded
+ribbon fold, not a mitred point; the crossbar is a folded-back tab; the
+upper-right slash is a detached parallelogram) and it has been deleted along
+with the hand-authored SVG masters. The pipeline is now:
+
+  * `brand-assets/` holds the client's own files and is THE SOURCE OF TRUTH —
+    `auxion-monogram.png`, `auxion-wordmark.png`, `auxion-logo-transparent[-trimmed].png`
+    (transparent), plus the black-ground raster versions.
+  * `scripts/build-brand-assets.mjs` (`pnpm brand:assets`) derives everything in
+    product using **trim, downscale and composite-onto-a-flat-ground only** — no
+    recolour, no re-trace, no reconstruction. It emits
+    `apps/web/public/brand/{mark,wordmark,lockup-stacked}.png` and the Next file
+    conventions `app/{icon,apple-icon,opengraph-image}.png`. Outputs are
+    committed so a build never runs the script, but they are REGENERATED, never
+    hand-edited.
+  * `Logo.tsx` serves those files as `<img>` with exact per-variant `width`/
+    `height` computed from the artwork's true content dimensions, so every call
+    site is layout-stable with no CLS and no `next/image` dependency in a shared
+    package. CSS must not restate the dimensions: a `height: 100%` there
+    resolved against the auto-height inline-flex wrapper and fell back to the
+    artwork's intrinsic size — a 305px mark in a 26px header.
+  * `variant="stacked"` is the supplied lockup as delivered (mark over wordmark).
+    `variant="lockup"` is a HORIZONTAL arrangement composed from the supplied
+    mark and wordmark as separate elements, because the stacked artwork is
+    ~1.6:1 and unreadable at a 26px header height. Composing from the client's
+    own elements is not redrawing them; that is why they ship as separate files.
+  * No SVG is used or needed. The sources are raster (776px widest), so tracing
+    would gain nothing and would necessarily alter the artwork. The Next PNG
+    icon conventions cover the favicon, touch icon and social card at exact
+    sizes. **If a true vector master ever arrives, that is the moment to
+    revisit** — not before.
+
+**B.4a — The plate, and why it is not optional on paper.** The artwork is built
+for a dark ground. Measured against the light theme's canvas (`--bg` #F5F2EA)
+its median luminance gives ~2.3:1 and its specular highlights ~1.06:1 — far
+below the 3:1 WCAG 1.4.11 floor for a graphical object, and visibly washed out.
+Against the dark canvas the same pixels give ~7.9:1. So on a light surface the
+mark sits on its own near-black plate (`--ground`, a theme-INVARIANT token, not
+`--bg`), which is standard practice for a metallic identity and leaves the
+artwork untouched. The cascade in `Logo.module.css` makes the plate the DEFAULT
+and lets any dark surface remove it, deliberately: the inverse
+(`:root:not([data-theme="dark"]) .logo`) is (0,4,0) specific and would beat the
+`[data-theme="dark"] .logo` override at (0,2,0), leaving a black plate floating
+on black inside a `tone="dark"` Section. Default-on also means the SSR HTML and
+the no-JS case — neither of which has a `data-theme` attribute yet — get the
+plate, which is right, because `:root` in the token sheet is light.
 
 **B.5 — `global-error.tsx` is the only file allowed literal brand hexes**, because
 it replaces the root layout and runs before any token sheet has loaded. Its
-values are copied from the dark canon and annotated as such.
+values are copied from the dark canon and annotated as such. (The plate's ground
+is the token `--ground`, not a literal, precisely to keep this rule true.)
 
 **B.6 — The landing page.** `(public)/page.tsx` is a cinematic single-column
 descent: a full-`svh` opening stage, an honest ledger, the capability ticker, the
@@ -545,7 +584,12 @@ cards said "pick one" when the point is the loop), the platform, proof,
 testimonials, and a closing stage. `_sections/RibbonRail.tsx` draws the logo's
 own folded strap down the left gutter in proportion to scroll progress, so the
 page's through-line *is* the mark; it renders fully drawn and static with no JS,
-under reduced motion, and below 1280px. Light/Dark/System still governs — only
+under reduced motion, and below 1280px. The opening stage carries the supplied
+mark as an oversized `.stageMark` watermark at 9% opacity, bleeding off the
+right edge to fill the half the copy does not use (hidden on phones, where
+there is no spare half). The Footer's top margin is dropped via `:has()` when a
+page ends on a dark band, or it shows a stripe of the page ground between two
+dark surfaces. Light/Dark/System still governs — only
 the opening and closing stages and `PlatformShowcase` commit to `tone="dark"`,
 so choosing Light does not yield a mostly-black page.
 

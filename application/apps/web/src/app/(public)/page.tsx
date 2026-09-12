@@ -119,6 +119,7 @@ export default async function HomePage() {
       {/* ---- Opening stage ---- */}
       <Section rhythm="hero" tone="dark" className={styles.stage}>
         <div className={styles.stageWash} aria-hidden="true" />
+        <div className={styles.stageMark} aria-hidden="true" />
         <Container width="wide">
           <HeroSequence className={styles.open}>
             <div data-hero="eyebrow">
