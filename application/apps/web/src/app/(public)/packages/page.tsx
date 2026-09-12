@@ -18,6 +18,10 @@ export const metadata: Metadata = {
  * you get (deliverables), what changes (outcomes), who it suits (industries) and
  * how long it takes (timeline). Tailored pricing is prepared by a strategist in
  * the discovery conversation after the assessment + configurator — never here.
+ *
+ * The card's action is a stretched link in the card HEAD, not a button in its
+ * foot — see packages.module.css for why. All presentation lives in that module;
+ * this file deliberately carries no inline `style` props.
  */
 export default async function PackagesPage() {
   const catalog = getCatalogRepository();
@@ -41,55 +45,70 @@ export default async function PackagesPage() {
 
           <h2 className="sr-only">The three packages</h2>
           <div className={styles.grid}>
-            {resolved.map(({ plan, modules }) => (
-              <Card key={plan.id} className={styles.compareCard}>
-                <div className={styles.rowTop} style={{ display: "flex", alignItems: "center", gap: "var(--space-2)", justifyContent: "space-between" }}>
-                  <h3 className={styles.compareName}>{plan.name}</h3>
-                  {plan.tag ? <Tag accent={plan.tag === "Popular"}>{plan.tag}</Tag> : null}
-                </div>
-                <p className={home.lede} style={{ fontSize: "var(--fs-sm)", marginTop: "var(--space-2)" }}>{plan.blurb}</p>
+            {resolved.map(({ plan, modules }) => {
+              const featured = plan.tag === "Popular";
+              // The Starter plan's tag is the word "Starter", which next to a
+              // heading that already says Starter is just the label twice. Show
+              // a tag only when it tells the reader something the name doesn't.
+              const tag = plan.tag && plan.tag !== plan.name ? plan.tag : null;
+              return (
+                <Card
+                  key={plan.id}
+                  interactive
+                  className={[styles.planCard, featured ? styles.planFeatured : null]
+                    .filter(Boolean)
+                    .join(" ")}
+                >
+                  <div className={styles.planHead}>
+                    <div className={styles.planTitleRow}>
+                      <h3 className={styles.planName}>{plan.name}</h3>
+                      {tag ? <Tag accent={featured}>{tag}</Tag> : null}
+                    </div>
 
-                {plan.timelineWeeks ? (
-                  <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
- Typically {plan.timelineWeeks[0]}–{plan.timelineWeeks[1]} weeks
-                  </p>
-                ) : null}
+                    {plan.timelineWeeks ? (
+                      <p className={styles.planMeta}>
+                        Typically {plan.timelineWeeks[0]}–{plan.timelineWeeks[1]} weeks
+                      </p>
+                    ) : null}
 
-                {plan.outcomes && plan.outcomes.length > 0 ? (
-                  <div style={{ marginTop: "var(--space-3)" }}>
-                    <span className={styles.compareName} style={{ fontSize: "var(--fs-xs)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-muted)" }}>Outcomes</span>
-                    <ul style={{ listStyle: "none", padding: 0, margin: "var(--space-2) 0 0" }}>
-                      {plan.outcomes.map((o) => (
-                        <li key={o} style={{ display: "flex", gap: "var(--space-2)", fontSize: "var(--fs-sm)", padding: "3px 0" }}>
- <span>{o}</span>
-                        </li>
+                    <Link href={`/configurator?plan=${plan.id}`} className={styles.planAction}>
+                      Configure {plan.name}
+                      <span className={styles.planArrow} aria-hidden="true">
+                        →
+                      </span>
+                    </Link>
+                  </div>
+
+                  <p className={styles.planBlurb}>{plan.blurb}</p>
+
+                  {plan.outcomes && plan.outcomes.length > 0 ? (
+                    <div className={styles.planBlock}>
+                      <span className={styles.planLabel}>Outcomes</span>
+                      <ul className={styles.planList}>
+                        {plan.outcomes.map((outcome) => (
+                          <li key={outcome} className={styles.planListItem}>
+                            {outcome}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+
+                  <div className={styles.planBlock}>
+                    <span className={styles.planLabel}>What&apos;s included</span>
+                    <div className={styles.moduleTags}>
+                      {modules.map((m) => (
+                        <Tag key={m.module.id}>{m.module.name}</Tag>
                       ))}
-                    </ul>
+                    </div>
                   </div>
-                ) : null}
 
-                <div style={{ marginTop: "var(--space-3)" }}>
-                  <span className={styles.compareName} style={{ fontSize: "var(--fs-xs)", textTransform: "uppercase", letterSpacing: "0.04em", color: "var(--text-muted)" }}>What&apos;s included</span>
-                  <div className={styles.moduleTags} style={{ marginTop: "var(--space-2)" }}>
-                    {modules.map((m) => (
-                      <Tag key={m.module.id}>{m.module.name}</Tag>
-                    ))}
-                  </div>
-                </div>
-
-                {plan.industries && plan.industries.length > 0 ? (
-                  <p style={{ fontSize: "var(--fs-xs)", color: "var(--text-muted)", marginTop: "var(--space-3)" }}>
-                    Common fit: {plan.industries.join(" · ")}
-                  </p>
-                ) : null}
-
-                <div style={{ marginTop: "var(--space-4)" }}>
-                  <Button variant={plan.tag === "Popular" ? "primary" : "secondary"} size="md" block asChild>
-                    <Link href={`/configurator?plan=${plan.id}`}>Configure {plan.name}</Link>
-                  </Button>
-                </div>
-              </Card>
-            ))}
+                  {plan.industries && plan.industries.length > 0 ? (
+                    <p className={styles.planFit}>Common fit: {plan.industries.join(" · ")}</p>
+                  ) : null}
+                </Card>
+              );
+            })}
           </div>
         </Container>
       </Section>

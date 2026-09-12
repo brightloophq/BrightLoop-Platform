@@ -1,8 +1,18 @@
+/* =============================================================================
+ * Work — the client index.
+ *
+ * This page is a showcase, not a catalogue browser. The old layout spent a
+ * 260px sticky rail and a nine-up grid of 300px cards on filter chrome, which
+ * left every project rendered at thumbnail scale. Here the work takes the full
+ * measure — two large tiles per row — and the facets live behind one Filters
+ * button at every width, in the drawer that already existed for phones.
+ * ========================================================================== */
+
 .toolbar {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
   flex-wrap: wrap;
 }
 
@@ -12,19 +22,12 @@
   min-width: 240px;
 }
 
-.searchIcon {
-  position: absolute;
-  left: var(--space-3);
-  top: 50%;
-  transform: translateY(-50%);
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
+/* The left padding used to reserve room for a search glyph. The icon set is
+   gone (§13 B.1), so the field is padded symmetrically like every other input. */
 .search {
   width: 100%;
   height: 44px;
-  padding: 0 var(--space-3) 0 var(--space-8);
+  padding: 0 var(--space-3);
   background: var(--surface-inset);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
@@ -46,8 +49,9 @@
   cursor: pointer;
 }
 
+/* Shown at EVERY width now — there is no desktop rail for it to duplicate. */
 .filterBtn {
-  display: none;
+  display: inline-flex;
 }
 
 .chips {
@@ -55,8 +59,6 @@
   align-items: center;
   flex-wrap: wrap;
   gap: var(--space-2);
-  margin-bottom: var(--space-5);
-  min-height: 28px;
 }
 
 .chip {
@@ -93,35 +95,265 @@
   color: var(--text-primary);
 }
 
-/* ---- layout: filter rail + grid ---- */
-.layout {
-  display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: var(--space-6);
-  align-items: start;
-}
-
-.rail {
-  position: sticky;
-  top: calc(var(--header-h) + var(--space-4));
-  max-height: calc(100vh - var(--header-h) - var(--space-8));
-  overflow-y: auto;
-  padding-right: var(--space-2);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+/* The count sits on the same rule as the chips: one thin status line between
+   the toolbar and the work, rather than three stacked bands of chrome. */
+.status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: var(--space-4);
+  flex-wrap: wrap;
+  padding-bottom: var(--space-4);
+  border-bottom: var(--border-hairline);
+  margin-bottom: var(--space-7);
 }
 
 .count {
   color: var(--text-muted);
   font-size: var(--fs-sm);
-  margin: 0 0 var(--space-4);
+  margin: 0;
+  font-variant-numeric: tabular-nums;
 }
 
-/* ---- facet group ---- */
+/* ---- the work ------------------------------------------------------------- */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-8) var(--space-5);
+  margin-bottom: var(--space-6);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  text-decoration: none;
+  color: inherit;
+}
+
+.tileMedia {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  border: var(--border-hairline);
+  /* The gold field the monogram sits on, and the ground behind a photo while it
+     decodes — so the band is never a bare grey rectangle. */
+  background:
+    radial-gradient(120% 120% at 22% 18%, color-mix(in srgb, var(--signal) 22%, transparent), transparent 62%),
+    radial-gradient(120% 120% at 82% 88%, color-mix(in srgb, var(--signal) 14%, transparent), transparent 58%),
+    var(--surface-inset);
+  /* Contains the image's scale transform inside the rounded corners. */
+  isolation: isolate;
+  transition:
+    border-color var(--dur-base) var(--ease-precise),
+    box-shadow var(--dur-base) var(--ease-precise);
+}
+
+.tile:hover .tileMedia,
+.tile:focus-visible .tileMedia {
+  border-color: color-mix(in srgb, var(--signal) 45%, var(--line-strong));
+  box-shadow: var(--elevation-3);
+}
+
+.tile:focus-visible {
+  outline: none;
+}
+.tile:focus-visible .tileMedia {
+  outline: var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.tileImage {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--dur-slow) var(--ease-precise);
+}
+
+.tile:hover .tileImage {
+  transform: scale(1.04);
+}
+
+/*
+ * The monogram plate — what a project shows before its photography is uploaded.
+ * The metallic gradient is clipped to the letterforms, which is allowed here and
+ * nowhere else: this is `aria-hidden` decoration at display scale, not text a
+ * reader has to resolve, so the sheen band cannot cost anyone a word. Every
+ * piece of real copy on this tile sits on flat ground.
+ */
+.tileMonogram {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: clamp(3.5rem, 9vw, 7rem);
+  font-weight: var(--fw-bold);
+  letter-spacing: 0.06em;
+  /* --grad-signal, not --grad-gold: it is defined PER THEME, so the letterforms
+     are dark gold on paper and bright gold on black. The metallic --grad-gold
+     carries light stops that vanish against the cream ground. */
+  background-image: var(--grad-signal);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0.5;
+  user-select: none;
+}
+
+/*
+ * The reveal. Copy is in the DOM at all times — this only fades a scrim over it
+ * — so assistive tech reads the summary regardless, and keyboard users get it
+ * via :focus-visible. Text is pinned to the bottom, where the scrim is at 0.93
+ * and the light type clears AA by a wide margin; the transparent top of the
+ * gradient never carries a word.
+ */
+.tileVeil {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  background: linear-gradient(
+    to top,
+    rgba(5, 5, 5, 0.93) 0%,
+    rgba(5, 5, 5, 0.72) 42%,
+    rgba(5, 5, 5, 0) 100%
+  );
+  opacity: 0;
+  transition: opacity var(--dur-base) var(--ease-precise);
+}
+
+.tile:hover .tileVeil,
+.tile:focus-visible .tileVeil {
+  opacity: 1;
+}
+
+.tileSummary {
+  color: #f2ece0;
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  /* Contained rather than allowed to overrun the band. The full summary — and
+     the whole case study — is one click away. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  overflow: hidden;
+}
+
+.tileCta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--gold-200);
+  font-size: var(--fs-sm);
+  font-weight: var(--fw-semibold);
+}
+
+.tileArrow {
+  transition: transform var(--dur-fast) var(--ease-out);
+}
+.tile:hover .tileArrow {
+  transform: translateX(4px);
+}
+
+.tileAwards {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* ---- the caption --------------------------------------------------------- */
+
+.tileCaption {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-4);
+}
+
+.tileIndex {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-accent);
+  flex: none;
+  padding-top: 4px;
+}
+
+.tileIdent {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tileName {
+  font-family: var(--font-display);
+  font-size: var(--fs-h4);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+  /* The rule grows from the left on hover — the one interaction signal. */
+  background-image: linear-gradient(var(--signal), var(--signal));
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0 2px;
+  transition: background-size var(--dur-base) var(--ease-precise);
+  align-self: flex-start;
+  padding-bottom: 2px;
+}
+
+.tile:hover .tileName,
+.tile:focus-visible .tileName {
+  background-size: 100% 2px;
+}
+
+.tileDisciplines {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: var(--lh-body);
+}
+
+.tileMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex: none;
+}
+
+.tileYear {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tileImage,
+  .tileArrow,
+  .tileName,
+  .tileVeil {
+    transition: none;
+  }
+  .tile:hover .tileImage,
+  .tile:hover .tileArrow {
+    transform: none;
+  }
+}
+
+/* ---- facet group (drawer only) ------------------------------------------- */
+
 .group {
   border-bottom: var(--border-hairline);
   padding-bottom: var(--space-3);
@@ -145,14 +377,6 @@
   font-size: var(--fs-sm);
   font-weight: var(--fw-semibold);
   min-height: 40px;
-}
-
-.groupChevron {
-  color: var(--text-muted);
-  transition: transform var(--dur-fast) var(--ease-out);
-}
-.groupOpen {
-  transform: rotate(180deg);
 }
 
 .options {
@@ -199,18 +423,28 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* <900px: rail hides behind a Filters button + drawer (handoff §05). */
 @media (max-width: 899px) {
-  .layout {
-    grid-template-columns: 1fr;
-  }
-  .rail {
-    display: none;
-  }
-  .filterBtn {
-    display: inline-flex;
-  }
   .grid {
     grid-template-columns: 1fr;
+    gap: var(--space-7);
+  }
+  .status {
+    margin-bottom: var(--space-6);
+  }
+}
+
+/*
+ * On a phone the caption's three columns fight each other: the client name wraps
+ * to two lines while the year and rating stay pinned to the first, which reads
+ * as a stagger rather than a caption. Drop the metadata onto its own line and
+ * let the name have the full width.
+ */
+@media (max-width: 599px) {
+  .tileCaption {
+    flex-wrap: wrap;
+    row-gap: var(--space-2);
+  }
+  .tileMeta {
+    flex: 1 0 100%;
   }
 }
