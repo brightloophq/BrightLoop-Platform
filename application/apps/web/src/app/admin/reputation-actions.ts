@@ -5,6 +5,7 @@ import { FACETS, PUBLISH_STATES, RATING_CATEGORIES, type PublishStatus } from "@
 import { assertCapability } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
 import { emitEvent } from "@/lib/analytics";
+import { readProjectMedia } from "@/lib/project-media";
 import { isValidSlug, slugify } from "@/lib/slug";
 import { createClient } from "@/lib/supabase/server";
 
@@ -255,6 +256,9 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
 
     const completedDate = String(formData.get("completedDate") ?? "").trim() || null;
 
+    const mediaResult = readProjectMedia(formData);
+    if ("error" in mediaResult) return { ok: false, error: mediaResult.error };
+
     const row = {
       slug,
       name,
@@ -277,6 +281,7 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
       summary: String(formData.get("summary") ?? "").trim(),
       challenge: String(formData.get("challenge") ?? "").trim(),
       approach: String(formData.get("approach") ?? "").trim(),
+      media: mediaResult.media,
       testimonial_id: String(formData.get("testimonialId") ?? "").trim() || null,
       seo: {
         title: String(formData.get("seoTitle") ?? "").trim(),
@@ -302,7 +307,6 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
         awards: [],
         hero_slot: "",
         gallery_slots: [],
-        media: [],
         // Undisclosed by default — result numbers have their own guarded action.
         metrics: { disclosed: false },
         order: 0,
