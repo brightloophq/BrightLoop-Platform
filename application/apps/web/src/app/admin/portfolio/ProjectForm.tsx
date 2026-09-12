@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FACETS, type PortfolioProject } from "@brightloop/schema";
 import { Alert, Button, Card, Input, Textarea } from "@brightloop/ui";
 import { slugify } from "@/lib/slug";
+import { MediaFields } from "./MediaFields";
 import { saveProject } from "../reputation-actions";
 import styles from "../cms.module.css";
 
@@ -169,6 +170,8 @@ export function ProjectForm({ project, testimonials }: Props) {
         <div className={styles.formFull}>
           <Textarea label="Our approach" name="approach" defaultValue={project?.approach} maxLength={2000} />
         </div>
+
+        <MediaFields media={project?.media} />
 
         {/* Live preview gate — permission AND a real URL, per handoff §05. */}
         <div className={styles.formFull} style={{ padding: "var(--space-4)", background: "var(--surface-inset)", border: "var(--border-hairline)", borderRadius: "var(--radius-md)" }}>
