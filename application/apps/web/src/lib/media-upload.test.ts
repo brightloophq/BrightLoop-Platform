@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { resolveEmbed } from "@brightloop/ui";
 import {
+  ACCEPTED_UPLOAD_TYPES,
   MAX_UPLOAD_BYTES,
   mediaObjectPath,
   tooLargeMessage,
@@ -73,5 +76,42 @@ describe("tooLargeMessage", () => {
     const message = tooLargeMessage(12.5 * 1024 * 1024);
     expect(message).toContain("12.5 MB");
     expect(message).toContain(`${MAX_UPLOAD_BYTES / (1024 * 1024)} MB`);
+  });
+});
+
+/**
+ * The bucket is the only thing that still sees the bytes — a portfolio image
+ * goes browser → Supabase directly, so no application code can enforce size or
+ * type. These assertions guard the coupling between this module's copy of the
+ * rules and the migration that actually enforces them; drift between the two
+ * means a file the form promises to accept gets rejected by the bucket, or
+ * worse, the reverse.
+ */
+describe("the media bucket limits agree with this module", () => {
+  const migration = readFileSync(
+    fileURLToPath(new URL("../../../../supabase/migrations/20260812000100_media_bucket_limits.sql", import.meta.url)),
+    "utf8",
+  );
+
+  it("sets file_size_limit to exactly MAX_UPLOAD_BYTES", () => {
+    const match = /file_size_limit\s*=\s*(\d+)/.exec(migration);
+    expect(match?.[1]).toBeDefined();
+    expect(Number(match![1])).toBe(MAX_UPLOAD_BYTES);
+  });
+
+  /** The array literal itself, so a comment mentioning a type proves nothing. */
+  const allowed = /allowed_mime_types\s*=\s*array\[([^\]]*)\]/.exec(migration)?.[1] ?? "";
+
+  it("allows exactly the MIME types the form offers", () => {
+    expect(allowed).not.toBe("");
+    for (const mime of ACCEPTED_UPLOAD_TYPES.split(",")) {
+      // image/jpg is an alias the form tolerates; the bucket speaks image/jpeg.
+      if (mime === "image/jpg") continue;
+      expect(allowed).toContain(`'${mime}'`);
+    }
+  });
+
+  it("does NOT allow svg into a public-read bucket", () => {
+    expect(allowed).not.toContain("svg");
   });
 });

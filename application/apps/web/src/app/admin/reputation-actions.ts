@@ -211,37 +211,45 @@ function multi(formData: FormData, field: string, vocab: readonly string[]): str
  *   * `permissionLivePreview` requires a valid absolute liveUrl — the DB CHECK
  *     enforces the same pairing, so a permissioned row cannot carry an empty URL.
  */
-export type UploadResult = { ok: true; url: string } | { ok: false; error: string };
+export type UploadTicket =
+  | { ok: true; path: string; token: string; publicUrl: string }
+  | { ok: false; error: string };
 
 /**
- * Upload a portfolio image and hand back its public URL.
+ * Issue a one-time signed URL for uploading a portfolio image.
  *
- * The `media` bucket (storage migration 0006) is the only public-read bucket and
- * exists precisely for published marketing assets. Its insert policy already
- * restricts writes to owner/admin; `authorize("marketing.update")` refuses a
- * team_member here first, so the request never reaches storage.
+ * THE FILE DOES NOT COME THROUGH HERE, and that is the whole point. An earlier
+ * revision took the File in a server action and uploaded it server-side; every
+ * real photograph failed, because a Next.js server action caps its request body
+ * at 1 MB by default and Vercel caps a serverless request at 4.5 MB. The browser
+ * now PUTs the bytes straight to Supabase Storage with the token returned here.
  *
- * This is a SESSION client, never the service role — the storage policy is the
- * thing enforcing who may write, and a service-role upload behind a user action
- * would bypass exactly that.
+ * The authorization story is unchanged, and is two-layered exactly as before:
+ *   1. `authorize("marketing.update")` refuses a team_member outright;
+ *   2. `createSignedUploadUrl` runs on the SESSION client, so the bucket's own
+ *      insert policy (owner/admin — storage migration 0006) must also pass. A
+ *      token is only ever minted for someone the DATABASE agrees may write.
+ * The token is scoped to the single path we choose here, so it cannot be
+ * replayed against any other object.
  *
- * What comes back is a plain public URL, which is all the caller stores: the
- * media row keeps a URL like any other, so an uploaded image and a pasted one
- * are the same thing to every reader downstream.
+ * Size and type are checked here to fail fast with a readable message, and
+ * enforced for real by the bucket's own file_size_limit / allowed_mime_types
+ * (migration 20260812000100) — the only place that still sees the bytes.
  */
-export async function uploadProjectImage(formData: FormData): Promise<UploadResult> {
+export async function createProjectImageUpload(formData: FormData): Promise<UploadTicket> {
   try {
     const { supabase } = await authorize("marketing.update");
 
-    const file = formData.get("file");
-    if (!(file instanceof File) || file.size === 0) {
-      return { ok: false, error: "Choose an image file first." };
-    }
-    if (file.size > MAX_UPLOAD_BYTES) {
-      return { ok: false, error: tooLargeMessage(file.size) };
+    const filename = String(formData.get("filename") ?? "").trim();
+    const mime = String(formData.get("mime") ?? "").trim();
+    const size = Number(formData.get("size") ?? 0);
+
+    if (!filename) return { ok: false, error: "Choose an image file first." };
+    if (Number.isFinite(size) && size > MAX_UPLOAD_BYTES) {
+      return { ok: false, error: tooLargeMessage(size) };
     }
 
-    const extension = uploadExtension(file.type, file.name);
+    const extension = uploadExtension(mime, filename);
     if (!extension) {
       return {
         ok: false,
@@ -250,19 +258,18 @@ export async function uploadProjectImage(formData: FormData): Promise<UploadResu
     }
 
     const path = mediaObjectPath(id("m"), extension);
-    const { error: upErr } = await supabase.storage
-      .from("media")
-      .upload(path, file, { contentType: file.type || `image/${extension}`, upsert: false });
-    if (upErr) return { ok: false, error: upErr.message };
+    const { data, error } = await supabase.storage.from("media").createSignedUploadUrl(path);
+    if (error) return { ok: false, error: error.message };
+    if (!data?.token) return { ok: false, error: "Supabase returned no upload token." };
 
-    const { data } = supabase.storage.from("media").getPublicUrl(path);
-    if (!data?.publicUrl) {
-      return { ok: false, error: "Uploaded, but Supabase returned no public URL for it." };
+    const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
+    if (!pub?.publicUrl) {
+      return { ok: false, error: "Supabase returned no public URL for that path." };
     }
 
-    return { ok: true, url: data.publicUrl };
+    return { ok: true, path, token: data.token, publicUrl: pub.publicUrl };
   } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Upload failed" };
+    return { ok: false, error: e instanceof Error ? e.message : "Could not start the upload" };
   }
 }
 
