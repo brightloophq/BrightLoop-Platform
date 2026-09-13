@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { PUBLISH, type PublishStatus } from "@brightloop/schema";
 import { Alert, Badge, Card, EmptyState, Stars } from "@brightloop/ui";
+import { explainAdminLoadError } from "@/lib/admin-error";
 import { createClient } from "@/lib/supabase/server";
 import { toPortfolioProject, toTestimonial } from "@brightloop/data";
 import { DeleteTestimonial } from "./DeleteTestimonial";
@@ -60,8 +61,8 @@ export default async function ReviewsPage() {
         {tErr ? (
           <div className={styles.notice}>
             <Alert tone="danger" title="Couldn't load reviews">
-              {tErr.message}. If this says permission denied, the custom access token hook may not be
-              registered — your JWT would carry no role and every policy denies.
+              {tErr.message}
+              {explainAdminLoadError(tErr) ? ` — ${explainAdminLoadError(tErr)}` : null}
             </Alert>
           </div>
         ) : null}
