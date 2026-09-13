@@ -1,9 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FACETS, type PortfolioProject } from "@brightloop/schema";
 import { Alert, Button, Card, Input, Textarea } from "@brightloop/ui";
+import {
+  firstInvalidField,
+  summariseErrors,
+  validateProjectForm,
+} from "@/lib/project-form";
 import { slugify } from "@/lib/slug";
 import { MediaFields } from "./MediaFields";
 import { saveProject } from "../reputation-actions";
@@ -34,7 +39,9 @@ export function ProjectForm({ project, testimonials }: Props) {
   const [slugTouched, setSlugTouched] = useState(Boolean(project));
   const [livePermitted, setLivePermitted] = useState(project?.permissionLivePreview ?? false);
   const [state, setState] = useState<{ error?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [pending, setPending] = useState(false);
+  const formRef = useRef<HTMLFormElement>(null);
 
   // Auto-suggest the slug from the name until the user edits it themselves.
   const onName = (v: string) => {
@@ -43,6 +50,21 @@ export function ProjectForm({ project, testimonials }: Props) {
   };
 
   async function onSubmit(formData: FormData) {
+    const invalid = validateProjectForm(formData);
+    setFieldErrors(invalid);
+
+    const firstInvalid = firstInvalidField(invalid);
+    if (firstInvalid) {
+      // One banner saying how many; the detail sits on each field itself.
+      setState({ error: summariseErrors(invalid) });
+
+      const el = formRef.current?.querySelector<HTMLElement>(`[name="${firstInvalid}"]`);
+      el?.scrollIntoView({ block: "center", behavior: "smooth" });
+      el?.focus({ preventScroll: true });
+      return;
+    }
+
+    setState({});
     setPending(true);
     const result = await saveProject(formData);
     setPending(false);
@@ -65,6 +87,7 @@ export function ProjectForm({ project, testimonials }: Props) {
         defaultValue={value ?? ""}
         className={styles.select}
         style={{ width: "100%", height: 44 }}
+        aria-invalid={fieldErrors[field] ? true : undefined}
       >
         <option value="">— select —</option>
         {options.map((o) => (
@@ -73,6 +96,11 @@ export function ProjectForm({ project, testimonials }: Props) {
           </option>
         ))}
       </select>
+      {fieldErrors[field] ? (
+        <span className={styles.hint} style={{ color: "var(--critical)" }} role="alert">
+          {fieldErrors[field]}
+        </span>
+      ) : null}
     </div>
   );
 
@@ -92,8 +120,12 @@ export function ProjectForm({ project, testimonials }: Props) {
 
   return (
     <Card>
-      <form action={onSubmit} className={styles.form} noValidate>
+      <form ref={formRef} action={onSubmit} className={styles.form} noValidate>
         {project ? <input type="hidden" name="id" value={project.id} /> : null}
+
+        <p className={`${styles.hint} ${styles.formFull}`}>
+          Project name, slug, client and year are required. Everything else can be filled in later.
+        </p>
 
         {state.error ? (
           <div className={styles.formFull}>
@@ -110,7 +142,14 @@ export function ProjectForm({ project, testimonials }: Props) {
           </p>
         ) : null}
 
-        <Input label="Project name" name="name" required value={name} onChange={(e) => onName(e.target.value)} />
+        <Input
+          label="Project name"
+          name="name"
+          required
+          error={fieldErrors.name}
+          value={name}
+          onChange={(e) => onName(e.target.value)}
+        />
         <Input
           label="Slug"
           name="slug"
@@ -120,10 +159,17 @@ export function ProjectForm({ project, testimonials }: Props) {
             setSlugTouched(true);
             setSlug(e.target.value);
           }}
+          error={fieldErrors.slug}
           hint="Used in the URL: /portfolio/your-slug. Must be unique."
         />
 
-        <Input label="Client" name="client" required defaultValue={project?.client} />
+        <Input
+          label="Client"
+          name="client"
+          required
+          error={fieldErrors.client}
+          defaultValue={project?.client}
+        />
         {sel("Industry", "industry", FACETS.industry, project?.industry)}
         {sel("Business size", "size", FACETS.size, project?.size)}
         {sel("Country", "country", FACETS.country, project?.country)}
