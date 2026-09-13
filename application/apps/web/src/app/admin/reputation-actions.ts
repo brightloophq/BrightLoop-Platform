@@ -5,6 +5,13 @@ import { FACETS, PUBLISH_STATES, RATING_CATEGORIES, type PublishStatus } from "@
 import { assertCapability } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
 import { emitEvent } from "@/lib/analytics";
+import {
+  ACCEPTED_UPLOAD_LABEL,
+  MAX_UPLOAD_BYTES,
+  mediaObjectPath,
+  tooLargeMessage,
+  uploadExtension,
+} from "@/lib/media-upload";
 import { readProjectMedia } from "@/lib/project-media";
 import { isValidSlug, slugify } from "@/lib/slug";
 import { createClient } from "@/lib/supabase/server";
@@ -204,6 +211,61 @@ function multi(formData: FormData, field: string, vocab: readonly string[]): str
  *   * `permissionLivePreview` requires a valid absolute liveUrl — the DB CHECK
  *     enforces the same pairing, so a permissioned row cannot carry an empty URL.
  */
+export type UploadResult = { ok: true; url: string } | { ok: false; error: string };
+
+/**
+ * Upload a portfolio image and hand back its public URL.
+ *
+ * The `media` bucket (storage migration 0006) is the only public-read bucket and
+ * exists precisely for published marketing assets. Its insert policy already
+ * restricts writes to owner/admin; `authorize("marketing.update")` refuses a
+ * team_member here first, so the request never reaches storage.
+ *
+ * This is a SESSION client, never the service role — the storage policy is the
+ * thing enforcing who may write, and a service-role upload behind a user action
+ * would bypass exactly that.
+ *
+ * What comes back is a plain public URL, which is all the caller stores: the
+ * media row keeps a URL like any other, so an uploaded image and a pasted one
+ * are the same thing to every reader downstream.
+ */
+export async function uploadProjectImage(formData: FormData): Promise<UploadResult> {
+  try {
+    const { supabase } = await authorize("marketing.update");
+
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) {
+      return { ok: false, error: "Choose an image file first." };
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return { ok: false, error: tooLargeMessage(file.size) };
+    }
+
+    const extension = uploadExtension(file.type, file.name);
+    if (!extension) {
+      return {
+        ok: false,
+        error: `That file type can't be used as a project image. Use ${ACCEPTED_UPLOAD_LABEL}.`,
+      };
+    }
+
+    const path = mediaObjectPath(id("m"), extension);
+    const { error: upErr } = await supabase.storage
+      .from("media")
+      .upload(path, file, { contentType: file.type || `image/${extension}`, upsert: false });
+    if (upErr) return { ok: false, error: upErr.message };
+
+    const { data } = supabase.storage.from("media").getPublicUrl(path);
+    if (!data?.publicUrl) {
+      return { ok: false, error: "Uploaded, but Supabase returned no public URL for it." };
+    }
+
+    return { ok: true, url: data.publicUrl };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Upload failed" };
+  }
+}
+
 export async function saveProject(formData: FormData): Promise<ActionResult & { slug?: string }> {
   try {
     const { supabase } = await authorize("marketing.update");
