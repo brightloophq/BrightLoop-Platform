@@ -3,8 +3,13 @@
 import { useRef, useState } from "react";
 import { MEDIA_KINDS, type MediaItem, type MediaKind } from "@brightloop/schema";
 import { Button, Input, resolveEmbed } from "@brightloop/ui";
-import { ACCEPTED_UPLOAD_TYPES } from "@/lib/media-upload";
-import { uploadProjectImage } from "../reputation-actions";
+import { createClient } from "@/lib/supabase/client";
+import {
+  ACCEPTED_UPLOAD_TYPES,
+  MAX_UPLOAD_BYTES,
+  tooLargeMessage,
+} from "@/lib/media-upload";
+import { createProjectImageUpload } from "../reputation-actions";
 import styles from "../cms.module.css";
 
 interface Row {
@@ -63,23 +68,63 @@ export function MediaFields({ media = [] }: { media?: readonly MediaItem[] }) {
     setRows((cur) => (cur.length === 1 ? [blank()] : cur.filter((_, n) => n !== i)));
 
   /**
-   * Send the chosen file to Supabase Storage and drop the resulting public URL
-   * into this row. The upload happens immediately rather than on form submit, so
-   * the verdict line can confirm the image is usable BEFORE the project is saved
-   * — and so a failed upload costs the owner a retry, not the whole form.
+   * Upload the chosen file and drop the resulting public URL into this row.
+   *
+   * The bytes go BROWSER → SUPABASE directly, never through our server. A
+   * server action caps its request body at 1 MB by default, so the first
+   * revision of this — which posted the File to an action — hung on every real
+   * photograph. The action is still called, but only to mint a one-time signed
+   * upload token after its capability check.
+   *
+   * The upload runs on choose rather than on submit, so the verdict line can
+   * confirm the image is usable BEFORE the project is saved, and a failure costs
+   * a retry rather than the whole form.
+   *
+   * EVERY path out of here clears `uploading`. The try/catch is not decoration:
+   * without it a rejected promise left the button spinning forever with nothing
+   * said, which is exactly how this went wrong the first time.
    */
   async function upload(i: number, file: File) {
     update(i, { uploading: true, uploadError: undefined });
 
-    const body = new FormData();
-    body.append("file", file);
-    const result = await uploadProjectImage(body);
+    try {
+      // Fail fast and locally on an oversized file, rather than spending the
+      // round trip to be told by the bucket.
+      if (file.size > MAX_UPLOAD_BYTES) {
+        update(i, { uploading: false, uploadError: tooLargeMessage(file.size) });
+        return;
+      }
 
-    if (result.ok) {
-      // An uploaded file is always an image — the action refuses anything else.
-      update(i, { uploading: false, url: result.url, kind: "image" });
-    } else {
-      update(i, { uploading: false, uploadError: result.error });
+      const body = new FormData();
+      body.append("filename", file.name);
+      body.append("mime", file.type);
+      body.append("size", String(file.size));
+
+      const ticket = await createProjectImageUpload(body);
+      if (!ticket.ok) {
+        update(i, { uploading: false, uploadError: ticket.error });
+        return;
+      }
+
+      const supabase = createClient();
+      const { error } = await supabase.storage
+        .from("media")
+        .uploadToSignedUrl(ticket.path, ticket.token, file, {
+          contentType: file.type || undefined,
+        });
+
+      if (error) {
+        update(i, { uploading: false, uploadError: error.message });
+        return;
+      }
+
+      // An uploaded file is always an image — the ticket refuses anything else.
+      update(i, { uploading: false, url: ticket.publicUrl, kind: "image" });
+    } catch (e) {
+      update(i, {
+        uploading: false,
+        uploadError: e instanceof Error ? e.message : "Upload failed. Try again.",
+      });
     }
   }
 
