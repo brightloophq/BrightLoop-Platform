@@ -31,7 +31,7 @@ export class FakeHttpTransport implements HttpTransport {
     this.calls.push(request.url);
     const route = this.routes[request.url];
     if (route === undefined) {
-      return { ok: false, error: { kind: "connect", message: `no scripted route for ${request.url}` } };
+      return { ok: false, error: { kind: "connect", message: `no scripted route for ${request.url}`, code: "" } };
     }
     if ("error" in route) return { ok: false, error: route.error };
 

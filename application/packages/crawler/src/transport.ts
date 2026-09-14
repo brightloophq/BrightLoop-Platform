@@ -41,6 +41,16 @@ export interface HttpResponse {
 export interface HttpTransportError {
   kind: "timeout" | "dns" | "tls" | "connect" | "aborted" | "unknown";
   message: string;
+  /**
+   * The machine code behind `kind`, when Node gave one.
+   *
+   * `kind` alone is too coarse to act on: UND_ERR_CONNECT_TIMEOUT (the TCP
+   * connection never completed — the host is not answering us) and
+   * UND_ERR_HEADERS_TIMEOUT (it accepted the connection and then sent nothing)
+   * are both "timeout" and mean entirely different things. Empty when the
+   * failure carried no code.
+   */
+  code: string;
 }
 
 export type HttpFetchResult =
@@ -146,7 +156,8 @@ export function classifyError(cause: unknown): HttpTransportError {
   // rest: when we abort, whatever the socket reports afterwards is a
   // consequence of the abort rather than the reason for it.
   if (cause instanceof Error && cause.name === "AbortError") {
-    return { kind: "timeout", message: "request timed out" };
+    // OUR abort, at the configured timeoutMs — distinct from undici giving up.
+    return { kind: "timeout", message: "request timed out", code: "CRAWLER_TIMEOUT" };
   }
 
   const links = collectCauses(cause);
@@ -155,23 +166,27 @@ export function classifyError(cause: unknown): HttpTransportError {
     const lower = message.toLowerCase();
 
     if (TIMEOUT_CODES.has(code) || lower.includes("timeout") || lower.includes("timed out")) {
-      return { kind: "timeout", message: detail("request timed out", code, message) };
+      return { kind: "timeout", message: detail("request timed out", code, message), code };
     }
     if (DNS_CODES.has(code) || lower.includes("getaddrinfo") || lower.includes("enotfound") || lower.includes("eai_again")) {
-      return { kind: "dns", message: detail("dns resolution failed", code, message) };
+      return { kind: "dns", message: detail("dns resolution failed", code, message), code };
     }
     if (TLS_CODES.has(code) || lower.includes("cert") || lower.includes("tls") || lower.includes("ssl") || lower.includes("handshake")) {
-      return { kind: "tls", message: detail("tls handshake failed", code, message) };
+      return { kind: "tls", message: detail("tls handshake failed", code, message), code };
     }
     if (CONNECT_CODES.has(code) || lower.includes("econnrefused") || lower.includes("econnreset") || lower.includes("socket")) {
-      return { kind: "connect", message: detail("connection failed", code, message) };
+      return { kind: "connect", message: detail("connection failed", code, message), code };
     }
   }
 
   // Genuinely unrecognised. Carry the deepest real message rather than the
   // outer "fetch failed", so an operator has something to search for.
   const deepest = links.filter((l) => l.message && l.message !== "fetch failed").pop();
-  return { kind: "unknown", message: deepest ? detail("fetch failed", deepest.code, deepest.message) : "fetch failed" };
+  return {
+    kind: "unknown",
+    message: deepest ? detail("fetch failed", deepest.code, deepest.message) : "fetch failed",
+    code: deepest?.code ?? "",
+  };
 }
 
 /** "dns resolution failed (ENOTFOUND: getaddrinfo ENOTFOUND example.com)" */
