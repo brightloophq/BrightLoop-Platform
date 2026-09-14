@@ -55,15 +55,13 @@ export const SITE_NAME = "Auxion";
  * business does not control is a false claim of identity in structured data,
  * and a footer link to a dead profile is worse than no link.
  *
- * NOTE on the Facebook entry: it is a personal profile rather than a Facebook
- * Page for the business. It is linked because it is genuinely where the
- * business is reachable there, but a Page would be the stronger signal — a
- * Page can carry the business name, category and contact details, which is what
- * `sameAs` on an Organization is meant to point at. Swap the URL here when one
- * exists.
+ * The Facebook entry now points at the business's own Facebook presence rather
+ * than a personal profile, which is what `sameAs` on an Organization is meant
+ * to identify. It is still the numeric `profile.php?id=` form; if a vanity
+ * username is claimed later, swap the URL here and both surfaces follow.
  */
 export const SOCIAL_PROFILES: readonly { label: string; href: string }[] = [
   { label: "Instagram", href: "https://www.instagram.com/auxion_ai/" },
   { label: "TikTok", href: "https://www.tiktok.com/@auxion_ai" },
-  { label: "Facebook", href: "https://www.facebook.com/oladipupo.habeebulahi/" },
+  { label: "Facebook", href: "https://www.facebook.com/profile.php?id=61582458882522" },
 ];
