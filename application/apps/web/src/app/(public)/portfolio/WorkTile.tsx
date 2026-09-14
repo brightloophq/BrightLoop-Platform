@@ -1,6 +1,7 @@
 import Link from "next/link";
-import type { MediaItem, PortfolioProject } from "@brightloop/schema";
-import { Stars, Tag, resolveEmbed } from "@brightloop/ui";
+import type { PortfolioProject } from "@brightloop/schema";
+import { Stars, Tag } from "@brightloop/ui";
+import { firstUsableImage } from "@/lib/project-image";
 import styles from "./portfolio.module.css";
 
 export interface WorkTileProps {
@@ -113,22 +114,6 @@ export function WorkTile({ project, position, rating, awards = [] }: WorkTilePro
       </span>
     </Link>
   );
-}
-
-/**
- * The first media item we can actually paint in the band.
- *
- * `resolveEmbed` is the authority, not `kind`: it accepts only https URLs with a
- * known image extension, so a `kind: "image"` row pointing at an arbitrary host
- * (or at the dataset's "#" placeholder) yields the monogram plate instead of a
- * broken <img> that would leak the visitor to that host.
- */
-function firstUsableImage(media: readonly MediaItem[]): { src: string; label: string } | null {
-  for (const item of media) {
-    const embed = resolveEmbed(item.url);
-    if (embed.kind === "image" && embed.src) return { src: embed.src, label: item.label };
-  }
-  return null;
 }
 
 /** One or two letters from the client name — "Harbor & Co" → "HC". */
