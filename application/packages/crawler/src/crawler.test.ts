@@ -143,9 +143,18 @@ describe("fetchPage", () => {
     expect(notFound.outcome).toBe("failed");
     expect(notFound.reason).toBe("status:404");
 
-    const timeout = await fetchPage(ROOT, deps({ [ROOT]: { error: { kind: "timeout", message: "timed out" } } }));
+    // A transport failure with no code still reads as the bare kind.
+    const timeout = await fetchPage(ROOT, deps({ [ROOT]: { error: { kind: "timeout", message: "timed out", code: "" } } }));
     expect(timeout.outcome).toBe("failed");
     expect(timeout.reason).toBe("timeout");
+
+    // With a code, the reason names WHICH timeout — a connect timeout and a
+    // headers timeout are the same `kind` and completely different problems.
+    const connectTimeout = await fetchPage(
+      ROOT,
+      deps({ [ROOT]: { error: { kind: "timeout", message: "t", code: "UND_ERR_CONNECT_TIMEOUT" } } }),
+    );
+    expect(connectTimeout.reason).toBe("timeout:UND_ERR_CONNECT_TIMEOUT");
   });
   it("marks an oversized (capped) response as truncated", async () => {
     const res = await fetchPage(ROOT, deps({ [ROOT]: { ...page("Big"), truncated: true, bytes: 9_999_999 } }));

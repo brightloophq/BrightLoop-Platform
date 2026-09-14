@@ -29,7 +29,11 @@ export interface PageFetch {
   /** Decoded HTML on a successful text/html 2xx; null otherwise. */
   body: string | null;
   outcome: PageFetchOutcome;
-  /** Exclusion/failure reason (content_type / too_large / status:<n> / redirect_limit / ssrf:* / timeout / dns / tls / connect). */
+  /**
+   * Exclusion/failure reason: content_type / too_large / status:<n> /
+   * redirect_limit / ssrf:* / <kind>:<CODE> for a transport failure, e.g.
+   * `timeout:UND_ERR_CONNECT_TIMEOUT` or `timeout:CRAWLER_TIMEOUT`.
+   */
   reason: string | null;
 }
 
@@ -87,7 +91,14 @@ export async function fetchPage(initialUrl: string, deps: FetchDeps): Promise<Pa
     });
 
     if (!result.ok) {
-      return { ...base, finalUrl: currentUrl, redirects, durationMs: totalDuration, outcome: "failed", reason: result.error.kind };
+      // `kind` alone was stored here, which threw away the one detail that
+      // distinguishes causes: a connect timeout (the host never completed the
+      // TCP handshake) and a headers timeout (it accepted the connection and
+      // then sent nothing) are both "timeout" and mean different things, and
+      // our own abort at timeoutMs is a third. The code is appended in the
+      // `prefix:detail` form this field already uses for `status:` and `ssrf:`.
+      const reason = result.error.code ? `${result.error.kind}:${result.error.code}` : result.error.kind;
+      return { ...base, finalUrl: currentUrl, redirects, durationMs: totalDuration, outcome: "failed", reason };
     }
     const res = result.response;
     totalDuration += res.durationMs;

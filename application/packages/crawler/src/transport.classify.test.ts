@@ -116,3 +116,37 @@ describe("classifyError", () => {
     expect(classifyError(undefined).kind).toBe("unknown");
   });
 });
+
+describe("classifyError · the code that makes a kind actionable", () => {
+  /**
+   * Three failures share the kind "timeout" and mean entirely different things.
+   * Storing only the kind — which is what the page row did — collapses them.
+   */
+  it("distinguishes a connect timeout from a headers timeout", () => {
+    const connect = classifyError(fetchFailed(sysError("UND_ERR_CONNECT_TIMEOUT", "Connect Timeout Error")));
+    const headers = classifyError(fetchFailed(sysError("UND_ERR_HEADERS_TIMEOUT", "Headers Timeout Error")));
+
+    expect(connect.kind).toBe("timeout");
+    expect(headers.kind).toBe("timeout");
+    // Same kind, different cause: one never reached the host, the other was
+    // accepted and then ignored.
+    expect(connect.code).toBe("UND_ERR_CONNECT_TIMEOUT");
+    expect(headers.code).toBe("UND_ERR_HEADERS_TIMEOUT");
+  });
+
+  it("marks OUR OWN abort so it is not mistaken for the host stalling", () => {
+    const abort = new Error("The operation was aborted");
+    abort.name = "AbortError";
+    expect(classifyError(abort).code).toBe("CRAWLER_TIMEOUT");
+  });
+
+  it("carries the code for every classified kind", () => {
+    expect(classifyError(fetchFailed(sysError("ENOTFOUND", "getaddrinfo ENOTFOUND x"))).code).toBe("ENOTFOUND");
+    expect(classifyError(fetchFailed(sysError("ECONNREFUSED", "connect ECONNREFUSED"))).code).toBe("ECONNREFUSED");
+    expect(classifyError(fetchFailed(sysError("CERT_HAS_EXPIRED", "certificate has expired"))).code).toBe("CERT_HAS_EXPIRED");
+  });
+
+  it("leaves the code empty rather than inventing one", () => {
+    expect(classifyError(fetchFailed(new Error("something entirely new"))).code).toBe("");
+  });
+});
