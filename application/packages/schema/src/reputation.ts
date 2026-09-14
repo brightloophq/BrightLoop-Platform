@@ -82,6 +82,7 @@ export const FACETS = {
     "Airtable",
     "Zapier",
     "Make",
+    "n8n",
     "Google Workspace",
     "Meta Ads",
     "Klaviyo",
