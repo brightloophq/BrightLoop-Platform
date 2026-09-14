@@ -1,0 +1,16 @@
+.notice {
+  margin: var(--space-6) 0;
+}
+
+.body {
+  margin: 0 0 var(--space-4);
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+}

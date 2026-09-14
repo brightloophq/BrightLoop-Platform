@@ -47,9 +47,12 @@ export const FOOTER_COLUMNS = [
   {
     title: "Company",
     links: [
+      { label: "About", href: "/about" },
       { label: "Packages", href: "/packages" },
       { label: "Work", href: "/portfolio" },
       { label: "Testimonials", href: "/testimonials" },
+      { label: "Resources", href: "/resources" },
+      { label: "Careers", href: "/careers" },
       { label: "Contact", href: "/contact" },
     ],
   },

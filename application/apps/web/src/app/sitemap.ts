@@ -41,7 +41,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_ORIGIN}/packages`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${SITE_ORIGIN}/portfolio`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE_ORIGIN}/testimonials`, changeFrequency: "weekly", priority: 0.7 },
+    { url: `${SITE_ORIGIN}/about`, changeFrequency: "monthly", priority: 0.7 },
+    { url: `${SITE_ORIGIN}/resources`, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_ORIGIN}/contact`, changeFrequency: "yearly", priority: 0.6 },
+    { url: `${SITE_ORIGIN}/careers`, changeFrequency: "yearly", priority: 0.3 },
+    // /legal and its documents are deliberately absent: they carry
+    // `robots: { index: false }` because no policy has been issued, and
+    // listing a noindex page in the sitemap asks a crawler to do two
+    // contradictory things.
   ];
 
   const projectRoutes: MetadataRoute.Sitemap = slugs.map((slug) => ({
