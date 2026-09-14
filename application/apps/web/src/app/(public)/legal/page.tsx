@@ -39,6 +39,7 @@ const DOCUMENTS = [
 export const metadata: Metadata = {
   title: "Legal",
   description: "Auxion's privacy, terms and cookie documents.",
+  alternates: { canonical: "/legal" },
   // Consistent with the documents themselves: nothing here is in force yet.
   robots: { index: false, follow: false },
 };

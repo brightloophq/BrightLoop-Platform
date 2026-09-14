@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   title: "About",
   description:
     "Auxion builds the brand, site, automation and measurement a small business needs as one system rather than four disconnected projects.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {

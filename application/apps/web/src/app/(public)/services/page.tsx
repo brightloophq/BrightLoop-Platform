@@ -5,11 +5,13 @@ import { PLACEHOLDER_DISCIPLINE_COPY } from "@brightloop/data";
 import { Button, CTASection, Container, Eyebrow, Section, ServiceCard } from "@brightloop/ui";
 import { getCatalogRepository } from "@/lib/repositories";
 import styles from "../home.module.css";
+import page from "./services.module.css";
 
 export const metadata: Metadata = {
   title: "Services",
   description:
     "Brand, Build, Automate, Grow — the four disciplines of the Auxion loop, and the modules inside each.",
+  alternates: { canonical: "/services" },
 };
 
 /**
@@ -18,6 +20,11 @@ export const metadata: Metadata = {
  * The four discipline cards are derived from the schema vocabulary; module
  * counts come from the catalog repository. Nothing about the catalog is
  * hardcoded here.
+ *
+ * The page was four cards and a call to action — a visitor could read the whole
+ * of it and still not know how an engagement starts, what it produces, or what
+ * they end up owning. Those three answers are the page's real job, so they are
+ * stated here rather than left to the conversation.
  */
 export default async function ServicesPage() {
   const catalog = getCatalogRepository();
@@ -59,6 +66,77 @@ export default async function ServicesPage() {
               );
             })}
           </div>
+        </Container>
+      </Section>
+
+      <Section inset>
+        <Container width="prose">
+          <h2 className={styles.sectionTitle}>How an engagement works</h2>
+          <p className={page.body}>
+            The same four steps whichever discipline you start in. Nothing is scoped before the
+            first one is done.
+          </p>
+
+          <ol className={page.steps}>
+            <li className={page.step}>
+              <span className={page.stepN}>01</span>
+              <span className={page.stepBody}>
+                <span className={page.stepName}>Diagnose</span>
+                <span className={page.stepText}>
+                  We scan what exists now — the site, the paths through it, the ways someone can
+                  actually reach you, and what is measurable from the outside. Each finding carries
+                  the evidence behind it, and anything the scan cannot see is reported as
+                  unmeasured rather than guessed at.
+                </span>
+              </span>
+            </li>
+            <li className={page.step}>
+              <span className={page.stepN}>02</span>
+              <span className={page.stepBody}>
+                <span className={page.stepName}>Scope</span>
+                <span className={page.stepText}>
+                  The findings become a proposal: which modules, in what order, and what each one
+                  is meant to change. You see the reasoning, not just the total. Work you do not
+                  need is the cheapest thing to remove at this stage.
+                </span>
+              </span>
+            </li>
+            <li className={page.step}>
+              <span className={page.stepN}>03</span>
+              <span className={page.stepBody}>
+                <span className={page.stepName}>Build</span>
+                <span className={page.stepText}>
+                  Delivery runs module by module against the agreed scope. Each one is built to
+                  connect to the rest of the loop rather than to stand alone, because the seams
+                  between brand, site, follow-up and measurement are where most value leaks.
+                </span>
+              </span>
+            </li>
+            <li className={page.step}>
+              <span className={page.stepN}>04</span>
+              <span className={page.stepBody}>
+                <span className={page.stepName}>Measure</span>
+                <span className={page.stepText}>
+                  The same scan runs again against the same categories, so the difference is a
+                  measurement rather than an impression. That result is what decides the next piece
+                  of work — including when the answer is that no further work is needed yet.
+                </span>
+              </span>
+            </li>
+          </ol>
+
+          <h2 className={styles.sectionTitle}>What you own at the end</h2>
+          <p className={page.body}>
+            Accounts, domains, data and source stay in your name throughout. Brand files are handed
+            over in their editable originals, not as flattened exports. An engagement that ends
+            leaves a working system behind rather than a dependency — you should be able to take
+            what we built to someone else, and the fact that you could is the point.
+          </p>
+          <p className={page.body}>
+            We publish no rate card, because the honest price depends on what the diagnosis finds.
+            What we can say before it is what a package includes and how it is assembled, which is
+            what the <Link href="/packages">packages page</Link> sets out.
+          </p>
         </Container>
       </Section>
 

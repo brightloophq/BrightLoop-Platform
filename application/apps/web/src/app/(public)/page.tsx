@@ -50,6 +50,7 @@ export const metadata: Metadata = {
   title: "Auxion — Brands. Systems. Growth.",
   description:
     "One connected loop — Brand, Build, Automate, Grow — for small businesses that want to look established and run like it.",
+  alternates: { canonical: "/" },
 };
 
 /** The disciplines in loop order, which is also their chapter order. */

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider, ThemeScript } from "@brightloop/ui";
+import { SITE_DESCRIPTION, siteOrigin } from "@/lib/site";
 import "@brightloop/ui/tokens.css";
 
 /**
@@ -16,11 +17,15 @@ const plexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600
 const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex-mono", display: "swap" });
 
 export const metadata: Metadata = {
+  // Without a metadataBase, every relative canonical and Open Graph URL below
+  // resolves against localhost at build time and is dropped in production, so
+  // pages that declared a canonical shipped without one.
+  metadataBase: new URL(siteOrigin()),
   title: {
     default: "Auxion",
     template: "%s · Auxion",
   },
-  description: "Brands. Systems. Growth.",
+  description: SITE_DESCRIPTION,
   // Site-wide noindex while content is placeholder; flip on at launch (see
   // docs/PRE-LAUNCH.md).
   robots: { index: false, follow: false },

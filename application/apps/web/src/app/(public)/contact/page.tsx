@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Alert, Card, Container, Eyebrow, Section } from "@brightloop/ui";
+import { CONTACT_EMAIL } from "@/lib/site";
 import { ContactForm } from "./ContactForm";
 import home from "../home.module.css";
 import styles from "./contact.module.css";
@@ -7,6 +8,7 @@ import styles from "./contact.module.css";
 export const metadata: Metadata = {
   title: "Contact",
   description: "Book a strategy call with Auxion, or send an enquiry.",
+  alternates: { canonical: "/contact" },
 };
 
 /**
@@ -27,7 +29,6 @@ export const metadata: Metadata = {
  * Still outstanding on that list: business address, social links, phone, and the
  * booking calendar.
  */
-const CONTACT_EMAIL = "info@auxion.xyz";
 
 export default function ContactPage() {
   return (

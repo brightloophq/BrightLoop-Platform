@@ -51,6 +51,7 @@ export const FOOTER_COLUMNS = [
       { label: "Packages", href: "/packages" },
       { label: "Work", href: "/portfolio" },
       { label: "Testimonials", href: "/testimonials" },
+      { label: "Writing", href: "/blog" },
       { label: "Resources", href: "/resources" },
       { label: "Careers", href: "/careers" },
       { label: "Contact", href: "/contact" },
