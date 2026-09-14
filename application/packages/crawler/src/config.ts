@@ -14,8 +14,15 @@ type Env = Record<string, string | undefined>;
 /** The stable block reason emitted when the crawler is disabled. */
 export const CRAWLER_DISABLED_REASON = "crawler_disabled" as const;
 
-/** Default bot user-agent. Overridable via env; never impersonates a browser. */
-export const DEFAULT_CRAWLER_USER_AGENT = "AuxionBot/1.0 (+https://auxion.co/bot)";
+/**
+ * Default bot user-agent. Overridable via env; never impersonates a browser.
+ *
+ * The URL has to RESOLVE. It pointed at auxion.co, which is not the company's
+ * domain — auxion.xyz is — so a site owner looking up who was crawling them
+ * found nothing, and a dead self-identifying URL is one of the cheapest signals
+ * a WAF uses to decide a bot is not worth letting through.
+ */
+export const DEFAULT_CRAWLER_USER_AGENT = "AuxionBot/1.0 (+https://auxion.xyz/bot)";
 
 export interface CrawlerConfig {
   /** Global kill switch — false unless AUXION_CRAWLER_ENABLED=true. */
