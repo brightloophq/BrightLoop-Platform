@@ -179,8 +179,25 @@ export async function deleteTestimonial(formData: FormData): Promise<ActionResul
   try {
     const { supabase } = await authorize("marketing.delete");
     const testimonialId = String(formData.get("id") ?? "").trim();
-    const { error } = await supabase.from("testimonials").delete().eq("id", testimonialId);
+    if (!testimonialId) return { ok: false, error: "No review was selected." };
+
+    // `.select()` makes the delete REPORT what it removed. Without it Supabase
+    // returns error: null for a delete that matched nothing — a stale id, a row
+    // already gone, or one hidden by RLS all look exactly like success, so the
+    // UI said nothing and the list re-rendered unchanged.
+    const { data, error } = await supabase
+      .from("testimonials")
+      .delete()
+      .eq("id", testimonialId)
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    if (!data || data.length === 0) {
+      return {
+        ok: false,
+        error: "That review was not deleted — it may already be gone. Reload the page and check.",
+      };
+    }
+
     revalidateReputation();
     return { ok: true };
   } catch (e) {
@@ -408,8 +425,23 @@ export async function deleteProject(formData: FormData): Promise<ActionResult> {
   try {
     const { supabase } = await authorize("marketing.delete");
     const projectId = String(formData.get("id") ?? "").trim();
-    const { error } = await supabase.from("portfolio_projects").delete().eq("id", projectId);
+    if (!projectId) return { ok: false, error: "No project was selected." };
+
+    // See deleteTestimonial: without .select() a no-op delete is indistinguishable
+    // from a successful one.
+    const { data, error } = await supabase
+      .from("portfolio_projects")
+      .delete()
+      .eq("id", projectId)
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    if (!data || data.length === 0) {
+      return {
+        ok: false,
+        error: "That project was not deleted — it may already be gone. Reload the page and check.",
+      };
+    }
+
     revalidateReputation();
     return { ok: true };
   } catch (e) {
