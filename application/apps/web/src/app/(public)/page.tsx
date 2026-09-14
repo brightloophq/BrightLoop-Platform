@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { DISCIPLINE_SLUGS, type Discipline } from "@brightloop/schema";
 import { PLACEHOLDER_DISCIPLINE_COPY } from "@brightloop/data";
 import {
-  Alert,
   Button,
   CaseStudyCard,
   Container,
@@ -238,16 +237,22 @@ export default async function HomePage() {
       {/* ---- The platform, showcased as a product ---- */}
       <PlatformShowcase />
 
-      {/* ---- Proof: featured case study ---- */}
-      <Section inset>
-        <Container width="wide">
-          <Reveal className={styles.head}>
-            <Eyebrow>Proof</Eyebrow>
-            <h2 className={styles.sectionTitle}>The loop, applied</h2>
-          </Reveal>
+      {/* ---- Proof: featured case study ----
+           Rendered ONLY when something is featured. This used to fall back to an
+           Alert reading "No published case studies yet", which was not just
+           noise but WRONG: this section needs a project marked Featured or Home,
+           so a published, live case study still produced a notice announcing
+           there were none. An empty heading over a status box is worse than no
+           section — the Work index carries the full list either way. */}
+      {marquee ? (
+        <Section inset>
+          <Container width="wide">
+            <Reveal className={styles.head}>
+              <Eyebrow>Proof</Eyebrow>
+              <h2 className={styles.sectionTitle}>The loop, applied</h2>
+            </Reveal>
 
-          <Reveal stagger={false}>
-            {marquee ? (
+            <Reveal stagger={false}>
               <CaseStudyCard
                 name={marquee.name}
                 summary={marquee.summary}
@@ -263,34 +268,36 @@ export default async function HomePage() {
                   { label: "Status", value: marquee.projectStatus },
                 ]}
               />
-            ) : (
-              <Alert tone="neutral" title="No published case studies yet">
-                Work appears here once a project is published in the Reputation CMS. Nothing is
-                shown until it is real and client-approved.
-              </Alert>
-            )}
-          </Reveal>
-        </Container>
-      </Section>
+            </Reveal>
+          </Container>
+        </Section>
+      ) : null}
 
-      {/* ---- Testimonials ---- */}
-      <Section>
-        <Container width="wide">
-          <Reveal className={`${styles.head} ${styles.headCentered}`}>
-            <Eyebrow>What clients say</Eyebrow>
-            <h2 className={styles.sectionTitle}>Rated by the businesses we build for</h2>
-            {aggregate.count > 0 ? (
-              <div className={styles.ratingRow}>
-                <Stars value={aggregate.overall} showValue />
-                <span>
-                  based on <CountUp to={aggregate.count} /> verified{" "}
-                  {aggregate.count === 1 ? "review" : "reviews"}
-                </span>
-              </div>
-            ) : null}
-          </Reveal>
+      {/* ---- Testimonials ----
+           Same rule, and the old fallback here was self-contradicting: the
+           heading could carry "5.0 based on 1 verified review" — the aggregate
+           counts every PUBLISHED review — directly above a box reading "No
+           published reviews yet", because the wall additionally requires the
+           Home flag. One of those two statements was always a lie. The rating
+           itself is not lost: the ledger above reports count and average.
+           The reviews wall has the full list. */}
+      {testimonials.length > 0 ? (
+        <Section>
+          <Container width="wide">
+            <Reveal className={`${styles.head} ${styles.headCentered}`}>
+              <Eyebrow>What clients say</Eyebrow>
+              <h2 className={styles.sectionTitle}>Rated by the businesses we build for</h2>
+              {aggregate.count > 0 ? (
+                <div className={styles.ratingRow}>
+                  <Stars value={aggregate.overall} showValue />
+                  <span>
+                    based on <CountUp to={aggregate.count} /> verified{" "}
+                    {aggregate.count === 1 ? "review" : "reviews"}
+                  </span>
+                </div>
+              ) : null}
+            </Reveal>
 
-          {testimonials.length > 0 ? (
             <Reveal className={styles.testimonialGrid}>
               {testimonials.map((t) => (
                 <Testimonial
@@ -304,13 +311,9 @@ export default async function HomePage() {
                 />
               ))}
             </Reveal>
-          ) : (
-            <Alert tone="neutral" title="No published reviews yet">
-              Reviews appear here once they are real, attributed and approved for publication.
-            </Alert>
-          )}
-        </Container>
-      </Section>
+          </Container>
+        </Section>
+      ) : null}
 
       {/* ---- Closing stage: where the ribbon finishes ---- */}
       <Section rhythm="hero" tone="dark" className={styles.close}>
