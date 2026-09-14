@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { describe, it, expect } from "vitest";
 import type { Actor } from "@brightloop/domain";
 import { transformationNavGroup, TRANSFORMATION_NAV } from "./transformation-nav";
@@ -15,6 +17,7 @@ describe("transformationNavGroup", () => {
     expect(labels).toEqual([
       "Console",
       "Business Scan",
+      "Prospect Scanner",
       "Activation",
       "Signals",
       "Insights",
@@ -61,8 +64,66 @@ describe("transformationNavGroup", () => {
     expect(transformationNavGroup(clientAdmin)).toBeNull();
   });
 
+  /**
+   * This test used to assert only that each href STARTED WITH "/admin/", which
+   * is not what its name claims and would pass for a route that does not exist.
+   * It now resolves each one on disk. The Prospect Scanner was built, complete
+   * with its own API routes and tests, and reachable from nowhere; a nav test
+   * that only pattern-matched strings could never notice.
+   */
   it("every nav item points at a real /admin route (no dead links)", () => {
-    const labels = transformationNavGroup(owner)?.items ?? [];
-    expect(labels.every((i) => i.href.startsWith("/admin/"))).toBe(true);
+    const appDir = fileURLToPath(new URL("../app", import.meta.url));
+    for (const item of transformationNavGroup(owner)?.items ?? []) {
+      expect(item.href.startsWith("/admin/")).toBe(true);
+      const dir = `${appDir}${item.href}`;
+      expect(
+        existsSync(`${dir}/page.tsx`) || existsSync(`${dir}/page.ts`),
+        `${item.label} → ${item.href} has no page file`,
+      ).toBe(true);
+    }
+  });
+
+  /* ---- the Prospect Scanner, which had no way in at all ------------------- */
+
+  it("exposes the Prospect Scanner, which was previously unreachable", () => {
+    const item = transformationNavGroup(owner)?.items.find(
+      (i) => i.href === "/admin/prospect-scanner",
+    );
+    expect(item?.label).toBe("Prospect Scanner");
+  });
+
+  it("gives the Prospect Scanner to every internal role that can run a scan", () => {
+    for (const actor of [owner, admin, teamMember]) {
+      const hrefs = (transformationNavGroup(actor)?.items ?? []).map((i) => i.href);
+      expect(hrefs).toContain("/admin/prospect-scanner");
+    }
+  });
+
+  it("keeps Business Scan alongside it — the scanner does not replace it", () => {
+    const hrefs = (transformationNavGroup(owner)?.items ?? []).map((i) => i.href);
+    expect(hrefs).toContain("/admin/business-scan");
+    expect(hrefs).toContain("/admin/prospect-scanner");
+  });
+
+  it("never shows the scanner to a client role", () => {
+    expect(transformationNavGroup(clientAdmin)).toBeNull();
+  });
+
+  /**
+   * The menu entry and the page must be gated on the SAME capability, or the
+   * nav offers a door the page refuses to open. Today every internal role holds
+   * `transformation.scan.write`, so no role exercises the difference — which is
+   * exactly why this is pinned rather than left to a role fixture that would
+   * quietly stop proving anything.
+   */
+  it("gates the scanner on the capability its page asserts", () => {
+    const entry = TRANSFORMATION_NAV.find((i) => i.href === "/admin/prospect-scanner");
+    expect(entry && "cap" in entry && entry.cap).toBe("transformation.scan.write");
+
+    const page = readFileSync(
+      fileURLToPath(new URL("../app/admin/prospect-scanner/page.tsx", import.meta.url)),
+      "utf8",
+    );
+    expect(page).toContain('SCANNER_CAP = "transformation.scan.write"');
   });
 });

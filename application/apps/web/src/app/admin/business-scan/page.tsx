@@ -50,6 +50,7 @@ export default async function BusinessScanPage({ searchParams }: { searchParams:
   const params = await searchParams;
   const clientId = first(params["client"]) ?? null;
   const scanError = first(params["scanError"]) ?? null;
+  const findingError = first(params["findingError"]) ?? null;
   const canWrite = canWriteScans(actor);
 
   return (
@@ -58,7 +59,7 @@ export default async function BusinessScanPage({ searchParams }: { searchParams:
         <div className={styles.canvas}>
           {clientId ? (
             <Suspense key={clientId} fallback={<ScanSkeleton />}>
-              <ScanWorkspace clientId={clientId} canWrite={canWrite} scanError={scanError} />
+              <ScanWorkspace clientId={clientId} canWrite={canWrite} scanError={scanError} findingError={findingError} />
             </Suspense>
           ) : (
             <Suspense fallback={<ScanSkeleton />}>
@@ -104,7 +105,7 @@ async function OrgPicker() {
   );
 }
 
-async function ScanWorkspace({ clientId, canWrite, scanError }: { clientId: string; canWrite: boolean; scanError?: string | null }) {
+async function ScanWorkspace({ clientId, canWrite, scanError, findingError }: { clientId: string; canWrite: boolean; scanError?: string | null; findingError?: string | null }) {
   const repo = await getCoreSurfaceRepository();
   let scan: Awaited<ReturnType<typeof repo.latestScan>>;
   let domains: Awaited<ReturnType<typeof repo.listDomains>>;
@@ -210,6 +211,13 @@ async function ScanWorkspace({ clientId, canWrite, scanError }: { clientId: stri
       <div>
         <SectionRule index="02" label="Diagnosis" meta={`${view.gapCount} gaps to close`} />
         <OperationalPanel className={styles.ledgerPanel}>
+          {/* A finding that failed to save used to vanish without a word — the
+              form action discarded its result. The reason arrives here now. */}
+          {findingError ? (
+            <Alert tone="danger" title="Couldn't add the finding">
+              {findingError}
+            </Alert>
+          ) : null}
           {rows.length === 0 ? (
             <EmptyWorkspace title="No findings yet" body="Add a diagnosis finding for a domain below." />
           ) : (
