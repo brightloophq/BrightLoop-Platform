@@ -12462,6 +12462,7 @@ export const Constants = {
       execution_record_status: ["queued", "running", "succeeded", "failed"],
       file_upload_status: ["queued", "uploading", "success", "failed"],
       finding_priority: ["low", "medium", "high"],
+      finding_source: ["manual", "import"],
       insight_status: ["generated", "endorsed", "dismissed"],
       invoice_status: [
         "draft",
