@@ -303,3 +303,39 @@ export async function listScanSubjects(): Promise<ScanSubjectOption[]> {
     ...(leads ?? []).map((r) => ({ id: r.id, name: r.company || r.name, kind: "lead" as const })),
   ];
 }
+
+export interface ImportableScan {
+  id: string;
+  label: string;
+  completedAt: string | null;
+}
+
+/**
+ * This client's scans that are far enough along to have an assessment.
+ *
+ * The Business Scan offers these as a baseline source. A scan still in flight
+ * has no report to read, so listing it would only produce a refusal after the
+ * click — the filter is on `completed` for that reason, not for tidiness.
+ */
+export async function listImportableScans(clientId: string): Promise<ImportableScan[]> {
+  const ctx = await buildAppContext();
+  if (ctx === null) return [];
+
+  try {
+    const scans = await listScans(ctx, { clientId, limit: 50 });
+    return scans
+      .filter((scan) => scan.lifecycle === "completed")
+      .map((scan) => {
+        const identity = readIdentity(scan.metadata);
+        return {
+          id: scan.id,
+          label: identity.businessName ?? identity.websiteUrl ?? scan.scanId,
+          completedAt: scan.completedAt,
+        };
+      });
+  } catch {
+    // A read failure here must not take the whole Business Scan down with it —
+    // importing is an offer, not the page.
+    return [];
+  }
+}

@@ -9,8 +9,11 @@ import { redirect } from "next/navigation";
 import { businessScanCreateInputSchema, scanFindingCreateInputSchema } from "@brightloop/schema";
 import { assertCapability, AuthorizationError } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
+import { getScanAssessment, listScans } from "@brightloop/application";
 import { readBaselineScores } from "@/lib/baseline-scores";
-import { getCoreSurfaceService } from "@/lib/repositories";
+import { baselineScoresFromSummaries, findingsFromLedger } from "@/lib/diagnosis-import";
+import { buildAppContext } from "@/lib/runtime-api";
+import { getCoreSurfaceRepository, getCoreSurfaceService } from "@/lib/repositories";
 
 const SCAN_WRITE = "transformation.scan.write";
 
@@ -160,4 +163,118 @@ export async function setBaselinesForm(formData: FormData): Promise<void> {
   const clientId = String(formData.get("clientId") ?? "");
   const base = `/admin/business-scan?client=${encodeURIComponent(clientId)}`;
   redirect(result.ok ? base : `${base}&baselineError=${encodeURIComponent(result.error ?? "Couldn't save the baseline scores.")}`);
+}
+
+/* ---- Import a diagnosis from a completed prospect scan ---------------------
+ * The Business Scan asks you to score seven domains by hand. The Prospect
+ * Scanner already computes a Business Health Index from a crawl of the real
+ * website. This carries one into the other.
+ *
+ * It does NOT run a scan. Stage execution stays in the Prospect Scanner, one
+ * stage per click behind its kill switches, because every stage can spend
+ * provider budget — putting a whole pipeline behind a button labelled "Start
+ * diagnosis" would spend money on a mis-click. This reads a scan that has
+ * ALREADY been run and completed, and costs nothing.
+ * ------------------------------------------------------------------------- */
+
+/** The pair a reader would call "the same finding". */
+function findingKey(domainKey: string, finding: string): string {
+  return JSON.stringify([domainKey, finding]);
+}
+
+/** Copy a completed scan's assessment into this client's baseline + findings. */
+export async function importDiagnosisAction(formData: FormData): Promise<ActionResult> {
+  try {
+    const actor = await getActor();
+    if (!actor) return { ok: false, error: "You are not signed in." };
+    assertCapability(actor, SCAN_WRITE);
+
+    const clientId = String(formData.get("clientId") ?? "").trim();
+    const runId = String(formData.get("runId") ?? "").trim();
+    if (!clientId || !runId) return { ok: false, error: "Missing the organization or the scan." };
+
+    const ctx = await buildAppContext();
+    if (ctx === null) return { ok: false, error: "You are not signed in." };
+
+    // The run must belong to THIS client. `getScanAssessment` authorizes the
+    // run on its own terms, which is not the same question: without this check
+    // a run id put into the form could pull another client's diagnosis onto
+    // this one's System Map.
+    const runs = await listScans(ctx, { clientId, limit: 100 });
+    const run = runs.find((r) => r.id === runId);
+    if (!run) return { ok: false, error: "That scan does not belong to this organization." };
+
+    const assessment = await getScanAssessment(ctx, runId);
+    if (!assessment.present || assessment.report === null) {
+      return {
+        ok: false,
+        error: "That scan has not produced an assessment yet. Advance its stages in the Prospect Scanner first.",
+      };
+    }
+
+    const content = assessment.report.content as {
+      domainSummaries?: unknown;
+      findingsLedger?: unknown;
+    };
+    const summaries = Array.isArray(content.domainSummaries) ? content.domainSummaries : [];
+    const ledger = Array.isArray(content.findingsLedger) ? content.findingsLedger : [];
+
+    const scores = baselineScoresFromSummaries(summaries as never);
+    const findings = findingsFromLedger(ledger as never);
+
+    if (scores.length === 0 && findings.length === 0) {
+      return {
+        ok: false,
+        error: "That assessment carried nothing this map can use — no scored dimension mapped to a domain.",
+      };
+    }
+
+    const svc = await getCoreSurfaceService();
+    // Idempotent: reuses the existing scan and seeds any missing domains.
+    const scan = await svc.startDiagnosis(actor, { clientId });
+
+    for (const { key, score } of scores) {
+      await svc.upsertDomain(actor, { clientId, key, baselineScore: score });
+    }
+
+    // Importing the same scan twice must not double the ledger.
+    const repo = await getCoreSurfaceRepository();
+    const existing = new Set(
+      (await repo.listFindings(scan.id)).map((f) => findingKey(f.domainKey, f.finding)),
+    );
+
+    let added = 0;
+    for (const finding of findings) {
+      if (existing.has(findingKey(finding.domainKey, finding.finding))) continue;
+      await svc.addFinding(actor, {
+        scanId: scan.id,
+        clientId,
+        domainKey: finding.domainKey,
+        finding: finding.finding,
+        baseline: finding.baseline ?? undefined,
+        priority: finding.priority,
+      });
+      added += 1;
+    }
+
+    revalidatePath("/admin/business-scan");
+    revalidatePath("/admin/activation");
+    revalidatePath("/admin/dashboard");
+    return { ok: true, id: `${scores.length} domains scored, ${added} findings added` };
+  } catch (e) {
+    if (e instanceof AuthorizationError) return { ok: false, error: "You don't have permission to import a diagnosis." };
+    return { ok: false, error: e instanceof Error ? e.message : "Couldn't import the diagnosis." };
+  }
+}
+
+/** Form wrapper — reports what landed, or why nothing did. */
+export async function importDiagnosisForm(formData: FormData): Promise<void> {
+  const result = await importDiagnosisAction(formData);
+  const clientId = String(formData.get("clientId") ?? "");
+  const base = `/admin/business-scan?client=${encodeURIComponent(clientId)}`;
+  redirect(
+    result.ok
+      ? `${base}&imported=${encodeURIComponent(result.id ?? "")}`
+      : `${base}&importError=${encodeURIComponent(result.error ?? "Couldn't import the diagnosis.")}`,
+  );
 }
