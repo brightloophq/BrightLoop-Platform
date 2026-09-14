@@ -57,6 +57,81 @@ export function CommercialProposalPanel({ proposal }: { proposal: CommercialProp
         ) : null}
       </div>
 
+      {/* The draft itself. The panel used to stop at the executive summary, so a
+          proposal reporting "6 items" showed none of them and there was nothing
+          to review. Everything below is bounded plain text — this content is
+          machine-assembled and is never rendered as markup. */}
+      {proposal.observedSituation ? (
+        <div className={styles.proposalBlock}>
+          <h3 className={styles.proposalHeading}>Observed situation</h3>
+          <p className={styles.proposalProse}>{proposal.observedSituation}</p>
+        </div>
+      ) : null}
+
+      {proposal.keyIssues.length > 0 ? (
+        <div className={styles.proposalBlock}>
+          <h3 className={styles.proposalHeading}>Key issues</h3>
+          <ul className={styles.proposalList}>
+            {proposal.keyIssues.map((point) => (
+              <li key={point.title} className={styles.proposalPoint}>
+                <span className={styles.proposalPointTitle}>{point.title}</span>
+                {point.detail ? <span className={styles.proposalProse}>{point.detail}</span> : null}
+                <span className={styles.proposalEvidence}>
+                  {point.evidenceCount} evidence item{point.evidenceCount === 1 ? "" : "s"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {proposal.opportunities.length > 0 ? (
+        <div className={styles.proposalBlock}>
+          <h3 className={styles.proposalHeading}>Opportunities</h3>
+          <ul className={styles.proposalList}>
+            {proposal.opportunities.map((point) => (
+              <li key={point.title} className={styles.proposalPoint}>
+                <span className={styles.proposalPointTitle}>{point.title}</span>
+                {point.detail ? <span className={styles.proposalProse}>{point.detail}</span> : null}
+                <span className={styles.proposalEvidence}>
+                  {point.evidenceCount} evidence item{point.evidenceCount === 1 ? "" : "s"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {proposal.recommendedWork.length > 0 ? (
+        <div className={styles.proposalBlock}>
+          <h3 className={styles.proposalHeading}>Recommended work</h3>
+          <ul className={styles.proposalList}>
+            {proposal.recommendedWork.map((item) => (
+              <li key={item.title} className={styles.proposalPoint}>
+                <span className={styles.proposalPointTitle}>{item.title}</span>
+                {item.solution ? <span className={styles.proposalProse}>{item.solution}</span> : null}
+                <span className={styles.proposalMeta}>
+                  {[
+                    item.priority ? `Priority ${item.priority}` : null,
+                    item.effort ? `Effort ${item.effort}` : null,
+                    `${item.evidenceCount} evidence item${item.evidenceCount === 1 ? "" : "s"}`,
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {proposal.proposedNextStep ? (
+        <div className={styles.proposalBlock}>
+          <h3 className={styles.proposalHeading}>Proposed next step</h3>
+          <p className={styles.proposalProse}>{proposal.proposedNextStep}</p>
+        </div>
+      ) : null}
+
       <div className={styles.railFoot}>
         <span>Draft assembled from verified intelligence · no invented pricing</span>
         <span>Approve in the Prospect package · nothing is sent</span>

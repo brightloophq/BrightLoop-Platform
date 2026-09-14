@@ -30,7 +30,14 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
           body: JSON.stringify({ runId, action, note: note.trim() || undefined }),
         });
         if (!res.ok) {
-          setError(res.status === 403 ? "You do not have permission to review this package." : "The review action could not be recorded.");
+          // Same rule for the review actions: prefer what the server said.
+          const failure = await res.json().catch(() => null) as { error?: string } | null;
+          setError(
+            failure?.error ??
+              (res.status === 403
+                ? "You do not have permission to review this package."
+                : "The review action could not be recorded."),
+          );
           setBusy(null);
           return;
         }
@@ -54,9 +61,18 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ runId }),
       });
-      const body = await res.json() as { quoteId?: string; itemCount?: number; outcome?: string };
+      // The route distinguishes several refusals — the decision is not approved,
+      // the approval pins no proposal version, the database refused — and every
+      // one arrived here in `error` and was replaced with one fixed sentence,
+      // which is why a blocked promotion gave the operator nothing to act on.
+      const body = await res.json() as {
+        quoteId?: string;
+        itemCount?: number;
+        outcome?: string;
+        error?: string;
+      };
       if (!res.ok || body.quoteId === undefined) {
-        setError("The approved package could not be promoted.");
+        setError(body.error ?? "The approved package could not be promoted.");
         return;
       }
       setPromotion({ quoteId: body.quoteId, itemCount: body.itemCount ?? 0, outcome: body.outcome ?? "created" });
