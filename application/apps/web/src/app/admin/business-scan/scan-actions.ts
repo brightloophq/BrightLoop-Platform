@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { businessScanCreateInputSchema, scanFindingCreateInputSchema } from "@brightloop/schema";
 import { assertCapability, AuthorizationError } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
+import { readBaselineScores } from "@/lib/baseline-scores";
 import { getCoreSurfaceService } from "@/lib/repositories";
 
 const SCAN_WRITE = "transformation.scan.write";
@@ -110,4 +111,53 @@ export async function addFindingForm(formData: FormData): Promise<void> {
   const clientId = String(formData.get("clientId") ?? "");
   const base = `/admin/business-scan?client=${encodeURIComponent(clientId)}`;
   redirect(result.ok ? base : `${base}&findingError=${encodeURIComponent(result.error ?? "Couldn't add the finding.")}`);
+}
+
+/* ---- Baseline scoring ------------------------------------------------------
+ * Diagnosis produces a NUMBER, and until now nothing in the product could set
+ * one. `upsertDomain` has always accepted `baselineScore`, the System Map and
+ * the Index gauge have always read it, and no screen ever wrote it — so the
+ * seven nodes stayed unlit and the Baseline Index stayed 0 no matter what you
+ * did. "Start diagnosis" appeared to do nothing because the instrument it feeds
+ * had no input.
+ * ------------------------------------------------------------------------- */
+
+/** Score the seven domains 0–100. A blank field leaves that domain untouched. */
+export async function setBaselinesAction(formData: FormData): Promise<ActionResult> {
+  try {
+    const actor = await getActor();
+    if (!actor) return { ok: false, error: "You are not signed in." };
+    assertCapability(actor, SCAN_WRITE);
+
+    const clientId = String(formData.get("clientId") ?? "").trim();
+    if (!clientId) return { ok: false, error: "Missing the organization." };
+
+    // Blank means "not scored yet", never zero — see baseline-scores.ts.
+    const parsed = readBaselineScores(formData);
+    if ("error" in parsed) return { ok: false, error: parsed.error };
+    if (parsed.scores.length === 0) {
+      return { ok: false, error: "Nothing to save — enter a score for at least one domain." };
+    }
+
+    const svc = await getCoreSurfaceService();
+    for (const { key, score } of parsed.scores) {
+      await svc.upsertDomain(actor, { clientId, key, baselineScore: score });
+    }
+
+    revalidatePath("/admin/business-scan");
+    revalidatePath("/admin/activation");
+    revalidatePath("/admin/dashboard");
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof AuthorizationError) return { ok: false, error: "You don't have permission to score domains." };
+    return { ok: false, error: e instanceof Error ? e.message : "Couldn't save the baseline scores." };
+  }
+}
+
+/** Form wrapper — carries the reason back, never a silent no-op. */
+export async function setBaselinesForm(formData: FormData): Promise<void> {
+  const result = await setBaselinesAction(formData);
+  const clientId = String(formData.get("clientId") ?? "");
+  const base = `/admin/business-scan?client=${encodeURIComponent(clientId)}`;
+  redirect(result.ok ? base : `${base}&baselineError=${encodeURIComponent(result.error ?? "Couldn't save the baseline scores.")}`);
 }

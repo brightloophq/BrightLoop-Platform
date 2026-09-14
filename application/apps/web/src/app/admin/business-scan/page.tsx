@@ -5,10 +5,11 @@ import { AuthorizationError, assertCoreSurfacesRead, canWriteScans, buildBusines
 import { DOMAIN_KEYS, DOMAIN_META } from "@brightloop/schema";
 import { Alert, Badge, Button, EmptyWorkspace, IndexGauge, OperationalPanel, OperationalTable, SectionHeader, SectionRule, SkeletonBlock, SystemMap, type OperationalColumn } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
+import { scoreField } from "@/lib/baseline-scores";
 import { requireSurface } from "@/lib/auth";
 import { getCoreSurfaceRepository } from "@/lib/repositories";
 import { createClient } from "@/lib/supabase/server";
-import { startScanForm, addFindingForm } from "./scan-actions";
+import { startScanForm, addFindingForm, setBaselinesForm } from "./scan-actions";
 import styles from "./scan.module.css";
 
 export const dynamic = "force-dynamic";
@@ -51,6 +52,7 @@ export default async function BusinessScanPage({ searchParams }: { searchParams:
   const clientId = first(params["client"]) ?? null;
   const scanError = first(params["scanError"]) ?? null;
   const findingError = first(params["findingError"]) ?? null;
+  const baselineError = first(params["baselineError"]) ?? null;
   const canWrite = canWriteScans(actor);
 
   return (
@@ -59,7 +61,7 @@ export default async function BusinessScanPage({ searchParams }: { searchParams:
         <div className={styles.canvas}>
           {clientId ? (
             <Suspense key={clientId} fallback={<ScanSkeleton />}>
-              <ScanWorkspace clientId={clientId} canWrite={canWrite} scanError={scanError} findingError={findingError} />
+              <ScanWorkspace clientId={clientId} canWrite={canWrite} scanError={scanError} findingError={findingError} baselineError={baselineError} />
             </Suspense>
           ) : (
             <Suspense fallback={<ScanSkeleton />}>
@@ -105,7 +107,7 @@ async function OrgPicker() {
   );
 }
 
-async function ScanWorkspace({ clientId, canWrite, scanError, findingError }: { clientId: string; canWrite: boolean; scanError?: string | null; findingError?: string | null }) {
+async function ScanWorkspace({ clientId, canWrite, scanError, findingError, baselineError }: { clientId: string; canWrite: boolean; scanError?: string | null; findingError?: string | null; baselineError?: string | null }) {
   const repo = await getCoreSurfaceRepository();
   let scan: Awaited<ReturnType<typeof repo.latestScan>>;
   let domains: Awaited<ReturnType<typeof repo.listDomains>>;
@@ -129,7 +131,7 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError }: { 
         <Hero
           title="Not yet diagnosed"
           kicker={`${name} · Diagnose`}
-          hint="Run a diagnosis to baseline the seven domains against category benchmarks and reveal the gaps to close."
+          hint="Open the diagnosis to seed the seven domains, then score each one and record what you found."
         />
         <OperationalPanel>
           {scanError ? (
@@ -139,7 +141,7 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError }: { 
           ) : null}
           <EmptyWorkspace
             title="No scan yet"
-            body="Run a diagnosis to baseline the seven domains and reveal the gaps to close."
+            body="This opens the worksheet and seeds the seven domains unlit. You then score each domain and record findings — nothing is measured automatically."
             action={
               canWrite ? (
                 <form action={startScanForm}>
@@ -162,6 +164,7 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError }: { 
   const rows: FindingRow[] = view.findings;
   const idx = view.systemMap.index;
   const readCount = view.systemMap.nodes.length;
+  const scoredCount = domains.filter((d) => d.baselineScore !== null).length;
 
   const columns: OperationalColumn<FindingRow>[] = [
     {
@@ -208,8 +211,22 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError }: { 
         </div>
       </OperationalPanel>
 
+      {canWrite ? (
+        <div>
+          <SectionRule index="02" label="Baseline scores" meta={`${scoredCount} / 7 scored`} />
+          <OperationalPanel>
+            {baselineError ? (
+              <Alert tone="danger" title="Couldn't save the baseline scores">
+                {baselineError}
+              </Alert>
+            ) : null}
+            <BaselineScores clientId={clientId} domains={domains} />
+          </OperationalPanel>
+        </div>
+      ) : null}
+
       <div>
-        <SectionRule index="02" label="Diagnosis" meta={`${view.gapCount} gaps to close`} />
+        <SectionRule index={canWrite ? "03" : "02"} label="Diagnosis" meta={`${view.gapCount} gaps to close`} />
         <OperationalPanel className={styles.ledgerPanel}>
           {/* A finding that failed to save used to vanish without a word — the
               form action discarded its result. The reason arrives here now. */}
@@ -227,6 +244,63 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError }: { 
         </OperationalPanel>
       </div>
     </>
+  );
+}
+
+/**
+ * Score the seven domains — the control that did not exist.
+ *
+ * `upsertDomain` has always accepted `baselineScore`, and the System Map and
+ * the Index gauge have always read it. Nothing ever wrote it, so the nodes
+ * stayed unlit and the Baseline Index stayed 0 however many times you pressed
+ * Start diagnosis. This is the missing input to that instrument.
+ *
+ * One form for all seven, so scoring a client is one submit rather than seven.
+ * A blank field means "leave this domain as it is" — never zero, which would
+ * silently score a domain you simply had not got to yet.
+ */
+function BaselineScores({
+  clientId,
+  domains,
+}: {
+  clientId: string;
+  domains: { key: string; baselineScore: number | null }[];
+}) {
+  const scoreFor = (key: string) => domains.find((d) => d.key === key)?.baselineScore ?? undefined;
+
+  return (
+    <form action={setBaselinesForm} className={styles.scoreForm}>
+      <input type="hidden" name="clientId" value={clientId} />
+      <p className={styles.scoreHint}>
+        Score each domain 0–100 against where it should be. Leave a field blank to skip it — the
+        System Map lights and the Baseline Index moves as domains are scored.
+      </p>
+      <div className={styles.scoreGrid}>
+        {DOMAIN_KEYS.map((k) => (
+          <label key={k} className={styles.scoreField}>
+            <span className={styles.scoreLabel}>
+              <span className={styles.domainCode}>{DOMAIN_META[k].code}</span>
+              <span className={styles.domainName}>{DOMAIN_META[k].label}</span>
+            </span>
+            <input
+              type="number"
+              inputMode="numeric"
+              name={scoreField(k)}
+              min={0}
+              max={100}
+              step={1}
+              defaultValue={scoreFor(k)}
+              placeholder="—"
+              className={styles.scoreInput}
+              aria-label={`${DOMAIN_META[k].label} baseline score`}
+            />
+          </label>
+        ))}
+      </div>
+      <Button type="submit" variant="secondary">
+        Save baseline scores
+      </Button>
+    </form>
   );
 }
 
