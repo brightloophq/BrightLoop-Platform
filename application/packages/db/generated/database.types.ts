@@ -10187,6 +10187,8 @@ export type Database = {
           id: string
           priority: Database["public"]["Enums"]["finding_priority"]
           scan_id: string
+          source: Database["public"]["Enums"]["finding_source"]
+          source_run_id: string | null
         }
         Insert: {
           baseline?: string | null
@@ -10197,6 +10199,8 @@ export type Database = {
           id: string
           priority?: Database["public"]["Enums"]["finding_priority"]
           scan_id: string
+          source?: Database["public"]["Enums"]["finding_source"]
+          source_run_id?: string | null
         }
         Update: {
           baseline?: string | null
@@ -10207,6 +10211,8 @@ export type Database = {
           id?: string
           priority?: Database["public"]["Enums"]["finding_priority"]
           scan_id?: string
+          source?: Database["public"]["Enums"]["finding_source"]
+          source_run_id?: string | null
         }
         Relationships: [
           {
@@ -12115,6 +12121,7 @@ export type Database = {
       execution_record_status: "queued" | "running" | "succeeded" | "failed"
       file_upload_status: "queued" | "uploading" | "success" | "failed"
       finding_priority: "low" | "medium" | "high"
+      finding_source: "manual" | "import"
       insight_status: "generated" | "endorsed" | "dismissed"
       invoice_status:
         | "draft"
@@ -12455,6 +12462,7 @@ export const Constants = {
       execution_record_status: ["queued", "running", "succeeded", "failed"],
       file_upload_status: ["queued", "uploading", "success", "failed"],
       finding_priority: ["low", "medium", "high"],
+      finding_source: ["manual", "import"],
       insight_status: ["generated", "endorsed", "dismissed"],
       invoice_status: [
         "draft",

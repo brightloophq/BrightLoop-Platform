@@ -16,6 +16,7 @@ import {
   findingsFromRisks,
   findingsFromWeaknesses,
   importedDiagnosis,
+  reconcileLedger,
   priorityFromObservedScore,
   priorityFromSeverity,
   unreachableDomainLabels,
@@ -360,5 +361,84 @@ describe("importedDiagnosis", () => {
       findings: [],
       summariesSeen: 0,
     });
+  });
+});
+
+describe("reconcileLedger", () => {
+  const imported = (finding: string, domainKey = "web") =>
+    ({ domainKey, finding, baseline: null, priority: "medium" }) as never;
+  const row = (id: string, finding: string, source: "manual" | "import", domainKey = "web") =>
+    ({ id, domainKey, finding, source }) as never;
+
+  it("adds what the new scan reports and the ledger does not have", () => {
+    const plan = reconcileLedger([], [imported("Thin content base")]);
+    expect(plan.add).toHaveLength(1);
+    expect(plan.remove).toEqual([]);
+  });
+
+  it("RETIRES an imported row the newer scan no longer reports", () => {
+    // The defect this exists for: a Sales score of 81 sitting above
+    // "Minimal social footprint · Observed 0/100" from an older scan.
+    const plan = reconcileLedger(
+      [row("f1", "Minimal social footprint", "import", "sales")],
+      [imported("Weak lead capture", "sales")],
+    );
+    expect(plan.remove).toEqual(["f1"]);
+    expect(plan.add).toHaveLength(1);
+    expect(plan.keep).toBe(0);
+  });
+
+  it("NEVER retires a finding a person typed", () => {
+    // No scan is evidence a hand-written finding stopped being true — no scan
+    // is what put it there.
+    const plan = reconcileLedger([row("f1", "Owner answers the phone at night", "manual")], []);
+    expect(plan.remove).toEqual([]);
+    expect(plan.keep).toBe(1);
+  });
+
+  it("keeps an imported row the newer scan still reports", () => {
+    const plan = reconcileLedger(
+      [row("f1", "Thin content base", "import")],
+      [imported("Thin content base")],
+    );
+    expect(plan).toEqual({ add: [], remove: [], keep: 1 });
+  });
+
+  it("makes re-importing the same scan a no-op", () => {
+    const existing = [row("f1", "Thin content base", "import"), row("f2", "Weak lead capture", "import", "sales")];
+    const incoming = [imported("Thin content base"), imported("Weak lead capture", "sales")];
+    expect(reconcileLedger(existing, incoming)).toEqual({ add: [], remove: [], keep: 2 });
+  });
+
+  it("matches on the pair, so the same words under another domain are a different finding", () => {
+    const plan = reconcileLedger(
+      [row("f1", "Thin content base", "import", "sales")],
+      [imported("Thin content base", "web")],
+    );
+    expect(plan.remove).toEqual(["f1"]);
+    expect(plan.add).toHaveLength(1);
+  });
+
+  it("ignores case and surrounding whitespace rather than churning the row", () => {
+    const plan = reconcileLedger(
+      [row("f1", "Thin Content Base", "import")],
+      [imported("  thin content base  ")],
+    );
+    expect(plan).toEqual({ add: [], remove: [], keep: 1 });
+  });
+
+  it("does not re-add a finding a person already wrote by hand", () => {
+    // Adding it again would file the same sentence twice under one domain.
+    const plan = reconcileLedger([row("f1", "Thin content base", "manual")], [imported("Thin content base")]);
+    expect(plan.add).toEqual([]);
+    expect(plan.remove).toEqual([]);
+    expect(plan.keep).toBe(1);
+  });
+
+  it("retires every stale import at once", () => {
+    const stale = ["a", "b", "c"].map((id, i) => row(id, `Old finding ${i}`, "import"));
+    const plan = reconcileLedger([...stale, row("keep", "Typed", "manual")], []);
+    expect(plan.remove).toEqual(["a", "b", "c"]);
+    expect(plan.keep).toBe(1);
   });
 });

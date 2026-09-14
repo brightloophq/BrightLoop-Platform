@@ -11,7 +11,7 @@ import { assertCapability, AuthorizationError } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
 import { getScanAssessment, listScans } from "@brightloop/application";
 import { readBaselineScores } from "@/lib/baseline-scores";
-import { importedDiagnosis } from "@/lib/diagnosis-import";
+import { importedDiagnosis, reconcileLedger } from "@/lib/diagnosis-import";
 import { buildAppContext } from "@/lib/runtime-api";
 import { getCoreSurfaceRepository, getCoreSurfaceService } from "@/lib/repositories";
 
@@ -116,6 +116,49 @@ export async function addFindingForm(formData: FormData): Promise<void> {
   redirect(result.ok ? base : `${base}&findingError=${encodeURIComponent(result.error ?? "Couldn't add the finding.")}`);
 }
 
+/**
+ * Remove one diagnosis finding.
+ *
+ * The ledger had no way to delete a row at all. That mattered most for rows the
+ * old append-only import left behind: they predate the manual/import
+ * distinction, so they are recorded as `manual` and a re-import will not retire
+ * them — correctly, since nothing can now prove they were not typed by a person.
+ * This is how they go.
+ */
+export async function removeFindingAction(formData: FormData): Promise<ActionResult> {
+  try {
+    const actor = await getActor();
+    if (!actor) return { ok: false, error: "You are not signed in." };
+    assertCapability(actor, SCAN_WRITE);
+
+    const findingId = String(formData.get("findingId") ?? "").trim();
+    if (!findingId) return { ok: false, error: "Missing the finding." };
+
+    const svc = await getCoreSurfaceService();
+    // `false` means nothing was deleted — a row already gone, or one RLS
+    // refused. Reported, never rendered as a success.
+    if (!(await svc.removeFinding(actor, findingId))) {
+      return { ok: false, error: "That finding was already gone, or you don't have access to it." };
+    }
+
+    revalidatePath("/admin/business-scan");
+    revalidatePath("/admin/activation");
+    revalidatePath("/admin/dashboard");
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof AuthorizationError) return { ok: false, error: "You don't have permission to remove findings." };
+    return { ok: false, error: e instanceof Error ? e.message : "Couldn't remove the finding." };
+  }
+}
+
+/** Form wrapper — carries the reason back, never a silent no-op. */
+export async function removeFindingForm(formData: FormData): Promise<void> {
+  const result = await removeFindingAction(formData);
+  const clientId = String(formData.get("clientId") ?? "");
+  const base = `/admin/business-scan?client=${encodeURIComponent(clientId)}`;
+  redirect(result.ok ? base : `${base}&findingError=${encodeURIComponent(result.error ?? "Couldn't remove the finding.")}`);
+}
+
 /* ---- Baseline scoring ------------------------------------------------------
  * Diagnosis produces a NUMBER, and until now nothing in the product could set
  * one. `upsertDomain` has always accepted `baselineScore`, the System Map and
@@ -177,11 +220,6 @@ export async function setBaselinesForm(formData: FormData): Promise<void> {
  * ALREADY been run and completed, and costs nothing.
  * ------------------------------------------------------------------------- */
 
-/** The pair a reader would call "the same finding". */
-function findingKey(domainKey: string, finding: string): string {
-  return JSON.stringify([domainKey, finding]);
-}
-
 /** Copy a completed scan's assessment into this client's baseline + findings. */
 export async function importDiagnosisAction(formData: FormData): Promise<ActionResult> {
   try {
@@ -239,15 +277,17 @@ export async function importDiagnosisAction(formData: FormData): Promise<ActionR
       await svc.upsertDomain(actor, { clientId, key, baselineScore: score });
     }
 
-    // Importing the same scan twice must not double the ledger.
+    // The ledger is REPLACED, not appended to: a newer scan retires the rows the
+    // previous import wrote and no longer reports. Findings typed by a person
+    // are never touched — see reconcileLedger.
     const repo = await getCoreSurfaceRepository();
-    const existing = new Set(
-      (await repo.listFindings(scan.id)).map((f) => findingKey(f.domainKey, f.finding)),
-    );
+    const plan = reconcileLedger(await repo.listFindings(scan.id), findings);
 
+    // Add BEFORE retiring. If this run is interrupted the ledger briefly holds
+    // both, which is visibly wrong and self-corrects on the next import; the
+    // other order would leave it empty with nothing to say why.
     let added = 0;
-    for (const finding of findings) {
-      if (existing.has(findingKey(finding.domainKey, finding.finding))) continue;
+    for (const finding of plan.add) {
       await svc.addFinding(actor, {
         scanId: scan.id,
         clientId,
@@ -255,14 +295,27 @@ export async function importDiagnosisAction(formData: FormData): Promise<ActionR
         finding: finding.finding,
         baseline: finding.baseline ?? undefined,
         priority: finding.priority,
+        source: "import",
+        sourceRunId: runId,
       });
       added += 1;
+    }
+
+    let retired = 0;
+    for (const id of plan.remove) {
+      if (await svc.removeFinding(actor, id)) retired += 1;
     }
 
     revalidatePath("/admin/business-scan");
     revalidatePath("/admin/activation");
     revalidatePath("/admin/dashboard");
-    return { ok: true, id: `${scores.length} domains scored, ${added} findings added` };
+    const summary = [
+      `${scores.length} domains scored`,
+      `${added} findings added`,
+      retired > 0 ? `${retired} retired` : null,
+      plan.keep > 0 ? `${plan.keep} kept` : null,
+    ].filter(Boolean).join(", ");
+    return { ok: true, id: summary };
   } catch (e) {
     if (e instanceof AuthorizationError) return { ok: false, error: "You don't have permission to import a diagnosis." };
     return { ok: false, error: e instanceof Error ? e.message : "Couldn't import the diagnosis." };

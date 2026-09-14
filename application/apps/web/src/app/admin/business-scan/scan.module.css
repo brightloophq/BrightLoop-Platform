@@ -216,3 +216,20 @@
     gap: var(--space-4);
   }
 }
+
+/* A finding, with where it came from under it. The provenance is small on
+   purpose: it matters when you are about to re-import, and not before. */
+.findingCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.findingSource {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
