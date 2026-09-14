@@ -69,14 +69,115 @@ const SAFE_RESPONSE_HEADERS = new Set([
   "referrer-policy",
 ]);
 
-function classifyError(cause: unknown): HttpTransportError {
-  const message = cause instanceof Error ? cause.message : String(cause);
-  const lower = message.toLowerCase();
-  if (cause instanceof Error && cause.name === "AbortError") return { kind: "timeout", message: "request timed out" };
-  if (lower.includes("enotfound") || lower.includes("eai_again") || lower.includes("getaddrinfo")) return { kind: "dns", message: "dns resolution failed" };
-  if (lower.includes("cert") || lower.includes("tls") || lower.includes("ssl")) return { kind: "tls", message: "tls handshake failed" };
-  if (lower.includes("econnrefused") || lower.includes("econnreset") || lower.includes("timeout")) return { kind: "connect", message: "connection failed" };
-  return { kind: "unknown", message: "fetch failed" };
+/**
+ * Why a fetch failed, read from the error Node actually throws.
+ *
+ * This used to inspect only the top-level `message`, which for `fetch` is the
+ * fixed string "fetch failed" — undici puts the real failure on `cause`. So
+ * none of the dns / tls / connect branches could ever match in production and
+ * EVERY transport failure classified as `unknown`, which is what the crawl
+ * surfaced: nine pages, nine "unknown", no reason to act on.
+ *
+ * The chain is walked because the real error can be nested more than one level,
+ * and an `AggregateError` is unwrapped because a host with several A records
+ * fails once PER ADDRESS — the aggregate's own message says nothing.
+ *
+ * `code` is consulted before `message`: `ENOTFOUND`/`UND_ERR_CONNECT_TIMEOUT`
+ * are stable identifiers, while messages are prose and change between Node
+ * releases.
+ */
+function collectCauses(cause: unknown, depth = 0): { code: string; message: string }[] {
+  // Depth-capped: `cause` chains can be circular, and a runaway walk in the
+  // crawler's hot path is a worse failure than an unclassified error.
+  if (depth > 8 || cause === null || cause === undefined) return [];
+
+  if (cause instanceof AggregateError) {
+    const out = [{ code: readCode(cause), message: cause.message }];
+    for (const inner of cause.errors ?? []) out.push(...collectCauses(inner, depth + 1));
+    return out;
+  }
+
+  if (cause instanceof Error) {
+    return [
+      { code: readCode(cause), message: cause.message },
+      ...collectCauses((cause as { cause?: unknown }).cause, depth + 1),
+    ];
+  }
+
+  return [{ code: "", message: String(cause) }];
+}
+
+function readCode(error: unknown): string {
+  const code = (error as { code?: unknown }).code;
+  return typeof code === "string" ? code : "";
+}
+
+/** DNS could not resolve the host. */
+const DNS_CODES = new Set(["ENOTFOUND", "EAI_AGAIN", "EAI_NODATA", "EAI_NONAME"]);
+/** The certificate or handshake was rejected. */
+const TLS_CODES = new Set([
+  "CERT_HAS_EXPIRED",
+  "DEPTH_ZERO_SELF_SIGNED_CERT",
+  "SELF_SIGNED_CERT_IN_CHAIN",
+  "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+  "ERR_TLS_CERT_ALTNAME_INVALID",
+  "EPROTO",
+]);
+/** The connection itself never came up or was dropped. */
+const CONNECT_CODES = new Set([
+  "ECONNREFUSED",
+  "ECONNRESET",
+  "EHOSTUNREACH",
+  "ENETUNREACH",
+  "EPIPE",
+  "UND_ERR_SOCKET",
+  "ERR_SOCKET_CONNECTION_TIMEOUT",
+]);
+/** Undici gave up waiting — distinct from our own AbortController timeout. */
+const TIMEOUT_CODES = new Set([
+  "UND_ERR_CONNECT_TIMEOUT",
+  "UND_ERR_HEADERS_TIMEOUT",
+  "UND_ERR_BODY_TIMEOUT",
+  "ETIMEDOUT",
+]);
+
+export function classifyError(cause: unknown): HttpTransportError {
+  // Our own timeout is signalled by name, not by any message, and outranks the
+  // rest: when we abort, whatever the socket reports afterwards is a
+  // consequence of the abort rather than the reason for it.
+  if (cause instanceof Error && cause.name === "AbortError") {
+    return { kind: "timeout", message: "request timed out" };
+  }
+
+  const links = collectCauses(cause);
+
+  for (const { code, message } of links) {
+    const lower = message.toLowerCase();
+
+    if (TIMEOUT_CODES.has(code) || lower.includes("timeout") || lower.includes("timed out")) {
+      return { kind: "timeout", message: detail("request timed out", code, message) };
+    }
+    if (DNS_CODES.has(code) || lower.includes("getaddrinfo") || lower.includes("enotfound") || lower.includes("eai_again")) {
+      return { kind: "dns", message: detail("dns resolution failed", code, message) };
+    }
+    if (TLS_CODES.has(code) || lower.includes("cert") || lower.includes("tls") || lower.includes("ssl") || lower.includes("handshake")) {
+      return { kind: "tls", message: detail("tls handshake failed", code, message) };
+    }
+    if (CONNECT_CODES.has(code) || lower.includes("econnrefused") || lower.includes("econnreset") || lower.includes("socket")) {
+      return { kind: "connect", message: detail("connection failed", code, message) };
+    }
+  }
+
+  // Genuinely unrecognised. Carry the deepest real message rather than the
+  // outer "fetch failed", so an operator has something to search for.
+  const deepest = links.filter((l) => l.message && l.message !== "fetch failed").pop();
+  return { kind: "unknown", message: deepest ? detail("fetch failed", deepest.code, deepest.message) : "fetch failed" };
+}
+
+/** "dns resolution failed (ENOTFOUND: getaddrinfo ENOTFOUND example.com)" */
+function detail(summary: string, code: string, message: string): string {
+  const inner = code && message ? `${code}: ${message}` : code || message;
+  return inner ? `${summary} (${inner})` : summary;
 }
 
 /**
