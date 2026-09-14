@@ -310,6 +310,23 @@
   text-align: center;
 }
 
+/**
+ * Page title — the h1 on every inner public page.
+ *
+ * Eight pages already imported this as `home.title` and it did not exist, so
+ * the class resolved to `undefined` and those headings fell back to the
+ * browser's default 2em. The global rule in base.css sets h1's family, leading
+ * and margin but deliberately no size, so nothing else was covering for it:
+ * every inner page has been rendering its title at a size nobody chose.
+ * `--fs-h1` was defined the whole time and simply never wired up.
+ */
+.title {
+  font-size: var(--fs-h1);
+  margin: 0 0 var(--space-4);
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
 .sectionTitle {
   font-size: var(--fs-h2);
   margin: 0 0 var(--space-4);

@@ -1,4 +1,5 @@
 import { Alert, Badge, EmptyWorkspace, MetricCard, OperationalPanel, OperationalTable, SectionRule, type OperationalColumn } from "@brightloop/ui";
+import { freshnessView } from "@/lib/evidence-freshness";
 import type { EvidenceItemView, EvidenceView } from "@/lib/prospect-scanner";
 import styles from "../scanner.module.css";
 
@@ -34,7 +35,23 @@ export function EvidenceCoverage({ evidence }: EvidenceCoverageProps) {
       label: "State",
       render: (i) => <Badge status={i.state === "observed" ? "active" : "pending"}>{i.state}</Badge>,
     },
-    { key: "freshness", header: "Freshness", label: "Freshness", hideOnMobile: true, render: (i) => <span className={styles.mono}>{i.freshness ?? "unknown"}</span> },
+    {
+      key: "freshness",
+      header: "Freshness",
+      label: "Freshness",
+      hideOnMobile: true,
+      // `i.freshness ?? "unknown"` read backwards: a static 404 sends
+      // Last-Modified and a dynamic 200 does not, so failures looked better
+      // dated than captures. See evidence-freshness.ts.
+      render: (i) => {
+        const view = freshnessView(i);
+        return (
+          <span className={styles.mono} title={view.title}>
+            {view.label}
+          </span>
+        );
+      },
+    },
     { key: "checksum", header: "Checksum", label: "Checksum", hideOnMobile: true, render: (i) => <span className={styles.mono}>{i.checksum ?? "—"}</span> },
     { key: "reason", header: "Note", label: "Note", hideOnMobile: true, render: (i) => <span className={styles.mono}>{i.reason ?? "—"}</span> },
   ];

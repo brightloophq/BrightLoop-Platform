@@ -38,6 +38,21 @@ const nextConfig = {
   poweredByHeader: false,
   // The design system ships TS + CSS Modules from source; Next compiles it.
   transpilePackages: ["@brightloop/ui"],
+  /**
+   * Conventional paths that already exist under another name.
+   *
+   * `/pricing` was a 404 while `/packages` served the three plans — so a
+   * prospect (and any crawler, ours included) concluded the site had no pricing
+   * page at all. Permanent, because the canonical URL is `/packages`.
+   */
+  async redirects() {
+    return [
+      { source: "/pricing", destination: "/packages", permanent: true },
+      { source: "/plans", destination: "/packages", permanent: true },
+      { source: "/work", destination: "/portfolio", permanent: true },
+      { source: "/reviews", destination: "/testimonials", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
