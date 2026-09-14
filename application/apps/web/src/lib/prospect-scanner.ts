@@ -945,10 +945,87 @@ export interface CommercialProposalView {
   needsPricing: boolean;
   workItemCount: number;
   summary: string;
+  /* ---- the draft itself ----------------------------------------------------
+   * The panel used to show the executive summary and nothing else, so a draft
+   * reported "6 items" and displayed none of them. These carry the actual
+   * proposal. Every field is plain text, bounded, and rendered as text — never
+   * as markup — because this content is machine-assembled.
+   * ----------------------------------------------------------------------- */
+  observedSituation: string;
+  keyIssues: ProposalPoint[];
+  opportunities: ProposalPoint[];
+  recommendedWork: ProposalWorkItem[];
+  proposedNextStep: string;
+}
+
+/** An evidenced point from the draft (a key issue or an opportunity). */
+export interface ProposalPoint {
+  title: string;
+  detail: string;
+  evidenceCount: number;
+}
+
+/** One recommended work item, with the priority/effort the engine assigned. */
+export interface ProposalWorkItem {
+  title: string;
+  solution: string;
+  priority: string;
+  effort: string;
+  evidenceCount: number;
+}
+
+/** A bounded string from artifact content, or "" — never `undefined`. */
+function text(value: unknown, max: number): string {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  return trimmed.length > max ? `${trimmed.slice(0, max - 1).trimEnd()}…` : trimmed;
+}
+
+function evidenceCount(value: unknown): number {
+  return Array.isArray(value) ? value.length : 0;
+}
+
+/**
+ * Evidenced points from artifact content.
+ *
+ * Artifact content is `Record<string, unknown>`, so every field is checked
+ * rather than cast: a malformed row is dropped, not rendered as "undefined".
+ */
+export function readProposalPoints(value: unknown, limit = 6): ProposalPoint[] {
+  if (!Array.isArray(value)) return [];
+  const out: ProposalPoint[] = [];
+  for (const raw of value.slice(0, limit)) {
+    if (raw === null || typeof raw !== "object") continue;
+    const row = raw as Record<string, unknown>;
+    const title = text(row["title"], 160);
+    if (title.length === 0) continue;
+    out.push({ title, detail: text(row["detail"], 400), evidenceCount: evidenceCount(row["evidenceIds"]) });
+  }
+  return out;
+}
+
+/** Recommended work items from artifact content, same defensive reading. */
+export function readProposalWork(value: unknown, limit = 8): ProposalWorkItem[] {
+  if (!Array.isArray(value)) return [];
+  const out: ProposalWorkItem[] = [];
+  for (const raw of value.slice(0, limit)) {
+    if (raw === null || typeof raw !== "object") continue;
+    const row = raw as Record<string, unknown>;
+    const title = text(row["title"], 160);
+    if (title.length === 0) continue;
+    out.push({
+      title,
+      solution: text(row["solution"], 400),
+      priority: text(row["priority"], 24),
+      effort: text(row["effort"], 24),
+      evidenceCount: evidenceCount(row["evidenceIds"]),
+    });
+  }
+  return out;
 }
 
 export function emptyCommercialProposalView(): CommercialProposalView {
-  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet." };
+  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet.", observedSituation: "", keyIssues: [], opportunities: [], recommendedWork: [], proposedNextStep: "" };
 }
 
 /** Build the proposal-draft surface from a persisted proposal_version DTO. */
@@ -968,8 +1045,15 @@ export function buildCommercialProposalView(dto: ArtifactDTO | null): Commercial
     commercialState,
     commercialStateLabel: commercialState === null ? null : needsPricing ? "Pricing required" : "Priced",
     needsPricing,
+    // The COUNT was all that survived here, which is why the panel could say
+    // "6 items" and show none of them. The items themselves come through now.
     workItemCount: Array.isArray(c["recommendedWork"]) ? (c["recommendedWork"] as unknown[]).length : 0,
     summary: typeof c["executiveSummary"] === "string" ? (c["executiveSummary"] as string) : "",
+    observedSituation: text(c["observedSituation"], 1000),
+    keyIssues: readProposalPoints(c["keyIssues"]),
+    opportunities: readProposalPoints(c["opportunities"]),
+    recommendedWork: readProposalWork(c["recommendedWork"]),
+    proposedNextStep: text(c["proposedNextStep"], 400),
   };
 }
 

@@ -57,7 +57,15 @@ export async function POST(req: Request): Promise<NextResponse> {
     p_quote_id: quoteId,
   });
   if (error || data === null || data.length === 0) {
-    return NextResponse.json({ error: "The package could not be promoted" }, { status: error?.code === "42501" ? 403 : 409 });
+    // Name the refusal. "Could not be promoted" was true of every branch here
+    // and told an operator nothing about which one they had hit.
+    const refused =
+      error?.code === "42501"
+        ? "The database refused the promotion for this account — it lacks permission on the quote tables."
+        : error
+          ? `The promotion did not complete: ${error.message}`
+          : "The promotion ran but created nothing. Commercial pricing is required before a package can become a quote.";
+    return NextResponse.json({ error: refused }, { status: error?.code === "42501" ? 403 : 409 });
   }
   const result = data[0]!;
   return NextResponse.json({ quoteId: result.quote_id, outcome: result.outcome, itemCount: result.item_count });

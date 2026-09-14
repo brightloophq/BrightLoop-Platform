@@ -640,3 +640,56 @@
   border-radius: var(--radius-lg);
   background: var(--surface-1);
 }
+
+/* ---- the commercial proposal draft, §09 ----------------------------------
+ * The panel reported a draft existed and showed none of it. These style the
+ * draft's own content: bounded plain text, never markup.
+ * ------------------------------------------------------------------------ */
+.proposalBlock {
+  margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: var(--border-hairline);
+}
+
+.proposalHeading {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-sm);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.proposalProse {
+  display: block;
+  margin: 0;
+  color: var(--text-secondary);
+  line-height: var(--lh-body);
+}
+
+.proposalList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.proposalPoint {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.proposalPointTitle {
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.proposalEvidence,
+.proposalMeta {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}

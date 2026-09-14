@@ -8,6 +8,8 @@ import {
   buildProspectPackageView,
   emptyCommercialProposalView,
   emptyClientNarrativeView,
+  readProposalPoints,
+  readProposalWork,
 } from "./prospect-scanner";
 
 const proposalDto = (status: string, commercialState = "needs_pricing"): ArtifactDTO => ({
@@ -157,5 +159,85 @@ describe("competitor commercial status (§11) — no legacy 'Unavailable' anywhe
     expect(v.status).toBe("needs_review");
     expect(v.statusLabel).toBe("Review required");
     expect(v.summary).toBe("Two verified competitors.");
+  });
+});
+
+describe("the proposal draft actually reaches the view", () => {
+  /**
+   * The defect: `buildCommercialProposalView` read `recommendedWork`, counted
+   * it, and dropped the array — so §09 could report "6 items" and display none
+   * of them, leaving nothing to review.
+   */
+  const draft = {
+    id: "prop_1",
+    content: {
+      status: "draft_ready",
+      commercialState: "needs_pricing",
+      executiveSummary: "Assessed from the public website.",
+      observedSituation: "Three of nine pages were fetched.",
+      keyIssues: [
+        { title: "Thin content base", detail: "Few indexable pages.", evidenceIds: ["e1", "e2"] },
+      ],
+      opportunities: [{ title: "Build out content", detail: "", evidenceIds: ["e3"] }],
+      recommendedWork: [
+        { sourceId: "s1", title: "Publish core pages", solution: "Add about and pricing.", priority: "medium", effort: "low", evidenceIds: ["e1"] },
+        { sourceId: "s2", title: "Add structured data", solution: "JSON-LD.", priority: "medium", effort: "low", evidenceIds: ["e2", "e3"] },
+      ],
+      proposedNextStep: "Review, then prepare outreach.",
+    },
+  } as never;
+
+  it("carries the recommended work, not only its count", () => {
+    const view = buildCommercialProposalView(draft);
+    expect(view.workItemCount).toBe(2);
+    expect(view.recommendedWork).toHaveLength(2);
+    expect(view.recommendedWork[0]!.title).toBe("Publish core pages");
+    expect(view.recommendedWork[0]!.priority).toBe("medium");
+    expect(view.recommendedWork[1]!.evidenceCount).toBe(2);
+  });
+
+  it("carries the rest of the draft the panel needs to show", () => {
+    const view = buildCommercialProposalView(draft);
+    expect(view.observedSituation).toContain("Three of nine");
+    expect(view.keyIssues[0]!.title).toBe("Thin content base");
+    expect(view.opportunities[0]!.evidenceCount).toBe(1);
+    expect(view.proposedNextStep).toContain("outreach");
+  });
+
+  it("an empty view carries empty collections, never undefined", () => {
+    const view = emptyCommercialProposalView();
+    expect(view.recommendedWork).toEqual([]);
+    expect(view.keyIssues).toEqual([]);
+    expect(view.observedSituation).toBe("");
+  });
+});
+
+describe("readProposalPoints / readProposalWork — artifact content is untrusted", () => {
+  it("drops a row with no title rather than rendering a blank entry", () => {
+    expect(readProposalPoints([{ detail: "orphan detail" }])).toEqual([]);
+    expect(readProposalWork([{ solution: "no title" }])).toEqual([]);
+  });
+
+  it("survives a non-array, a null row and a non-object row", () => {
+    expect(readProposalPoints("not an array")).toEqual([]);
+    expect(readProposalPoints(null)).toEqual([]);
+    expect(readProposalPoints([null, "x", 7])).toEqual([]);
+    expect(readProposalWork(undefined)).toEqual([]);
+  });
+
+  it("treats a missing evidence array as zero, not a crash", () => {
+    expect(readProposalPoints([{ title: "T" }])[0]!.evidenceCount).toBe(0);
+  });
+
+  it("truncates an over-long title instead of letting it break the layout", () => {
+    const [point] = readProposalPoints([{ title: "x".repeat(400) }]);
+    expect(point!.title.length).toBeLessThanOrEqual(160);
+    expect(point!.title.endsWith("…")).toBe(true);
+  });
+
+  it("caps how many rows are rendered", () => {
+    const many = Array.from({ length: 30 }, (_, i) => ({ title: `T${i}`, evidenceIds: [] }));
+    expect(readProposalPoints(many).length).toBeLessThanOrEqual(6);
+    expect(readProposalWork(many).length).toBeLessThanOrEqual(8);
   });
 });
