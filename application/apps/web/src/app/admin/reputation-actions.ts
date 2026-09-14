@@ -162,8 +162,19 @@ export async function moderateTestimonial(formData: FormData): Promise<ActionRes
       patch["featured_on_home"] = formData.get("featuredOnHome") === "true";
     }
 
-    const { error } = await supabase.from("testimonials").update(patch).eq("id", testimonialId);
+    // See moderateProject: an update matching no row is otherwise silent.
+    const { data, error } = await supabase
+      .from("testimonials")
+      .update(patch)
+      .eq("id", testimonialId)
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    if (!data || data.length === 0) {
+      return {
+        ok: false,
+        error: "That review was not updated — it may have been deleted. Reload the page and check.",
+      };
+    }
 
     if (patch["publish"]) {
       await emitEvent({ name: "review.moderate", props: { status: String(patch["publish"]) } });
@@ -463,8 +474,22 @@ export async function moderateProject(formData: FormData): Promise<ActionResult>
       patch["featured_on_home"] = formData.get("featuredOnHome") === "true";
     }
 
-    const { error } = await supabase.from("portfolio_projects").update(patch).eq("id", projectId);
+    // `.select()` makes the update REPORT what it changed. Without it Supabase
+    // returns error: null for an update that matched nothing, so "make this
+    // public" could do exactly nothing and still look like it worked — which is
+    // precisely how a case study stays invisible with no explanation.
+    const { data, error } = await supabase
+      .from("portfolio_projects")
+      .update(patch)
+      .eq("id", projectId)
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    if (!data || data.length === 0) {
+      return {
+        ok: false,
+        error: "That project was not updated — it may have been deleted. Reload the page and check.",
+      };
+    }
 
     if (patch["publish"]) {
       await emitEvent({ name: "portfolio.publish", props: { status: String(patch["publish"]) } });
