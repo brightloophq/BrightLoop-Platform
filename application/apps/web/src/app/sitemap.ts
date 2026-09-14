@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { SITE_ORIGIN, canonicalUrl } from "@brightloop/domain";
 import { DISCIPLINE_SLUGS } from "@brightloop/schema";
 import { getReputationRepository } from "@/lib/repositories";
+import { ARTICLES } from "@/lib/blog";
 
 /**
  * ISR, 5 min. A statically-captured sitemap would list whatever was published at
@@ -43,6 +44,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_ORIGIN}/testimonials`, changeFrequency: "weekly", priority: 0.7 },
     { url: `${SITE_ORIGIN}/about`, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_ORIGIN}/resources`, changeFrequency: "monthly", priority: 0.6 },
+    { url: `${SITE_ORIGIN}/blog`, changeFrequency: "monthly", priority: 0.6 },
+    ...ARTICLES.map((article) => ({
+      url: `${SITE_ORIGIN}/blog/${article.slug}`,
+      lastModified: article.publishedAt,
+      changeFrequency: "yearly" as const,
+      priority: 0.5,
+    })),
     { url: `${SITE_ORIGIN}/contact`, changeFrequency: "yearly", priority: 0.6 },
     { url: `${SITE_ORIGIN}/careers`, changeFrequency: "yearly", priority: 0.3 },
     // /legal and its documents are deliberately absent: they carry

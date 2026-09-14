@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Alert, Button, Container, Eyebrow, Section } from "@brightloop/ui";
+import { CONTACT_EMAIL } from "@/lib/site";
 import home from "../home.module.css";
 import styles from "./careers.module.css";
 
@@ -16,11 +17,11 @@ import styles from "./careers.module.css";
  * 404 reads as a site that is half-built rather than a team that is not hiring.
  */
 
-const CONTACT_EMAIL = "info@auxion.xyz";
 
 export const metadata: Metadata = {
   title: "Careers",
   description: "Auxion is not hiring right now. How to reach us anyway.",
+  alternates: { canonical: "/careers" },
 };
 
 export default function CareersPage() {

@@ -18,9 +18,15 @@ import styles from "./resources.module.css";
 export const metadata: Metadata = {
   title: "Resources",
   description: "The tools, work and reference material Auxion publishes for small businesses.",
+  alternates: { canonical: "/resources" },
 };
 
 const RESOURCES = [
+  {
+    href: "/blog",
+    name: "Writing",
+    body: "How we diagnose a business before quoting it, why brand, web, automation and measurement belong in one loop, and what lead capture really means.",
+  },
   {
     href: "/start",
     name: "Free business scan",
@@ -56,7 +62,7 @@ export default function ResourcesPage() {
         <h1 className={home.title}>Where to start</h1>
         <p className={home.lede}>
           Everything below is live and free to use. We do not publish gated guides or lead-magnet
-          downloads — when we have something worth writing down, it will appear here.
+          downloads — what we have written down is open, and linked first.
         </p>
 
         <ul className={styles.grid}>

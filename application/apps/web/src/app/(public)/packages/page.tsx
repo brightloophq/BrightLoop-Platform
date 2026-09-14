@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: "Packages",
   description:
     "Auxion packages — Starter, Growth and Enterprise. See the deliverables, outcomes, industries served and timelines for each. Pricing is prepared with a strategist.",
+  // /pricing redirects here, so this page is the one canonical address for it.
+  alternates: { canonical: "/packages" },
 };
 
 /**

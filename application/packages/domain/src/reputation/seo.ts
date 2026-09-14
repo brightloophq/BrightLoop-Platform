@@ -16,8 +16,17 @@
 import type { PortfolioProject, Testimonial } from "@brightloop/schema";
 import { isPublic } from "./query.js";
 
-/** Production origin. Overridable so previews don't emit prod canonicals. */
-export const SITE_ORIGIN = "https://brightloop.co";
+/**
+ * Production origin. Overridable so previews don't emit prod canonicals.
+ *
+ * This is the domain the site actually answers on. It was `brightloop.co` —
+ * the platform's working name — long after the public site moved to Auxion, so
+ * every canonical tag, every sitemap URL and every JSON-LD `url` named a
+ * different site than the one serving them. A canonical pointing at another
+ * domain is not a cosmetic slip: it tells a crawler the page it just read is a
+ * copy and the original lives elsewhere.
+ */
+export const SITE_ORIGIN = "https://auxion.xyz";
 
 export type CanonicalKind = "portfolio" | "case" | "testimonials";
 
