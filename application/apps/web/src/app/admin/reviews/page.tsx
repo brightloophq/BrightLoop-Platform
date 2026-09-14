@@ -4,7 +4,7 @@ import { Alert, Badge, Card, EmptyState, Stars } from "@brightloop/ui";
 import { explainAdminLoadError } from "@/lib/admin-error";
 import { createClient } from "@/lib/supabase/server";
 import { toPortfolioProject, toTestimonial } from "@brightloop/data";
-import { DeleteTestimonial } from "./DeleteTestimonial";
+import { DeleteRow } from "./DeleteRow";
 import { ModerationControls } from "./ModerationControls";
 import { TestimonialForm } from "./TestimonialForm";
 import styles from "../cms.module.css";
@@ -116,7 +116,7 @@ export default async function ReviewsPage() {
                       {/* Editing leaves publish status alone, so correcting a
                           live review does not pull it off the site. */}
                       <TestimonialForm projectSlugs={projectSlugs} testimonial={t} />
-                      <DeleteTestimonial id={t.id} author={t.author} />
+                      <DeleteRow kind="testimonial" id={t.id} label={t.author} />
                     </div>
                   </div>
 

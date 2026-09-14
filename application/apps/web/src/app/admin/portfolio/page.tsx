@@ -6,6 +6,7 @@ import { toPortfolioProject } from "@brightloop/data";
 import { Alert, Badge, Button, Card, EmptyState } from "@brightloop/ui";
 import { explainAdminLoadError } from "@/lib/admin-error";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteRow } from "../reviews/DeleteRow";
 import { ModerationControls } from "../reviews/ModerationControls";
 import styles from "../cms.module.css";
 import shell from "../admin.module.css";
@@ -121,6 +122,10 @@ export default async function AdminPortfolioPage() {
                         </>
                       ) : null}
                     </p>
+
+                    <div className={styles.rowActions}>
+                      <DeleteRow kind="project" id={p.id} label={p.client || p.name} />
+                    </div>
                   </div>
 
                   <ModerationControls
