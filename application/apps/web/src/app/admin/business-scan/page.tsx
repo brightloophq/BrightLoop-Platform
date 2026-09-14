@@ -6,10 +6,12 @@ import { DOMAIN_KEYS, DOMAIN_META } from "@brightloop/schema";
 import { Alert, Badge, Button, EmptyWorkspace, IndexGauge, OperationalPanel, OperationalTable, SectionHeader, SectionRule, SkeletonBlock, SystemMap, type OperationalColumn } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
 import { scoreField } from "@/lib/baseline-scores";
+import { unreachableDomainLabels } from "@/lib/diagnosis-import";
+import { listImportableScans } from "@/lib/scanner-data";
 import { requireSurface } from "@/lib/auth";
 import { getCoreSurfaceRepository } from "@/lib/repositories";
 import { createClient } from "@/lib/supabase/server";
-import { startScanForm, addFindingForm, setBaselinesForm } from "./scan-actions";
+import { startScanForm, addFindingForm, setBaselinesForm, importDiagnosisForm } from "./scan-actions";
 import styles from "./scan.module.css";
 
 export const dynamic = "force-dynamic";
@@ -53,6 +55,8 @@ export default async function BusinessScanPage({ searchParams }: { searchParams:
   const scanError = first(params["scanError"]) ?? null;
   const findingError = first(params["findingError"]) ?? null;
   const baselineError = first(params["baselineError"]) ?? null;
+  const importError = first(params["importError"]) ?? null;
+  const imported = first(params["imported"]) ?? null;
   const canWrite = canWriteScans(actor);
 
   return (
@@ -61,7 +65,7 @@ export default async function BusinessScanPage({ searchParams }: { searchParams:
         <div className={styles.canvas}>
           {clientId ? (
             <Suspense key={clientId} fallback={<ScanSkeleton />}>
-              <ScanWorkspace clientId={clientId} canWrite={canWrite} scanError={scanError} findingError={findingError} baselineError={baselineError} />
+              <ScanWorkspace clientId={clientId} canWrite={canWrite} scanError={scanError} findingError={findingError} baselineError={baselineError} importError={importError} imported={imported} />
             </Suspense>
           ) : (
             <Suspense fallback={<ScanSkeleton />}>
@@ -107,7 +111,7 @@ async function OrgPicker() {
   );
 }
 
-async function ScanWorkspace({ clientId, canWrite, scanError, findingError, baselineError }: { clientId: string; canWrite: boolean; scanError?: string | null; findingError?: string | null; baselineError?: string | null }) {
+async function ScanWorkspace({ clientId, canWrite, scanError, findingError, baselineError, importError, imported }: { clientId: string; canWrite: boolean; scanError?: string | null; findingError?: string | null; baselineError?: string | null; importError?: string | null; imported?: string | null }) {
   const repo = await getCoreSurfaceRepository();
   let scan: Awaited<ReturnType<typeof repo.latestScan>>;
   let domains: Awaited<ReturnType<typeof repo.listDomains>>;
@@ -159,7 +163,7 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
     );
   }
 
-  const findings = await repo.listFindings(scan.id);
+  const [findings, importable] = await Promise.all([repo.listFindings(scan.id), listImportableScans(clientId)]);
   const view = buildBusinessScanView(scan, domains, findings);
   const rows: FindingRow[] = view.findings;
   const idx = view.systemMap.index;
@@ -213,7 +217,22 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
 
       {canWrite ? (
         <div>
-          <SectionRule index="02" label="Baseline scores" meta={`${scoredCount} / 7 scored`} />
+          <SectionRule index="02" label="Import from a prospect scan" meta={`${importable.length} available`} />
+          <OperationalPanel>
+            {importError ? (
+              <Alert tone="danger" title="Couldn't import the diagnosis">
+                {importError}
+              </Alert>
+            ) : null}
+            {imported ? <Alert tone="success" title="Diagnosis imported">{imported}</Alert> : null}
+            <ImportDiagnosis clientId={clientId} scans={importable} />
+          </OperationalPanel>
+        </div>
+      ) : null}
+
+      {canWrite ? (
+        <div>
+          <SectionRule index="03" label="Baseline scores" meta={`${scoredCount} / 7 scored`} />
           <OperationalPanel>
             {baselineError ? (
               <Alert tone="danger" title="Couldn't save the baseline scores">
@@ -226,7 +245,7 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
       ) : null}
 
       <div>
-        <SectionRule index={canWrite ? "03" : "02"} label="Diagnosis" meta={`${view.gapCount} gaps to close`} />
+        <SectionRule index={canWrite ? "04" : "02"} label="Diagnosis" meta={`${view.gapCount} gaps to close`} />
         <OperationalPanel className={styles.ledgerPanel}>
           {/* A finding that failed to save used to vanish without a word — the
               form action discarded its result. The reason arrives here now. */}
@@ -259,6 +278,66 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
  * A blank field means "leave this domain as it is" — never zero, which would
  * silently score a domain you simply had not got to yet.
  */
+/**
+ * Import a diagnosis from a prospect scan that has already been run.
+ *
+ * This is the bridge between the two halves of diagnosis: the Prospect Scanner
+ * measures a real website, the Business Scan is where a client's baseline
+ * lives. Before this, the second could not see the first — the seven domains
+ * were scored by hand or not at all.
+ *
+ * It offers only scans that have REACHED an assessment, and never runs one.
+ * Stage execution stays in the Prospect Scanner, one stage per click behind its
+ * kill switches, because stages spend provider budget; importing is free and
+ * repeatable.
+ *
+ * It also says plainly which domains a scan cannot reach. The engine scores ten
+ * Business Health Index dimensions and none of them speaks to Delivery or
+ * Analytics, so those stay unscored rather than being filled with a number
+ * nothing measured.
+ */
+function ImportDiagnosis({
+  clientId,
+  scans,
+}: {
+  clientId: string;
+  scans: { id: string; label: string; completedAt: string | null }[];
+}) {
+  if (scans.length === 0) {
+    return (
+      <p className={styles.scoreHint}>
+        No completed prospect scan for this organization yet. Run one in the{" "}
+        <Link href="/admin/prospect-scanner">Prospect Scanner</Link> and its assessment can be
+        imported here as the baseline.
+      </p>
+    );
+  }
+
+  return (
+    <form action={importDiagnosisForm} className={styles.scoreForm}>
+      <input type="hidden" name="clientId" value={clientId} />
+      <p className={styles.scoreHint}>
+        Copies the scan&rsquo;s scored dimensions onto the System Map and its findings into the
+        ledger below. {unreachableDomainLabels()} are not scored by a scan — nothing measures them,
+        so they stay blank for you to judge. Importing the same scan twice adds nothing new.
+      </p>
+      <div className={styles.importRow}>
+        <select name="runId" className={styles.select} aria-label="Completed scan to import">
+          {scans.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.label}
+              {s.completedAt ? ` · ${new Date(s.completedAt).toLocaleDateString()}` : ""}
+            </option>
+          ))}
+        </select>
+        <Button type="submit" variant="primary">
+          Import diagnosis
+        </Button>
+      </div>
+    </form>
+  );
+}
+
 function BaselineScores({
   clientId,
   domains,
