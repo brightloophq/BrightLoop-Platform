@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   firstInvalidField,
+  normaliseLiveUrl,
   summariseErrors,
   validateProjectForm,
   YEAR_MAX,
@@ -90,5 +91,100 @@ describe("summariseErrors", () => {
 
   it("always points the reader downwards rather than naming fields twice", () => {
     expect(summariseErrors({ client: "x" })).toContain("marked below");
+  });
+});
+
+describe("normaliseLiveUrl", () => {
+  /**
+   * The case that prompted this: a bare domain is the most ordinary thing to
+   * type, and `new URL()` throws on it — so the form refused the client's own
+   * website as "not a valid http(s) URL".
+   */
+  it("accepts a bare domain and assumes https, as a browser would", () => {
+    expect(normaliseLiveUrl("auxion.xyz")).toEqual({ url: "https://auxion.xyz/" });
+    expect(normaliseLiveUrl("www.acme.com")).toEqual({ url: "https://www.acme.com/" });
+  });
+
+  it("keeps a scheme that is already there, http included", () => {
+    expect(normaliseLiveUrl("https://auxion.xyz/work")).toEqual({ url: "https://auxion.xyz/work" });
+    expect(normaliseLiveUrl("http://legacy.example.com/")).toEqual({
+      url: "http://legacy.example.com/",
+    });
+  });
+
+  it("keeps a path, query and port intact", () => {
+    expect(normaliseLiveUrl("acme.com/work?ref=auxion")).toEqual({
+      url: "https://acme.com/work?ref=auxion",
+    });
+    expect(normaliseLiveUrl("acme.com:8443/x")).toEqual({ url: "https://acme.com:8443/x" });
+  });
+
+  it("trims stray whitespace from a paste", () => {
+    expect(normaliseLiveUrl("  auxion.xyz  ")).toEqual({ url: "https://auxion.xyz/" });
+  });
+
+  it("treats an empty field as empty, not as an error", () => {
+    expect(normaliseLiveUrl("")).toEqual({ url: "" });
+    expect(normaliseLiveUrl("   ")).toEqual({ url: "" });
+  });
+
+  /* ---- what must still be refused ----------------------------------------- */
+
+  it("REFUSES javascript: — it must never reach an href on the public site", () => {
+    const result = normaliseLiveUrl("javascript:alert(1)");
+    expect(result).toHaveProperty("error");
+    // And it must not be "fixed" into https://javascript... by prefixing.
+    expect(JSON.stringify(result)).not.toContain("https://javascript");
+  });
+
+  it("refuses data: and other non-web schemes", () => {
+    expect(normaliseLiveUrl("data:text/html,<script>")).toHaveProperty("error");
+    expect(normaliseLiveUrl("ftp://files.example.com")).toHaveProperty("error");
+    expect(normaliseLiveUrl("mailto:hi@auxion.xyz")).toHaveProperty("error");
+  });
+
+  it("refuses something with no website in it", () => {
+    expect(normaliseLiveUrl("just some words")).toHaveProperty("error");
+    expect(normaliseLiveUrl("localhost")).toHaveProperty("error");
+  });
+
+  it("quotes what the person actually typed, so the message is about their input", () => {
+    const result = normaliseLiveUrl("not a url");
+    expect("error" in result && result.error).toContain("not a url");
+  });
+});
+
+describe("validateProjectForm — live URL", () => {
+  const form = (fields: Record<string, string>) => {
+    const fd = new FormData();
+    fd.set("name", "Project");
+    fd.set("slug", "project");
+    fd.set("client", "Client");
+    fd.set("year", "2025");
+    for (const [k, v] of Object.entries(fields)) fd.set(k, v);
+    return fd;
+  };
+
+  it("ignores the live URL entirely when the permission is off", () => {
+    // The server stores "" in that case, so a leftover value must not block a save.
+    expect(validateProjectForm(form({ liveUrl: "nonsense" }))).toEqual({});
+  });
+
+  it("marks the liveUrl FIELD rather than only the banner", () => {
+    const errors = validateProjectForm(
+      form({ permissionLivePreview: "on", liveUrl: "javascript:alert(1)" }),
+    );
+    expect(errors.liveUrl).toBeDefined();
+  });
+
+  it("asks for a URL when the permission is on and the field is empty", () => {
+    const errors = validateProjectForm(form({ permissionLivePreview: "on", liveUrl: "" }));
+    expect(errors.liveUrl).toContain("untick");
+  });
+
+  it("passes a bare domain, matching what the server now accepts", () => {
+    expect(
+      validateProjectForm(form({ permissionLivePreview: "on", liveUrl: "auxion.xyz" })),
+    ).toEqual({});
   });
 });

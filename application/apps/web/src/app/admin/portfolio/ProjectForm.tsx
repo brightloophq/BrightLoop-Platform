@@ -236,7 +236,19 @@ export function ProjectForm({ project, testimonials }: Props) {
           </p>
           {livePermitted ? (
             <div style={{ marginTop: "var(--space-3)" }}>
-              <Input label="Live URL" name="liveUrl" type="url" defaultValue={project?.liveUrl} placeholder="https://example.com" />
+              {/* `type="text"`, not `type="url"`: the form carries noValidate so
+                  the browser never enforced it anyway, and the field now accepts
+                  a bare domain, which `type="url"` would mark invalid. */}
+              <Input
+                label="Live URL"
+                name="liveUrl"
+                type="text"
+                inputMode="url"
+                defaultValue={project?.liveUrl}
+                placeholder="auxion.xyz"
+                hint="Either form works — auxion.xyz or https://auxion.xyz."
+                error={fieldErrors.liveUrl}
+              />
             </div>
           ) : null}
         </div>

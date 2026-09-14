@@ -12,6 +12,7 @@ import {
   tooLargeMessage,
   uploadExtension,
 } from "@/lib/media-upload";
+import { normaliseLiveUrl } from "@/lib/project-form";
 import { readProjectMedia } from "@/lib/project-media";
 import { isValidSlug, slugify } from "@/lib/slug";
 import { createClient } from "@/lib/supabase/server";
@@ -319,20 +320,23 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
     const client = String(formData.get("client") ?? "").trim();
     if (!client) return { ok: false, error: "Client is required" };
 
-    const liveUrl = String(formData.get("liveUrl") ?? "").trim();
+    const rawLiveUrl = String(formData.get("liveUrl") ?? "").trim();
     const permissionLivePreview = formData.get("permissionLivePreview") === "on";
 
     // §09.2: liveUrl must be a valid URL when permissionLivePreview is on.
+    // This used to call `new URL(raw)` directly, which throws on a bare domain —
+    // so typing "auxion.xyz" was refused as "not a valid http(s) URL". The
+    // shared normaliser assumes https for a bare host, exactly as the browser
+    // does, and still refuses javascript: and data:. Same function the form
+    // runs in the browser, so the two can never disagree.
+    let liveUrl = "";
     if (permissionLivePreview) {
-      if (!liveUrl) {
+      if (!rawLiveUrl) {
         return { ok: false, error: "A live URL is required when live preview is permitted" };
       }
-      try {
-        const u = new URL(liveUrl);
-        if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("bad protocol");
-      } catch {
-        return { ok: false, error: "Live URL must be a valid http(s) URL" };
-      }
+      const normalised = normaliseLiveUrl(rawLiveUrl);
+      if ("error" in normalised) return { ok: false, error: normalised.error };
+      liveUrl = normalised.url;
     }
 
     const year = Number(formData.get("year"));
@@ -389,11 +393,21 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
     };
 
     if (existingId) {
-      const { error } = await supabase
+      // `.select()` is not decoration: without it an update matching ZERO rows
+      // comes back as `error: null`, so "saved" and "changed nothing at all"
+      // were the same answer — the same defect that hid a failed publish.
+      const { data, error } = await supabase
         .from("portfolio_projects")
         .update(row)
-        .eq("id", existingId);
+        .eq("id", existingId)
+        .select("id");
       if (error) return { ok: false, error: friendlyDbError(error.message) };
+      if (!data || data.length === 0) {
+        return {
+          ok: false,
+          error: "That project was not saved — it may have been deleted. Reload the list and check.",
+        };
+      }
     } else {
       const { error } = await supabase.from("portfolio_projects").insert({
         ...row,
