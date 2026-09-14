@@ -347,6 +347,9 @@ export function demoFindingsForScan(scanId: string): ScanFinding[] {
     finding: f.finding,
     baseline: f.baseline,
     priority: f.priority,
+    // Demo findings read as hand-written: nothing in Demo Mode ran a scan.
+    source: "manual" as const,
+    sourceRunId: null,
     createdAt: DEMO_EPOCH,
   }));
 }

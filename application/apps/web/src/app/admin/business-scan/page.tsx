@@ -11,7 +11,13 @@ import { listImportableScans } from "@/lib/scanner-data";
 import { requireSurface } from "@/lib/auth";
 import { getCoreSurfaceRepository } from "@/lib/repositories";
 import { createClient } from "@/lib/supabase/server";
-import { startScanForm, addFindingForm, setBaselinesForm, importDiagnosisForm } from "./scan-actions";
+import {
+  startScanForm,
+  addFindingForm,
+  removeFindingForm,
+  setBaselinesForm,
+  importDiagnosisForm,
+} from "./scan-actions";
 import styles from "./scan.module.css";
 
 export const dynamic = "force-dynamic";
@@ -21,12 +27,14 @@ type RawParams = Record<string, string | string[] | undefined>;
 const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
 interface FindingRow {
+  id: string;
   domainKey: string;
   domainCode: string;
   domainLabel: string;
   finding: string;
   baseline: string | null;
   priority: string;
+  source: string;
 }
 
 async function listOrgs(): Promise<{ id: string; name: string }[]> {
@@ -182,10 +190,42 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
         </span>
       ),
     },
-    { key: "finding", header: "Finding", label: "Finding", render: (r) => r.finding },
+    {
+      key: "finding",
+      header: "Finding",
+      label: "Finding",
+      render: (r) => (
+        <span className={styles.findingCell}>
+          <span>{r.finding}</span>
+          {/* Say which rows a newer import will replace and which it will
+              leave alone, so "replace on import" is visible before it runs. */}
+          <span className={styles.findingSource}>
+            {r.source === "import" ? "from a scan" : "added by hand"}
+          </span>
+        </span>
+      ),
+    },
     { key: "baseline", header: "Baseline", label: "Baseline", hideOnMobile: true, render: (r) => r.baseline ?? "—" },
     { key: "priority", header: "Priority", label: "Priority", align: "end", render: (r) => <Badge status={r.priority}>{r.priority}</Badge> },
   ];
+
+  if (canWrite) {
+    columns.push({
+      key: "remove",
+      header: "",
+      label: "Remove",
+      align: "end",
+      render: (r) => (
+        <form action={removeFindingForm}>
+          <input type="hidden" name="clientId" value={clientId} />
+          <input type="hidden" name="findingId" value={r.id} />
+          <Button type="submit" variant="ghost" size="sm">
+            Remove
+          </Button>
+        </form>
+      ),
+    });
+  }
 
   return (
     <>
@@ -250,14 +290,14 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
           {/* A finding that failed to save used to vanish without a word — the
               form action discarded its result. The reason arrives here now. */}
           {findingError ? (
-            <Alert tone="danger" title="Couldn't add the finding">
+            <Alert tone="danger" title="Couldn't update the ledger">
               {findingError}
             </Alert>
           ) : null}
           {rows.length === 0 ? (
             <EmptyWorkspace title="No findings yet" body="Add a diagnosis finding for a domain below." />
           ) : (
-            <OperationalTable caption="Diagnosis ledger." columns={columns} rows={rows} rowKey={(r) => `${r.domainKey}-${r.finding}`} />
+            <OperationalTable caption="Diagnosis ledger." columns={columns} rows={rows} rowKey={(r) => r.id} />
           )}
           {canWrite ? <AddFinding clientId={clientId} scanId={scan.id} /> : null}
         </OperationalPanel>

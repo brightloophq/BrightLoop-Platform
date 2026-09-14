@@ -36,6 +36,7 @@ import {
   DOMAIN_META,
   type DomainKey,
   type FindingPriority,
+  type FindingSource,
   type IndexDimension,
   type MaturityCategory,
   type ProspectRiskCategory,
@@ -388,4 +389,63 @@ export function importedDiagnosis({ report, findings }: ImportSources): Imported
     findings: deduped,
     summariesSeen: rows(content["domainSummaries"]).length,
   };
+}
+
+/* ---- reconciling the ledger against a newer scan -------------------------- */
+
+/** An existing ledger row, as far as reconciling cares. */
+export interface LedgerRow {
+  id: string;
+  domainKey: DomainKey;
+  finding: string;
+  source: FindingSource;
+}
+
+export interface LedgerPlan {
+  /** Findings in the new scan that are not already in the ledger. */
+  add: ImportedFinding[];
+  /** Ids of imported rows the new scan no longer reports. */
+  remove: string[];
+  /** Rows the new scan still reports, or that a person wrote. */
+  keep: number;
+}
+
+const rowKey = (domainKey: string, finding: string): string =>
+  JSON.stringify([domainKey, finding.trim().toLowerCase()]);
+
+/**
+ * What importing a newer scan should do to the ledger already there.
+ *
+ * REPLACE, NOT ACCUMULATE. Before this, an import only ever added: a client
+ * whose site had since been fixed showed a Sales score of 81 directly above
+ * "Minimal social footprint · Observed 0/100" — two scans presented as one
+ * diagnosis, with nothing on the page admitting it.
+ *
+ * A MANUAL FINDING IS NEVER REMOVED. Somebody typed it; no scan is evidence
+ * that it stopped being true, because no scan is what put it there. Only rows
+ * an import wrote are retired, and only when the newer scan does not report
+ * them again.
+ *
+ * Matching is on the pair a reader would call the same finding, case- and
+ * whitespace-insensitively, so a re-import of the same scan is a no-op rather
+ * than a churn of deletes and inserts.
+ */
+export function reconcileLedger(
+  existing: readonly LedgerRow[],
+  incoming: readonly ImportedFinding[],
+): LedgerPlan {
+  const incomingKeys = new Set(incoming.map((f) => rowKey(f.domainKey, f.finding)));
+  const existingKeys = new Set(existing.map((r) => rowKey(r.domainKey, r.finding)));
+
+  const add = incoming.filter((f) => !existingKeys.has(rowKey(f.domainKey, f.finding)));
+
+  const remove: string[] = [];
+  let keep = 0;
+  for (const row of existing) {
+    const stale = row.source === "import" && !incomingKeys.has(rowKey(row.domainKey, row.finding));
+    if (stale) remove.push(row.id);
+    else keep += 1;
+  }
+
+  return { add, remove, keep };
 }
