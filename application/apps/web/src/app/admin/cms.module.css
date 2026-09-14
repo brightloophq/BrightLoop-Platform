@@ -176,3 +176,17 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* What a contact-form enquiry said, under the lead's own line. Wraps rather
+   than truncates: the message IS the lead. */
+.rowNote {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-3);
+  border-left: 2px solid color-mix(in srgb, var(--signal) 40%, transparent);
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-width: 78ch;
+}

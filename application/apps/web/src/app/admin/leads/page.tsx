@@ -15,6 +15,13 @@ function money(cents: number): string {
   return `$${Math.round(cents / 100).toLocaleString("en-US")}`;
 }
 
+const DATE = new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" });
+
+/** Readable names for the machine-written `source` values. */
+const SOURCE_LABELS: Record<string, string> = {
+  contact_form: "Contact form",
+};
+
 /**
  * Leads / CRM (handoff §08).
  *
@@ -33,6 +40,7 @@ export default async function LeadsPage() {
 
   const leads = data ?? [];
   const open = leads.filter((l) => l.stage !== "won" && l.stage !== "lost").length;
+  const enquiries = leads.filter((l) => l.source === "contact_form").length;
 
   return (
     <>
@@ -45,8 +53,9 @@ export default async function LeadsPage() {
           <div>
             <h2 className={styles.title}>Pipeline</h2>
             <p className={styles.lede}>
-              {leads.length} total · {open} open. Stage moves are guarded — a lead must be qualified
-              before a proposal, and every move is recorded in the audit log.
+              {leads.length} total · {open} open{enquiries > 0 ? ` · ${enquiries} from the contact form` : ""}.
+              Stage moves are guarded — a lead must be qualified before a proposal, and every move
+              is recorded in the audit log.
             </p>
           </div>
           <NewLeadForm />
@@ -78,11 +87,16 @@ export default async function LeadsPage() {
                     </Badge>
                   </div>
                   <p className={styles.rowMeta}>
-                    {lead.email}
+                    <a href={`mailto:${lead.email}`}>{lead.email}</a>
                     {lead.industry ? ` · ${lead.industry}` : ""}
                     {lead.value ? ` · ${money(lead.value)}` : ""}
-                    {lead.source ? ` · ${lead.source}` : ""}
+                    {lead.source ? ` · ${SOURCE_LABELS[lead.source] ?? lead.source}` : ""}
+                    {` · ${DATE.format(new Date(lead.created_at))}`}
                   </p>
+                  {/* What the enquiry actually said. A contact-form lead whose
+                      message was not shown here would be a row telling you
+                      someone wrote in, and nothing about what they wrote. */}
+                  {lead.message ? <p className={styles.rowNote}>{lead.message}</p> : null}
                 </div>
 
                 <StageControl

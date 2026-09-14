@@ -26,8 +26,8 @@ export const metadata: Metadata = {
  * sees is part of whether they believe the rest of the page, and this one is
  * the same brand as the site they are standing on.
  *
- * Still outstanding on that list: business address, social links, phone, and the
- * booking calendar.
+ * Still outstanding on that list: business address, phone, and the booking
+ * calendar. Social links are published in the footer of every page.
  */
 
 export default function ContactPage() {

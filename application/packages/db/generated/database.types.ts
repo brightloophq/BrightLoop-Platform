@@ -6673,6 +6673,7 @@ export type Database = {
           email: string
           id: string
           industry: string | null
+          message: string | null
           name: string
           owner_id: string | null
           source: string | null
@@ -6685,6 +6686,7 @@ export type Database = {
           email: string
           id: string
           industry?: string | null
+          message?: string | null
           name: string
           owner_id?: string | null
           source?: string | null
@@ -6697,6 +6699,7 @@ export type Database = {
           email?: string
           id?: string
           industry?: string | null
+          message?: string | null
           name?: string
           owner_id?: string | null
           source?: string | null
@@ -12051,6 +12054,15 @@ export type Database = {
           total: number
           updated_at: string
         }[]
+      }
+      bl_submit_contact_enquiry: {
+        Args: {
+          p_company: string
+          p_email: string
+          p_message: string
+          p_name: string
+        }
+        Returns: string
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
     }
