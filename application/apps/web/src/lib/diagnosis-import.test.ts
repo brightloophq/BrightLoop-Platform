@@ -1,24 +1,63 @@
 import { describe, expect, it } from "vitest";
-import { DOMAIN_KEYS, indexDimensionSchema } from "@brightloop/schema";
 import {
+  DOMAIN_KEYS,
+  indexDimensionSchema,
+  maturityCategorySchema,
+  prospectRiskCategorySchema,
+} from "@brightloop/schema";
+import {
+  CATEGORY_TO_DOMAIN,
   DIMENSION_TO_DOMAIN,
+  RISK_CATEGORY_TO_DOMAIN,
   UNREACHABLE_DOMAINS,
   baselineScoresFromSummaries,
+  domainForTerm,
   findingsFromLedger,
+  findingsFromRisks,
+  findingsFromWeaknesses,
+  importedDiagnosis,
+  priorityFromObservedScore,
   priorityFromSeverity,
   unreachableDomainLabels,
 } from "./diagnosis-import";
 
-describe("DIMENSION_TO_DOMAIN", () => {
-  it("covers every engine dimension, so none is silently forgotten", () => {
+describe("the vocabulary maps", () => {
+  it("covers every maturity category, so none is silently forgotten", () => {
+    for (const category of maturityCategorySchema.options) {
+      expect(category in CATEGORY_TO_DOMAIN).toBe(true);
+    }
+  });
+
+  it("covers every engine dimension and risk category too", () => {
     for (const dimension of indexDimensionSchema.options) {
       expect(dimension in DIMENSION_TO_DOMAIN).toBe(true);
+    }
+    for (const category of prospectRiskCategorySchema.options) {
+      expect(category in RISK_CATEGORY_TO_DOMAIN).toBe(true);
     }
   });
 
   it("only ever targets real System Map domains", () => {
-    for (const target of Object.values(DIMENSION_TO_DOMAIN)) {
+    const targets = [
+      ...Object.values(CATEGORY_TO_DOMAIN),
+      ...Object.values(DIMENSION_TO_DOMAIN),
+      ...Object.values(RISK_CATEGORY_TO_DOMAIN),
+    ];
+    for (const target of targets) {
       if (target !== null) expect(DOMAIN_KEYS).toContain(target);
+    }
+  });
+
+  it("agrees with itself wherever two vocabularies share a word", () => {
+    // domainForTerm resolves one term through all three maps, so a word that
+    // appears in more than one must not mean two different domains.
+    const maps = [CATEGORY_TO_DOMAIN, DIMENSION_TO_DOMAIN, RISK_CATEGORY_TO_DOMAIN] as const;
+    const seen = new Map<string, string | null>();
+    for (const map of maps) {
+      for (const [term, domain] of Object.entries(map)) {
+        if (seen.has(term)) expect(seen.get(term)).toBe(domain);
+        else seen.set(term, domain);
+      }
     }
   });
 
@@ -28,32 +67,50 @@ describe("DIMENSION_TO_DOMAIN", () => {
     expect(DIMENSION_TO_DOMAIN.opportunity).toBeNull();
   });
 
-  it("names the domains a scan cannot reach, rather than hiding them", () => {
-    expect(UNREACHABLE_DOMAINS).toEqual(["delivery", "analytics"]);
-    expect(unreachableDomainLabels()).toBe("Delivery and Analytics");
+  it("reaches Analytics now that a scan scores it", () => {
+    expect(CATEGORY_TO_DOMAIN.analytics).toBe("analytics");
+    expect(UNREACHABLE_DOMAINS).toEqual(["delivery"]);
+    expect(unreachableDomainLabels()).toBe("Delivery");
+  });
+
+  it("resolves a term from any vocabulary, and nothing from none", () => {
+    expect(domainForTerm("lead_capture")).toBe("sales");
+    expect(domainForTerm("digital_presence")).toBe("web");
+    expect(domainForTerm("compliance")).toBe("operations");
+    expect(domainForTerm("growth")).toBeNull();
+    expect(domainForTerm("spicy")).toBeNull();
+    expect(domainForTerm(undefined)).toBeNull();
+    // Never let a prototype key masquerade as a mapping.
+    expect(domainForTerm("toString")).toBeNull();
+    expect(domainForTerm("constructor")).toBeNull();
   });
 });
 
 describe("baselineScoresFromSummaries", () => {
-  it("maps a dimension onto its domain", () => {
-    expect(baselineScoresFromSummaries([{ domain: "operations", score: 61 }])).toEqual([
+  it("reads the `category` key the prospect report actually writes", () => {
+    expect(baselineScoresFromSummaries([{ category: "operations", score: 61 }])).toEqual([
       { key: "operations", score: 61, from: ["operations"] },
     ]);
   });
 
-  it("averages the dimensions that share a domain", () => {
-    // Digital is fed by digital_presence and brand.
-    const [digital] = baselineScoresFromSummaries([
-      { domain: "digital_presence", score: 40 },
-      { domain: "brand", score: 60 },
+  it("still reads the engine report's `domain` key", () => {
+    expect(baselineScoresFromSummaries([{ domain: "customer_experience", score: 44 }])).toEqual([
+      { key: "crm", score: 44, from: ["customer_experience"] },
     ]);
-    expect(digital).toEqual({ key: "web", score: 50, from: ["digital_presence", "brand"] });
+  });
+
+  it("averages the categories that share a domain", () => {
+    const [digital] = baselineScoresFromSummaries([
+      { category: "website", score: 40 },
+      { category: "seo", score: 60 },
+    ]);
+    expect(digital).toEqual({ key: "web", score: 50, from: ["website", "seo"] });
   });
 
   it("rounds the mean to an integer, since the map stores integers", () => {
     const [sales] = baselineScoresFromSummaries([
-      { domain: "sales", score: 50 },
-      { domain: "marketing", score: 51 },
+      { category: "social_presence", score: 50 },
+      { category: "lead_capture", score: 51 },
     ]);
     expect(sales?.score).toBe(51);
     expect(Number.isInteger(sales?.score)).toBe(true);
@@ -62,40 +119,45 @@ describe("baselineScoresFromSummaries", () => {
   /* ---- the honesty rules -------------------------------------------------- */
 
   it("EXCLUDES a null score from the average instead of counting it as zero", () => {
-    // brand unmeasured must not halve Digital's score.
     const [digital] = baselineScoresFromSummaries([
-      { domain: "digital_presence", score: 80 },
-      { domain: "brand", score: null },
+      { category: "website", score: 80 },
+      { category: "seo", score: null },
     ]);
     expect(digital?.score).toBe(80);
-    expect(digital?.from).toEqual(["digital_presence"]);
+    expect(digital?.from).toEqual(["website"]);
   });
 
-  it("produces nothing for a domain whose dimensions are all unmeasured", () => {
-    expect(baselineScoresFromSummaries([{ domain: "brand", score: null }])).toEqual([]);
+  it("produces nothing for a domain whose categories are all unmeasured", () => {
+    expect(baselineScoresFromSummaries([{ category: "branding", score: null }])).toEqual([]);
   });
 
-  it("never invents a score for Delivery or Analytics", () => {
+  it("never invents a score for Delivery", () => {
     const scores = baselineScoresFromSummaries(
-      indexDimensionSchema.options.map((domain) => ({ domain, score: 70 })),
+      maturityCategorySchema.options.map((category) => ({ category, score: 70 })),
     );
-    const keys = scores.map((s) => s.key);
-    expect(keys).not.toContain("delivery");
-    expect(keys).not.toContain("analytics");
+    expect(scores.map((s) => s.key)).not.toContain("delivery");
   });
 
-  it("drops unmapped dimensions rather than filing them somewhere", () => {
+  it("drops unmapped terms rather than filing them somewhere", () => {
     expect(baselineScoresFromSummaries([{ domain: "growth", score: 90 }])).toEqual([]);
   });
 
   it("ignores a score outside 0–100 rather than storing an impossible baseline", () => {
-    expect(baselineScoresFromSummaries([{ domain: "sales", score: 140 }])).toEqual([]);
-    expect(baselineScoresFromSummaries([{ domain: "sales", score: -5 }])).toEqual([]);
+    expect(baselineScoresFromSummaries([{ category: "seo", score: 140 }])).toEqual([]);
+    expect(baselineScoresFromSummaries([{ category: "seo", score: -5 }])).toEqual([]);
   });
 
   it("keeps a real zero — the worst score is still a score", () => {
-    expect(baselineScoresFromSummaries([{ domain: "sales", score: 0 }])).toEqual([
-      { key: "sales", score: 0, from: ["sales"] },
+    expect(baselineScoresFromSummaries([{ category: "seo", score: 0 }])).toEqual([
+      { key: "web", score: 0, from: ["seo"] },
+    ]);
+  });
+
+  it("survives an envelope that is not an array of rows", () => {
+    expect(baselineScoresFromSummaries(undefined)).toEqual([]);
+    expect(baselineScoresFromSummaries("nope")).toEqual([]);
+    expect(baselineScoresFromSummaries([null, 7, { category: "seo", score: 30 }])).toEqual([
+      { key: "web", score: 30, from: ["seo"] },
     ]);
   });
 });
@@ -117,8 +179,98 @@ describe("priorityFromSeverity", () => {
   });
 });
 
+describe("priorityFromObservedScore", () => {
+  it("reads a low observed score as the more urgent gap", () => {
+    expect(priorityFromObservedScore(12)).toBe("high");
+    expect(priorityFromObservedScore(55)).toBe("medium");
+    expect(priorityFromObservedScore(88)).toBe("low");
+  });
+
+  it("does not guess when there is no number", () => {
+    expect(priorityFromObservedScore(undefined)).toBe("medium");
+    expect(priorityFromObservedScore(Number.NaN)).toBe("medium");
+  });
+});
+
+describe("findingsFromRisks", () => {
+  it("maps a risk onto its domain with its description as the baseline", () => {
+    expect(
+      findingsFromRisks([
+        {
+          title: "No contact route on mobile",
+          category: "trust",
+          severity: "high",
+          description: "Enquiries drop off before contact.",
+        },
+      ]),
+    ).toEqual([
+      {
+        domainKey: "web",
+        finding: "No contact route on mobile",
+        baseline: "Enquiries drop off before contact.",
+        priority: "high",
+      },
+    ]);
+  });
+
+  it("drops a risk whose category has no domain rather than misfiling it", () => {
+    expect(findingsFromRisks([{ title: "Something", category: "vibes" }])).toEqual([]);
+  });
+
+  it("skips an empty title, which could not be stored anyway", () => {
+    expect(findingsFromRisks([{ title: "   ", category: "seo" }])).toEqual([]);
+  });
+
+  it("truncates to the column limits instead of being rejected on save", () => {
+    const [finding] = findingsFromRisks([
+      { title: "x".repeat(900), category: "seo", description: "y".repeat(400) },
+    ]);
+    expect(finding!.finding.length).toBeLessThanOrEqual(500);
+    expect(finding!.baseline!.length).toBeLessThanOrEqual(120);
+    expect(finding!.finding.endsWith("…")).toBe(true);
+  });
+
+  it("leaves the baseline null when there is no description", () => {
+    const [finding] = findingsFromRisks([{ title: "Something", category: "seo" }]);
+    expect(finding!.baseline).toBeNull();
+  });
+});
+
+describe("findingsFromWeaknesses", () => {
+  it("imports a weakness with its observed score as the baseline", () => {
+    expect(
+      findingsFromWeaknesses([
+        { kind: "weakness", category: "lead_capture", title: "No enquiry form", observedScore: 22 },
+      ]),
+    ).toEqual([
+      {
+        domainKey: "sales",
+        finding: "No enquiry form",
+        baseline: "Observed 22/100",
+        priority: "high",
+      },
+    ]);
+  });
+
+  it("NEVER files a strength as a finding — the ledger is a list of gaps", () => {
+    expect(
+      findingsFromWeaknesses([
+        { kind: "strength", category: "seo", title: "Titles are unique", observedScore: 91 },
+      ]),
+    ).toEqual([]);
+  });
+
+  it("leaves the baseline null when no score was observed", () => {
+    const [finding] = findingsFromWeaknesses([
+      { kind: "weakness", category: "seo", title: "Thin content" },
+    ]);
+    expect(finding!.baseline).toBeNull();
+    expect(finding!.priority).toBe("medium");
+  });
+});
+
 describe("findingsFromLedger", () => {
-  it("maps a finding onto its domain with its impact as the baseline", () => {
+  it("still reads the engine report's ledger shape", () => {
     expect(
       findingsFromLedger([
         {
@@ -138,25 +290,75 @@ describe("findingsFromLedger", () => {
     ]);
   });
 
-  it("DROPS a finding whose dimension has no domain, rather than misfiling it", () => {
+  it("drops a finding whose dimension has no domain", () => {
     expect(findingsFromLedger([{ title: "Market is growing", domain: "growth" }])).toEqual([]);
   });
+});
 
-  it("skips an empty title, which could not be stored anyway", () => {
-    expect(findingsFromLedger([{ title: "   ", domain: "sales" }])).toEqual([]);
-  });
+describe("importedDiagnosis", () => {
+  const report = {
+    domainSummaries: [
+      { category: "website", score: 62, confidence: 0.8 },
+      { category: "analytics", score: 20, confidence: 0.5 },
+      { category: "automation", score: null, confidence: 0.2 },
+    ],
+    risks: [
+      { title: "No analytics on any page", category: "technical", severity: "critical", description: "Nothing is measured." },
+    ],
+  };
+  const findings = {
+    weaknesses: [
+      { kind: "weakness", category: "analytics", title: "No analytics on any page", observedScore: 20 },
+      { kind: "weakness", category: "lead_capture", title: "No enquiry form", observedScore: 30 },
+    ],
+    strengths: [{ kind: "strength", category: "seo", title: "Titles are unique", observedScore: 90 }],
+  };
 
-  it("truncates to the column limits instead of being rejected on save", () => {
-    const [finding] = findingsFromLedger([
-      { title: "x".repeat(900), domain: "sales", businessImpact: "y".repeat(400) },
+  it("imports the scores and findings a real assessment carries", () => {
+    const result = importedDiagnosis({ report, findings });
+    expect(result.scores).toEqual([
+      { key: "web", score: 62, from: ["website"] },
+      { key: "analytics", score: 20, from: ["analytics"] },
     ]);
-    expect(finding!.finding.length).toBeLessThanOrEqual(500);
-    expect(finding!.baseline!.length).toBeLessThanOrEqual(120);
-    expect(finding!.finding.endsWith("…")).toBe(true);
+    // Two weaknesses; the risk restates the first and is folded into it.
+    expect(result.findings).toHaveLength(2);
+    expect(result.summariesSeen).toBe(3);
   });
 
-  it("leaves the baseline null when there is no impact text", () => {
-    const [finding] = findingsFromLedger([{ title: "Something", domain: "sales" }]);
-    expect(finding!.baseline).toBeNull();
+  it("deduplicates a problem a risk and a weakness both name", () => {
+    const titles = importedDiagnosis({ report, findings }).findings.map((f) => f.finding);
+    expect(titles.filter((t) => t === "No analytics on any page")).toHaveLength(1);
+  });
+
+  it("prefers the weakness's own domain over the risk's broader category", () => {
+    // The weakness knows it is about analytics; the risk only says "technical".
+    const analytics = importedDiagnosis({ report, findings }).findings.find(
+      (f) => f.finding === "No analytics on any page",
+    );
+    expect(analytics!.domainKey).toBe("analytics");
+  });
+
+  it("reports zero summaries seen for an assessment with none, so the UI can say why", () => {
+    const empty = importedDiagnosis({ report: { domainSummaries: [] }, findings: null });
+    expect(empty.scores).toEqual([]);
+    expect(empty.findings).toEqual([]);
+    expect(empty.summariesSeen).toBe(0);
+  });
+
+  it("distinguishes 'nothing scored' from 'nothing mappable'", () => {
+    const unmappable = importedDiagnosis({
+      report: { domainSummaries: [{ category: "vibes", score: 50 }] },
+      findings: null,
+    });
+    expect(unmappable.scores).toEqual([]);
+    expect(unmappable.summariesSeen).toBe(1);
+  });
+
+  it("survives a missing report entirely", () => {
+    expect(importedDiagnosis({ report: null })).toEqual({
+      scores: [],
+      findings: [],
+      summariesSeen: 0,
+    });
   });
 });

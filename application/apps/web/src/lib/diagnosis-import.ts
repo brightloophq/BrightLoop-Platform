@@ -1,59 +1,134 @@
 /* =============================================================================
  * Prospect scan → Business Scan diagnosis.
  *
- * Two vocabularies meet here, and they are NOT the same shape:
+ * WHAT A PROSPECT SCAN ACTUALLY PERSISTS
+ * --------------------------------------
+ * The bridge reads the `internal_intelligence_report` artifact, whose envelope
+ * is built by `toInternalReportEnvelope` (application/pipeline/report-adapter).
+ * That envelope keys its scores by MATURITY CATEGORY — thirteen of them —
+ * alongside `risks` (severity + risk category) and, in the sibling `findings`
+ * artifact, the observed strengths and weaknesses.
  *
- *   the scan engine scores TEN Business Health Index dimensions
- *   the Business Scan has SEVEN System Map domains
+ * This file previously read a DIFFERENT report shape: the scan engine's
+ * `pipelineReportSchema`, whose summaries are keyed `domain` over the ten
+ * Business Health Index dimensions. Nothing in the prospect pipeline writes
+ * that envelope, so every lookup missed, every import came back empty, and the
+ * UI reported "no scored dimension mapped to a domain" for scans that were full
+ * of scores. Both vocabularies are mapped here now, so either report imports.
  *
- * So the bridge is a real translation, not a rename, and the honest parts of it
- * are the gaps. Three engine dimensions describe the business rather than a
- * system domain — `growth` is an outcome, `risk` is scored inversely upstream,
- * `opportunity` is forward-looking — and folding any of them into a domain
- * would distort the baseline it is supposed to measure. Two System Map domains,
- * Delivery and Analytics, have no engine dimension that speaks to them at all.
+ * THREE VOCABULARIES, SEVEN DOMAINS
+ * ---------------------------------
+ * The System Map has seven fixed domains. The maturity categories, the index
+ * dimensions and the risk categories each describe a different cut of the same
+ * business, so the bridge is a real translation and the honest parts of it are
+ * the gaps: a term with no domain is DROPPED, never filed under a neighbour,
+ * and a domain nothing measures comes back unscored exactly as if nobody had
+ * typed a number.
  *
- * NOTHING IS INVENTED TO FILL THOSE GAPS. An unmapped domain comes back
- * unscored, exactly as if nobody had typed a number, and the UI says which ones
- * a scan cannot reach. A fabricated score would be indistinguishable from a
- * measured one the moment it was written.
+ * NOTHING IS INVENTED TO FILL A GAP. A fabricated score would be
+ * indistinguishable from a measured one the moment it was written.
  *
  * Pure and unit-tested: no I/O, no clock, no ids.
  * ========================================================================== */
 
 import {
+  DOMAIN_KEYS,
   DOMAIN_META,
   type DomainKey,
   type FindingPriority,
   type IndexDimension,
+  type MaturityCategory,
+  type ProspectRiskCategory,
 } from "@brightloop/schema";
 
-/** Where each engine dimension lands on the System Map, or null for none. */
+/**
+ * Maturity category → System Map domain. This is the map that matters: it is
+ * the vocabulary a prospect scan actually scores.
+ *
+ * Seven of the thirteen land on Digital because a crawl of a website observes
+ * the web surface most directly — that is what the instrument can see, and
+ * spreading them across domains to look balanced would move a measurement of
+ * the site onto a domain the site says nothing about.
+ */
+export const CATEGORY_TO_DOMAIN: Record<MaturityCategory, DomainKey | null> = {
+  // The public surface: the site itself and how it reads.
+  website: "web",
+  seo: "web",
+  branding: "web",
+  trust: "web",
+  accessibility: "web",
+  content: "web",
+  performance: "web",
+  // Demand and conversion.
+  social_presence: "sales",
+  lead_capture: "sales",
+  // What happens to a customer once captured.
+  customer_journey: "crm",
+  operations: "operations",
+  analytics: "analytics",
+  automation: "ai",
+};
+
+/**
+ * Index dimension → System Map domain, for the scan engine's report shape.
+ *
+ * `growth`, `risk` and `opportunity` stay unmapped: they describe the business
+ * rather than a domain of its system, and folding any of them into a domain
+ * would distort the baseline it is supposed to measure.
+ */
 export const DIMENSION_TO_DOMAIN: Record<IndexDimension, DomainKey | null> = {
-  // The public-facing surface: the site and how the brand reads on it.
   digital_presence: "web",
   brand: "web",
-  // Demand creation and conversion both sit under Sales on the map.
   sales: "sales",
   marketing: "sales",
-  // How customers are captured, tracked and looked after.
   customer_experience: "crm",
   operations: "operations",
-  // The AI Layer is the automation the business runs on.
   automation: "ai",
-  // Deliberately unmapped — see the header. These describe the business, not a
-  // domain of its system, and must not be folded into one.
   growth: null,
   risk: null,
   opportunity: null,
 };
 
-/** System Map domains no scan can score — stated, not silently skipped. */
-export const UNREACHABLE_DOMAINS: DomainKey[] = (
-  ["web", "sales", "crm", "operations", "delivery", "analytics", "ai"] as DomainKey[]
-).filter((d) => !Object.values(DIMENSION_TO_DOMAIN).includes(d));
+/** Risk category → System Map domain, for the report's `risks` section. */
+export const RISK_CATEGORY_TO_DOMAIN: Record<ProspectRiskCategory, DomainKey | null> = {
+  technical: "web",
+  trust: "web",
+  seo: "web",
+  accessibility: "web",
+  content: "web",
+  marketing: "sales",
+  operational: "operations",
+  compliance: "operations",
+  automation: "ai",
+};
 
-/** Human list for the UI, e.g. "Delivery and Analytics". */
+/**
+ * The domain a scan term names, across every vocabulary, or null for none.
+ *
+ * The three maps agree wherever they overlap (`operations`, `automation`,
+ * `content`…), so a single lookup is unambiguous and a report may mix them.
+ */
+export function domainForTerm(term: string | undefined | null): DomainKey | null {
+  if (typeof term !== "string" || term.length === 0) return null;
+  const maps: Record<string, DomainKey | null>[] = [
+    CATEGORY_TO_DOMAIN,
+    DIMENSION_TO_DOMAIN,
+    RISK_CATEGORY_TO_DOMAIN,
+  ];
+  for (const map of maps) {
+    if (Object.hasOwn(map, term)) return map[term] ?? null;
+  }
+  return null;
+}
+
+/** System Map domains no scan can score — stated, not silently skipped. */
+export const UNREACHABLE_DOMAINS: DomainKey[] = DOMAIN_KEYS.filter(
+  (d) =>
+    !Object.values(CATEGORY_TO_DOMAIN).includes(d) &&
+    !Object.values(DIMENSION_TO_DOMAIN).includes(d),
+);
+
+/** Human list for the UI, e.g. "Delivery" or "Delivery and Analytics". */
 export function unreachableDomainLabels(): string {
   const labels = UNREACHABLE_DOMAINS.map((d) => DOMAIN_META[d].label);
   if (labels.length === 0) return "";
@@ -61,44 +136,53 @@ export function unreachableDomainLabels(): string {
   return `${labels.slice(0, -1).join(", ")} and ${labels[labels.length - 1]}`;
 }
 
-export interface DomainSummaryInput {
-  domain: string;
-  score?: number | null;
-  summary?: string;
+/* ---- reading the envelope ------------------------------------------------ */
+
+function row(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function rows(value: unknown): Record<string, unknown>[] {
+  if (!Array.isArray(value)) return [];
+  return value.map(row).filter((r): r is Record<string, unknown> => r !== null);
+}
+
+function text(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 export interface ImportedScore {
   key: DomainKey;
   score: number;
-  /** Which engine dimensions produced it — shown so the number is traceable. */
-  from: IndexDimension[];
+  /** Which scan terms produced it — shown so the number is traceable. */
+  from: string[];
 }
 
 /**
  * Baseline scores from a report's domain summaries.
  *
- * A domain fed by several dimensions (Digital ← digital_presence + brand;
- * Sales ← sales + marketing) takes their MEAN, over the dimensions that
- * actually carry a score. A dimension scored `null` is missing data, not a
- * zero, so it is left out of the average rather than dragging it down — the
- * same rule the manual form uses for a blank field.
+ * A domain fed by several terms (Digital ← seven categories) takes their MEAN,
+ * over the terms that actually carry a score. A term scored `null` is missing
+ * data, not a zero, so it is left out of the average rather than dragging it
+ * down — the same rule the manual form uses for a blank field.
+ *
+ * Reads `category` (the prospect report) or `domain` (the engine report),
+ * whichever the row carries.
  */
-export function baselineScoresFromSummaries(
-  summaries: readonly DomainSummaryInput[],
-): ImportedScore[] {
-  const collected = new Map<DomainKey, { scores: number[]; from: IndexDimension[] }>();
+export function baselineScoresFromSummaries(summaries: unknown): ImportedScore[] {
+  const collected = new Map<DomainKey, { scores: number[]; from: string[] }>();
 
-  for (const summary of summaries) {
-    const dimension = summary.domain as IndexDimension;
-    const key = DIMENSION_TO_DOMAIN[dimension];
+  for (const summary of rows(summaries)) {
+    const term = text(summary["category"]) || text(summary["domain"]);
+    const key = domainForTerm(term);
     if (!key) continue;
 
-    const score = summary.score;
+    const score = summary["score"];
     if (typeof score !== "number" || !Number.isFinite(score) || score < 0 || score > 100) continue;
 
     const entry = collected.get(key) ?? { scores: [], from: [] };
     entry.scores.push(score);
-    entry.from.push(dimension);
+    entry.from.push(term);
     collected.set(key, entry);
   }
 
@@ -109,13 +193,6 @@ export function baselineScoresFromSummaries(
     out.push({ key, score: Math.round(mean), from });
   }
   return out;
-}
-
-export interface PipelineFindingInput {
-  title: string;
-  domain: string;
-  severity?: string;
-  businessImpact?: string;
 }
 
 export interface ImportedFinding {
@@ -144,45 +221,171 @@ export function priorityFromSeverity(severity: string | undefined): FindingPrior
   }
 }
 
+/**
+ * Observed 0–100 score → priority, for a weakness that carries no severity.
+ *
+ * The bands are the reading of a measured number, not a new judgement: a
+ * category the scan scored in the twenties is a worse problem than one it
+ * scored in the sixties, and the ledger has three levels to say so with.
+ */
+export function priorityFromObservedScore(score: number | undefined): FindingPriority {
+  if (typeof score !== "number" || !Number.isFinite(score)) return "medium";
+  if (score < 40) return "high";
+  if (score < 70) return "medium";
+  return "low";
+}
+
 /** Length caps from `scanFindingCreateInputSchema` — enforced here so a long
  *  machine-written finding is truncated visibly rather than rejected. */
 const FINDING_MAX = 500;
 const BASELINE_MAX = 120;
 
-function clamp(text: string, max: number): string {
-  const trimmed = text.trim();
+function clamp(value: string, max: number): string {
+  const trimmed = value.trim();
   if (trimmed.length <= max) return trimmed;
   return `${trimmed.slice(0, max - 1).trimEnd()}…`;
 }
 
 /**
- * Findings from a report's ledger, for the domains the map can reach.
- *
- * A finding whose dimension does not map is DROPPED rather than filed under a
- * neighbouring domain — attributing a marketing finding to Operations because
- * there was nowhere else to put it is worse than not importing it.
+ * Findings from the scan engine's `findingsLedger`, for the domains the map can
+ * reach. Retained for reports written in that shape.
  */
-export function findingsFromLedger(
-  ledger: readonly PipelineFindingInput[],
-): ImportedFinding[] {
+export function findingsFromLedger(ledger: unknown): ImportedFinding[] {
   const out: ImportedFinding[] = [];
 
-  for (const finding of ledger) {
-    const domainKey = DIMENSION_TO_DOMAIN[finding.domain as IndexDimension];
+  for (const finding of rows(ledger)) {
+    const domainKey = domainForTerm(text(finding["domain"]) || text(finding["category"]));
     if (!domainKey) continue;
 
-    const title = clamp(finding.title ?? "", FINDING_MAX);
+    const title = clamp(text(finding["title"]), FINDING_MAX);
     if (title.length === 0) continue;
 
-    const impact = finding.businessImpact ? clamp(finding.businessImpact, BASELINE_MAX) : "";
+    const impact = clamp(text(finding["businessImpact"]), BASELINE_MAX);
 
     out.push({
       domainKey,
       finding: title,
       baseline: impact.length > 0 ? impact : null,
-      priority: priorityFromSeverity(finding.severity),
+      priority: priorityFromSeverity(text(finding["severity"]) || undefined),
     });
   }
 
   return out;
+}
+
+/**
+ * Findings from the report's `risks` section.
+ *
+ * The risk's own description is the baseline — what is true now — clamped to
+ * the column rather than dropped, so the ledger row says more than its title.
+ */
+export function findingsFromRisks(risks: unknown): ImportedFinding[] {
+  const out: ImportedFinding[] = [];
+
+  for (const risk of rows(risks)) {
+    const domainKey = domainForTerm(text(risk["category"]));
+    if (!domainKey) continue;
+
+    const title = clamp(text(risk["title"]), FINDING_MAX);
+    if (title.length === 0) continue;
+
+    const description = clamp(text(risk["description"]), BASELINE_MAX);
+
+    out.push({
+      domainKey,
+      finding: title,
+      baseline: description.length > 0 ? description : null,
+      priority: priorityFromSeverity(text(risk["severity"]) || undefined),
+    });
+  }
+
+  return out;
+}
+
+/**
+ * Findings from the `findings` artifact's weaknesses.
+ *
+ * Strengths are deliberately skipped: the ledger is a list of gaps to close,
+ * and a strength filed as a finding would read as a problem. The weakness's
+ * `observedScore` becomes the baseline — a measured number is exactly what
+ * that column is for.
+ */
+export function findingsFromWeaknesses(findings: unknown): ImportedFinding[] {
+  const out: ImportedFinding[] = [];
+
+  for (const finding of rows(findings)) {
+    if (text(finding["kind"]) !== "weakness") continue;
+
+    const domainKey = domainForTerm(text(finding["category"]));
+    if (!domainKey) continue;
+
+    const title = clamp(text(finding["title"]), FINDING_MAX);
+    if (title.length === 0) continue;
+
+    const observed = finding["observedScore"];
+    const score = typeof observed === "number" && Number.isFinite(observed) ? observed : undefined;
+
+    out.push({
+      domainKey,
+      finding: title,
+      baseline: score === undefined ? null : `Observed ${Math.round(score)}/100`,
+      priority: priorityFromObservedScore(score),
+    });
+  }
+
+  return out;
+}
+
+export interface ImportSources {
+  /** The `internal_intelligence_report` envelope. */
+  report: Record<string, unknown> | null;
+  /** The `findings` envelope, which carries the category a weakness belongs to. */
+  findings?: Record<string, unknown> | null;
+}
+
+export interface ImportedDiagnosis {
+  scores: ImportedScore[];
+  findings: ImportedFinding[];
+  /** True when the report carried scored rows but none named a mappable domain. */
+  summariesSeen: number;
+}
+
+/**
+ * Everything one scan can contribute to a Business Scan, from the artifacts as
+ * they are actually persisted.
+ *
+ * Weaknesses and risks describe the same business from two angles and regularly
+ * name the same problem, so the combined list is deduplicated BY TITLE rather
+ * than by title-and-domain. A risk carries only a broad risk category while the
+ * weakness it restates knows the maturity category it came from, so the two can
+ * land on different domains — deduplicating on the pair would let the same
+ * sentence into the ledger twice under two headings. Weaknesses are collected
+ * first and the first entry wins, so the more specific attribution is the one
+ * that survives.
+ */
+export function importedDiagnosis({ report, findings }: ImportSources): ImportedDiagnosis {
+  const content = report ?? {};
+
+  const scores = baselineScoresFromSummaries(content["domainSummaries"]);
+
+  const collected = [
+    ...findingsFromWeaknesses(findings?.["weaknesses"]),
+    ...findingsFromRisks(content["risks"]),
+    ...findingsFromLedger(content["findingsLedger"]),
+  ];
+
+  const seen = new Set<string>();
+  const deduped: ImportedFinding[] = [];
+  for (const finding of collected) {
+    const key = finding.finding.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(finding);
+  }
+
+  return {
+    scores,
+    findings: deduped,
+    summariesSeen: rows(content["domainSummaries"]).length,
+  };
 }

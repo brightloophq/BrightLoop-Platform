@@ -291,10 +291,10 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
  * kill switches, because stages spend provider budget; importing is free and
  * repeatable.
  *
- * It also says plainly which domains a scan cannot reach. The engine scores ten
- * Business Health Index dimensions and none of them speaks to Delivery or
- * Analytics, so those stay unscored rather than being filled with a number
- * nothing measured.
+ * It also says plainly which domains a scan cannot reach. A website scan scores
+ * thirteen maturity categories and none of them speaks to Delivery, so that
+ * domain stays unscored rather than being filled with a number nothing
+ * measured. The list is derived from the mapping itself, so it cannot drift.
  */
 function ImportDiagnosis({
   clientId,
@@ -317,9 +317,10 @@ function ImportDiagnosis({
     <form action={importDiagnosisForm} className={styles.scoreForm}>
       <input type="hidden" name="clientId" value={clientId} />
       <p className={styles.scoreHint}>
-        Copies the scan&rsquo;s scored dimensions onto the System Map and its findings into the
-        ledger below. {unreachableDomainLabels()} are not scored by a scan — nothing measures them,
-        so they stay blank for you to judge. Importing the same scan twice adds nothing new.
+        Copies the scan&rsquo;s scored categories onto the System Map, and its risks and observed
+        weaknesses into the ledger below. Not measured by a website scan:{" "}
+        {unreachableDomainLabels()} — left blank for you to judge. Importing the same scan twice
+        adds nothing new.
       </p>
       <div className={styles.importRow}>
         <select name="runId" className={styles.select} aria-label="Completed scan to import">

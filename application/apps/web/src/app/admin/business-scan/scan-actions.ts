@@ -11,7 +11,7 @@ import { assertCapability, AuthorizationError } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
 import { getScanAssessment, listScans } from "@brightloop/application";
 import { readBaselineScores } from "@/lib/baseline-scores";
-import { baselineScoresFromSummaries, findingsFromLedger } from "@/lib/diagnosis-import";
+import { importedDiagnosis } from "@/lib/diagnosis-import";
 import { buildAppContext } from "@/lib/runtime-api";
 import { getCoreSurfaceRepository, getCoreSurfaceService } from "@/lib/repositories";
 
@@ -212,20 +212,22 @@ export async function importDiagnosisAction(formData: FormData): Promise<ActionR
       };
     }
 
-    const content = assessment.report.content as {
-      domainSummaries?: unknown;
-      findingsLedger?: unknown;
-    };
-    const summaries = Array.isArray(content.domainSummaries) ? content.domainSummaries : [];
-    const ledger = Array.isArray(content.findingsLedger) ? content.findingsLedger : [];
-
-    const scores = baselineScoresFromSummaries(summaries as never);
-    const findings = findingsFromLedger(ledger as never);
+    // The artifacts as the pipeline actually persists them: the report carries
+    // `domainSummaries` keyed by maturity category plus a `risks` section, and
+    // the sibling `findings` artifact carries the category each weakness belongs
+    // to. Reading the wrong keys here is what made every import come back empty.
+    const { scores, findings, summariesSeen } = importedDiagnosis({
+      report: assessment.report.content,
+      findings: assessment.findings?.content ?? null,
+    });
 
     if (scores.length === 0 && findings.length === 0) {
       return {
         ok: false,
-        error: "That assessment carried nothing this map can use — no scored dimension mapped to a domain.",
+        error:
+          summariesSeen === 0
+            ? "That scan produced no scored categories and no findings — its crawl may have reached nothing. Open it in the Prospect Scanner and check the pages it fetched."
+            : "That assessment carried nothing this map can use — none of its scored categories names a System Map domain.",
       };
     }
 
