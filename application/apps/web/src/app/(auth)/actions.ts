@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import { isClientRole, isRole } from "@brightloop/schema";
+import { explainSignInError } from "@/lib/auth-error";
 import { createClient } from "@/lib/supabase/server";
 import { resolveSiteUrl } from "@/lib/site-url";
 import { emitEvent } from "@/lib/analytics";
@@ -42,9 +43,15 @@ export async function signInWithPassword(
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error) {
-    // Generic on purpose (handoff §09.2): never reveal WHICH field was wrong,
-    // or an attacker can enumerate valid accounts.
-    return { error: "Email or password is incorrect" };
+    // Generic for a CREDENTIAL failure (handoff §09.2): never reveal which field
+    // was wrong, or an attacker can enumerate valid accounts.
+    //
+    // But only for a credential failure. This branch used to return that message
+    // for every error, so a rate limit, a gateway timeout and an unreachable
+    // database all told the owner their password was wrong — sending them to
+    // reset a password that was fine. Enumeration is the only thing the generic
+    // wording protects, and a 429 or a 503 leaks nothing either way.
+    return { error: explainSignInError(error) };
   }
 
   // Read the role from the JWT CLAIMS, not from `data.user`. The user record's
