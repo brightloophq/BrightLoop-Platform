@@ -80,7 +80,10 @@ export async function addFindingAction(formData: FormData): Promise<ActionResult
     return { ok: true };
   } catch (e) {
     if (e instanceof AuthorizationError) return { ok: false, error: "You don't have permission to add findings." };
-    return { ok: false, error: "Couldn't add the finding." };
+    // Surface the typed failure, exactly as startScanAction does. This used to
+    // discard `e.message` and return a fixed sentence, so a real database error
+    // arrived as an unexplained refusal.
+    return { ok: false, error: e instanceof Error ? e.message : "Couldn't add the finding." };
   }
 }
 
@@ -93,6 +96,18 @@ export async function startScanForm(formData: FormData): Promise<void> {
   const base = `/admin/business-scan?client=${encodeURIComponent(clientId)}`;
   redirect(result.ok ? base : `${base}&scanError=${encodeURIComponent(result.error ?? "Couldn't start the scan.")}`);
 }
+/**
+ * Add Finding — the same contract as Start Diagnosis above.
+ *
+ * This used to `await addFindingAction(formData)` and DISCARD the result. A
+ * refused write, a validation failure and a successful one were indistinguish-
+ * able: the page re-rendered, the finding was simply not in the ledger, and
+ * nothing anywhere said why. The redirect carries the real reason back instead,
+ * matching the `?scanError=` pattern its sibling already used.
+ */
 export async function addFindingForm(formData: FormData): Promise<void> {
-  await addFindingAction(formData);
+  const result = await addFindingAction(formData);
+  const clientId = String(formData.get("clientId") ?? "");
+  const base = `/admin/business-scan?client=${encodeURIComponent(clientId)}`;
+  redirect(result.ok ? base : `${base}&findingError=${encodeURIComponent(result.error ?? "Couldn't add the finding.")}`);
 }

@@ -14,6 +14,14 @@ import type { AdminNavGroup } from "@/app/admin/AdminNav";
 export const TRANSFORMATION_NAV = [
   { label: "Console", href: "/admin/dashboard" },
   { label: "Business Scan", href: "/admin/business-scan" },
+  // The Prospect Scanner was BUILT AND UNREACHABLE: a full pipeline — twenty
+  // components, its own API routes and tests — with no link to it anywhere in
+  // the product. The only route in was a back-link from a quote, which already
+  // required a run id, so there was no way to reach it without one. It sits
+  // beside Business Scan because they are the two halves of diagnosis: this one
+  // reads a PROSPECT's public site before they are a client, Business Scan
+  // baselines a client you already have.
+  { label: "Prospect Scanner", href: "/admin/prospect-scanner", cap: "transformation.scan.write" },
   { label: "Activation", href: "/admin/activation" },
   { label: "Signals", href: "/admin/signals" },
   { label: "Insights", href: "/admin/insights" },
@@ -33,7 +41,12 @@ export function transformationNavGroup(actor: Actor): AdminNavGroup | null {
   const items: AdminNavGroup["items"] = [];
 
   if (may(actor, "transformation.read")) {
-    for (const item of TRANSFORMATION_NAV) items.push({ ...item, ready: true });
+    for (const item of TRANSFORMATION_NAV) {
+      // An item may name its own capability; most inherit `transformation.read`.
+      // Hidden, not disabled — an operator never sees a door they cannot open.
+      if ("cap" in item && !may(actor, item.cap)) continue;
+      items.push({ label: item.label, href: item.href, ready: true });
+    }
   }
   if (may(actor, "settings.read")) {
     items.push({ label: "Settings", href: "/admin/settings", ready: true });
