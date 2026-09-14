@@ -39,11 +39,25 @@ describe("siteSchema", () => {
     expect(points[0]!["url"]).toBe("https://auxion.xyz/contact");
   });
 
-  it("OMITS sameAs while no real profile has been declared", () => {
-    // `sameAs: []` would assert the business has no other profiles. It has not
-    // been established that it has none — only that none are recorded here.
-    expect(SOCIAL_PROFILES).toHaveLength(0);
-    expect("sameAs" in organization()).toBe(false);
+  it("publishes the declared profiles as sameAs", () => {
+    expect(SOCIAL_PROFILES.length).toBeGreaterThan(0);
+    expect(organization()["sameAs"]).toEqual(SOCIAL_PROFILES.map((p) => p.href));
+  });
+
+  it("links only to profiles over https, with no placeholder left in", () => {
+    for (const profile of SOCIAL_PROFILES) {
+      const url = new URL(profile.href);
+      expect(url.protocol).toBe("https:");
+      // A handle segment, not a bare host — a link to instagram.com is not a
+      // profile, and would be a `sameAs` identifying nobody.
+      expect(url.pathname.replace(/\/+$/, "").length).toBeGreaterThan(1);
+      expect(profile.label.trim().length).toBeGreaterThan(0);
+    }
+  });
+
+  it("does not list the same account twice", () => {
+    const hrefs = SOCIAL_PROFILES.map((p) => p.href);
+    expect(new Set(hrefs).size).toBe(hrefs.length);
   });
 
   it("asserts nothing it cannot source", () => {

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { may } from "@brightloop/domain";
 import { ToastProvider } from "@brightloop/ui";
@@ -22,6 +23,19 @@ import styles from "./admin.module.css";
  * Per handoff §09.3 role-gated items are HIDDEN, not disabled — and hiding them
  * here is convenience, not security. RLS is what actually stops them.
  */
+/**
+ * Never indexable.
+ *
+ * This surface used to inherit `noindex` from the root layout's site-wide rule.
+ * That rule is gone now the public site is indexable, so the guard is declared
+ * where it belongs — on the surface it protects. It is a crawler hint, not
+ * access control: middleware, `requireSurface()` and RLS are what actually keep
+ * this private.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const actor = await requireSurface("admin");
 

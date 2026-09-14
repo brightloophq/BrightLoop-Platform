@@ -50,10 +50,20 @@ export const SITE_NAME = "Auxion";
  * Public profiles, emitted as `sameAs` on the Organization record and linked in
  * the footer.
  *
- * EMPTY BY DESIGN. A scan of this site reports "minimal social footprint", and
- * the fix is to list the real accounts — not to guess at handles. A `sameAs`
- * pointing at an account the business does not control is a false claim of
- * identity in structured data, and a footer link to a dead profile is worse
- * than no link. Add the real URLs here and both surfaces populate themselves.
+ * Every entry is an account the business actually holds, supplied by its owner.
+ * Nothing is added here on a guess: a `sameAs` pointing at an account the
+ * business does not control is a false claim of identity in structured data,
+ * and a footer link to a dead profile is worse than no link.
+ *
+ * NOTE on the Facebook entry: it is a personal profile rather than a Facebook
+ * Page for the business. It is linked because it is genuinely where the
+ * business is reachable there, but a Page would be the stronger signal — a
+ * Page can carry the business name, category and contact details, which is what
+ * `sameAs` on an Organization is meant to point at. Swap the URL here when one
+ * exists.
  */
-export const SOCIAL_PROFILES: readonly { label: string; href: string }[] = [];
+export const SOCIAL_PROFILES: readonly { label: string; href: string }[] = [
+  { label: "Instagram", href: "https://www.instagram.com/auxion_ai/" },
+  { label: "TikTok", href: "https://www.tiktok.com/@auxion_ai" },
+  { label: "Facebook", href: "https://www.facebook.com/oladipupo.habeebulahi/" },
+];

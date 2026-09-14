@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { requireSurface } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -15,6 +16,19 @@ import styles from "../admin/admin.module.css";
  * The nav shows an "actions awaiting you" count on Deliverables, computed from
  * the client's own in_review deliverables — the re-entry driver from §07.
  */
+/**
+ * Never indexable.
+ *
+ * This surface used to inherit `noindex` from the root layout's site-wide rule.
+ * That rule is gone now the public site is indexable, so the guard is declared
+ * where it belongs — on the surface it protects. It is a crawler hint, not
+ * access control: middleware, `requireSurface()` and RLS are what actually keep
+ * this private.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const actor = await requireSurface("portal");
   const supabase = await createClient();

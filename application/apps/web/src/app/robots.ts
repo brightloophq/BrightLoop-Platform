@@ -17,7 +17,22 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "*",
         allow: "/",
-        disallow: ["/portal", "/portal/", "/admin", "/admin/", "/login", "/legal/"],
+        disallow: [
+          "/portal",
+          "/portal/",
+          "/admin",
+          "/admin/",
+          // The Phase F client surface — authenticated, and previously covered
+          // only by the site-wide noindex this list now has to stand in for.
+          "/workspace",
+          "/workspace/",
+          "/login",
+          "/legal/",
+          // Session-scoped: the signup funnel and the wizard's result steps.
+          "/start",
+          "/recommendation",
+          "/roadmap",
+        ],
       },
     ],
     sitemap: `${SITE_ORIGIN}/sitemap.xml`,
