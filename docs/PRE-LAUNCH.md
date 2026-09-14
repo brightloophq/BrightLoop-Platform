@@ -38,8 +38,10 @@ Each integration works as a deterministic **mock** until its key is set, then se
 
 ## 4. SEO / indexing
 
-- �flip **Site-wide `robots: index:false`** (`apps/web/src/app/layout.tsx`): the whole site is `noindex` while content is placeholder. **Flip to index once real content is in** — keep `/portal`, `/admin`, `/start` noindex (they already are, and are behind auth).
-- ✅ Sitemap, robots.txt, canonical, OG, JSON-LD (portfolio/testimonials) are wired.
+- ✅ **Site-wide indexing is ON** (`apps/web/src/app/layout.tsx`): flipped to `index: true` once the portfolio, reviews and written pages were real. The private surfaces used to inherit their `noindex` from that one line and declared none of their own, so `/portal`, `/admin` and `/workspace` now each set it in their own layout; `/start`, `/legal/*`, the auth pages and the funnel's result steps (`/recommendation`, `/roadmap`) carry their own too, and robots.txt disallows all of them. ⚠️ Legal copy is still unissued — the documents say so on their own pages and are excluded from the sitemap, but they are now reachable on an indexable site.
+- ✅ Sitemap, robots.txt, canonical (every public page), OG, and JSON-LD are wired: `Organization` + `WebSite` from the public layout, `Article` on each written page, `CreativeWork`/review schema on portfolio and testimonials.
+- ✅ **Canonical origin** is `auxion.xyz` (`SITE_ORIGIN`). It named `brightloop.co` until the site was launched, which pointed every canonical, sitemap URL and JSON-LD `url` at another domain. Override per deployment with `NEXT_PUBLIC_SITE_ORIGIN` so previews do not emit production canonicals.
+- ✅ **Social profiles** (`apps/web/src/lib/site.ts`, `SOCIAL_PROFILES`): Instagram, TikTok and Facebook, linked in the footer and emitted as `sameAs`. ⚠️ The Facebook entry is a personal profile, not a business Page — swap it when a Page exists.
 - ⚠️ Set real production hostnames (`NEXT_PUBLIC_PUBLIC_HOST` / `PORTAL_HOST` / `ADMIN_HOST`) — middleware routes surfaces by subdomain.
 
 ## 5. Accessibility (WCAG 2.1 AA)
