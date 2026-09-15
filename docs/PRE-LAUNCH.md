@@ -26,6 +26,27 @@ Each integration works as a deterministic **mock** until its key is set, then se
 - ⚠️ **Email** (`EMAIL_PROVIDER_API_KEY`): pipeline + consent gate are real; the concrete provider adapter (and a template strategy — templates are delegated to the provider/n8n) still needed for real sends. Supabase's built-in mailer is capped at ~2/hour; set custom SMTP in the Supabase dashboard to lift it.
 - ✅ **n8n automations** (`N8N_WEBHOOK_SECRET`): signed callback receiver built; point it at your n8n instance.
 
+## 2b. Deploying — migrations are NOT automatic
+
+⚠️ **Push migrations BEFORE the app code that needs them.** Nothing in CI applies
+migrations to the live database: CI runs them against a throwaway local stack and
+holds no production credentials. A deploy therefore ships code that may read a
+column the live database does not have yet, and the failure appears at request
+time, not at build time — a page that worked yesterday simply stops loading.
+
+```bash
+cd application
+export SUPABASE_ACCESS_TOKEN=<personal access token>   # or: supabase login
+supabase link --project-ref <ref>                      # prompts for the DB password
+supabase db push                                       # applies every unapplied migration
+```
+
+This has bitten once already: `scan_findings.source` shipped with the app before
+its migration reached the database and the Business Scan page stopped loading.
+The admin pages now name a schema mismatch and the command that fixes it rather
+than dying (`apps/web/src/lib/schema-drift.ts`), but the ordering is still the
+real fix.
+
 ## 3. Security
 
 - ✅ **RLS coverage**: verified live — all 34 public tables have RLS enabled + at least one policy (see `bl_rls_audit()`). No anon-readable holes; only published marketing content is public.

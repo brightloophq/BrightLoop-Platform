@@ -8,6 +8,7 @@ import { MotionProvider } from "@brightloop/ui/motion";
 import { scoreField } from "@/lib/baseline-scores";
 import { unreachableDomainLabels } from "@/lib/diagnosis-import";
 import { listImportableScans } from "@/lib/scanner-data";
+import { errorMessage, schemaDriftHint } from "@/lib/schema-drift";
 import { requireSurface } from "@/lib/auth";
 import { getCoreSurfaceRepository } from "@/lib/repositories";
 import { createClient } from "@/lib/supabase/server";
@@ -126,12 +127,19 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
   let name: string;
   try {
     [scan, domains, name] = await Promise.all([repo.latestScan(clientId), repo.listDomains(clientId), orgName(clientId)]);
-  } catch {
+  } catch (e) {
+    // This used to discard the error and say "something went wrong", which is
+    // exactly what it must not do when the cause is a database one migration
+    // behind the deploy: the reason is the only thing that makes it fixable.
+    const message = errorMessage(e);
+    const hint = schemaDriftHint(message);
     return (
       <>
         <Hero title="Business Scan" kicker="Diagnose · Step 01" hint="Baseline the seven domains." />
         <Alert tone="danger" title="We couldn't load the scan">
-          Something went wrong reading the diagnosis. <Link href={`/admin/business-scan?client=${clientId}`}>Try again</Link>.
+          {hint ? <>{hint}<br /><br /></> : null}
+          {message}{" "}
+          <Link href={`/admin/business-scan?client=${clientId}`}>Try again</Link>.
         </Alert>
       </>
     );
@@ -171,7 +179,19 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
     );
   }
 
-  const [findings, importable] = await Promise.all([repo.listFindings(scan.id), listImportableScans(clientId)]);
+  // Guarded for the same reason. The findings read is the one that reaches the
+  // newest columns, so it is the first to fail when the database is behind —
+  // and it used to take the whole page with it, System Map and all.
+  let findings: Awaited<ReturnType<typeof repo.listFindings>> = [];
+  let ledgerError: string | null = null;
+  const importable = await listImportableScans(clientId);
+  try {
+    findings = await repo.listFindings(scan.id);
+  } catch (e) {
+    const message = errorMessage(e);
+    ledgerError = [schemaDriftHint(message), message].filter(Boolean).join(" — ");
+  }
+
   const view = buildBusinessScanView(scan, domains, findings);
   const rows: FindingRow[] = view.findings;
   const idx = view.systemMap.index;
@@ -289,6 +309,11 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
         <OperationalPanel className={styles.ledgerPanel}>
           {/* A finding that failed to save used to vanish without a word — the
               form action discarded its result. The reason arrives here now. */}
+          {ledgerError ? (
+            <Alert tone="danger" title="Couldn't read the diagnosis ledger">
+              {ledgerError}
+            </Alert>
+          ) : null}
           {findingError ? (
             <Alert tone="danger" title="Couldn't update the ledger">
               {findingError}
