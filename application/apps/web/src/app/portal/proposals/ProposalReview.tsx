@@ -2,12 +2,19 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Badge, Button, Card } from "@brightloop/ui";
 import { proposalAction } from "../../portal-sales-actions";
 
 export interface ProposalLine { label: string; amount?: number; quantity?: number; description?: string }
 export interface PortalProposal {
   id: string;
+  proposal_kind: "legacy_sales" | "canonical_issued";
+  proposal_number?: string | null;
+  title?: string | null;
+  currency?: string | null;
+  issued_at?: string | null;
+  valid_until?: string | null;
   status: string;
   subtotal: number;
   total: number;
@@ -63,7 +70,9 @@ export function ProposalReview({ proposals }: { proposals: PortalProposal[] }) {
           </div>
           {p.deposit > 0 ? <div style={row}><span>Deposit to start</span><span>{money(p.deposit)}</span></div> : null}
 
-          {p.status === "sent" || p.status === "viewed" ? (
+          {p.proposal_kind === "canonical_issued" ? (
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}><Link href={`/portal/proposals/${p.id}`}>View issued proposal {p.proposal_number ?? p.id}</Link>. Acceptance will be enabled in a later release.</p>
+          ) : p.status === "sent" || p.status === "viewed" ? (
             <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)", flexWrap: "wrap" }}>
               <Button variant="primary" size="sm" disabled={busy} onClick={() => act(p.id, "accept")}>Accept proposal</Button>
               <Button variant="secondary" size="sm" disabled={busy} onClick={() => act(p.id, "change")}>Request changes</Button>

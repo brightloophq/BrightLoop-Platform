@@ -13,12 +13,13 @@ type Quote = {
   client_note: string; valid_until: string | null; updated_at: string;
   commercial_mode: "legacy_client_quote" | "proposal_only";
   source_run_id: string | null; source_proposal_version_id: string | null; source_review_event_id: string | null;
+  lead_id?: string | null; client_id?: string | null; proposal_id?: string | null; commercial_approved_state?: string | null;
   quote_items: WorkspaceQuoteItem[];
 };
 
 const cadenceOptions: QuoteRecurrenceCadence[] = ["weekly", "monthly", "quarterly", "annual"];
 
-export function QuoteCommercialWorkspace({ quote, sourceProposal }: { quote: Quote; sourceProposal: { id: string; checksum: string; envelope: unknown } | null }) {
+export function QuoteCommercialWorkspace({ quote, sourceProposal, clients = [] }: { quote: Quote; sourceProposal: { id: string; checksum: string; envelope: unknown } | null; clients?: { id: string; company: string }[] }) {
   const router = useRouter();
   const [title, setTitle] = useState(quote.title);
   const [currency, setCurrency] = useState(quote.currency);
@@ -30,6 +31,7 @@ export function QuoteCommercialWorkspace({ quote, sourceProposal }: { quote: Quo
   const [authoritativeSummary, setAuthoritativeSummary] = useState<CommercialQuoteSummary | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ tone: "success" | "warning"; text: string } | null>(null);
+  const [clientId, setClientId] = useState(quote.client_id ?? "");
   const editable = quote.commercial_mode === "proposal_only" ? ["draft", "internal_review"].includes(quote.status) : ["draft", "internal_review", "revised"].includes(quote.status);
   const preview = useMemo(() => quoteWorkspaceSummary(items, discount), [items, discount]);
   const summary = authoritativeSummary ?? preview.summary;
@@ -64,6 +66,20 @@ export function QuoteCommercialWorkspace({ quote, sourceProposal }: { quote: Quo
     setBusy(false);
     if (!result.ok) setMessage({ tone: "warning", text: result.error ?? "Could not submit for review." });
     else router.refresh();
+  }
+
+  async function canonical(action: "approve" | "revoke" | "bind" | "issue") {
+    setBusy(true); setMessage(null);
+    let result: {ok:boolean;error?:string;id?:string;outcome?:string;updatedAt?:string};
+    try { const response=await fetch(`/api/internal/quotes/${quote.id}/issuance`,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action,expectedUpdatedAt,clientId})}); const body=await response.json(); result=response.ok?{ok:true,id:body.proposalId??body.quoteId,outcome:body.outcome,updatedAt:body.updatedAt}:{ok:false,error:body.error}; }
+    catch { result={ok:false,error:"Commercial action failed."}; }
+    setBusy(false);
+    if (!result.ok) setMessage({ tone: "warning", text: result.error ?? "Commercial action failed." });
+    else {
+      if (result.updatedAt) setExpectedUpdatedAt(result.updatedAt);
+      setMessage({ tone: "success", text: action === "issue" ? `${result.outcome === "already_issued" ? "Already issued" : "Proposal issued"}: ${result.id}` : "Commercial state updated." });
+      router.refresh();
+    }
   }
 
   return <div className={styles.layout}>
@@ -107,6 +123,12 @@ export function QuoteCommercialWorkspace({ quote, sourceProposal }: { quote: Quo
       {preview.error ? <Alert tone="warning" title="Invalid commercial configuration">{preview.error}</Alert> : null}
       {message ? <Alert tone={message.tone} title={message.tone === "success" ? "Saved" : "Could not save"}>{message.text}</Alert> : null}
       <div className={styles.actions}><Button onClick={save} disabled={!editable || busy || summary === null}>{busy ? "Saving…" : "Save scope & pricing"}</Button>{quote.status === "draft" ? <Button variant="secondary" onClick={review} disabled={busy}>Submit for internal review</Button> : null}</div>
+      {quote.commercial_mode === "proposal_only" ? <div className={styles.actions}>
+        {!quote.client_id && quote.lead_id ? <><select aria-label="Existing client" value={clientId} onChange={(event) => setClientId(event.target.value)}><option value="">Select existing client</option>{clients.map((client) => <option key={client.id} value={client.id}>{client.company}</option>)}</select><Button variant="secondary" disabled={busy || !clientId} onClick={() => canonical("bind")}>Bind existing client</Button></> : null}
+        {quote.status === "internal_review" ? <Button disabled={busy} onClick={() => canonical("approve")}>Approve commercial scope</Button> : null}
+        {quote.status === "approved" ? <><Button variant="secondary" disabled={busy} onClick={() => canonical("revoke")}>Return to review</Button><Button disabled={busy || !quote.client_id} onClick={() => canonical("issue")}>Issue canonical proposal</Button></> : null}
+        {quote.status === "issued" && quote.proposal_id ? <a href={`/admin/proposals/${quote.proposal_id}`}>Issued proposal {quote.proposal_id}</a> : null}
+      </div> : null}
     </OperationalPanel>
 
     {sourceProposal ? <OperationalPanel><div className={styles.heading}><strong>Scanner source · read only</strong><span>{sourceProposal.id}</span></div><p>Checksum: <code>{sourceProposal.checksum}</code></p><details><summary>Approved proposal intelligence snapshot</summary><pre className={styles.source}>{JSON.stringify(sourceProposal.envelope, null, 2)}</pre></details></OperationalPanel> : null}

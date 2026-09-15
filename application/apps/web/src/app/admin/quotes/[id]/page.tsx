@@ -19,7 +19,7 @@ export default async function QuoteWorkspacePage({ params }: { params: Promise<{
 
   const { id } = await params;
   const supabase = await createClient();
-  const { data: quote, error } = await supabase.from("quotes").select("id,title,status,currency,subtotal,discount,total,recurring_total,recurring_cadence,optional_one_time_total,optional_recurring_total,client_note,valid_until,updated_at,commercial_mode,source_run_id,source_proposal_version_id,source_review_event_id,quote_items(id,label,description,quantity,unit_amount,amount,sort,pricing_type,recurrence_cadence,optional,source_work_item_id,source_evidence_refs)").eq("id", id).maybeSingle();
+  const { data: quote, error } = await supabase.from("quotes").select("id,title,status,currency,subtotal,discount,total,recurring_total,recurring_cadence,optional_one_time_total,optional_recurring_total,client_note,valid_until,updated_at,commercial_mode,lead_id,client_id,proposal_id,commercial_approved_state,source_run_id,source_proposal_version_id,source_review_event_id,quote_items(id,label,description,quantity,unit_amount,amount,sort,pricing_type,recurrence_cadence,optional,source_work_item_id,source_evidence_refs)").eq("id", id).maybeSingle();
   if (error) return <OperationalPanel><Alert tone="danger" title="Quote unavailable">{error.message}</Alert></OperationalPanel>;
   if (!quote) notFound();
 
@@ -27,11 +27,12 @@ export default async function QuoteWorkspacePage({ params }: { params: Promise<{
     ? await supabase.from("proposal_versions").select("id,checksum,envelope").eq("id", quote.source_proposal_version_id).maybeSingle()
     : { data: null };
   const items = [...(quote.quote_items ?? [])].sort((a, b) => a.sort - b.sort);
+  const { data: clients } = quote.commercial_mode === "proposal_only" && !quote.client_id ? await supabase.from("clients").select("id,company").order("company") : { data: [] };
 
   return (
     <div style={{ maxWidth: 1200, marginInline: "auto", padding: "var(--space-6)", display: "grid", gap: "var(--space-5)" }}>
       <SectionHeader as="h1" size="page" index="01" kicker={<Link href={quote.source_run_id ? `/admin/prospect-scanner/${quote.source_run_id}` : "/admin"}>← {quote.source_run_id ? "Scanner package" : "Admin"}</Link>} title={quote.title} hint="Canonical internal commercial scope and quote-owned pricing." />
-      <QuoteCommercialWorkspace quote={{ ...quote, quote_items: items }} sourceProposal={source.data} />
+      <QuoteCommercialWorkspace quote={{ ...quote, quote_items: items }} sourceProposal={source.data} clients={clients ?? []} />
     </div>
   );
 }
