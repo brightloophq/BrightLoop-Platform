@@ -1,5 +1,7 @@
 import "server-only";
 
+import { newestPerBusiness, type ScanChoice } from "./importable-scans";
+
 import {
   advanceCommercialWorkflow,
   getScan,
@@ -304,11 +306,8 @@ export async function listScanSubjects(): Promise<ScanSubjectOption[]> {
   ];
 }
 
-export interface ImportableScan {
-  id: string;
-  label: string;
-  completedAt: string | null;
-}
+/** The Business Scan's name for a scan it can offer as a baseline source. */
+export type ImportableScan = ScanChoice;
 
 /**
  * This client's scans that are far enough along to have an assessment.
@@ -323,16 +322,20 @@ export async function listImportableScans(clientId: string): Promise<ImportableS
 
   try {
     const scans = await listScans(ctx, { clientId, limit: 50 });
-    return scans
-      .filter((scan) => scan.lifecycle === "completed")
-      .map((scan) => {
-        const identity = readIdentity(scan.metadata);
-        return {
-          id: scan.id,
-          label: identity.businessName ?? identity.websiteUrl ?? scan.scanId,
-          completedAt: scan.completedAt,
-        };
-      });
+    return newestPerBusiness(
+      scans
+        .filter((scan) => scan.lifecycle === "completed")
+        .map((scan) => {
+          const identity = readIdentity(scan.metadata);
+          return {
+            id: scan.id,
+            label: identity.businessName ?? identity.websiteUrl ?? scan.scanId,
+            businessName: identity.businessName,
+            websiteUrl: identity.websiteUrl,
+            completedAt: scan.completedAt,
+          };
+        }),
+    );
   } catch {
     // A read failure here must not take the whole Business Scan down with it —
     // importing is an offer, not the page.
