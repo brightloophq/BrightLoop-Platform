@@ -26,6 +26,41 @@ Each integration works as a deterministic **mock** until its key is set, then se
 - ⚠️ **Email** (`EMAIL_PROVIDER_API_KEY`): pipeline + consent gate are real; the concrete provider adapter (and a template strategy — templates are delegated to the provider/n8n) still needed for real sends. Supabase's built-in mailer is capped at ~2/hour; set custom SMTP in the Supabase dashboard to lift it.
 - ✅ **n8n automations** (`N8N_WEBHOOK_SECRET`): signed callback receiver built; point it at your n8n instance.
 
+## 2b. Deploying — migrations are NOT automatic
+
+⚠️ **Push migrations BEFORE the app code that needs them.** Nothing in CI applies
+migrations to the live database: CI runs them against a throwaway local stack and
+holds no production credentials. A deploy therefore ships code that may read a
+column the live database does not have yet, and the failure appears at request
+time, not at build time — a page that worked yesterday simply stops loading.
+
+```bash
+cd application
+export SUPABASE_ACCESS_TOKEN=<personal access token>   # or: supabase login
+supabase link --project-ref <ref>                      # prompts for the DB password
+supabase db push                                       # applies every unapplied migration
+```
+
+⚠️ **Version numbers are the identity, not filenames.** `db push` records the
+numeric prefix. If two working copies ever create different migrations under the
+same prefix, whichever is pushed first claims that version and the other is
+skipped FOREVER, silently — `supabase migration list` shows the version in both
+columns, which is what makes it invisible. This happened at `20260812000100`
+(`media_bucket_limits` here vs `quote_proposal_statuses` in a diverged copy);
+the repair was to re-issue the skipped statement under a fresh version
+(`20260815000100`), not to rewrite history on a live database.
+
+⚠️ **Never push from a working copy that is not current `main`.** Anything it
+applies that is not committed here becomes production schema this repository
+cannot reproduce — invisible to CI, to the generated types, and to anyone
+rebuilding the database from migrations.
+
+This has bitten once already: `scan_findings.source` shipped with the app before
+its migration reached the database and the Business Scan page stopped loading.
+The admin pages now name a schema mismatch and the command that fixes it rather
+than dying (`apps/web/src/lib/schema-drift.ts`), but the ordering is still the
+real fix.
+
 ## 3. Security
 
 - ✅ **RLS coverage**: verified live — all 34 public tables have RLS enabled + at least one policy (see `bl_rls_audit()`). No anon-readable holes; only published marketing content is public.
