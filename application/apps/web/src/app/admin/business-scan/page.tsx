@@ -6,7 +6,7 @@ import { DOMAIN_KEYS, DOMAIN_META } from "@brightloop/schema";
 import { Alert, Badge, Button, EmptyWorkspace, IndexGauge, OperationalPanel, OperationalTable, SectionHeader, SectionRule, SkeletonBlock, SystemMap, type OperationalColumn } from "@brightloop/ui";
 import { MotionProvider } from "@brightloop/ui/motion";
 import { scoreField } from "@/lib/baseline-scores";
-import { unreachableDomainLabels } from "@/lib/diagnosis-import";
+import { isReplaceable, unreachableDomainLabels } from "@/lib/diagnosis-import";
 import { listImportableScans } from "@/lib/scanner-data";
 import { errorMessage, schemaDriftHint } from "@/lib/schema-drift";
 import { requireSurface } from "@/lib/auth";
@@ -218,9 +218,11 @@ async function ScanWorkspace({ clientId, canWrite, scanError, findingError, base
         <span className={styles.findingCell}>
           <span>{r.finding}</span>
           {/* Say which rows a newer import will replace and which it will
-              leave alone, so "replace on import" is visible before it runs. */}
+              leave alone, so "replace on import" is visible before it runs.
+              Asked of the row the same way the import asks it, so the label
+              cannot promise one thing and the import do another. */}
           <span className={styles.findingSource}>
-            {r.source === "import" ? "from a scan" : "added by hand"}
+            {isReplaceable(r) ? "from a scan" : "added by hand"}
           </span>
         </span>
       ),
@@ -384,15 +386,16 @@ function ImportDiagnosis({
       <p className={styles.scoreHint}>
         Copies the scan&rsquo;s scored categories onto the System Map, and its risks and observed
         weaknesses into the ledger below. Not measured by a website scan:{" "}
-        {unreachableDomainLabels()} — left blank for you to judge. Importing the same scan twice
-        adds nothing new.
+        {unreachableDomainLabels()} — left blank for you to judge. Only each business&rsquo;s
+        newest scan is listed; an older one would write a baseline already known to be stale.
+        Importing the same scan twice adds nothing new.
       </p>
       <div className={styles.importRow}>
         <select name="runId" className={styles.select} aria-label="Completed scan to import">
           {scans.map((s) => (
             <option key={s.id} value={s.id}>
               {s.label}
-              {s.completedAt ? ` · ${new Date(s.completedAt).toLocaleDateString()}` : ""}
+              {completedLabel(s.completedAt)}
             </option>
           ))}
         </select>
@@ -402,6 +405,31 @@ function ImportDiagnosis({
       </div>
     </form>
   );
+}
+
+/**
+ * When a scan finished, to the minute and in one fixed format.
+ *
+ * A date alone could not tell two scans of the same site apart on the day it was
+ * scanned twice, which is exactly when telling them apart matters. The month is
+ * spelled so the row does not read as 9/14 to one person and 14/9 to another,
+ * and the zone is named because the stored time is UTC and the reader may not be.
+ */
+const SCAN_TIME = new Intl.DateTimeFormat("en-GB", {
+  day: "numeric",
+  month: "short",
+  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "UTC",
+});
+
+function completedLabel(completedAt: string | null): string {
+  if (!completedAt) return "";
+  const at = new Date(completedAt);
+  if (Number.isNaN(at.getTime())) return "";
+  return ` · ${SCAN_TIME.format(at)} UTC`;
 }
 
 function BaselineScores({

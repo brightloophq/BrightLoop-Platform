@@ -399,7 +399,46 @@ export interface LedgerRow {
   domainKey: DomainKey;
   finding: string;
   source: FindingSource;
+  baseline?: string | null;
 }
+
+/**
+ * The baseline string `observedFindings` writes, and one no person types.
+ *
+ * WHY A ROW'S OWN TEXT GETS A VOTE ON ITS PROVENANCE. The `source` column
+ * arrived in 20260814000100 with a default of `'manual'`, which was the safe
+ * choice for rows already in the table — mislabelling a hand-written finding as
+ * imported would let a later import DELETE something a person typed.
+ *
+ * The cost of that choice only showed up afterwards: every finding written by
+ * an import BEFORE that migration is now permanently unretirable and shown as
+ * "added by hand". So the ledger keeps reporting an old scan's numbers while
+ * the scores above it come from a new one, and re-importing cannot fix it.
+ *
+ * `Observed 38/100` is generated in exactly one place in this file and appears
+ * nowhere a person can type. Matching it reclassifies only rows this module
+ * demonstrably wrote.
+ *
+ * It is deliberately narrow. Findings built from a risk carry the risk's own
+ * prose as their baseline, which has no signature to match, so a pre-migration
+ * row of that shape stays `'manual'` and stays put. Removing it is a decision
+ * for the person reading it, not a guess made here.
+ */
+const IMPORTER_BASELINE = /^observed\s+\d{1,3}\/100$/i;
+
+export function looksImporterWritten(baseline: string | null | undefined): boolean {
+  return typeof baseline === "string" && IMPORTER_BASELINE.test(baseline.trim());
+}
+
+/**
+ * Whether a newer import may retire this row.
+ *
+ * Takes the two fields the question actually turns on rather than a whole
+ * `LedgerRow`, so the ledger UI and the import can ask it of the same row and
+ * cannot answer differently.
+ */
+export const isReplaceable = (row: { source: string; baseline?: string | null }): boolean =>
+  row.source === "import" || looksImporterWritten(row.baseline);
 
 export interface LedgerPlan {
   /** Findings in the new scan that are not already in the ledger. */
@@ -442,7 +481,7 @@ export function reconcileLedger(
   const remove: string[] = [];
   let keep = 0;
   for (const row of existing) {
-    const stale = row.source === "import" && !incomingKeys.has(rowKey(row.domainKey, row.finding));
+    const stale = isReplaceable(row) && !incomingKeys.has(rowKey(row.domainKey, row.finding));
     if (stale) remove.push(row.id);
     else keep += 1;
   }

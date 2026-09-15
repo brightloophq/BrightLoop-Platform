@@ -16,6 +16,7 @@ import {
   findingsFromRisks,
   findingsFromWeaknesses,
   importedDiagnosis,
+  looksImporterWritten,
   reconcileLedger,
   priorityFromObservedScore,
   priorityFromSeverity,
@@ -367,8 +368,45 @@ describe("importedDiagnosis", () => {
 describe("reconcileLedger", () => {
   const imported = (finding: string, domainKey = "web") =>
     ({ domainKey, finding, baseline: null, priority: "medium" }) as never;
-  const row = (id: string, finding: string, source: "manual" | "import", domainKey = "web") =>
-    ({ id, domainKey, finding, source }) as never;
+  const row = (
+    id: string,
+    finding: string,
+    source: "manual" | "import",
+    domainKey = "web",
+    baseline: string | null = null,
+  ) => ({ id, domainKey, finding, source, baseline }) as never;
+
+  /**
+   * The rows this exists for: written by an import that predates the `source`
+   * column, so the database calls them 'manual' and nothing could ever retire
+   * them. That is what left a ledger reporting one scan while the scores above
+   * it came from another.
+   */
+  it("retires a pre-provenance row the importer demonstrably wrote", () => {
+    const plan = reconcileLedger(
+      [row("f1", "Thin content base", "manual", "web", "Observed 38/100")],
+      [imported("Something else")],
+    );
+    expect(plan.remove).toEqual(["f1"]);
+    expect(plan.keep).toBe(0);
+  });
+
+  it("keeps a pre-provenance row whose baseline has no importer signature", () => {
+    const plan = reconcileLedger(
+      [row("f1", "Limited owned distribution", "manual", "web", "Social presence scored 0/100.")],
+      [imported("Something else")],
+    );
+    expect(plan.remove).toEqual([]);
+    expect(plan.keep).toBe(1);
+  });
+
+  it("never retires a hand-written row on the strength of its prose", () => {
+    const plan = reconcileLedger(
+      [row("f1", "Owner answers the phone at night", "manual", "web", "I observed 3 calls")],
+      [imported("Something else")],
+    );
+    expect(plan.remove).toEqual([]);
+  });
 
   it("adds what the new scan reports and the ledger does not have", () => {
     const plan = reconcileLedger([], [imported("Thin content base")]);
@@ -440,5 +478,36 @@ describe("reconcileLedger", () => {
     const plan = reconcileLedger([...stale, row("keep", "Typed", "manual")], []);
     expect(plan.remove).toEqual(["a", "b", "c"]);
     expect(plan.keep).toBe(1);
+  });
+});
+
+describe("looksImporterWritten", () => {
+  it("recognises the baseline this module generates", () => {
+    expect(looksImporterWritten("Observed 38/100")).toBe(true);
+    expect(looksImporterWritten("Observed 0/100")).toBe(true);
+    expect(looksImporterWritten("  observed 100/100  ")).toBe(true);
+  });
+
+  it("does not claim prose a person could have typed", () => {
+    expect(looksImporterWritten("Social presence scored 0/100; limited owned distribution.")).toBe(false);
+    expect(looksImporterWritten("Observed by the owner")).toBe(false);
+    expect(looksImporterWritten("Observed 38/100 on the homepage")).toBe(false);
+    expect(looksImporterWritten("")).toBe(false);
+    expect(looksImporterWritten(null)).toBe(false);
+    expect(looksImporterWritten(undefined)).toBe(false);
+  });
+
+  /**
+   * Binds the matcher to the generator. If the baseline string ever changes
+   * shape, this fails here rather than silently stranding the rows it is meant
+   * to identify.
+   */
+  it("agrees with what findingsFromWeaknesses writes", () => {
+    const generated = findingsFromWeaknesses([
+      { kind: "weakness", category: "content", title: "Thin content base", observedScore: 38 },
+    ]);
+    expect(generated).toHaveLength(1);
+    expect(generated[0]!.baseline).toBe("Observed 38/100");
+    expect(looksImporterWritten(generated[0]!.baseline)).toBe(true);
   });
 });
