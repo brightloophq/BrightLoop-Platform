@@ -62,6 +62,30 @@ two files sharing version `20260812000100`, which the CLI rejects.
 
 ## Applying
 
+**On merge to `main`, CI applies them** — `.github/workflows/migrate-production.yml`,
+triggered only when `application/supabase/migrations/**` changes. It requires three
+repository secrets and **fails loudly if any is missing**, because a workflow that
+quietly skips would recreate the drift it exists to prevent:
+
+| Secret | What it is |
+| --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | A personal access token (Supabase dashboard → Account → Access Tokens) |
+| `SUPABASE_PROJECT_REF` | The project ref from the project's URL |
+| `SUPABASE_DB_PASSWORD` | The database password, so `link` does not prompt |
+
+Point the job's `production` environment at a protection rule if you want a human
+approval before any production DDL.
+
+⚠️ **Ordering is improved, not guaranteed.** Vercel and Netlify build from their own
+git integrations on the same push, in parallel. Migrations apply in seconds and a
+build takes minutes, so the schema normally lands first — but only turning off the
+host's automatic deploys and deploying from a step after the migration would
+actually enforce it.
+
+### By hand
+
+Still the path for a backlog, a recovery, or a project the workflow is not linked to:
+
 ```bash
 export SUPABASE_ACCESS_TOKEN=<personal access token>   # or: supabase login
 supabase link --project-ref <ref>                      # prompts for the DB password

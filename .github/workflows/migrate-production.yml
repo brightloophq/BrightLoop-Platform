@@ -1,0 +1,118 @@
+name: Migrate production
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Applies this repository's Supabase migrations to the production database when
+# they reach `main`.
+#
+# WHY THIS EXISTS
+#   Migrations used to be applied by hand. Two failures followed directly from
+#   that, both of them live incidents:
+#
+#     1. App code that read a new column deployed before the migration reached
+#        the database. The Business Scan page stopped loading, and nothing on
+#        screen could say why.
+#     2. A laptop pushed migrations that existed in no branch, so production
+#        carried schema the repository could not reproduce — invisible to CI,
+#        to the generated types, and to anyone rebuilding from migrations.
+#
+#   Both are the same root cause: the database's state depended on a person
+#   remembering, from a working copy nobody else could see.
+#
+# THE SAFETY THIS RELIES ON
+#   Every migration here has already been applied to a real Postgres and had the
+#   pgTAP suite run against it by the `migrate · pgTAP · RLS · adapter ·
+#   type-drift` job — on the pull request, before merge. This job does not
+#   validate; it applies what merging already validated.
+#
+# ⚠️ ORDERING IS IMPROVED, NOT GUARANTEED
+#   Vercel and Netlify build from their own git integrations on push to main, in
+#   parallel with this workflow. Migrations typically apply in seconds and a
+#   Next.js build takes minutes, so in practice the schema lands first — but
+#   nothing here enforces it. The only way to guarantee it is to turn off the
+#   host's automatic git deploys and deploy from a step after this one. That is
+#   a change to the hosting setup, not to this repository, and is deliberately
+#   left as a decision rather than made here.
+# ─────────────────────────────────────────────────────────────────────────────
+
+on:
+  push:
+    branches: [main]
+    # Only when migrations actually changed. Every other merge to main leaves
+    # the database alone.
+    paths:
+      - "application/supabase/migrations/**"
+  # Manual runs, for recovering after a failure or applying a backlog.
+  workflow_dispatch:
+
+# Two runs must never apply migrations concurrently. NOT cancel-in-progress: a
+# half-applied run is worse than a queued one.
+concurrency:
+  group: migrate-production
+  cancel-in-progress: false
+
+jobs:
+  migrate:
+    name: supabase db push
+    runs-on: ubuntu-latest
+    # Point this at a GitHub Environment to require a human approval before any
+    # production DDL runs. Create it under Settings → Environments and add the
+    # secrets there; with no protection rules configured it simply runs.
+    environment: production
+    defaults:
+      run:
+        working-directory: application
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # Fail loudly rather than skipping. A workflow that quietly does nothing
+      # when it is misconfigured recreates the exact invisibility this exists to
+      # remove — the database would drift again and the log would look fine.
+      - name: Require the credentials
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: |
+          missing=""
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing="$missing SUPABASE_ACCESS_TOKEN"
+          [ -n "$SUPABASE_PROJECT_REF" ]  || missing="$missing SUPABASE_PROJECT_REF"
+          [ -n "$SUPABASE_DB_PASSWORD" ]  || missing="$missing SUPABASE_DB_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secret(s):$missing — set them under Settings → Secrets and variables → Actions (or on the 'production' environment). Until then no migration reaches the database and every deploy risks running against a schema behind the code."
+            exit 1
+          fi
+
+      - name: Link the project
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      # What WOULD be applied, recorded before anything is. When a later run
+      # surprises somebody, this is the line that says what the database looked
+      # like going in.
+      - name: Migration state before
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase migration list
+
+      - name: Apply
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase db push
+
+      # Runs even when the push fails, so a partial application is visible in
+      # the log rather than being something to reconstruct afterwards.
+      - name: Migration state after
+        if: always()
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+        run: supabase migration list

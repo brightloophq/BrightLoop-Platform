@@ -26,13 +26,22 @@ Each integration works as a deterministic **mock** until its key is set, then se
 - ⚠️ **Email** (`EMAIL_PROVIDER_API_KEY`): pipeline + consent gate are real; the concrete provider adapter (and a template strategy — templates are delegated to the provider/n8n) still needed for real sends. Supabase's built-in mailer is capped at ~2/hour; set custom SMTP in the Supabase dashboard to lift it.
 - ✅ **n8n automations** (`N8N_WEBHOOK_SECRET`): signed callback receiver built; point it at your n8n instance.
 
-## 2b. Deploying — migrations are NOT automatic
+## 2b. Deploying — migrations
 
-⚠️ **Push migrations BEFORE the app code that needs them.** Nothing in CI applies
-migrations to the live database: CI runs them against a throwaway local stack and
-holds no production credentials. A deploy therefore ships code that may read a
-column the live database does not have yet, and the failure appears at request
-time, not at build time — a page that worked yesterday simply stops loading.
+✅ **CI applies migrations on merge to `main`**
+(`.github/workflows/migrate-production.yml`), but only once three secrets are set:
+`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`. ⚠️ **Until
+they are, every run fails** — deliberately, and visibly, rather than skipping and
+letting the database drift behind the code again.
+
+⚠️ **Ordering is improved, not guaranteed.** The hosts build from their own git
+integrations on the same push. Migrations apply in seconds against a build that
+takes minutes, so the schema normally lands first; enforcing it means turning off
+automatic git deploys and deploying from a step after the migration job.
+
+This mattered: app code that read a new column deployed before the migration
+reached the database, and the Business Scan page stopped loading at request time —
+nothing at build time could have caught it.
 
 ```bash
 cd application
