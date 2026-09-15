@@ -41,6 +41,20 @@ supabase link --project-ref <ref>                      # prompts for the DB pass
 supabase db push                                       # applies every unapplied migration
 ```
 
+⚠️ **Version numbers are the identity, not filenames.** `db push` records the
+numeric prefix. If two working copies ever create different migrations under the
+same prefix, whichever is pushed first claims that version and the other is
+skipped FOREVER, silently — `supabase migration list` shows the version in both
+columns, which is what makes it invisible. This happened at `20260812000100`
+(`media_bucket_limits` here vs `quote_proposal_statuses` in a diverged copy);
+the repair was to re-issue the skipped statement under a fresh version
+(`20260815000100`), not to rewrite history on a live database.
+
+⚠️ **Never push from a working copy that is not current `main`.** Anything it
+applies that is not committed here becomes production schema this repository
+cannot reproduce — invisible to CI, to the generated types, and to anyone
+rebuilding the database from migrations.
+
 This has bitten once already: `scan_findings.source` shipped with the app before
 its migration reached the database and the Business Scan page stopped loading.
 The admin pages now name a schema mismatch and the command that fixes it rather
