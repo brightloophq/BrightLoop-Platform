@@ -165,3 +165,54 @@ jobs:
           VERSION=8.18.4
           curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" | tar -xz gitleaks
           ./gitleaks detect --source . --redact --no-banner --exit-code 1
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # Says, ON THE PULL REQUEST, that merging this will need a `supabase db push`.
+  #
+  # The incident this prevents needed no automation to prevent: app code that
+  # read a new column shipped before its migration reached the database, and the
+  # admin stopped loading. Nobody had forgotten how to run the command — nobody
+  # knew there was one to run.
+  #
+  # So this asks for no credentials and touches no database. It reads the diff,
+  # and when a pull request adds a migration it says so while there is still
+  # somebody looking at the page. Green either way: it is a note, not a gate.
+  # ───────────────────────────────────────────────────────────────────────────
+  migrations:
+    name: migrations · manual push reminder
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # need the base branch to diff against
+
+      - name: Report any migrations this pull request adds
+        run: |
+          base="origin/${{ github.base_ref }}"
+          added=$(git diff --name-only --diff-filter=A "$base...HEAD" \
+            -- application/supabase/migrations || true)
+
+          if [ -z "$added" ]; then
+            echo "No new migrations in this pull request." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "## This pull request adds migrations"
+            echo
+            echo "$added" | sed 's|application/supabase/migrations/|- `|; s|$|`|'
+            echo
+            echo "**They do not reach the database by merging**, unless automatic"
+            echo "migration is configured (see \`packages/db/README.md\`). Until it is,"
+            echo "run this from a checkout of \`main\` AFTER merging and BEFORE relying"
+            echo "on any page that reads the new schema:"
+            echo
+            echo '```bash'
+            echo "cd application"
+            echo "supabase db push"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+          count=$(echo "$added" | wc -l | tr -d ' ')
+          echo "::warning::This pull request adds $count migration(s). Run 'supabase db push' after merging — merging alone does not apply them."

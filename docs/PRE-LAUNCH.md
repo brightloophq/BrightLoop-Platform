@@ -28,11 +28,13 @@ Each integration works as a deterministic **mock** until its key is set, then se
 
 ## 2b. Deploying — migrations
 
-✅ **CI applies migrations on merge to `main`**
-(`.github/workflows/migrate-production.yml`), but only once three secrets are set:
-`SUPABASE_ACCESS_TOKEN`, `SUPABASE_PROJECT_REF`, `SUPABASE_DB_PASSWORD`. ⚠️ **Until
-they are, every run fails** — deliberately, and visibly, rather than skipping and
-letting the database drift behind the code again.
+✅ **A pull request that adds migrations says so**, on the PR, with the command to
+run — the `migrations · manual push reminder` check. No setup, no credentials.
+
+🔧 **Optionally, CI can apply them on merge**
+(`.github/workflows/migrate-production.yml`) once `SUPABASE_ACCESS_TOKEN`,
+`SUPABASE_PROJECT_REF` and `SUPABASE_DB_PASSWORD` are set. Unset, it stands down
+green and records the manual command — applying them by hand stays supported.
 
 ⚠️ **Ordering is improved, not guaranteed.** The hosts build from their own git
 integrations on the same push. Migrations apply in seconds against a build that

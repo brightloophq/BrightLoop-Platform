@@ -18,6 +18,11 @@ name: Migrate production
 #   Both are the same root cause: the database's state depended on a person
 #   remembering, from a working copy nobody else could see.
 #
+# THIS IS OPT-IN. With no secrets configured it stands down green and records
+#   what to run by hand. Applying migrations manually is a legitimate choice —
+#   what is not survivable is applying them INVISIBLY, and the `migrations` job
+#   on the pull request covers that whether or not this one is switched on.
+#
 # THE SAFETY THIS RELIES ON
 #   Every migration here has already been applied to a real Postgres and had the
 #   pgTAP suite run against it by the `migrate · pgTAP · RLS · adapter ·
@@ -69,10 +74,15 @@ jobs:
         with:
           version: latest
 
-      # Fail loudly rather than skipping. A workflow that quietly does nothing
-      # when it is misconfigured recreates the exact invisibility this exists to
-      # remove — the database would drift again and the log would look fine.
-      - name: Require the credentials
+      # OPT-IN. With no secrets set this stands down green and says so, because
+      # applying migrations by hand is a legitimate choice and a red X on every
+      # migration merge would be noise, not safety.
+      #
+      # Standing down is not the same as being silent. The `migrations` job on
+      # the pull request already announced, before the merge, that a manual push
+      # was needed — so the reminder does not depend on anyone reading this log.
+      - name: Are the credentials set?
+        id: creds
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -82,12 +92,30 @@ jobs:
           [ -n "$SUPABASE_ACCESS_TOKEN" ] || missing="$missing SUPABASE_ACCESS_TOKEN"
           [ -n "$SUPABASE_PROJECT_REF" ]  || missing="$missing SUPABASE_PROJECT_REF"
           [ -n "$SUPABASE_DB_PASSWORD" ]  || missing="$missing SUPABASE_DB_PASSWORD"
+
           if [ -n "$missing" ]; then
-            echo "::error::Missing repository secret(s):$missing — set them under Settings → Secrets and variables → Actions (or on the 'production' environment). Until then no migration reaches the database and every deploy risks running against a schema behind the code."
-            exit 1
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            {
+              echo "## Migrations were NOT applied"
+              echo
+              echo "Automatic migration is not configured, so this run did nothing."
+              echo "Apply them by hand from a checkout of \`main\`:"
+              echo
+              echo '```bash'
+              echo "cd application"
+              echo "supabase db push"
+              echo '```'
+              echo
+              echo "To have this happen on merge instead, set:$missing"
+              echo "(Settings → Secrets and variables → Actions, or on the \`production\` environment.)"
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::warning::Migrations were not applied — automatic migration is not configured. Run 'supabase db push' by hand. Set$missing to automate it."
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Link the project
+        if: steps.creds.outputs.configured == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -97,12 +125,14 @@ jobs:
       # surprises somebody, this is the line that says what the database looked
       # like going in.
       - name: Migration state before
+        if: steps.creds.outputs.configured == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
         run: supabase migration list
 
       - name: Apply
+        if: steps.creds.outputs.configured == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -111,7 +141,7 @@ jobs:
       # Runs even when the push fails, so a partial application is visible in
       # the log rather than being something to reconstruct afterwards.
       - name: Migration state after
-        if: always()
+        if: always() && steps.creds.outputs.configured == 'true'
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
