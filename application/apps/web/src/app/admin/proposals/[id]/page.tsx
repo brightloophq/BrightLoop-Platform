@@ -18,7 +18,7 @@ export default async function AdminProposalDetail({ params }: PageProps) {
 
   const { data: proposal } = await supabase
     .from("proposals")
-    .select("id, status, total, deposit, line_items, client_id, clients(company)")
+    .select("id, proposal_kind, proposal_number, status, total, deposit, line_items, client_id, clients(company)")
     .eq("id", id)
     .maybeSingle();
   if (!proposal) notFound();
@@ -39,11 +39,11 @@ export default async function AdminProposalDetail({ params }: PageProps) {
           <Icon name="arrow-left" size={14} /> All proposals
         </Link>
         <div style={{ maxWidth: 560 }}>
-          <SalesFlow
+          {proposal.proposal_kind === "canonical_issued" ? <div><h2>{proposal.proposal_number ?? "Issued proposal"}</h2><p>This canonical proposal is an immutable, read-only commercial snapshot.</p></div> : <SalesFlow
             proposal={{ id: proposal.id, status: proposal.status, total: proposal.total, deposit: proposal.deposit, line_items: (proposal.line_items as { label: string; amount?: number }[] | null) ?? [] }}
             contract={(contract as FlowContract) ?? null}
             invoice={(invoice as FlowInvoice) ?? null}
-          />
+          />}
         </div>
       </div>
     </>

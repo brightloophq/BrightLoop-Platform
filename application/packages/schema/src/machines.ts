@@ -44,10 +44,11 @@ export const MACHINES = {
   },
 
   proposal: {
-    states: ["draft", "sent", "viewed", "accepted", "change_requested", "revised", "expired"],
+    states: ["draft", "issued", "sent", "viewed", "accepted", "change_requested", "revised", "expired"],
     initial: "draft",
     transitions: {
       draft: ["sent"],
+      issued: [],
       // A client may act straight from `sent` (they don't have to trip `viewed`
       // first) — mirrors the quote machine and avoids a view/accept race.
       sent: ["viewed", "accepted", "change_requested", "expired"],
@@ -75,11 +76,15 @@ export const MACHINES = {
       "rejected",
       "expired",
       "converted",
+      "approved",
+      "issued",
     ],
     initial: "draft",
     transitions: {
       draft: ["internal_review", "sent"],
-      internal_review: ["sent", "draft"], // kick back to draft for edits
+      internal_review: ["sent", "draft", "approved"], // canonical approval is proposal-only guarded by RPC
+      approved: ["internal_review", "issued"],
+      issued: [],
       sent: ["viewed", "accepted", "rejected", "expired"],
       viewed: ["accepted", "rejected", "revision_requested", "expired"],
       revision_requested: ["revised"],

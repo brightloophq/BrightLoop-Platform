@@ -7891,6 +7891,62 @@ export type Database = {
           },
         ]
       }
+      proposal_items: {
+        Row: {
+          amount: number
+          description: string
+          id: string
+          label: string
+          optional: boolean
+          pricing_type: string
+          proposal_id: string
+          quantity: number
+          recurrence_cadence: string | null
+          sort: number
+          source_evidence_refs: Json
+          source_work_item_id: string | null
+          unit_amount: number
+        }
+        Insert: {
+          amount: number
+          description?: string
+          id: string
+          label: string
+          optional?: boolean
+          pricing_type: string
+          proposal_id: string
+          quantity: number
+          recurrence_cadence?: string | null
+          sort?: number
+          source_evidence_refs?: Json
+          source_work_item_id?: string | null
+          unit_amount: number
+        }
+        Update: {
+          amount?: number
+          description?: string
+          id?: string
+          label?: string
+          optional?: boolean
+          pricing_type?: string
+          proposal_id?: string
+          quantity?: number
+          recurrence_cadence?: string | null
+          sort?: number
+          source_evidence_refs?: Json
+          source_work_item_id?: string | null
+          unit_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_items_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposal_versions: {
         Row: {
           checksum: string
@@ -7972,43 +8028,106 @@ export type Database = {
         Row: {
           change_note: string | null
           client_id: string
+          client_note: string
           configuration_id: string | null
+          currency: string | null
           decided_at: string | null
           deposit: number
+          discount: number
           id: string
+          issuance_key: string | null
+          issued_at: string | null
+          issued_by: string | null
+          lead_origin_id: string | null
           line_items: Json
+          optional_one_time_total: number
+          optional_recurring_total: number
+          proposal_kind: Database["public"]["Enums"]["proposal_kind"]
+          proposal_number: string | null
+          recurring_cadence: string | null
+          recurring_total: number
+          revision_number: number | null
           sent_at: string | null
+          source_proposal_version_id: string | null
+          source_quote_id: string | null
+          source_review_event_id: string | null
+          source_run_id: string | null
           status: Database["public"]["Enums"]["proposal_status"]
           subtotal: number
+          supersedes_proposal_id: string | null
+          title: string | null
           total: number
+          valid_until: string | null
           viewed_at: string | null
         }
         Insert: {
           change_note?: string | null
           client_id: string
+          client_note?: string
           configuration_id?: string | null
+          currency?: string | null
           decided_at?: string | null
           deposit?: number
+          discount?: number
           id: string
+          issuance_key?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          lead_origin_id?: string | null
           line_items?: Json
+          optional_one_time_total?: number
+          optional_recurring_total?: number
+          proposal_kind?: Database["public"]["Enums"]["proposal_kind"]
+          proposal_number?: string | null
+          recurring_cadence?: string | null
+          recurring_total?: number
+          revision_number?: number | null
           sent_at?: string | null
+          source_proposal_version_id?: string | null
+          source_quote_id?: string | null
+          source_review_event_id?: string | null
+          source_run_id?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
           subtotal?: number
+          supersedes_proposal_id?: string | null
+          title?: string | null
           total?: number
+          valid_until?: string | null
           viewed_at?: string | null
         }
         Update: {
           change_note?: string | null
           client_id?: string
+          client_note?: string
           configuration_id?: string | null
+          currency?: string | null
           decided_at?: string | null
           deposit?: number
+          discount?: number
           id?: string
+          issuance_key?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          lead_origin_id?: string | null
           line_items?: Json
+          optional_one_time_total?: number
+          optional_recurring_total?: number
+          proposal_kind?: Database["public"]["Enums"]["proposal_kind"]
+          proposal_number?: string | null
+          recurring_cadence?: string | null
+          recurring_total?: number
+          revision_number?: number | null
           sent_at?: string | null
+          source_proposal_version_id?: string | null
+          source_quote_id?: string | null
+          source_review_event_id?: string | null
+          source_run_id?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
           subtotal?: number
+          supersedes_proposal_id?: string | null
+          title?: string | null
           total?: number
+          valid_until?: string | null
           viewed_at?: string | null
         }
         Relationships: [
@@ -8024,6 +8143,55 @@ export type Database = {
             columns: ["configuration_id"]
             isOneToOne: false
             referencedRelation: "configurations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_lead_origin_id_fkey"
+            columns: ["lead_origin_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_source_proposal_version_id_fkey"
+            columns: ["source_proposal_version_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_source_quote_id_fkey"
+            columns: ["source_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_source_review_event_id_fkey"
+            columns: ["source_review_event_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_source_run_id_fkey"
+            columns: ["source_run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_supersedes_proposal_id_fkey"
+            columns: ["supersedes_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -8230,6 +8398,9 @@ export type Database = {
         Row: {
           client_id: string | null
           client_note: string
+          commercial_approved_at: string | null
+          commercial_approved_by: string | null
+          commercial_approved_state: string | null
           commercial_mode: string
           conversation_id: string | null
           created_at: string
@@ -8259,6 +8430,9 @@ export type Database = {
         Insert: {
           client_id?: string | null
           client_note?: string
+          commercial_approved_at?: string | null
+          commercial_approved_by?: string | null
+          commercial_approved_state?: string | null
           commercial_mode?: string
           conversation_id?: string | null
           created_at?: string
@@ -8288,6 +8462,9 @@ export type Database = {
         Update: {
           client_id?: string | null
           client_note?: string
+          commercial_approved_at?: string | null
+          commercial_approved_by?: string | null
+          commercial_approved_state?: string | null
           commercial_mode?: string
           conversation_id?: string | null
           created_at?: string
@@ -8323,6 +8500,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "quotes_commercial_approved_by_fkey"
+            columns: ["commercial_approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quotes_conversation_id_fkey"
             columns: ["conversation_id"]
             isOneToOne: false
@@ -8341,6 +8525,13 @@ export type Database = {
             columns: ["lead_id"]
             isOneToOne: false
             referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_proposal_fk"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
             referencedColumns: ["id"]
           },
           {
@@ -11949,6 +12140,18 @@ export type Database = {
     }
     Functions: {
       bl_activate_client: { Args: { p_client_id: string }; Returns: boolean }
+      bl_bind_proposal_quote_client: {
+        Args: {
+          p_client_id: string
+          p_expected_updated_at: string
+          p_quote_id: string
+        }
+        Returns: {
+          client_id: string
+          quote_id: string
+          updated_at: string
+        }[]
+      }
       bl_can_activate: { Args: { p_client_id: string }; Returns: boolean }
       bl_client_contract_sign: {
         Args: { p_contract_id: string; p_signature: string }
@@ -11967,6 +12170,15 @@ export type Database = {
       bl_in_conversation: { Args: { conv_id: string }; Returns: boolean }
       bl_is_finance: { Args: never; Returns: boolean }
       bl_is_internal: { Args: never; Returns: boolean }
+      bl_issue_canonical_proposal: {
+        Args: { p_expected_updated_at: string; p_quote_id: string }
+        Returns: {
+          item_count: number
+          outcome: string
+          proposal_id: string
+          proposal_number: string
+        }[]
+      }
       bl_lease_next_job: {
         Args: {
           p_client_id?: string
@@ -12015,6 +12227,18 @@ export type Database = {
           item_count: number
           outcome: string
           quote_id: string
+        }[]
+      }
+      bl_review_proposal_quote: {
+        Args: {
+          p_action: string
+          p_expected_updated_at: string
+          p_quote_id: string
+        }
+        Returns: {
+          quote_id: string
+          status: Database["public"]["Enums"]["quote_status"]
+          updated_at: string
         }[]
       }
       bl_rls_audit: {
@@ -12162,6 +12386,7 @@ export type Database = {
         | "in_review"
         | "completed"
         | "post_launch"
+      proposal_kind: "legacy_sales" | "canonical_issued"
       proposal_status:
         | "draft"
         | "sent"
@@ -12170,6 +12395,7 @@ export type Database = {
         | "change_requested"
         | "revised"
         | "expired"
+        | "issued"
       publish_status: "featured" | "public" | "draft" | "private"
       quote_status:
         | "draft"
@@ -12182,6 +12408,8 @@ export type Database = {
         | "rejected"
         | "expired"
         | "converted"
+        | "approved"
+        | "issued"
       recommendation_status: "proposed" | "adjusted" | "accepted" | "rejected"
       risk_likelihood:
         | "rare"
@@ -12510,6 +12738,7 @@ export const Constants = {
         "completed",
         "post_launch",
       ],
+      proposal_kind: ["legacy_sales", "canonical_issued"],
       proposal_status: [
         "draft",
         "sent",
@@ -12518,6 +12747,7 @@ export const Constants = {
         "change_requested",
         "revised",
         "expired",
+        "issued",
       ],
       publish_status: ["featured", "public", "draft", "private"],
       quote_status: [
@@ -12531,6 +12761,8 @@ export const Constants = {
         "rejected",
         "expired",
         "converted",
+        "approved",
+        "issued",
       ],
       recommendation_status: ["proposed", "adjusted", "accepted", "rejected"],
       risk_likelihood: [

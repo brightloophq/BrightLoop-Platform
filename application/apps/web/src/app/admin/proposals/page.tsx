@@ -15,7 +15,7 @@ export default async function AdminProposalsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("proposals")
-    .select("id, status, total, client_id, clients(company)")
+    .select("id, proposal_kind, proposal_number, status, total, client_id, clients(company)")
     .order("sent_at", { ascending: false, nullsFirst: true });
   const rows = data ?? [];
 
@@ -41,6 +41,7 @@ export default async function AdminProposalsPage() {
                       {(p.clients as unknown as { company: string } | null)?.company ?? p.client_id}
                     </Link>
                     <Badge tone="neutral" dot>{p.status.replace(/_/g, " ")}</Badge>
+                    {p.proposal_kind === "canonical_issued" ? <Badge tone="success">{p.proposal_number ?? "canonical"}</Badge> : null}
                     <span className={styles.rowMeta}>{money(p.total)}</span>
                   </div>
                 </div>
