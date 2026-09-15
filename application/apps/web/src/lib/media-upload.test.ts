@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { resolveEmbed } from "@brightloop/ui";
@@ -88,8 +88,28 @@ describe("tooLargeMessage", () => {
  * worse, the reverse.
  */
 describe("the media bucket limits agree with this module", () => {
+  /**
+   * Resolved, never hardcoded. `supabase db push` records a migration by its
+   * numeric VERSION, so a file can be superseded by a later one re-issuing the
+   * same statement under a version the database has not already claimed — which
+   * is exactly what happened to the original 20260812000100. What binds the
+   * bucket is the LAST migration to touch it, so that is what this reads.
+   */
+  const migrationsDir = fileURLToPath(new URL("../../../../supabase/migrations", import.meta.url));
+  const mediaBucketMigrations = readdirSync(migrationsDir)
+    .filter((name) => name.endsWith(".sql"))
+    .sort()
+    .filter((name) => {
+      const sql = readFileSync(`${migrationsDir}/${name}`, "utf8");
+      return /update\s+storage\.buckets/i.test(sql) && /id\s*=\s*'media'/i.test(sql);
+    });
+
+  it("has a migration that binds the media bucket at all", () => {
+    expect(mediaBucketMigrations.length).toBeGreaterThan(0);
+  });
+
   const migration = readFileSync(
-    fileURLToPath(new URL("../../../../supabase/migrations/20260812000100_media_bucket_limits.sql", import.meta.url)),
+    `${migrationsDir}/${mediaBucketMigrations[mediaBucketMigrations.length - 1]}`,
     "utf8",
   );
 

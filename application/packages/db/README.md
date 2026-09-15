@@ -25,40 +25,42 @@ guard, RLS policies, the auth claims hook, and storage buckets.
 Order is load-bearing: `0400` defines `bl_is_internal()` / `bl_client_id()`, which
 `0600` and `0700` depend on.
 
-## ⚠️ Outstanding history divergence — read before merging `feat/canonical-proposal-issuance`
+## ⚠️ One repair still owed to production
 
-Production has two migrations that live on that branch and not on `main`:
+`feat/canonical-proposal-issuance` is merged. Two of the three closing steps were
+part of that merge; **the third needs production credentials and has not run.**
 
-| Version | On the branch | On `main` |
+Production applied `20260812000100_quote_proposal_statuses` and
+`20260812000200_canonical_proposal_issuance` from a working copy whose history had
+diverged from this repository. Two consequences followed, both now settled in the
+repo:
+
+| Version | Was | Now |
 | --- | --- | --- |
-| `20260812000100` | `quote_proposal_statuses` (applied in production) | `media_bucket_limits` (never applied) |
-| `20260812000200` | `canonical_proposal_issuance` (applied in production) | — |
+| `20260812000100` | claimed by `quote_proposal_statuses` in production, while `main` held a different `media_bucket_limits` under the same number | `main`'s dead file is deleted; `20260815000100_media_bucket_limits_reissue.sql` carries that statement under a version nothing claimed |
+| `20260812000200` | marked **reverted** in `schema_migrations` so a push from `main` could proceed — while its objects stayed in the database | file is on `main`; the bookkeeping row is still missing |
 
-Two consequences, both already live:
-
-1. **`20260812000100_media_bucket_limits.sql` can never apply.** Its version was
-   claimed by a different file. `20260815000100_media_bucket_limits_reissue.sql`
-   carries the same statement under a free version and is what actually runs.
-2. **`20260812000200` was marked reverted** in `schema_migrations` so a push from
-   `main` could proceed. The objects it created are still in the database — only
-   the bookkeeping row was removed.
-
-**When that branch is merged, in this order:**
+### The step that is still owed
 
 ```bash
-# 1. re-record the migration the database really does have
 supabase migration repair --status applied 20260812000200
-
-# 2. delete main's dead file, whose version the branch's migration now owns
-git rm application/supabase/migrations/20260812000100_media_bucket_limits.sql
-
-# 3. regenerate, because main's committed types do not describe those two
-pnpm --filter @brightloop/db gen:types:local
 ```
 
-Skipping step 1 means the merged `canonical_proposal_issuance.sql` is treated as
-unapplied and re-run against objects that already exist. Skipping step 2 leaves
-two files sharing version `20260812000100`, which the CLI rejects.
+This edits one bookkeeping row. It creates and drops nothing.
+
+**Until it runs, the next `supabase db push` fails.** It will treat
+`canonical_proposal_issuance.sql` as unapplied and re-run it against objects that
+already exist, dying on `create type public.proposal_kind` — which is not
+idempotent, and neither are the `add column`, `create table` and `create trigger`
+statements after it.
+
+That failure is **loud and harmless**: each migration runs in a transaction, so the
+push aborts and applies nothing. Nothing is corrupted. But every later migration is
+blocked behind it until the repair is run, which is how the last Business Scan
+outage started.
+
+Verify with `supabase migration list` — local and remote should agree through
+`20260815000100`, with no version appearing in only one column.
 
 ## Applying
 

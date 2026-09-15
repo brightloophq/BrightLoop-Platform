@@ -15,11 +15,11 @@ export default async function PortalProposalsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("proposals")
-    .select("id, status, subtotal, total, deposit, line_items")
+    .select("id, proposal_kind, proposal_number, title, currency, issued_at, valid_until, status, subtotal, total, deposit, line_items")
     .order("sent_at", { ascending: false });
 
   const proposals: PortalProposal[] = (data ?? []).map((p) => ({
-    id: p.id, status: p.status, subtotal: p.subtotal, total: p.total, deposit: p.deposit,
+    id: p.id, proposal_kind: p.proposal_kind, proposal_number: p.proposal_number, title: p.title, currency: p.currency, issued_at: p.issued_at, valid_until: p.valid_until, status: p.status, subtotal: p.subtotal, total: p.total, deposit: p.deposit,
     line_items: (p.line_items as PortalProposal["line_items"] | null) ?? [],
   }));
 

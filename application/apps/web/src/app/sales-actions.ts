@@ -35,6 +35,12 @@ async function internal() {
   return { actor, supabase };
 }
 
+async function requireLegacyProposal(supabase: Awaited<ReturnType<typeof createClient>>, proposalId: string): Promise<string | null> {
+  const { data, error } = await supabase.from("proposals").select("proposal_kind").eq("id", proposalId).maybeSingle();
+  if (error || !data) return "Proposal not found";
+  return data.proposal_kind === "legacy_sales" ? null : "Canonical issued proposals are read-only";
+}
+
 const CAP_SALES = "clients.update"; // owner/admin, not team_member
 const CAP_FINANCE = "finance.update"; // owner/admin
 
@@ -44,6 +50,8 @@ export async function setProposalDeposit(formData: FormData): Promise<SalesResul
   try {
     const { supabase } = await internal();
     const proposalId = String(formData.get("proposalId") ?? "").trim();
+    const kindError = await requireLegacyProposal(supabase, proposalId);
+    if (kindError) return { ok: false, error: kindError };
     const deposit = Math.max(0, Math.round(Number(formData.get("depositDollars") ?? 0) * 100));
     const { error } = await supabase.from("proposals").update({ deposit }).eq("id", proposalId);
     if (error) return { ok: false, error: error.message };
@@ -55,6 +63,11 @@ export async function setProposalDeposit(formData: FormData): Promise<SalesResul
 }
 
 export async function sendProposal(proposalId: string): Promise<SalesResult> {
+  try {
+    const { supabase } = await internal();
+    const kindError = await requireLegacyProposal(supabase, proposalId);
+    if (kindError) return { ok: false, error: kindError };
+  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : "Failed" }; }
   const res = await performTransition({
     table: "proposals", machine: "proposal", entityId: proposalId, to: "sent",
     capability: CAP_SALES, patch: { sent_at: new Date().toISOString() },
@@ -68,8 +81,9 @@ export async function sendProposal(proposalId: string): Promise<SalesResult> {
 export async function createContractForProposal(proposalId: string): Promise<SalesResult> {
   try {
     const { supabase } = await internal();
-    const { data: proposal } = await supabase.from("proposals").select("id, client_id, status").eq("id", proposalId).maybeSingle();
+    const { data: proposal } = await supabase.from("proposals").select("id, client_id, status, proposal_kind").eq("id", proposalId).maybeSingle();
     if (!proposal) return { ok: false, error: "Proposal not found" };
+    if (proposal.proposal_kind !== "legacy_sales") return { ok: false, error: "Canonical issued proposals cannot create contracts" };
     if (proposal.status !== "accepted") return { ok: false, error: "Only an accepted proposal becomes a contract" };
 
     // One contract per proposal.
@@ -143,8 +157,9 @@ export async function createDepositInvoice(proposalId: string): Promise<SalesRes
     assertCapability(actor, CAP_FINANCE);
     const supabase = await createClient();
 
-    const { data: proposal } = await supabase.from("proposals").select("client_id, deposit").eq("id", proposalId).maybeSingle();
+    const { data: proposal } = await supabase.from("proposals").select("client_id, deposit, proposal_kind").eq("id", proposalId).maybeSingle();
     if (!proposal) return { ok: false, error: "Proposal not found" };
+    if (proposal.proposal_kind !== "legacy_sales") return { ok: false, error: "Canonical issued proposals cannot create invoices" };
     if (!proposal.deposit || proposal.deposit <= 0) return { ok: false, error: "Set a deposit on the proposal first" };
 
     const invoiceId = id("inv");
