@@ -62,10 +62,21 @@ two files sharing version `20260812000100`, which the CLI rejects.
 
 ## Applying
 
-**On merge to `main`, CI applies them** — `.github/workflows/migrate-production.yml`,
-triggered only when `application/supabase/migrations/**` changes. It requires three
-repository secrets and **fails loudly if any is missing**, because a workflow that
-quietly skips would recreate the drift it exists to prevent:
+Two things happen, and **only one of them needs any setup**.
+
+### Always on — the pull request tells you
+
+A pull request that adds a migration gets a `migrations · manual push reminder`
+check listing the files and the command. No credentials, no database access: it
+reads the diff. The incident this prevents did not need automation to prevent —
+nobody had forgotten how to run `db push`, nobody knew there was one to run.
+
+### Opt-in — CI applies them on merge
+
+`.github/workflows/migrate-production.yml` runs on merges to `main` that touch
+`application/supabase/migrations/**`. **With no secrets set it stands down green**
+and records what to run by hand; applying migrations yourself is a legitimate
+choice and a red X on every migration merge would be noise. To switch it on:
 
 | Secret | What it is |
 | --- | --- |
@@ -76,11 +87,11 @@ quietly skips would recreate the drift it exists to prevent:
 Point the job's `production` environment at a protection rule if you want a human
 approval before any production DDL.
 
-⚠️ **Ordering is improved, not guaranteed.** Vercel and Netlify build from their own
-git integrations on the same push, in parallel. Migrations apply in seconds and a
-build takes minutes, so the schema normally lands first — but only turning off the
-host's automatic deploys and deploying from a step after the migration would
-actually enforce it.
+⚠️ **Even switched on, ordering is improved, not guaranteed.** Vercel and Netlify
+build from their own git integrations on the same push, in parallel. Migrations
+apply in seconds and a build takes minutes, so the schema normally lands first —
+but only turning off the host's automatic deploys and deploying from a step after
+the migration would actually enforce it.
 
 ### By hand
 
