@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { PUBLISH, PUBLISH_STATES } from "@brightloop/schema";
 import { Alert } from "@brightloop/ui";
+import { actionErrorMessage } from "@/lib/stale-deployment";
 import { moderateProject, moderateTestimonial } from "../reputation-actions";
 import styles from "../cms.module.css";
 
@@ -64,7 +65,7 @@ export function ModerationControls({
         if (!result.ok) setError(result.error ?? "That change was not saved.");
       } catch (e) {
         // A rejected action must not leave the control looking like it worked.
-        setError(e instanceof Error ? e.message : "That change was not saved.");
+        setError(actionErrorMessage(e, "That change was not saved."));
       }
     });
   };

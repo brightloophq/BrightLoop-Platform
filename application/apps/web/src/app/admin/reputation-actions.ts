@@ -263,7 +263,8 @@ export type UploadTicket =
  *
  * Size and type are checked here to fail fast with a readable message, and
  * enforced for real by the bucket's own file_size_limit / allowed_mime_types
- * (migration 20260812000100) — the only place that still sees the bytes.
+ * (migration 20260815000100_media_bucket_limits_reissue) — the only place that
+ * still sees the bytes.
  */
 export async function createProjectImageUpload(formData: FormData): Promise<UploadTicket> {
   try {
