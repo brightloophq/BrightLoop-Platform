@@ -9,6 +9,7 @@ import {
   MAX_UPLOAD_BYTES,
   tooLargeMessage,
 } from "@/lib/media-upload";
+import { actionErrorMessage } from "@/lib/stale-deployment";
 import { createProjectImageUpload } from "../reputation-actions";
 import styles from "../cms.module.css";
 
@@ -123,7 +124,7 @@ export function MediaFields({ media = [] }: { media?: readonly MediaItem[] }) {
     } catch (e) {
       update(i, {
         uploading: false,
-        uploadError: e instanceof Error ? e.message : "Upload failed. Try again.",
+        uploadError: actionErrorMessage(e, "Upload failed. Try again."),
       });
     }
   }
