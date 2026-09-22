@@ -73,8 +73,6 @@ export { Progress } from "./components/Progress";
 export type { ProgressProps } from "./components/Progress";
 export { EmptyState } from "./components/EmptyState";
 export type { EmptyStateProps } from "./components/EmptyState";
-export { PlaceholderNotice } from "./components/PlaceholderNotice";
-export type { PlaceholderNoticeProps } from "./components/PlaceholderNotice";
 
 /* ---- Overlay ---- */
 export { Drawer } from "./components/Drawer";

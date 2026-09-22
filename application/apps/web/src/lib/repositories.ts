@@ -643,25 +643,3 @@ export async function getTransformationService(): Promise<TransformationService>
   return createTransformationService({ repo, ids: newId });
 }
 
-/**
- * True while ANY bound source is serving non-real content — drives
- * PlaceholderNotice.
- *
- * This checks the CATALOG as well as reputation, and that matters: once
- * reputation points at Supabase, the case studies are real but every price on
- * /packages and /services is still placeholder (open decisions 1 & 2). Keying the
- * notice on reputation alone would drop the label at exactly the moment the site
- * starts showing real work beside invented prices — the most misleading state
- * available. The notice retires when the catalog is real too.
- */
-export function isServingPlaceholderData(): boolean {
-  return reputationSource() === "placeholder" || getCatalogRepository().source === "placeholder";
-}
-
-/** Which parts of the site are still sample content. Drives the notice's wording. */
-export function placeholderScope(): { reputation: boolean; catalog: boolean } {
-  return {
-    reputation: reputationSource() === "placeholder",
-    catalog: getCatalogRepository().source === "placeholder",
-  };
-}

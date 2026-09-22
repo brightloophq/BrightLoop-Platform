@@ -39,10 +39,4 @@ describe("status tints use tokens (color-mix), not hardcoded rgba", () => {
     expect(alert).not.toMatch(/rgba\(\s*22,\s*179,\s*100/); // old success literal
     expect(alert).not.toMatch(/rgba\(\s*239,\s*68,\s*68/); // old danger literal
   });
-
-  it("PlaceholderNotice amber tint is tokenized", () => {
-    const notice = css("../components/PlaceholderNotice.module.css");
-    expect(notice).toContain("color-mix(in srgb, var(--warning)");
-    expect(notice).not.toMatch(/rgba\(\s*245,\s*165,\s*36/);
-  });
 });
