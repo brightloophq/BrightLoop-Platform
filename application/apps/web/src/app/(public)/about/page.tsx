@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { DISCIPLINES } from "@brightloop/schema";
 import { PLACEHOLDER_DISCIPLINE_COPY } from "@brightloop/data";
 import { Button, CTASection, Container, Eyebrow, Section } from "@brightloop/ui";
+import { TeamGrid } from "./TeamGrid";
 import home from "../home.module.css";
 import styles from "./about.module.css";
 
@@ -93,6 +94,18 @@ export default function AboutPage() {
               </p>
             </div>
           </div>
+        </Container>
+      </Section>
+
+      <Section inset>
+        <Container>
+          <Eyebrow>The team</Eyebrow>
+          <h2 className={home.sectionTitle}>Who does the work</h2>
+          <p className={styles.body}>
+            Four seats, one for each part of the loop. Where a seat is filled you get the person
+            who does that work on your engagement — not an account manager relaying it.
+          </p>
+          <TeamGrid />
         </Container>
       </Section>
 
