@@ -7,6 +7,16 @@ import shell from "../../admin/admin.module.css";
 export const metadata: Metadata = { title: "Proposals" };
 export const dynamic = "force-dynamic";
 
+type ClientSnapshot = {
+  proposal?: {
+    executiveSummary?: string | null; observedSituation?: string | null;
+    keyIssues?: { title?: string; detail?: string }[];
+    opportunities?: { title?: string; detail?: string }[];
+    proposedNextStep?: string | null;
+  };
+  narrative?: { key?: string; heading?: string; paragraphs?: string[] }[];
+};
+
 /**
  * Client proposal review (handoff §07 / Sprint 6). RLS returns only this org's
  * proposals that have been SENT — a draft proposal is invisible here.
@@ -15,12 +25,26 @@ export default async function PortalProposalsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("proposals")
-    .select("id, status, subtotal, total, deposit, line_items")
+    .select("id, status, subtotal, total, deposit, line_items, currency, discount_minor, valid_until")
     .order("sent_at", { ascending: false });
+
+  const { data: snapshotData } = await supabase.rpc("bl_client_scanner_proposal_contents");
+  const scannerSnapshots = new Map<string, ClientSnapshot & { snapshotChecksum?: string; isCurrent?: boolean }>();
+  if (Array.isArray(snapshotData)) {
+    for (const item of snapshotData as unknown as { proposalId: string; snapshot: ClientSnapshot; snapshotChecksum?: string; isCurrent?: boolean }[]) {
+      if (item && typeof item.proposalId === "string" && item.snapshot && typeof item.snapshot === "object") {
+        scannerSnapshots.set(item.proposalId, { ...item.snapshot, snapshotChecksum: item.snapshotChecksum, isCurrent: item.isCurrent });
+      }
+    }
+  }
 
   const proposals: PortalProposal[] = (data ?? []).map((p) => ({
     id: p.id, status: p.status, subtotal: p.subtotal, total: p.total, deposit: p.deposit,
+    currency: p.currency, discountMinor: p.discount_minor, validUntil: p.valid_until,
     line_items: (p.line_items as PortalProposal["line_items"] | null) ?? [],
+    clientSnapshot: scannerSnapshots.get(p.id),
+    snapshotChecksum: scannerSnapshots.get(p.id)?.snapshotChecksum,
+    isCurrent: scannerSnapshots.get(p.id)?.isCurrent,
   }));
 
   return (

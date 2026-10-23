@@ -23,12 +23,35 @@ export interface PortalSalesResult {
   clientSecret?: string;
 }
 
-export async function proposalAction(proposalId: string, action: "view" | "accept" | "change", note?: string): Promise<PortalSalesResult> {
+export async function proposalAction(proposalId: string, action: "view" | "accept" | "change", note?: string, snapshotChecksum?: string): Promise<PortalSalesResult> {
   try {
     const actor = await getActor();
     if (!actor) return { ok: false, error: "Not signed in" };
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc("bl_client_proposal_action", { p_proposal_id: proposalId, p_action: action, p_note: note ?? "" });
+    let data: unknown;
+    let error: { code?: string; message: string } | null = null;
+    if (action !== "view") {
+      const response = await supabase.rpc("bl_client_scanner_proposal_response", {
+        p_proposal_id: proposalId,
+        p_action: action,
+        p_expected_snapshot_checksum: snapshotChecksum ?? "",
+        p_note: note ?? "",
+      });
+      // A P0002 means this is an ordinary legacy proposal. Its existing
+      // client-admin status transition remains the canonical action path.
+      if (response.error?.code === "P0002") {
+        const legacy = await supabase.rpc("bl_client_proposal_action", { p_proposal_id: proposalId, p_action: action, p_note: note ?? "" });
+        data = legacy.data; error = legacy.error;
+      } else {
+        data = response.data;
+        error = response.error;
+        if (!error && data && typeof data === "object" && "status" in data) data = (data as { status: unknown }).status;
+      }
+    }
+    if (action === "view") {
+      const legacy = await supabase.rpc("bl_client_proposal_action", { p_proposal_id: proposalId, p_action: action, p_note: note ?? "" });
+      data = legacy.data; error = legacy.error;
+    }
     if (error) return { ok: false, error: error.message };
     if (action === "accept") await emitEvent({ name: "proposal.accept", clientId: actor.clientId, role: actor.role, source: "server", props: { status: String(data) } });
     if (action === "change") await emitEvent({ name: "proposal.change_request", clientId: actor.clientId, role: actor.role, source: "server" });

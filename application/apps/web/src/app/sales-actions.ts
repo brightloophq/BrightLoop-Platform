@@ -6,6 +6,7 @@ import { getActor } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { selectSignatureProvider } from "@/lib/signatures";
 import { performTransition } from "./admin/transition-service";
+import { parseUsdMinorUnits } from "@/lib/sales-money";
 
 /**
  * Admin sales actions (Sprint 6) — proposal → contract → deposit invoice.
@@ -21,6 +22,15 @@ export interface SalesResult {
   ok: boolean;
   error?: string;
   id?: string;
+}
+
+export interface ScannerPublicationConfirmation {
+  proposalId: string;
+  clientId: string;
+  recipientUserId: string;
+  currency: string;
+  totalMinor: number;
+  validUntil: string;
 }
 
 function id(prefix: string): string {
@@ -44,7 +54,11 @@ export async function setProposalDeposit(formData: FormData): Promise<SalesResul
   try {
     const { supabase } = await internal();
     const proposalId = String(formData.get("proposalId") ?? "").trim();
-    const deposit = Math.max(0, Math.round(Number(formData.get("depositDollars") ?? 0) * 100));
+    const deposit = parseUsdMinorUnits(String(formData.get("depositDollars") ?? "0"));
+    if (deposit === null) return { ok: false, error: "Enter a USD deposit with at most two decimal places and within the supported range." };
+    const { data: proposal, error: readError } = await supabase.from("proposals").select("currency").eq("id", proposalId).maybeSingle();
+    if (readError || !proposal) return { ok: false, error: "Proposal could not be loaded." };
+    if (proposal.currency !== "USD" && deposit > 0) return { ok: false, error: "Non-USD deposits are unavailable until invoice currency support is added." };
     const { error } = await supabase.from("proposals").update({ deposit }).eq("id", proposalId);
     if (error) return { ok: false, error: error.message };
     revalidatePath(`/admin/proposals/${proposalId}`);
@@ -55,12 +69,79 @@ export async function setProposalDeposit(formData: FormData): Promise<SalesResul
 }
 
 export async function sendProposal(proposalId: string): Promise<SalesResult> {
+  // Converted scanner drafts require the explicit confirmation form and the
+  // database publication RPC. This legacy transition is retained for ordinary
+  // proposals; the database trigger independently rejects a bypass attempt.
+  try {
+    const { supabase } = await internal();
+    const { data: conversion, error } = await supabase.from("scanner_sales_conversions")
+      .select("id").eq("proposal_id", proposalId).maybeSingle();
+    if (error) return { ok: false, error: "Could not verify proposal origin." };
+    if (conversion) return { ok: false, error: "Use the confirmed portal publication action for scanner proposals." };
+    const { data: proposal, error: proposalError } = await supabase.from("proposals").select("currency").eq("id", proposalId).maybeSingle();
+    if (proposalError || !proposal) return { ok: false, error: "Proposal could not be loaded." };
+    if (proposal.currency !== "USD") return { ok: false, error: "Only USD proposals can be published until invoice currency support is available." };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
   const res = await performTransition({
     table: "proposals", machine: "proposal", entityId: proposalId, to: "sent",
     capability: CAP_SALES, patch: { sent_at: new Date().toISOString() },
   });
   if (res.ok) { revalidatePath("/admin/proposals", "layout"); revalidatePath("/portal/proposals"); }
   return res.ok ? { ok: true, id: proposalId } : { ok: false, error: res.error };
+}
+
+export async function publishScannerSalesProposal(input: ScannerPublicationConfirmation): Promise<SalesResult> {
+  try {
+    const { supabase } = await internal();
+    if (!input.proposalId || !input.clientId || !input.recipientUserId || input.currency !== "USD"
+      || !Number.isSafeInteger(input.totalMinor) || input.totalMinor < 0
+      || !/^\d{4}-\d{2}-\d{2}$/.test(input.validUntil)) {
+      return { ok: false, error: "Review the current recipient and proposal terms before publishing." };
+    }
+    const { error } = await supabase.rpc("bl_publish_scanner_sales_proposal", {
+      p_proposal_id: input.proposalId,
+      p_expected_client_id: input.clientId,
+      p_recipient_user_id: input.recipientUserId,
+      p_expected_currency: input.currency,
+      p_expected_total_minor: input.totalMinor,
+      p_expected_valid_until: input.validUntil,
+    });
+    if (error) {
+      if (error.code === "42501") return { ok: false, error: "Owner or admin authorization is required to publish." };
+      if (error.code === "40001") return { ok: false, error: error.message };
+      if (error.code === "22023") return { ok: false, error: error.message };
+      return { ok: false, error: "Publication could not be completed. Reload the proposal and try again." };
+    }
+    revalidatePath(`/admin/proposals/${input.proposalId}`);
+    revalidatePath("/admin/proposals", "layout");
+    revalidatePath("/portal/proposals");
+    return { ok: true, id: input.proposalId };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Publication failed" };
+  }
+}
+
+export async function createScannerSalesRevision(predecessorProposalId: string): Promise<SalesResult> {
+  try {
+    const { supabase } = await internal();
+    const { data, error } = await supabase.rpc("bl_create_scanner_sales_revision", {
+      p_predecessor_proposal_id: predecessorProposalId,
+    });
+    if (error) {
+      if (error.code === "42501") return { ok: false, error: "Owner or admin authorization is required to prepare a revision." };
+      if (error.code === "40001" || error.code === "55000" || error.code === "22023") return { ok: false, error: error.message };
+      return { ok: false, error: "A private revision could not be prepared. Reload the proposal and try again." };
+    }
+    const proposalId = data && typeof data === "object" && "proposalId" in data ? String(data.proposalId) : "";
+    if (!proposalId) return { ok: false, error: "The server did not return a revision proposal." };
+    revalidatePath(`/admin/proposals/${predecessorProposalId}`);
+    revalidatePath("/admin/proposals", "layout");
+    return { ok: true, id: proposalId };
+  } catch {
+    return { ok: false, error: "A private revision could not be prepared." };
+  }
 }
 
 /* ---- contracts ------------------------------------------------------------- */
