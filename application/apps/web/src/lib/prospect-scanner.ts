@@ -1,3 +1,4 @@
+import { commercialReviewBindingSchema, type CommercialReviewBinding } from "@brightloop/schema";
 /* =============================================================================
  * Prospect Scanner view models (Phase C · Sprint C4) — PURE, allowlist-only.
  *
@@ -12,7 +13,7 @@
  * ========================================================================== */
 
 import { PIPELINE_STAGE_ORDER } from "@brightloop/domain";
-import { computeProspectPackage, type ScanDTO, type TimelineEntryDTO, type ArtifactDTO, type EvidenceValidationDTO, type EvidenceClaimTraceDTO, type EvidenceFindingTraceDTO, type ProspectPackageState, type PackageReviewDecision } from "@brightloop/application";
+import { computeProspectPackage, type ScanDTO, type TimelineEntryDTO, type ArtifactDTO, type EvidenceValidationDTO, type EvidenceClaimTraceDTO, type EvidenceFindingTraceDTO, type ProspectPackageState, type PackageReviewDecision, type ProspectPackageReviewDTO } from "@brightloop/application";
 
 /* ---- primitives -------------------------------------------------------------- */
 
@@ -941,10 +942,13 @@ export interface CommercialWorkItemView {
   amountMinor: number | null;
   cadence: "monthly" | null;
   optional: boolean;
+  quantity: number;
+  adminNotes: string;
 }
 
 export interface CommercialProposalView {
   present: boolean;
+  version: number | null;
   status: CommercialStatus;
   statusLabel: string;
   /** True when a usable draft was generated (its own artifact status, not the review axis). */
@@ -970,7 +974,7 @@ export interface CommercialProposalView {
 }
 
 export function emptyCommercialProposalView(): CommercialProposalView {
-  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet.", workItems: [], currency: null, discountMinor: 0, validUntil: null, commercialNotes: "", totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 0 };
+  return { present: false, version: null, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet.", workItems: [], currency: null, discountMinor: 0, validUntil: null, commercialNotes: "", totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 0 };
 }
 
 const readStr = (v: unknown, fallback = ""): string => (typeof v === "string" ? v : fallback);
@@ -1014,11 +1018,14 @@ export function buildCommercialProposalView(dto: ArtifactDTO | null): Commercial
       amountMinor: line ? readInt(line["amountMinor"]) : null,
       cadence: line && line["cadence"] === "monthly" ? "monthly" : null,
       optional: line?.["optional"] === true,
+      quantity: line ? readInt(line["quantity"], 1) : 1,
+      adminNotes: line ? readStr(line["adminNotes"]) : "",
     };
   });
 
   return {
     present: true,
+    version: dto.version,
     status,
     statusLabel: commercialStatusLabel(status),
     draftReady,
@@ -1151,6 +1158,7 @@ export interface ProspectPackageView {
   reason: string;
   components: PackageComponentView[];
   reviewDecision: PackageReviewDecision;
+  reviewBinding: CommercialReviewBinding | null;
   /** True once every required component is present — the review actions unlock. */
   canReview: boolean;
   /** True when the proposal still needs pricing — an approval is NOT client-ready. */
@@ -1178,6 +1186,57 @@ const PACKAGE_STATE_BADGE: Record<ProspectPackageState, string> = {
   rejected: "failed",
 };
 
+export type PackageReviewUpdate = Pick<ProspectPackageReviewDTO, "decision" | "bindingStatus" | "currentBinding" | "readiness">;
+/** Null review means an authoritative 409, which invalidates displayed readiness. */
+export interface PackageReviewSnapshot { source: ProspectPackageView; review: PackageReviewUpdate | null }
+
+/** Accept only the display fields of the authoritative same-origin API response. */
+export function readPackageReviewUpdate(value: unknown): PackageReviewUpdate {
+  const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object";
+  if (!isRecord(value) || !isRecord(value["readiness"])) throw new Error("Invalid review response");
+  const r = value["readiness"];
+  const binding = value["currentBinding"] === null ? null : commercialReviewBindingSchema.safeParse(value["currentBinding"]);
+  if (!["pending", "approved", "rejected", "revision_requested"].includes(String(value["decision"])) ||
+    !["pending", "legacy", "stale", "current"].includes(String(value["bindingStatus"])) ||
+    typeof r["state"] !== "string" || !Object.hasOwn(PACKAGE_STATE_LABEL, r["state"]) ||
+    typeof r["reason"] !== "string" || typeof r["componentsReady"] !== "boolean" || typeof r["clientReady"] !== "boolean" ||
+    (binding !== null && !binding.success) ||
+    (r["state"] === "approved" && (value["decision"] !== "approved" || value["bindingStatus"] !== "current" || binding === null)) ||
+    (r["clientReady"] && (value["decision"] !== "approved" || value["bindingStatus"] !== "current" || !r["componentsReady"] || r["state"] !== "approved"))) {
+    throw new Error("Invalid review response");
+  }
+  return { decision: value["decision"] as PackageReviewDecision, bindingStatus: value["bindingStatus"] as PackageReviewUpdate["bindingStatus"],
+    currentBinding: binding?.success ? binding.data : null, readiness: {
+      state: r["state"] as ProspectPackageState, reason: r["reason"], componentsReady: r["componentsReady"], clientReady: r["clientReady"],
+    } };
+}
+
+/** Fresh server props supersede a completion snapshot, including revisions/expiry.
+ * A completion for an older render must never overwrite newer server props.
+ */
+export function resolvePackageReviewView(source: ProspectPackageView, snapshot: PackageReviewSnapshot | null): ProspectPackageView {
+  if (snapshot === null || snapshot.source !== source) return source;
+  const review = snapshot.review;
+  if (review === null) return { ...source, state: "blocked", stateLabel: "Package changed", badge: "failed",
+    reason: "The package changed. Reload the workspace and review the current versions.", reviewDecision: "pending", clientReady: false };
+  const a = source.reviewBinding; const b = review.currentBinding;
+  const sameVersions = a !== null && b !== null && (["proposal", "narrative", "report", "competitor", "coreProposal"] as const).every((key) => {
+    const x = a[key]; const y = b[key];
+    return x === null || y === null ? x === y : x.id === y.id && x.version === y.version && x.checksum === y.checksum;
+  });
+  // The API can observe a revision between writing the event and its final read.
+  // Do not attach that newer package's decision to the older details on screen.
+  if (!sameVersions) return { ...source, state: "blocked", stateLabel: "Package changed", badge: "failed",
+    reason: "The package changed. Reload the workspace and review the current versions.", reviewDecision: "pending",
+    reviewBinding: null, canReview: false, clientReady: false };
+  const pkg = review.readiness;
+  return { ...source, state: pkg.state, stateLabel: pkg.clientReady ? "Client ready" : pkg.state === "approved" && source.pricingRequired ? "Approved · pricing required" : PACKAGE_STATE_LABEL[pkg.state],
+    badge: pkg.clientReady ? "completed" : PACKAGE_STATE_BADGE[pkg.state],
+    reason: review.bindingStatus === "stale" ? "The reviewed versions changed. Review the current package again." : review.bindingStatus === "legacy" ? "The earlier decision has no version binding. Review the current package again." : pkg.reason,
+    reviewDecision: review.decision, reviewBinding: review.currentBinding,
+    canReview: pkg.componentsReady && review.currentBinding !== null, clientReady: pkg.clientReady };
+}
+
 export interface PackageViewInput {
   scanCompleted: boolean;
   reportPresent: boolean;
@@ -1187,6 +1246,7 @@ export interface PackageViewInput {
   commercialEnqueued: boolean;
   commercialFailed: boolean;
   reviewDecision: PackageReviewDecision;
+  review?: ProspectPackageReviewDTO | null;
 }
 
 /** Fold the commercial components + review decision into the command-center view. */
@@ -1194,7 +1254,7 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
   // Pricing is complete only when the mutation moved the draft to `priced` (the
   // generator never sets it). Derived, not client-trusted.
   const pricingComplete = input.proposal.commercialState === "priced";
-  const pkg = computeProspectPackage({
+  const pkg = input.review?.readiness ?? computeProspectPackage({
     scanCompleted: input.scanCompleted,
     reportPresent: input.reportPresent,
     competitor: input.competitor.status,
@@ -1202,7 +1262,7 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
     narrative: input.narrative.status,
     commercialFailed: input.commercialFailed,
     commercialEnqueued: input.commercialEnqueued,
-    reviewDecision: input.reviewDecision,
+    reviewDecision: "pending",
     pricingComplete,
   });
 
@@ -1232,10 +1292,12 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
     state: pkg.state,
     stateLabel,
     badge: pkg.clientReady ? "completed" : PACKAGE_STATE_BADGE[pkg.state],
-    reason,
+    reason: input.review?.bindingStatus === "legacy" ? "The earlier decision has no version binding. Review the current package again."
+      : input.review?.bindingStatus === "stale" ? "The reviewed versions changed. Review the current package again." : reason,
     components,
-    reviewDecision: input.reviewDecision,
-    canReview: pkg.componentsReady,
+    reviewDecision: input.review?.decision ?? "pending",
+    reviewBinding: input.review?.currentBinding ?? null,
+    canReview: pkg.componentsReady && input.review?.currentBinding != null,
     pricingRequired,
     clientReady: pkg.clientReady,
   };

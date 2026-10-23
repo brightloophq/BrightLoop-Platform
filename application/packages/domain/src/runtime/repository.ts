@@ -79,6 +79,9 @@ export interface AppendEventInput {
 export interface ListEventsQuery {
   aggregateType: string;
   aggregateId: string;
+  eventTypes?: readonly string[];
+  stage?: string;
+  descending?: boolean;
   fromSequence?: number;
   limit?: number;
 }

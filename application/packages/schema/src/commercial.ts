@@ -60,6 +60,17 @@ export const proposalItemPricingSchema = z.object({
 });
 export type ProposalItemPricing = z.infer<typeof proposalItemPricingSchema>;
 
+/** Input form lets the server carry forward omitted metadata from the prior line. */
+const proposalItemPricingInputSchema = z.object({
+  sourceId: z.string().min(1),
+  pricingType: proposalPricingTypeSchema,
+  amountMinor: amountMinorSchema,
+  cadence: proposalBillingCadenceSchema.nullable().optional(),
+  quantity: z.number().int().positive().max(9999).optional(),
+  optional: z.boolean().optional(),
+  adminNotes: z.string().max(500).optional(),
+});
+
 /** Proposal-level admin pricing. Derived totals are persisted for display but are
  * always recomputable from `items` + `discountMinor` (see computeProposalPricingTotals). */
 export const proposalPricingSchema = z.object({
@@ -83,11 +94,16 @@ export type ProposalPricing = z.infer<typeof proposalPricingSchema>;
 /** The pricing INPUT a caller supplies — price lines only. Server derives all totals,
  * `pricedBy`/`pricedAt`, and completeness; none of those are client-trusted. */
 export const setProposalPricingInputSchema = z.object({
-  currency: currencyCodeSchema,
-  items: z.array(proposalItemPricingSchema).max(32),
-  discountMinor: amountMinorSchema.default(0),
-  validUntil: z.string().max(40).nullable().default(null),
-  commercialNotes: z.string().max(1000).default(""),
+  /** Optimistic concurrency precondition for the proposal version being edited. */
+  expectedVersion: z.number().int().positive(),
+  currency: currencyCodeSchema.optional(),
+  items: z.array(proposalItemPricingInputSchema).max(32),
+  discountMinor: amountMinorSchema.optional(),
+  validUntil: z.string().length(10).regex(/^\d{4}-\d{2}-\d{2}$/).refine((value) => {
+    const date = new Date(`${value}T00:00:00.000Z`);
+    return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+  }, "validUntil must be a real calendar date").nullable().optional(),
+  commercialNotes: z.string().max(1000).optional(),
 });
 export type SetProposalPricingInput = z.input<typeof setProposalPricingInputSchema>;
 export type SetProposalPricingParsed = z.infer<typeof setProposalPricingInputSchema>;

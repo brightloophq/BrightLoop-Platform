@@ -2,7 +2,7 @@ import "server-only";
 
 import { NextResponse } from "next/server";
 import { hasCapability, isClientRole } from "@brightloop/schema";
-import { setProposalPricing, isApplicationError } from "@brightloop/application";
+import { setProposalPricing, getProspectPackageReview, isApplicationError } from "@brightloop/application";
 import { getActor } from "@/lib/auth";
 import { buildAppContext } from "@/lib/runtime-api";
 
@@ -48,8 +48,14 @@ export async function POST(req: Request): Promise<NextResponse> {
   try {
     // The application use-case validates and derives everything from `pricing` — the
     // route trusts NONE of it (totals/pricedBy are server-computed).
-    const proposal = await setProposalPricing(ctx, runId, body["pricing"]);
-    return NextResponse.json(proposal, { status: 200 });
+    const pricing = body["pricing"];
+    const input = pricing !== null && typeof pricing === "object" && !Array.isArray(pricing)
+      ? { ...(pricing as Record<string, unknown>), expectedVersion: body["expectedVersion"] }
+      : pricing;
+    const proposal = await setProposalPricing(ctx, runId, input);
+    let review = null;
+    try { review = await getProspectPackageReview(ctx, runId); } catch { /* The save succeeded; refresh can reconcile if the review read is unavailable. */ }
+    return NextResponse.json({ ...proposal, review }, { status: 200 });
   } catch (error) {
     if (isApplicationError(error)) return NextResponse.json(error.toBody(), { status: error.status });
     return NextResponse.json({ error: { code: "internal", message: "An unexpected error occurred" } }, { status: 500 });

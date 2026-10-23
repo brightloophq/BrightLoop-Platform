@@ -71,3 +71,5 @@ export type {
   RangeFactor,
   DisciplineSlug,
 } from "./catalog.js";
+
+export { commercialReviewBindingSchema, type CommercialReviewBinding } from "./commercial-review.js";

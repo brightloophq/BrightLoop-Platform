@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Alert, Badge, Button, OperationalPanel, SectionRule } from "@brightloop/ui";
@@ -23,21 +23,26 @@ interface LineState {
   amount: string; // dollars, as typed
   kind: Kind;
   optional: boolean;
+  quantity: string;
+  adminNotes: string;
 }
 
 const initialLine = (w: CommercialWorkItemView): LineState => ({
   amount: w.amountMinor !== null ? (w.amountMinor / 100).toFixed(2) : "",
   kind: w.pricingType === "recurring" ? "recurring" : "one_time",
   optional: w.optional,
+  quantity: String(w.quantity),
+  adminNotes: w.adminNotes,
 });
 
-/** Parse a dollars string to integer minor units; blank/NaN → null (no line). */
+/** Parse a two-decimal amount without floating-point rounding. */
 function toMinor(amount: string): number | null {
   const t = amount.trim();
   if (t === "") return null;
-  const n = Number(t);
-  if (!Number.isFinite(n) || n < 0) return null;
-  return Math.round(n * 100);
+  const match = /^(\d+)(?:\.(\d{1,2}))?$/.exec(t);
+  if (!match) return Number.NaN;
+  const minor = Number(match[1]) * 100 + Number((match[2] ?? "").padEnd(2, "0"));
+  return Number.isSafeInteger(minor) ? minor : Number.NaN;
 }
 
 export function CommercialProposalWorkspace({ runId, proposal }: { runId: string; proposal: CommercialProposalView }) {
@@ -45,11 +50,20 @@ export function CommercialProposalWorkspace({ runId, proposal }: { runId: string
   const [lines, setLines] = useState<Record<string, LineState>>(() =>
     Object.fromEntries(proposal.workItems.map((w) => [w.sourceId, initialLine(w)])),
   );
-  const [currency] = useState(proposal.currency ?? "USD");
+  const [currency, setCurrency] = useState(proposal.currency ?? "USD");
   const [notes, setNotes] = useState(proposal.commercialNotes);
-  const [validDays, setValidDays] = useState(proposal.validUntil ? "" : "30");
+  const [discount, setDiscount] = useState((proposal.discountMinor / 100).toFixed(2));
+  const [validUntil, setValidUntil] = useState(proposal.validUntil ?? "");
   const [phase, setPhase] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLines(Object.fromEntries(proposal.workItems.map((w) => [w.sourceId, initialLine(w)])));
+    setCurrency(proposal.currency ?? "USD");
+    setNotes(proposal.commercialNotes);
+    setDiscount((proposal.discountMinor / 100).toFixed(2));
+    setValidUntil(proposal.validUntil ?? "");
+  }, [proposal.version, proposal.workItems, proposal.currency, proposal.commercialNotes, proposal.discountMinor, proposal.validUntil]);
 
   const update = (sourceId: string, patch: Partial<LineState>) =>
     setLines((prev) => ({ ...prev, [sourceId]: { ...prev[sourceId]!, ...patch } }));
@@ -61,12 +75,13 @@ export function CommercialProposalWorkspace({ runId, proposal }: { runId: string
     for (const w of proposal.workItems) {
       const l = lines[w.sourceId]!;
       const minor = toMinor(l.amount);
-      if (minor === null) continue;
-      if (l.kind === "recurring") monthly += minor;
-      else oneTime += minor;
+      if (minor === null || Number.isNaN(minor)) continue;
+      const lineTotal = minor * (Number(l.quantity) || 0);
+      if (l.kind === "recurring") monthly += lineTotal;
+      else oneTime += lineTotal;
     }
-    return { oneTime, monthly };
-  }, [lines, proposal.workItems]);
+    return { oneTime: Math.max(0, oneTime - (toMinor(discount) || 0)), monthly };
+  }, [lines, proposal.workItems, discount]);
 
   if (!proposal.present) {
     return (
@@ -83,22 +98,44 @@ export function CommercialProposalWorkspace({ runId, proposal }: { runId: string
   const save = async () => {
     setPhase("saving");
     setError(null);
-    const items = proposal.workItems
-      .map((w) => ({ w, l: lines[w.sourceId]!, minor: toMinor(lines[w.sourceId]!.amount) }))
+    const parsedLines = proposal.workItems.map((w) => ({ w, l: lines[w.sourceId]!, minor: toMinor(lines[w.sourceId]!.amount) }));
+    if (parsedLines.some(({ minor }) => Number.isNaN(minor))) {
+      setError("Enter amounts with no more than two decimal places.");
+      setPhase("error");
+      return;
+    }
+    const parsedDiscount = toMinor(discount);
+    if (parsedDiscount === null || Number.isNaN(parsedDiscount)) {
+      setError("Enter a valid discount with no more than two decimal places.");
+      setPhase("error");
+      return;
+    }
+    if (proposal.version === null) {
+      setError("The current proposal version is unavailable. Reload before saving.");
+      setPhase("error");
+      return;
+    }
+    const items = parsedLines
       .filter(({ l, minor }) => minor !== null || l.optional)
       .map(({ w, l, minor }) => ({
         sourceId: w.sourceId,
         pricingType: l.kind,
         amountMinor: minor ?? 0,
-        cadence: l.kind === "recurring" ? "monthly" : null,
+        cadence: l.kind === "recurring" ? (w.cadence ?? "monthly") : null,
+        quantity: Number(l.quantity),
         optional: l.optional,
+        adminNotes: l.adminNotes,
       }));
-    const validUntil = validDays.trim() === "" ? null : new Date(Date.now() + Number(validDays) * 86_400_000).toISOString().slice(0, 10);
+    if (items.some((item) => !Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > 9999)) {
+      setError("Quantities must be whole numbers from 1 to 9,999.");
+      setPhase("error");
+      return;
+    }
     try {
       const res = await fetch("/api/internal/runtime/proposal-pricing", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ runId, pricing: { currency, items, discountMinor: 0, validUntil, commercialNotes: notes } }),
+        body: JSON.stringify({ runId, expectedVersion: proposal.version, pricing: { currency, items, discountMinor: parsedDiscount, validUntil: validUntil || null, commercialNotes: notes } }),
       });
       if (!res.ok) {
         const body = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
@@ -106,6 +143,8 @@ export function CommercialProposalWorkspace({ runId, proposal }: { runId: string
         setPhase("error");
         return;
       }
+      const saved = await res.json() as { review?: unknown };
+      window.dispatchEvent(new CustomEvent("auxion:proposal-pricing-saved", { detail: { runId, saved } }));
       setPhase("saved");
       router.refresh();
     } catch {
@@ -170,6 +209,14 @@ export function CommercialProposalWorkspace({ runId, proposal }: { runId: string
                   <input type="checkbox" checked={l.optional} onChange={(e) => update(w.sourceId, { optional: e.target.checked })} />
                   <span className={styles.summaryKey}>Optional</span>
                 </label>
+                <label className={styles.pricingField}>
+                  <span className={styles.summaryKey}>Quantity</span>
+                  <input className={styles.pricingInput} type="number" min="1" max="9999" step="1" value={l.quantity} onChange={(e) => update(w.sourceId, { quantity: e.target.value })} aria-label={`Quantity for ${w.title}`} />
+                </label>
+                <label className={styles.pricingField}>
+                  <span className={styles.summaryKey}>Line notes</span>
+                  <input className={styles.pricingInput} maxLength={500} value={l.adminNotes} onChange={(e) => update(w.sourceId, { adminNotes: e.target.value })} aria-label={`Notes for ${w.title}`} />
+                </label>
               </div>
             </div>
           );
@@ -186,8 +233,12 @@ export function CommercialProposalWorkspace({ runId, proposal }: { runId: string
           <span className={styles.summaryValue}>{totals.monthly > 0 ? `${formatMinor(totals.monthly, currency)}/mo` : "—"}</span>
         </div>
         <label className={styles.pricingField}>
-          <span className={styles.summaryKey}>Valid for (days)</span>
-          <input className={styles.pricingInput} inputMode="numeric" value={validDays} onChange={(e) => setValidDays(e.target.value)} aria-label="Proposal validity in days" />
+          <span className={styles.summaryKey}>Valid until</span>
+          <input className={styles.pricingInput} type="date" value={validUntil} onChange={(e) => setValidUntil(e.target.value)} aria-label="Proposal valid until" />
+        </label>
+        <label className={styles.pricingField}>
+          <span className={styles.summaryKey}>Discount ({currency})</span>
+          <input className={styles.pricingInput} inputMode="decimal" value={discount} onChange={(e) => setDiscount(e.target.value)} aria-label="Proposal discount" />
         </label>
       </div>
 

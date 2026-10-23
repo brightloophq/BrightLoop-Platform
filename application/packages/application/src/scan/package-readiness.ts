@@ -45,6 +45,10 @@ export interface ProspectPackageInput {
   reviewDecision: PackageReviewDecision;
   /** All REQUIRED proposal work items carry authoritative admin pricing. */
   pricingComplete: boolean;
+  /** Fail closed for callers that have not resolved the version-bound review. */
+  approvalCurrent?: boolean;
+  pricingValid?: boolean;
+  termsValid?: boolean;
 }
 
 export interface ProspectPackage {
@@ -70,13 +74,19 @@ export function computeProspectPackage(input: ProspectPackageInput): ProspectPac
   const competitorOk = TERMINAL.has(input.competitor); // insufficient_evidence counts as done
   const proposalOk = PRESENT.has(input.proposal); // a draft must exist
   const narrativeOk = PRESENT.has(input.narrative); // content must exist
-  const componentsReady = input.scanCompleted && input.reportPresent && competitorOk && proposalOk && narrativeOk;
+  const componentsReady = input.scanCompleted && input.reportPresent && competitorOk && proposalOk && narrativeOk && !input.commercialFailed;
   // Client-ready is a strict superset of approval: pricing must ALSO be complete and
   // the narrative present. Approval with pricing still required is NOT client-ready.
-  const clientReady = input.reviewDecision === "approved" && input.pricingComplete && proposalOk && narrativeOk && !input.commercialFailed;
+  const clientReady = input.reviewDecision === "approved" && input.approvalCurrent === true &&
+    componentsReady && input.pricingComplete && input.pricingValid === true && input.termsValid === true;
 
   // A recorded human decision is authoritative and overrides the generated state.
-  if (input.reviewDecision === "approved") return { state: "approved", reason: clientReady ? "The prospect package is approved and client-ready." : "Approved — pricing is still required before this can be sent.", componentsReady, clientReady };
+  if (input.reviewDecision === "approved" && input.approvalCurrent === true) return {
+    state: "approved", reason: clientReady ? "The prospect package is approved and client-ready."
+      : !componentsReady ? "Approved versions exist, but required components are incomplete or failed."
+      : !input.pricingComplete || !input.pricingValid ? "Approved — valid pricing is still required before this can be sent."
+      : "Approved — valid, non-expired commercial terms are required before this can be sent.", componentsReady, clientReady,
+  };
   if (input.reviewDecision === "rejected") return { state: "rejected", reason: "The prospect package was rejected.", componentsReady, clientReady: false };
   if (input.reviewDecision === "revision_requested") return { state: "revision_requested", reason: "A revision was requested for the prospect package.", componentsReady, clientReady: false };
 

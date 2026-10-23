@@ -57,12 +57,19 @@ describe("§09 pricing editor visibility — the view inputs that drive the work
   });
 
   it("a persisted price line pre-fills the editor for that item and marks the proposal priced", () => {
-    const priced = { ...draftContent, commercialState: "priced", pricing: { currency: "USD", items: [{ sourceId: "w1", pricingType: "recurring", amountMinor: 30000, cadence: "monthly", quantity: 1, optional: false, adminNotes: "" }], discountMinor: 0, subtotalOneTimeMinor: 0, totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 30000, validUntil: null, commercialNotes: "", pricedBy: "u", pricedAt: "t" } };
+    const priced = { ...draftContent, commercialState: "priced", pricing: { currency: "CAD", items: [{ sourceId: "w1", pricingType: "recurring", amountMinor: 30000, cadence: "monthly", quantity: 4, optional: false, adminNotes: "Preserve line notes" }], discountMinor: 25, subtotalOneTimeMinor: 0, totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 120000, validUntil: "2099-12-31", commercialNotes: "Keep proposal note", pricedBy: "u", pricedAt: "t" } };
     const v = buildCommercialProposalView(dto(priced));
-    expect(v.currency).toBe("USD");
+    expect(v.currency).toBe("CAD");
+    expect(v.version).toBe(1);
+    expect(v.discountMinor).toBe(25);
+    expect(v.validUntil).toBe("2099-12-31");
+    expect(v.commercialNotes).toBe("Keep proposal note");
     const w1 = v.workItems.find((w) => w.sourceId === "w1")!;
     expect(w1.amountMinor).toBe(30000);
     expect(w1.pricingType).toBe("recurring");
+    expect(w1.cadence).toBe("monthly");
+    expect(w1.quantity).toBe(4);
+    expect(w1.adminNotes).toBe("Preserve line notes");
     expect(v.needsPricing).toBe(false); // → §09 shows "Pricing complete"
   });
 
@@ -156,7 +163,7 @@ describe("client narrative view", () => {
 describe("prospect package view", () => {
   const competitorReady = { present: true, status: "ready" as const, statusLabel: "Ready", competitorCount: 2, evidenceCount: 3, confidence: 70, confidenceBand: "high", marketPosition: null, reviewRequired: true, summary: "" };
 
-  it("folds a complete set into ready_for_review and unlocks review", () => {
+  it("does not unlock review from component flags without server-resolved identities", () => {
     const pkg = buildProspectPackageView({
       scanCompleted: true,
       reportPresent: true,
@@ -168,7 +175,7 @@ describe("prospect package view", () => {
       reviewDecision: "pending",
     });
     expect(pkg.state).toBe("ready_for_review");
-    expect(pkg.canReview).toBe(true);
+    expect(pkg.canReview).toBe(false);
     const proposalRow = pkg.components.find((c) => c.key === "proposal")!;
     expect(proposalRow.note).toBe("Pricing required");
   });
@@ -205,13 +212,11 @@ describe("prospect package view", () => {
     expect(pkg.state).not.toBe("approved");
   });
 
-  it("only an explicit review.approved decision yields approved — and stays honest about missing pricing", () => {
+  it("an unbound approval flag cannot make a package approved or client-ready", () => {
     const pkg = buildProspectPackageView(fullInput("approved"));
-    expect(pkg.state).toBe("approved");
-    expect(pkg.pricingRequired).toBe(true);
-    // The UI must never imply a client-ready proposal while pricing is missing.
-    expect(pkg.stateLabel).toBe("Approved · pricing required");
-    expect(pkg.reason).toMatch(/pricing is still required/i);
+    expect(pkg.state).toBe("ready_for_review");
+    expect(pkg.clientReady).toBe(false);
+    expect(pkg.canReview).toBe(false);
   });
 });
 

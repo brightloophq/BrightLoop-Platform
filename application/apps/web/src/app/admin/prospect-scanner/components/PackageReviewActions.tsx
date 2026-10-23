@@ -1,8 +1,10 @@
 "use client";
 
+import type { CommercialReviewBinding } from "@brightloop/schema";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Alert, Button } from "@brightloop/ui";
+import { readPackageReviewUpdate, type PackageReviewUpdate } from "@/lib/prospect-scanner";
 import styles from "../scanner.module.css";
 
 /**
@@ -10,7 +12,10 @@ import styles from "../scanner.module.css";
  * reject). Posts to the internal review route; the decision is capability-gated and
  * recorded as an auditable event server-side. Nothing here sends or publishes.
  */
-export function PackageReviewActions({ runId, decision }: { runId: string; decision: string }) {
+export function PackageReviewActions({ runId, decision, expectedBinding, onReviewed, onReviewConflict }: {
+  runId: string; decision: string; expectedBinding: CommercialReviewBinding; onReviewed: (review: PackageReviewUpdate) => void;
+  onReviewConflict: () => void;
+}) {
   const router = useRouter();
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -24,13 +29,17 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
         const res = await fetch("/api/internal/runtime/package-review", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ runId, action, note: note.trim() || undefined }),
+          body: JSON.stringify({ runId, action, expectedBinding, note: note.trim() || undefined }),
         });
         if (!res.ok) {
-          setError(res.status === 403 ? "You do not have permission to review this package." : "The review action could not be recorded.");
+          if (res.status === 409) onReviewConflict();
+          setError(res.status === 409 ? "The package changed. Reload the workspace and review the current versions." : res.status === 403 ? "You do not have permission to review this package." : "The review action could not be recorded.");
           setBusy(null);
           return;
         }
+        // Persisted response, never optimistic: update the panel independently of
+        // the full workspace's potentially suspended App Router refresh render.
+        onReviewed(readPackageReviewUpdate(await res.json()));
         setNote("");
         router.refresh();
       } catch {
@@ -39,7 +48,7 @@ export function PackageReviewActions({ runId, decision }: { runId: string; decis
         setBusy(null);
       }
     },
-    [runId, note, router],
+    [runId, note, router, expectedBinding, onReviewed, onReviewConflict],
   );
 
   return (

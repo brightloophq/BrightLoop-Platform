@@ -568,7 +568,9 @@ export class SupabaseRuntimeRepository implements RuntimeRepository {
   async listRuntimeEvents(query: ListEventsQuery): Promise<RuntimeResult<RuntimeEvent[]>> {
     let q = this.db.from("runtime_events").select("*")
       .eq("aggregate_type", query.aggregateType).eq("aggregate_id", query.aggregateId)
-      .order("sequence", { ascending: true });
+      .order("sequence", { ascending: !query.descending });
+    if (query.eventTypes !== undefined) q = q.in("event_type", [...query.eventTypes]);
+    if (query.stage !== undefined) q = q.eq("stage", query.stage);
     if (query.fromSequence !== undefined) q = q.gte("sequence", query.fromSequence);
     if (query.limit !== undefined) q = q.limit(query.limit);
     return this.many("listRuntimeEvents", q, toEvent);

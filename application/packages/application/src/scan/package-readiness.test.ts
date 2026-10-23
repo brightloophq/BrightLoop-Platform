@@ -12,10 +12,20 @@ const base = (over: Partial<ProspectPackageInput> = {}): ProspectPackageInput =>
   commercialEnqueued: true,
   reviewDecision: "pending",
   pricingComplete: false,
+  approvalCurrent: true,
+  pricingValid: true,
+  termsValid: true,
   ...over,
 });
 
 describe("computeProspectPackage", () => {
+  it.each([
+    { scanCompleted: false }, { reportPresent: false }, { narrative: "not_started" as const },
+    { competitor: "failed" as const }, { commercialFailed: true }, { approvalCurrent: false },
+    { pricingValid: false }, { termsValid: false },
+  ])("fails closed despite an approval when a delivery prerequisite is missing: %j", (missing) => {
+    expect(computeProspectPackage(base({ reviewDecision: "approved", pricingComplete: true, ...missing })).clientReady).toBe(false);
+  });
   it("competitor ready + proposal + narrative → ready_for_review", () => {
     expect(computeProspectPackage(base()).state).toBe("ready_for_review");
   });

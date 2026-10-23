@@ -241,6 +241,14 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const commercialProposal = buildCommercialProposalView(commercialProposalDto ?? null);
   const clientNarrative = buildClientNarrativeView(clientNarrativeDto ?? null);
   const packageReviewDecision: PackageReviewDecision = packageReviewDto?.decision ?? "pending";
+  // Parallel reads must describe the same package the operator actually sees.
+  const binding = packageReviewDto?.currentBinding;
+  const consistentReview = binding && binding.proposal.id === commercialProposalDto?.id &&
+    binding.narrative.id === clientNarrativeDto?.id && binding.report.id === reportArtifact?.id &&
+    (binding.competitor?.id ?? null) === (competitorArtifact?.id ?? null) &&
+    (binding.coreProposal?.id ?? null) === (proposalArtifact?.id ?? null) && !commercialKickoffFailed
+    ? packageReviewDto : null;
+
   const prospectPackage = buildProspectPackageView({
     scanCompleted,
     reportPresent: reportArtifact !== null,
@@ -250,6 +258,7 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     commercialEnqueued,
     commercialFailed,
     reviewDecision: packageReviewDecision,
+    review: consistentReview,
   });
 
   const readiness = computeReasoningReadiness({
