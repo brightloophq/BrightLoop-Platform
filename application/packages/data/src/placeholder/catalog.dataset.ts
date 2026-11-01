@@ -50,7 +50,7 @@ export const PLACEHOLDER_MODULES: readonly ServiceModule[] = [
   {
     id: "website",
     stage: "Build",
-    name: "Website Build",
+    name: "Website Development",
     from: 3500,
     weeks: [3, 5],
     assets: ["website"],
@@ -58,6 +58,18 @@ export const PLACEHOLDER_MODULES: readonly ServiceModule[] = [
     why: "Your website is the engine that turns attention into booked calls.",
     deps: [],
     growth: "Build — conversion",
+  },
+  {
+    id: "shopify-store",
+    stage: "Build",
+    name: "Shopify Store Development",
+    from: 4200,
+    weeks: [3, 6],
+    assets: ["ecommerce"],
+    includes: ["Theme build or customisation", "Product & collection setup", "Checkout, shipping & tax config", "Payments + abandoned-cart recovery"],
+    why: "Selling online needs a store built to convert and priced to keep its margin — not a template with your logo dropped in.",
+    deps: [],
+    growth: "Build — online revenue",
   },
   {
     id: "landing-page",
@@ -122,6 +134,18 @@ export const PLACEHOLDER_MODULES: readonly ServiceModule[] = [
     growth: "Grow — audience",
   },
   {
+    id: "social-management",
+    stage: "Grow",
+    name: "Social Media Management",
+    from: 950,
+    weeks: [4, 12],
+    assets: ["social"],
+    includes: ["Monthly content calendar", "Design & scheduling", "Community replies & DMs", "Monthly performance report"],
+    why: "Posting consistently is what compounds — most businesses stop because nobody owns it.",
+    deps: ["social"],
+    growth: "Grow — presence & demand",
+  },
+  {
     id: "analytics",
     stage: "Grow",
     name: "Analytics & Tracking",
@@ -132,6 +156,18 @@ export const PLACEHOLDER_MODULES: readonly ServiceModule[] = [
     why: "You can't grow what you can't measure.",
     deps: ["website"],
     growth: "Grow — measurement",
+  },
+  {
+    id: "advisory",
+    stage: "Grow",
+    name: "Strategy & Advisory",
+    from: 1500,
+    weeks: [4, 12],
+    assets: [],
+    includes: ["Quarterly strategy session", "Priority roadmap & sequencing", "Monthly review against the Business Health Score", "Direct access between sessions"],
+    why: "Knowing what to do next — and in what order — is usually worth more than another deliverable.",
+    deps: [],
+    growth: "Grow — direction & sequencing",
   },
   {
     id: "marketing",
@@ -149,14 +185,15 @@ export const PLACEHOLDER_MODULES: readonly ServiceModule[] = [
 
 /** Capabilities the client may already own (configurator inventory step). */
 export const PLACEHOLDER_ASSETS: readonly Asset[] = [
-  { key: "logo", label: "Logo", icon: "pen-tool" },
-  { key: "colors", label: "Brand colors", icon: "palette" },
-  { key: "website", label: "Website", icon: "layout-grid" },
-  { key: "social", label: "Social media pages", icon: "share-2" },
-  { key: "gbp", label: "Google Business Profile", icon: "map-pin" },
-  { key: "crm", label: "CRM", icon: "route" },
-  { key: "email", label: "Email marketing", icon: "mail" },
-  { key: "analytics", label: "Analytics", icon: "line-chart" },
+  { key: "logo", label: "Logo" },
+  { key: "colors", label: "Brand colors" },
+  { key: "website", label: "Website" },
+  { key: "ecommerce", label: "Online store" },
+  { key: "social", label: "Social media pages" },
+  { key: "gbp", label: "Google Business Profile" },
+  { key: "crm", label: "CRM" },
+  { key: "email", label: "Email marketing" },
+  { key: "analytics", label: "Analytics" },
 ];
 
 export const PLACEHOLDER_PLANS: readonly Plan[] = [
@@ -215,11 +252,11 @@ export const PLACEHOLDER_PLANS: readonly Plan[] = [
 ];
 
 export const PLACEHOLDER_GOALS: readonly Goal[] = [
-  { id: "launch", label: "Launch a new business", icon: "rocket" },
-  { id: "leads", label: "Get more qualified leads", icon: "trending-up" },
-  { id: "automate", label: "Automate my operations", icon: "workflow" },
-  { id: "rebrand", label: "Modernize my brand", icon: "sparkles" },
-  { id: "scale", label: "Scale what's working", icon: "line-chart" },
+  { id: "launch", label: "Launch a new business" },
+  { id: "leads", label: "Get more qualified leads" },
+  { id: "automate", label: "Automate my operations" },
+  { id: "rebrand", label: "Modernize my brand" },
+  { id: "scale", label: "Scale what's working" },
 ];
 
 /**
@@ -282,9 +319,9 @@ export const PLACEHOLDER_ASSESSMENT = [
 
 /** The client's per-service choice → what Auxion will do (handoff onboarding). */
 export const PLACEHOLDER_CHOICES = [
-  { id: "have" as const, label: "Already have it", status: "Keep", icon: "check-circle", note: "We'll review your existing asset and confirm it meets professional standards." },
-  { id: "upgrade" as const, label: "Upgrade existing", status: "Improve", icon: "arrow-up-right", note: "You have this — Auxion will improve or redesign it to a professional standard." },
-  { id: "need" as const, label: "Build it for me", status: "Create", icon: "sparkles", note: "You don't have this yet — Auxion will create it from scratch." },
+  { id: "have" as const, label: "Already have it", status: "Keep", note: "We'll review your existing asset and confirm it meets professional standards." },
+  { id: "upgrade" as const, label: "Upgrade existing", status: "Improve", note: "You have this — Auxion will improve or redesign it to a professional standard." },
+  { id: "need" as const, label: "Build it for me", status: "Create", note: "You don't have this yet — Auxion will create it from scratch." },
 ];
 
 /** Status → tone/description for the Keep/Improve/Replace/Create summary. */
@@ -305,6 +342,81 @@ export const PLACEHOLDER_RANGE_FACTORS: readonly RangeFactor[] = [
 
 /** Rich editorial content per module, keyed by module id. */
 export const PLACEHOLDER_CONTENT: Readonly<Record<string, ModuleContent>> = {
+  "shopify-store": {
+    outcome: "A Store Built to Sell, Not Just to Exist",
+    promise:
+      "Take payments the day you launch, with a storefront that converts and a back office you can actually run.",
+    range: [4200, 8400],
+    deliverables: [
+      ["Store Architecture", "Collections, navigation and product structure planned around how your customers actually shop."],
+      ["Theme Build or Customisation", "A fast, on-brand storefront — either a tailored premium theme or a custom build."],
+      ["Product & Inventory Setup", "Products, variants, images and stock loaded and organised so you are not starting from an empty admin."],
+      ["Checkout, Shipping & Tax", "Rates, zones and tax configured and test-ordered end to end before launch."],
+      ["Payments & Recovery", "Payment providers connected, plus abandoned-cart recovery so near-misses still convert."],
+      ["Launch & Handover", "A walkthrough of adding products, fulfilling orders and reading your numbers."],
+    ],
+    impact: {
+      value: "An online store trades while you sleep and removes the phone call from every sale.",
+      results: "Orders without back-and-forth, fewer abandoned baskets, cleaner stock control.",
+      complexity: "Medium — your product data and photography are the long pole.",
+      future: "Becomes the revenue surface every campaign and email points at.",
+      next: "Automation & Follow-up",
+    },
+    resp: {
+      bl: ["Architect and build the store", "Configure checkout, shipping and tax", "Connect payments and recovery", "Test end to end and hand over"],
+      you: ["Supply product data and imagery", "Provide payment and shipping details", "Approve the storefront before launch"],
+    },
+    upgrades: ["Subscriptions & recurring orders", "Multi-currency and international shipping", "Custom app or ERP integration"],
+  },
+  "social-management": {
+    outcome: "A Channel That Keeps Showing Up",
+    promise:
+      "Consistent, on-brand social presence that someone owns — so it does not quietly stop in month two.",
+    range: [950, 2400],
+    deliverables: [
+      ["Monthly Content Calendar", "Planned ahead and approved by you, so nothing is invented the morning it goes out."],
+      ["Design & Copy", "Posts designed to your brand system and written in your voice."],
+      ["Scheduling & Publishing", "Queued and published across your channels on a consistent cadence."],
+      ["Community Management", "Comments, mentions and DMs answered, with anything commercial routed to you."],
+      ["Monthly Report", "What was published, what performed, and what we are changing next month."],
+    ],
+    impact: {
+      value: "Consistency is what compounds on social; sporadic posting resets the algorithm and the audience.",
+      results: "Steadier reach, a channel that looks alive, inbound enquiries that do not get missed.",
+      complexity: "Low for you — approvals and the occasional photo.",
+      future: "Feeds the campaign engine with proven creative.",
+      next: "Marketing Campaign",
+    },
+    resp: {
+      bl: ["Plan, design, write and schedule", "Manage comments and DMs", "Report monthly with recommendations"],
+      you: ["Approve the calendar", "Supply photos or product news as they happen", "Handle sales conversations we route to you"],
+    },
+    upgrades: ["Short-form video production", "Paid social management", "Influencer and partner outreach"],
+  },
+  advisory: {
+    outcome: "Knowing What To Do Next, In What Order",
+    promise:
+      "An outside operator reading your numbers with you every month and telling you the truth about sequencing.",
+    range: [1500, 4500],
+    deliverables: [
+      ["Quarterly Strategy Session", "A working session on where the business actually is and what the next quarter should prove."],
+      ["Priority Roadmap", "The work sequenced by impact and dependency, so you stop paying for things in the wrong order."],
+      ["Monthly Review", "Your Business Health Score across Brand, Build, Automate and Grow, reviewed against what changed."],
+      ["Decision Support", "Direct access between sessions for the calls that should not wait a month."],
+    ],
+    impact: {
+      value: "Most wasted spend is not a bad deliverable — it is a good deliverable bought too early.",
+      results: "Fewer false starts, clearer trade-offs, a plan you can hold a team to.",
+      complexity: "Low — the work is thinking, and we bring the structure.",
+      future: "Governs everything else in the loop.",
+      next: "Whatever the roadmap says is next",
+    },
+    resp: {
+      bl: ["Run the sessions", "Maintain the roadmap", "Review performance and challenge assumptions"],
+      you: ["Share numbers openly", "Attend the sessions", "Own the decisions — we advise, you decide"],
+    },
+    upgrades: ["Fractional operating support", "Board or investor reporting", "Team hiring and structure advice"],
+  },
   "brand-identity": {
     outcome: "A Brand That Earns Instant Trust",
     promise:
@@ -550,30 +662,26 @@ export const PLACEHOLDER_CONTENT: Readonly<Record<string, ModuleContent>> = {
  * messaging from the product owner.
  */
 export const PLACEHOLDER_DISCIPLINE_COPY: Readonly<
-  Record<string, { eyebrow: string; outcome: string; blurb: string; icon: string }>
+  Record<string, { eyebrow: string; outcome: string; blurb: string }>
 > = {
   Brand: {
     eyebrow: "Discipline 01",
     outcome: "Be chosen before you're contacted",
     blurb: "Identity, voice and guidelines that make a small business look established and trusted.",
-    icon: "pen-tool",
   },
   Build: {
     eyebrow: "Discipline 02",
     outcome: "Turn attention into booked calls",
     blurb: "Conversion-first websites and landing pages built to be found, understood and acted on.",
-    icon: "layout-grid",
   },
   Automate: {
     eyebrow: "Discipline 03",
     outcome: "Stop losing leads to admin",
     blurb: "CRM, follow-up and workflow automation so nothing slips and response takes minutes.",
-    icon: "workflow",
   },
   Grow: {
     eyebrow: "Discipline 04",
     outcome: "Make the pipeline predictable",
     blurb: "Measurement, presence and campaigns that compound into repeatable demand.",
-    icon: "trending-up",
   },
 };

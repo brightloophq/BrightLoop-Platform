@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Icon } from "@brightloop/ui";
 import { createClient } from "@/lib/supabase/server";
 import { SalesFlow, type FlowContract, type FlowInvoice, type FlowProposal, type ScannerDeliveryPreview, type ScannerRevisionContext } from "../SalesFlow";
 import shell from "../../admin.module.css";
@@ -18,7 +17,7 @@ export default async function AdminProposalDetail({ params }: PageProps) {
 
   const { data: proposal } = await supabase
     .from("proposals")
-    .select("id, status, total, deposit, line_items, currency, discount_minor, valid_until, client_id, clients(company)")
+    .select("id, proposal_kind, proposal_number, status, total, deposit, line_items, currency, discount, discount_minor, valid_until, client_id, clients(company)")
     .eq("id", id)
     .maybeSingle();
   if (!proposal) notFound();
@@ -54,20 +53,27 @@ export default async function AdminProposalDetail({ params }: PageProps) {
       <div className={shell.topbar}><h1 className={shell.topTitle}>{company}</h1></div>
       <div className={shell.content}>
         <Link href="/admin/proposals" style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", color: "var(--text-muted)", textDecoration: "none", fontSize: "var(--fs-sm)", marginBottom: "var(--space-5)" }}>
-          <Icon name="arrow-left" size={14} /> All proposals
+ All proposals
         </Link>
         <div style={{ maxWidth: 560 }}>
-          <SalesFlow
-            proposal={{ id: proposal.id, status: proposal.status, total: proposal.total, deposit: proposal.deposit,
-              currency: proposal.currency, discountMinor: proposal.discount_minor, validUntil: proposal.valid_until,
-              line_items: (proposal.line_items as { label: string; amount?: number; quantity?: number; unitAmountMinor?: number; pricingType?: string; cadence?: string | null }[] | null) ?? [] }}
-            delivery={delivery}
-            revisionContext={revisionContext}
-            predecessor={predecessor}
-            isScannerConverted={isScannerConverted}
-            contract={(contract as FlowContract) ?? null}
-            invoice={(invoice as FlowInvoice) ?? null}
-          />
+          {proposal.proposal_kind === "canonical_issued" && !isScannerConverted ? (
+            <div>
+              <h2>{proposal.proposal_number ?? "Issued proposal"}</h2>
+              <p>This canonical proposal is an immutable, read-only commercial snapshot.</p>
+            </div>
+          ) : (
+            <SalesFlow
+              proposal={{ id: proposal.id, status: proposal.status, total: proposal.total, deposit: proposal.deposit,
+                currency: proposal.currency ?? "USD", discountMinor: proposal.discount_minor ?? proposal.discount ?? 0,
+                validUntil: proposal.valid_until, line_items: (proposal.line_items as FlowProposal["line_items"] | null) ?? [] }}
+              delivery={delivery}
+              revisionContext={revisionContext}
+              predecessor={predecessor}
+              isScannerConverted={isScannerConverted}
+              contract={(contract as FlowContract) ?? null}
+              invoice={(invoice as FlowInvoice) ?? null}
+            />
+          )}
         </div>
       </div>
     </>

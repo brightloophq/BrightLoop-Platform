@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { toneFor } from "@brightloop/schema";
 import { may } from "@brightloop/domain";
-import { Alert, Badge, Card, Icon, MediaTile } from "@brightloop/ui";
+import { Alert, Badge, Card, MediaTile } from "@brightloop/ui";
 import { getActor } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { ApprovalControls } from "../ApprovalControls";
@@ -47,7 +47,6 @@ export default async function PortalDeliverableDetail({ params }: PageProps) {
           href="/portal/deliverables"
           style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", color: "var(--text-muted)", textDecoration: "none", fontSize: "var(--fs-sm)", marginBottom: "var(--space-5)" }}
         >
-          <Icon name="arrow-left" size={14} />
           All deliverables
         </Link>
 

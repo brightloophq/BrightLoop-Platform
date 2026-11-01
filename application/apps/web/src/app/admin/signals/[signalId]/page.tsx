@@ -8,18 +8,7 @@ import {
   buildSignalDetailView,
   signalStatusLabel,
 } from "@brightloop/domain";
-import {
-  ActivityTimeline,
-  Alert,
-  Badge,
-  DetailField,
-  DetailGrid,
-  EmptyWorkspace,
-  Icon,
-  OperationalPanel,
-  SectionHeader,
-  type TimelineItem,
-} from "@brightloop/ui";
+import { ActivityTimeline, Alert, Badge, DetailField, DetailGrid, EmptyWorkspace, OperationalPanel, SectionHeader, type TimelineItem } from "@brightloop/ui";
 import { MotionProvider, PageTransition } from "@brightloop/ui/motion";
 import { requireSurface } from "@/lib/auth";
 import { getSignalsRepository } from "@/lib/repositories";
@@ -68,7 +57,7 @@ export default async function SignalDetailPage({ params, searchParams }: PagePro
       <MotionProvider>
         <PageTransition className={styles.canvas}>
           <Link href="/admin/signals" className={styles.backLink}>
-            <Icon name="arrow-left" size={16} /> Back to signals
+ Back to signals
           </Link>
 
           {created === "1" ? (
@@ -143,7 +132,6 @@ function Unauthorized() {
       <div className={styles.canvas}>
         <OperationalPanel>
           <EmptyWorkspace
-            icon="lock"
             title="You don't have access to this signal"
             body="Your role can't view the transformation command center."
           />

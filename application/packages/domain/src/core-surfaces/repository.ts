@@ -27,6 +27,15 @@ export interface CoreSurfaceRepository {
   // ---- Scan findings -------------------------------------------------------
   createFinding(record: ScanFinding): Promise<ScanFinding>;
   listFindings(scanId: string): Promise<ScanFinding[]>;
+  /**
+   * Remove one finding. Returns whether a row was actually deleted.
+   *
+   * The boolean is the point. A Supabase `.delete().eq()` that matches nothing
+   * returns `error: null` — indistinguishable from success — so an adapter that
+   * returned void would report "removed" for a row RLS refused or that never
+   * existed. The adapter must `.select()` and answer honestly.
+   */
+  deleteFinding(id: string): Promise<boolean>;
 
   // ---- Business domains (System Map nodes) ---------------------------------
   upsertDomain(record: Domain): Promise<Domain>;

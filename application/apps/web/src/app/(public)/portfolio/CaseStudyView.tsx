@@ -6,24 +6,9 @@ import {
   disclosedMetrics,
   schemaFor,
 } from "@brightloop/domain";
-import {
-  Alert,
-  Badge,
-  Button,
-  Card,
-  CategoryRatings,
-  Container,
-  Eyebrow,
-  Icon,
-  MediaTile,
-  ProjectCard,
-  Section,
-  Stars,
-  Stat,
-  StatChip,
-  Tag,
-} from "@brightloop/ui";
+import { Alert, Badge, Button, Card, CategoryRatings, Container, Eyebrow, MediaTile, ProjectCard, Section, Stars, Stat, StatChip, Tag } from "@brightloop/ui";
 import { safeJsonLd } from "@/lib/json-ld";
+import { firstUsableImage } from "@/lib/project-image";
 import home from "../home.module.css";
 import styles from "./case-study.module.css";
 
@@ -54,6 +39,7 @@ export interface CaseStudyViewProps {
 export function CaseStudyView({ project, testimonial, related, variant }: CaseStudyViewProps) {
   const metrics = disclosedMetrics(project);
   const showLive = canShowLivePreview(project);
+  const hero = firstUsableImage(project.media);
   const schema = schemaFor(project, testimonial);
   const canonical = canonicalUrl(variant === "case" ? "case" : "portfolio", project.slug);
 
@@ -78,7 +64,6 @@ export function CaseStudyView({ project, testimonial, related, variant }: CaseSt
       <Section rhythm="hero">
         <Container width="wide">
           <Link href="/portfolio" className={styles.back}>
-            <Icon name="arrow-left" size={14} />
             Back to portfolio
           </Link>
 
@@ -101,35 +86,37 @@ export function CaseStudyView({ project, testimonial, related, variant }: CaseSt
 
           <div className={styles.headActions}>
             {showLive ? (
-              <>
-                <Button variant="primary" size="md" asChild>
-                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-                    Visit live website
-                  </a>
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="md"
-                  rightIcon={<Icon name="external-link" size={14} />}
-                  asChild
-                >
-                  <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
-                    Open in new tab
-                  </a>
-                </Button>
-              </>
+              // ONE button. This was two — "Visit live website" and "Open in new
+              // tab" — pointing at the same href with the same target, so the
+              // page offered the reader a choice between a thing and itself.
+              <Button variant="primary" size="md" asChild>
+                <a href={project.liveUrl} target="_blank" rel="noopener noreferrer">
+                  Visit live website
+                </a>
+              </Button>
             ) : (
               // Honest state — not an error, just an absence.
               <span className={styles.noPreview}>
-                <Icon name="lock" size={14} />
                 Live preview not shared for this project.
               </span>
             )}
           </div>
 
-          <div className={styles.hero}>
-            Hero image pending — slot “{project.heroSlot}”
-          </div>
+          {/* The hero was a hardcoded placeholder that rendered "Hero image
+              pending — slot ‘’" on EVERY case study: `hero_slot` is written as
+              "" by the CMS and was never editable, so the message named an
+              empty internal id and no image ever appeared, however many the
+              project had. It now shows the project's first image — the same
+              one its tile on the Work index shows — and when there is none it
+              shows nothing at all, rather than a large empty box explaining an
+              implementation detail to a prospective client. */}
+          {hero ? (
+            <figure className={styles.hero}>
+              {/* A plain <img>, as on the Work index: media URLs come from the
+                  CMS and can point at any storage host. */}
+              <img src={hero.src} alt={hero.label || `${project.name} — ${project.client}`} />
+            </figure>
+          ) : null}
 
           {/* Project FACTS. Always safe to show: these are ours, not the client's
               business results. */}
@@ -166,7 +153,7 @@ export function CaseStudyView({ project, testimonial, related, variant }: CaseSt
                   ))}
                 </div>
               ) : (
-                <Alert tone="neutral" title="Results kept private at the client's request" icon="lock">
+                <Alert tone="neutral" title="Results kept private at the client's request">
                   This client has chosen not to publish their business results. We don&apos;t
                   estimate, extrapolate or invent numbers to fill the gap — the project facts above
                   are what we can verify.

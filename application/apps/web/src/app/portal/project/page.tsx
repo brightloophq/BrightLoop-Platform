@@ -38,7 +38,7 @@ export default async function PortalProjectPage() {
           <h1 className={shell.topTitle}>Project</h1>
         </div>
         <div className={shell.content}>
-          <EmptyState icon="workflow" title="No project yet" body="Your project appears here once it kicks off." />
+          <EmptyState title="No project yet" body="Your project appears here once it kicks off." />
         </div>
       </>
     );
@@ -72,7 +72,7 @@ export default async function PortalProjectPage() {
         </div>
 
         {ms.length === 0 ? (
-          <EmptyState icon="check" title="No milestones yet" body="Your team will lay these out at kickoff." />
+          <EmptyState title="No milestones yet" body="Your team will lay these out at kickoff." />
         ) : (
           <div className={styles.rows}>
             {ms.map((m) => {

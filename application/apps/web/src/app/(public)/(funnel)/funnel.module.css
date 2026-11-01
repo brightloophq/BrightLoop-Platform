@@ -85,11 +85,11 @@
   font-size: var(--fs-sm);
 }
 .option:hover {
-  border-color: var(--slate-600);
+  border-color: var(--line-strong);
   color: var(--text-primary);
 }
 .optionSel {
-  border-color: var(--bl-cyan);
+  border-color: var(--signal);
   color: var(--text-primary);
   background: color-mix(in srgb, var(--signal) 8%, transparent);
 }
@@ -148,7 +148,7 @@
   cursor: pointer;
 }
 .choiceBtnSel {
-  border-color: var(--bl-cyan);
+  border-color: var(--signal);
   color: var(--text-accent);
   background: color-mix(in srgb, var(--signal) 8%, transparent);
 }
@@ -215,8 +215,10 @@
   border-radius: var(--radius-pill);
   display: grid;
   place-items: center;
-  background: var(--grad-loop);
-  color: var(--bl-white);
+  /* --grad-loop is a pale tint; white text on it failed on paper. The canon's
+     own signal/on-signal pair clears AA in both themes (5.5:1 / 11.2:1). */
+  background: var(--signal);
+  color: var(--on-signal);
   font-family: var(--font-display);
   font-weight: var(--fw-bold);
 }

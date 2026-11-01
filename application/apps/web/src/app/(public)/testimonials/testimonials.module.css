@@ -61,7 +61,7 @@
 .filterActive {
   background: var(--action-primary);
   border-color: var(--action-primary);
-  color: var(--bl-white);
+  color: var(--action-fg);
 }
 
 /* Masonry wall (handoff §05: column-width 360px). */
@@ -108,8 +108,10 @@
   border-radius: var(--radius-pill);
   display: grid;
   place-items: center;
-  background: var(--grad-loop);
-  color: var(--bl-white);
+  /* --grad-loop is a pale tint; white text on it failed on paper. The canon's
+     own signal/on-signal pair clears AA in both themes (5.5:1 / 11.2:1). */
+  background: var(--signal);
+  color: var(--on-signal);
   font-weight: var(--fw-bold);
   font-size: var(--fs-xs);
   flex: none;

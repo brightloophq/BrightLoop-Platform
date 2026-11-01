@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { PLACEHOLDER_MODULES, PLACEHOLDER_PLANS } from "@brightloop/data";
 import { healthBand } from "@brightloop/domain";
-import { Alert, Badge, Card, Icon, Stat } from "@brightloop/ui";
+import { Alert, Badge, Card, Stat } from "@brightloop/ui";
 import { getActor } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { joinConversationAsAdmin } from "../../../conversation-actions";
@@ -131,7 +131,6 @@ export default async function ConsultingWorkspace({ params }: PageProps) {
           href="/admin/conversations"
           style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", color: "var(--text-muted)", textDecoration: "none", fontSize: "var(--fs-sm)", marginBottom: "var(--space-5)" }}
         >
-          <Icon name="arrow-left" size={14} />
           All conversations
         </Link>
 

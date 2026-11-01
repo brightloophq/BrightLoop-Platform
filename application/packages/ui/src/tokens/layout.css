@@ -23,17 +23,19 @@
   --radius-pill: 999px; /* pills — chips, badges */
 
   /* ---- Shadows (tuned for dark navy surfaces) ---- */
-  --shadow-sm:  0 1px 2px rgba(2,6,18,0.4);
-  --shadow-md:  0 6px 20px rgba(2,6,18,0.45);
-  --shadow-lg:  0 18px 48px rgba(2,6,18,0.55);
-  --shadow-xl:  0 32px 80px rgba(2,6,18,0.6);
+  --shadow-sm:  0 1px 2px rgba(0,0,0,0.55);
+  --shadow-md:  0 6px 20px rgba(0,0,0,0.6);
+  --shadow-lg:  0 18px 48px rgba(0,0,0,0.7);
+  --shadow-xl:  0 32px 80px rgba(0,0,0,0.78);
   /* Glow — the signal accent, used sparingly on primary CTAs */
-  --glow-blue:  0 0 0 1px color-mix(in srgb, var(--signal) 40%, transparent), 0 8px 30px color-mix(in srgb, var(--signal) 35%, transparent);
-  --glow-cyan:  0 0 0 1px color-mix(in srgb, var(--signal) 35%, transparent), 0 8px 30px color-mix(in srgb, var(--signal) 28%, transparent);
+  /* Signal glow — a gold halo for the ONE emphasised surface on a view. Both
+     steps resolve from --signal, so they follow the theme. */
+  --glow-signal:      0 0 0 1px color-mix(in srgb, var(--signal) 40%, transparent), 0 8px 30px color-mix(in srgb, var(--signal) 35%, transparent);
+  --glow-signal-soft: 0 0 0 1px color-mix(in srgb, var(--signal) 35%, transparent), 0 8px 30px color-mix(in srgb, var(--signal) 28%, transparent);
   /* Light-theme shadows */
-  --shadow-light-sm: 0 1px 2px rgba(15,23,42,0.06);
-  --shadow-light-md: 0 8px 24px rgba(15,23,42,0.08);
-  --shadow-light-lg: 0 20px 50px rgba(15,23,42,0.10);
+  --shadow-light-sm: 0 1px 2px rgba(20,18,13,0.06);
+  --shadow-light-md: 0 8px 24px rgba(20,18,13,0.08);
+  --shadow-light-lg: 0 20px 50px rgba(20,18,13,0.10);
 
   /* ---- Motion (canonical — DNA §05 / DS §05: three named curves) ----
      Precise = decisive settle (controls); Orchestrate = state change (symmetric);

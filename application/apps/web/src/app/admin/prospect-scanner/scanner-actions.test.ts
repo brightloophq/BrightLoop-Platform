@@ -12,7 +12,7 @@ import { fileURLToPath } from "node:url";
 import type { Actor, RuntimeServices } from "@brightloop/domain";
 import { createRuntimeServices, InMemoryRuntimeRepository } from "@brightloop/domain";
 
-const session = vi.hoisted(() => ({ actor: null as Actor | null, services: null as RuntimeServices | null }));
+const session = vi.hoisted(() => ({ actor: null as Actor | null, services: null as RuntimeServices | null, repo: null as InMemoryRuntimeRepository | null }));
 const redirects = vi.hoisted(() => ({ calls: [] as string[] }));
 
 vi.mock("server-only", () => ({}));
@@ -36,7 +36,7 @@ let counter = 0;
 
 function form(overrides: Record<string, string> = {}, omit: string[] = []): FormData {
   const base: Record<string, string> = {
-    clientId: "t_acme",
+    subject: "client:t_acme",
     websiteUrl: "https://example.com",
     businessName: "Example Co",
     maxPages: "5",
@@ -57,6 +57,8 @@ beforeEach(() => {
   counter = 0;
   redirects.calls = [];
   const repo = new InMemoryRuntimeRepository(() => new Date().toISOString());
+  repo.addLead("lead_acme");
+  session.repo = repo;
   session.services = createRuntimeServices({ repo, ids: (p) => `${p}_${(++counter).toString().padStart(5, "0")}` });
   session.actor = OWNER;
 });
@@ -74,6 +76,19 @@ describe("authorization", () => {
     const result = await createProspectScanAction(form());
     expect(result.ok).toBe(true);
     expect(result.id).toBeTruthy();
+  });
+
+  it("allows an internal owner to scan an existing lead without creating a client", async () => {
+    const result = await createProspectScanAction(form({ subject: "lead:lead_acme" }));
+    expect(result.ok).toBe(true);
+    const run = await session.services!.runs.getRun(result.id!);
+    expect(run.ok && run.value).toMatchObject({ clientId: null, leadId: "lead_acme" });
+  });
+
+  it("rejects a nonexistent lead", async () => {
+    const result = await createProspectScanAction(form({ subject: "lead:lead_missing" }));
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/lead not found/i);
   });
 
   it("allows an internal team_member (operations role)", async () => {

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { toneFor } from "@brightloop/schema";
-import { Alert, Badge, Card, EmptyState, Icon, Stat } from "@brightloop/ui";
+import { Alert, Badge, Card, EmptyState, Stat } from "@brightloop/ui";
 import { getActor } from "@/lib/auth";
 import { may } from "@brightloop/domain";
 import { createClient } from "@/lib/supabase/server";
@@ -47,7 +47,6 @@ export default async function ClientDetailPage({ params }: PageProps) {
           href="/admin/clients"
           style={{ display: "inline-flex", alignItems: "center", gap: "var(--space-1)", color: "var(--text-muted)", textDecoration: "none", fontSize: "var(--fs-sm)", marginBottom: "var(--space-5)" }}
         >
-          <Icon name="arrow-left" size={14} />
           All clients
         </Link>
 
@@ -79,7 +78,7 @@ export default async function ClientDetailPage({ params }: PageProps) {
         </div>
 
         {(projects ?? []).length === 0 ? (
-          <EmptyState icon="workflow" title="No projects yet" body="Create the first project for this client." />
+          <EmptyState title="No projects yet" body="Create the first project for this client." />
         ) : (
           <div className={styles.rows}>
             {(projects ?? []).map((p) => (

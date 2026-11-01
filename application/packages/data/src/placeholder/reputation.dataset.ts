@@ -382,15 +382,11 @@ export const PLACEHOLDER_TESTIMONIALS: readonly Testimonial[] = [
   },
 ];
 
-/**
- * PLACEHOLDER — homepage trust bar.
- * These are NOT real clients or partners. Open decision 14 asks which real
- * logos may be shown; until answered this renders as clearly-marked sample text.
- */
-export const PLACEHOLDER_TRUST_BAR: readonly string[] = [
-  "NORTHWIND",
-  "Vertex",
-  "Harbor & Co",
-  "Meridian",
-  "Verdant",
-];
+/* PLACEHOLDER_TRUST_BAR is gone. It held five invented company names for the
+   homepage trust bar, pending open decision 14 ("which real logos may be
+   shown"). The rebuilt homepage answers that differently: it opens with a
+   ledger of things that are actually true — the four disciplines, the modules
+   really in the catalog, and review counts only once reviews are published — so
+   there is nothing left for a fabricated logo strip to do. If real, permitted
+   client marks arrive, they belong in the Reputation CMS behind the same
+   publish gate as every other piece of proof, not in a hardcoded array. */

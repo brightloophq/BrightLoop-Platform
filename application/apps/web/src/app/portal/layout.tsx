@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { requireSurface } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
@@ -15,6 +16,19 @@ import styles from "../admin/admin.module.css";
  * The nav shows an "actions awaiting you" count on Deliverables, computed from
  * the client's own in_review deliverables — the re-entry driver from §07.
  */
+/**
+ * Never indexable.
+ *
+ * This surface used to inherit `noindex` from the root layout's site-wide rule.
+ * That rule is gone now the public site is indexable, so the guard is declared
+ * where it belongs — on the surface it protects. It is a crawler hint, not
+ * access control: middleware, `requireSurface()` and RLS are what actually keep
+ * this private.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
+
 export default async function PortalLayout({ children }: { children: ReactNode }) {
   const actor = await requireSurface("portal");
   const supabase = await createClient();
@@ -39,29 +53,27 @@ export default async function PortalLayout({ children }: { children: ReactNode }
   const awaiting = (awaitingDeliverables ?? 0) + (awaitingMilestones ?? 0);
 
   const items: PortalNavItem[] = [
-    { label: "Dashboard", href: "/portal", icon: "layout-grid", ready: true },
-    { label: "Project", href: "/portal/project", icon: "workflow", ready: true },
+    { label: "Dashboard", href: "/portal", ready: true },
+    { label: "Project", href: "/portal/project", ready: true },
     {
       label: "Deliverables",
       href: "/portal/deliverables",
-      icon: "check",
       ready: true,
       badge: awaiting || undefined,
     },
-    { label: "Proposals", href: "/portal/proposals", icon: "search", ready: true },
-    { label: "Contracts", href: "/portal/contracts", icon: "check-circle", ready: true },
-    { label: "Invoices", href: "/portal/invoices", icon: "trending-up", ready: true },
+    { label: "Proposals", href: "/portal/proposals", ready: true },
+    { label: "Contracts", href: "/portal/contracts", ready: true },
+    { label: "Invoices", href: "/portal/invoices", ready: true },
     {
       label: "Notifications",
       href: "/portal/notifications",
-      icon: "heart",
       ready: true,
       badge: unread || undefined,
     },
-    { label: "Discovery chat", href: "/portal/chat", icon: "mail", ready: true },
-    { label: "Files", href: "/portal/files", icon: "layout-grid", ready: false },
-    { label: "Meetings", href: "/portal/meetings", icon: "clock", ready: false },
-    { label: "Settings", href: "/portal/settings", icon: "route", ready: false },
+    { label: "Discovery chat", href: "/portal/chat", ready: true },
+    { label: "Files", href: "/portal/files", ready: false },
+    { label: "Meetings", href: "/portal/meetings", ready: false },
+    { label: "Settings", href: "/portal/settings", ready: false },
   ];
 
   return (

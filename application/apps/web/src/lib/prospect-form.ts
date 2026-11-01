@@ -27,12 +27,16 @@ export interface ProspectScanInput {
   scanAuthorized: boolean;
 }
 
-export interface ProspectScanParsed {
-  clientId: string;
+interface ProspectScanParsedBase {
   /** Canonicalized root URL — what the crawler will actually plan against. */
   rootUrl: string;
   metadata: Record<string, unknown>;
 }
+
+export type ProspectScanParsed = ProspectScanParsedBase & (
+  | { clientId: string; leadId?: never }
+  | { clientId?: never; leadId: string }
+);
 
 export type FieldErrors = Record<string, string>;
 
@@ -86,7 +90,7 @@ function checkOptional(errors: FieldErrors, key: keyof typeof LIMITS, value: str
 export function parseProspectScanForm(form: FormData): ParseResult {
   const errors: FieldErrors = {};
 
-  const clientId = text(form.get("clientId"));
+  const subject = text(form.get("subject"));
   const websiteUrl = text(form.get("websiteUrl"));
   const businessName = text(form.get("businessName"));
   const contactName = text(form.get("contactName"));
@@ -98,7 +102,12 @@ export function parseProspectScanForm(form: FormData): ParseResult {
   const costAcknowledged = form.get("costAcknowledged") !== null;
   const scanAuthorized = form.get("scanAuthorized") !== null;
 
-  if (clientId === "") errors["clientId"] = "Choose the organization this prospect belongs to.";
+  const separator = subject.indexOf(":");
+  const subjectKind = separator > 0 ? subject.slice(0, separator) : "";
+  const subjectId = separator > 0 ? subject.slice(separator + 1) : "";
+  if ((subjectKind !== "client" && subjectKind !== "lead") || subjectId === "") {
+    errors["subject"] = "Choose a client organization or lead.";
+  }
 
   // ---- URL ----
   let rootUrl = "";
@@ -164,5 +173,8 @@ export function parseProspectScanForm(form: FormData): ParseResult {
   if (location !== "") metadata["location"] = location;
   if (notes !== "") metadata["notes"] = notes;
 
-  return { ok: true, value: { clientId, rootUrl, metadata } };
+  return {
+    ok: true,
+    value: subjectKind === "client" ? { clientId: subjectId, rootUrl, metadata } : { leadId: subjectId, rootUrl, metadata },
+  };
 }

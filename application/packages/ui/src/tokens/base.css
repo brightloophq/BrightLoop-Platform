@@ -28,6 +28,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Any element that DECLARES a theme must re-establish its own text colour.
+   `color` inherits as a COMPUTED VALUE, not as the var() reference: <body>
+   resolves `var(--text-primary)` once, and a descendant that merely redefines
+   --text-primary (a `data-theme="dark"` island inside a light page) does NOT
+   change the colour its children inherit. Without this, any heading in such an
+   island that sets no colour of its own renders in the OUTER theme's ink — which
+   is how the sign-in page's brand panel ended up dark-on-dark. `Section`'s
+   toneDark already did this locally; this makes it true for every theme island,
+   including hand-rolled ones. Low specificity (0,1,0), so components override
+   freely. */
+[data-theme],
+.bl-theme-light,
+.bl-theme-dark {
+  color: var(--text-primary);
+}
+
 h1,
 h2,
 h3,

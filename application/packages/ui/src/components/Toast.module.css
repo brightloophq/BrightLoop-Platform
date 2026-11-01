@@ -24,8 +24,14 @@
   color: var(--text-primary);
 }
 
-.icon {
+/* The tone word that replaced the pictogram. */
+.tone {
   flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
 }
 
 .message {
@@ -36,19 +42,19 @@
 .success {
   border-left: 3px solid var(--success);
 }
-.success .icon {
+.success .tone {
   color: var(--success);
 }
 .danger {
   border-left: 3px solid var(--danger);
 }
-.danger .icon {
+.danger .tone {
   color: var(--danger);
 }
 .info {
   border-left: 3px solid var(--info);
 }
-.info .icon {
+.info .tone {
   color: var(--info);
 }
 

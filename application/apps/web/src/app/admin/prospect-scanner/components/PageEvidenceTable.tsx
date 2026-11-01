@@ -14,7 +14,7 @@ export function PageEvidenceTable({ pages }: { pages: DiscoveryPageView[] }) {
     return (
       <OperationalPanel>
         <SectionRule index="04" label="Pages" meta="none" />
-        <EmptyWorkspace icon="search" title="No pages recorded" body="The crawl produced no page records. Nothing is inferred for a page that was never fetched." />
+        <EmptyWorkspace title="No pages recorded" body="The crawl produced no page records. Nothing is inferred for a page that was never fetched." />
       </OperationalPanel>
     );
   }

@@ -12,7 +12,8 @@ import type { CoreSurfaceRepository } from "@brightloop/domain";
 
 const SCAN_COLS = "id, client_id, status, baseline_index, target_index, created_by, created_at";
 const DOMAIN_COLS = "id, client_id, key, status, baseline_score, current_score, created_at";
-const FINDING_COLS = "id, scan_id, client_id, domain_key, finding, baseline, priority, created_at";
+const FINDING_COLS =
+  "id, scan_id, client_id, domain_key, finding, baseline, priority, source, source_run_id, created_at";
 
 type ScanRow = {
   id: string; client_id: string; status: BusinessScan["status"]; baseline_index: number;
@@ -24,7 +25,8 @@ type DomainRow = {
 };
 type FindingRow = {
   id: string; scan_id: string; client_id: string; domain_key: ScanFinding["domainKey"];
-  finding: string; baseline: string | null; priority: ScanFinding["priority"]; created_at: string;
+  finding: string; baseline: string | null; priority: ScanFinding["priority"];
+  source: ScanFinding["source"]; source_run_id: string | null; created_at: string;
 };
 
 const toScan = (r: ScanRow): BusinessScan => ({
@@ -37,7 +39,8 @@ const toDomain = (r: DomainRow): Domain => ({
 });
 const toFinding = (r: FindingRow): ScanFinding => ({
   id: r.id, scanId: r.scan_id, clientId: r.client_id, domainKey: r.domain_key,
-  finding: r.finding, baseline: r.baseline, priority: r.priority, createdAt: r.created_at,
+  finding: r.finding, baseline: r.baseline, priority: r.priority,
+  source: r.source, sourceRunId: r.source_run_id, createdAt: r.created_at,
 });
 
 export class SupabaseCoreSurfaceRepository implements CoreSurfaceRepository {
@@ -96,6 +99,7 @@ export class SupabaseCoreSurfaceRepository implements CoreSurfaceRepository {
       .insert({
         id: record.id, scan_id: record.scanId, client_id: record.clientId, domain_key: record.domainKey,
         finding: record.finding, baseline: record.baseline, priority: record.priority,
+        source: record.source, source_run_id: record.sourceRunId,
       })
       .select(FINDING_COLS)
       .single();
@@ -107,6 +111,18 @@ export class SupabaseCoreSurfaceRepository implements CoreSurfaceRepository {
     const { data, error } = await this.db.from("scan_findings").select(FINDING_COLS).eq("scan_id", scanId).limit(200);
     if (error) this.fail("listFindings", error.message);
     return (data ?? []).map(toFinding);
+  }
+
+  /**
+   * `.select()` is not decoration here. A delete that matches no row — because
+   * it is already gone, or because RLS refused it — comes back `error: null`
+   * with no indication anything was skipped. Asking for the deleted ids is the
+   * only way to tell a removal from a silent no-op.
+   */
+  async deleteFinding(id: string): Promise<boolean> {
+    const { data, error } = await this.db.from("scan_findings").delete().eq("id", id).select("id");
+    if (error) this.fail("deleteFinding", error.message);
+    return (data ?? []).length > 0;
   }
 
   async upsertDomain(record: Domain): Promise<Domain> {

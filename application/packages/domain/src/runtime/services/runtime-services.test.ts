@@ -81,6 +81,13 @@ async function drainQueue(h: Harness, owner = "worker-1", maxTurns = 40): Promis
 
 /* ===== 1 · run lifecycle ==================================================== */
 describe("RunService", () => {
+  it("requires exactly one client or lead subject", async () => {
+    const h = harness();
+    expect(await h.svc.runs.createRun({ clientId: null, scanId: "none" })).toMatchObject({ ok: false, code: "check_violation" });
+    expect(await h.svc.runs.createRun({ clientId: "c1", leadId: "lead1", scanId: "both" })).toMatchObject({ ok: false, code: "check_violation" });
+    expect(await h.svc.runs.createRun({ clientId: null, leadId: "lead1", scanId: "lead" })).toMatchObject({ ok: true, code: "created" });
+  });
+
   it("creates a run once per scan and replays a duplicate start", async () => {
     const h = harness();
     const first = await h.svc.runs.createRun(START);
@@ -881,7 +888,7 @@ describe("read models", () => {
   it("counts active runs and flags a passed deadline", () => {
     const now = "2026-07-21T00:01:00.000Z";
     const run = {
-      id: "r1", clientId: "c1", scanId: "s1", status: "executing_reasoning" as const, currentStage: "provider_execution",
+      id: "r1", clientId: "c1", leadId: null, scanId: "s1", status: "executing_reasoning" as const, currentStage: "provider_execution",
       failedStage: null, version: 1, idempotencyKey: "k", metadata: {}, checksum: null,
       deadline: "2026-07-21T00:00:30.000Z", cancelled: false, createdBy: null, createdAt: T0,
       updatedAt: null, startedAt: T0, completedAt: null, failedAt: null, cancelledAt: null,

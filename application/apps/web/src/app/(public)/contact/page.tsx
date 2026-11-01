@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Alert, Card, Container, Eyebrow, Icon, Section } from "@brightloop/ui";
+import { Alert, Card, Container, Eyebrow, Section } from "@brightloop/ui";
+import { CONTACT_EMAIL } from "@/lib/site";
 import { ContactForm } from "./ContactForm";
 import home from "../home.module.css";
 import styles from "./contact.module.css";
@@ -7,6 +8,7 @@ import styles from "./contact.module.css";
 export const metadata: Metadata = {
   title: "Contact",
   description: "Book a strategy call with Auxion, or send an enquiry.",
+  alternates: { canonical: "/contact" },
 };
 
 /**
@@ -20,10 +22,13 @@ export const metadata: Metadata = {
  * REAL — confirmed by the product owner. This resolves the "support email"
  * line of the "Company facts" placeholder list in handoff §13.
  *
- * Still outstanding on that list: business address, social links, phone, and the
- * booking calendar.
+ * On the Auxion domain, not the old free-mail address: the address a prospect
+ * sees is part of whether they believe the rest of the page, and this one is
+ * the same brand as the site they are standing on.
+ *
+ * Still outstanding on that list: business address, phone, and the booking
+ * calendar. Social links are published in the footer of every page.
  */
-const CONTACT_EMAIL = "brightloopofficial@gmail.com";
 
 export default function ContactPage() {
   return (
@@ -58,15 +63,12 @@ export default function ContactPage() {
             <Card>
               <ul className={styles.detailList}>
                 <li className={styles.detail}>
-                  <Icon name="mail" size={16} className={styles.detailIcon} />
                   <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
                 </li>
                 <li className={styles.detail}>
-                  <Icon name="clock" size={16} className={styles.detailIcon} />
-                  <span>We reply within one business day.</span>
+                  <span>We read every enquiry and reply as soon as we can.</span>
                 </li>
                 <li className={styles.detail}>
-                  <Icon name="map-pin" size={16} className={styles.detailIcon} />
                   <span>
                     Jamaica — working with businesses across the Caribbean, US, UK and Canada.
                   </span>

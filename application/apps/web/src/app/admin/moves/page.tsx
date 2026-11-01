@@ -7,7 +7,6 @@ export default function MovesPage() {
   return (
     <ComingSoon
       title="Moves"
-      icon="git-branch"
       description="The unit of transformation: plan, execute and measure a change end to end."
     />
   );

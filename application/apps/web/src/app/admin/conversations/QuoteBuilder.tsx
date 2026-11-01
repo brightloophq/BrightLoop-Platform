@@ -96,7 +96,7 @@ export function QuoteBuilder({ conversationId, clientId, quotes }: { conversatio
                         <button
                           type="button"
                           onClick={() => run(() => { const fd = new FormData(); fd.set("itemId", it.id); fd.set("quoteId", q.id); return removeQuoteItem(fd); })}
-                          style={{ border: "none", background: "none", cursor: "pointer", color: "var(--text-danger, #c0392b)" }}
+                          style={{ border: "none", background: "none", cursor: "pointer", color: "var(--critical)" }}
                           aria-label="Remove item"
                         >×</button>
                       ) : null}

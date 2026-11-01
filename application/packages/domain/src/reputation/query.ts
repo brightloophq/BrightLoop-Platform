@@ -68,7 +68,6 @@ export function testimonialForProject(
 export interface DisclosedMetric {
   key: MetricKey;
   label: string;
-  icon: string;
   unit: string;
   value: string | number;
 }
@@ -91,7 +90,7 @@ export function disclosedMetrics(project: PortfolioProject): DisclosedMetric[] {
     // Absent, null, or empty is NOT a result. Zero is a legitimate value.
     if (value === undefined || value === null || value === "") continue;
     if (typeof value !== "string" && typeof value !== "number") continue;
-    out.push({ key: def.key, label: def.label, icon: def.icon, unit: def.unit, value });
+    out.push({ key: def.key, label: def.label, unit: def.unit, value });
   }
   return out;
 }

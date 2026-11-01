@@ -3,9 +3,9 @@
 -- scanner run. No client delivery or acceptance occurs here.
 
 alter table public.proposals
-  add column currency text not null default 'USD',
+  alter column currency set default 'USD',
+  alter column currency set not null,
   add column discount_minor bigint not null default 0,
-  add column valid_until date,
   alter column subtotal type bigint,
   alter column deposit type bigint,
   alter column total type bigint;

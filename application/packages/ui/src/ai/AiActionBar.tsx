@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Icon } from "../components/Icon";
 import { AiResultPanel } from "./AiResultPanel";
 import { isBusy, activeKey } from "./state";
 import type { AiActionDef, AiActionOutcome, AiExecutable, AiViewState } from "./types";
@@ -54,7 +53,7 @@ export function AiActionBar({ actions, run, onExecute, label = "AI assist" }: Ai
   return (
     <div className={styles.bar}>
       <div className={styles.actions}>
-        <span className={styles.barLabel}><Icon name="sparkles" size={13} /> {label}</span>
+        <span className={styles.barLabel}>{label}</span>
         {actions.map((a) => {
           const running = busy && current === a.key;
           return (
@@ -67,9 +66,7 @@ export function AiActionBar({ actions, run, onExecute, label = "AI assist" }: Ai
               aria-busy={running}
               onClick={() => invoke(a.key)}
             >
-              <span className={running ? styles.spin : undefined}>
-                <Icon name={running ? "activity" : a.icon} size={13} />
-              </span>
+              {running ? <span className={styles.spin} aria-hidden="true" /> : null}
               {a.label}
             </button>
           );

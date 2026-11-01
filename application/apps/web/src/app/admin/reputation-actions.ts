@@ -5,6 +5,15 @@ import { FACETS, PUBLISH_STATES, RATING_CATEGORIES, type PublishStatus } from "@
 import { assertCapability } from "@brightloop/domain";
 import { getActor } from "@/lib/auth";
 import { emitEvent } from "@/lib/analytics";
+import {
+  ACCEPTED_UPLOAD_LABEL,
+  MAX_UPLOAD_BYTES,
+  mediaObjectPath,
+  tooLargeMessage,
+  uploadExtension,
+} from "@/lib/media-upload";
+import { normaliseLiveUrl } from "@/lib/project-form";
+import { readProjectMedia } from "@/lib/project-media";
 import { isValidSlug, slugify } from "@/lib/slug";
 import { createClient } from "@/lib/supabase/server";
 
@@ -154,8 +163,19 @@ export async function moderateTestimonial(formData: FormData): Promise<ActionRes
       patch["featured_on_home"] = formData.get("featuredOnHome") === "true";
     }
 
-    const { error } = await supabase.from("testimonials").update(patch).eq("id", testimonialId);
+    // See moderateProject: an update matching no row is otherwise silent.
+    const { data, error } = await supabase
+      .from("testimonials")
+      .update(patch)
+      .eq("id", testimonialId)
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    if (!data || data.length === 0) {
+      return {
+        ok: false,
+        error: "That review was not updated — it may have been deleted. Reload the page and check.",
+      };
+    }
 
     if (patch["publish"]) {
       await emitEvent({ name: "review.moderate", props: { status: String(patch["publish"]) } });
@@ -171,8 +191,25 @@ export async function deleteTestimonial(formData: FormData): Promise<ActionResul
   try {
     const { supabase } = await authorize("marketing.delete");
     const testimonialId = String(formData.get("id") ?? "").trim();
-    const { error } = await supabase.from("testimonials").delete().eq("id", testimonialId);
+    if (!testimonialId) return { ok: false, error: "No review was selected." };
+
+    // `.select()` makes the delete REPORT what it removed. Without it Supabase
+    // returns error: null for a delete that matched nothing — a stale id, a row
+    // already gone, or one hidden by RLS all look exactly like success, so the
+    // UI said nothing and the list re-rendered unchanged.
+    const { data, error } = await supabase
+      .from("testimonials")
+      .delete()
+      .eq("id", testimonialId)
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    if (!data || data.length === 0) {
+      return {
+        ok: false,
+        error: "That review was not deleted — it may already be gone. Reload the page and check.",
+      };
+    }
+
     revalidateReputation();
     return { ok: true };
   } catch (e) {
@@ -203,6 +240,69 @@ function multi(formData: FormData, field: string, vocab: readonly string[]): str
  *   * `permissionLivePreview` requires a valid absolute liveUrl — the DB CHECK
  *     enforces the same pairing, so a permissioned row cannot carry an empty URL.
  */
+export type UploadTicket =
+  | { ok: true; path: string; token: string; publicUrl: string }
+  | { ok: false; error: string };
+
+/**
+ * Issue a one-time signed URL for uploading a portfolio image.
+ *
+ * THE FILE DOES NOT COME THROUGH HERE, and that is the whole point. An earlier
+ * revision took the File in a server action and uploaded it server-side; every
+ * real photograph failed, because a Next.js server action caps its request body
+ * at 1 MB by default and Vercel caps a serverless request at 4.5 MB. The browser
+ * now PUTs the bytes straight to Supabase Storage with the token returned here.
+ *
+ * The authorization story is unchanged, and is two-layered exactly as before:
+ *   1. `authorize("marketing.update")` refuses a team_member outright;
+ *   2. `createSignedUploadUrl` runs on the SESSION client, so the bucket's own
+ *      insert policy (owner/admin — storage migration 0006) must also pass. A
+ *      token is only ever minted for someone the DATABASE agrees may write.
+ * The token is scoped to the single path we choose here, so it cannot be
+ * replayed against any other object.
+ *
+ * Size and type are checked here to fail fast with a readable message, and
+ * enforced for real by the bucket's own file_size_limit / allowed_mime_types
+ * (migration 20260815000100_media_bucket_limits_reissue) — the only place that
+ * still sees the bytes.
+ */
+export async function createProjectImageUpload(formData: FormData): Promise<UploadTicket> {
+  try {
+    const { supabase } = await authorize("marketing.update");
+
+    const filename = String(formData.get("filename") ?? "").trim();
+    const mime = String(formData.get("mime") ?? "").trim();
+    const size = Number(formData.get("size") ?? 0);
+
+    if (!filename) return { ok: false, error: "Choose an image file first." };
+    if (Number.isFinite(size) && size > MAX_UPLOAD_BYTES) {
+      return { ok: false, error: tooLargeMessage(size) };
+    }
+
+    const extension = uploadExtension(mime, filename);
+    if (!extension) {
+      return {
+        ok: false,
+        error: `That file type can't be used as a project image. Use ${ACCEPTED_UPLOAD_LABEL}.`,
+      };
+    }
+
+    const path = mediaObjectPath(id("m"), extension);
+    const { data, error } = await supabase.storage.from("media").createSignedUploadUrl(path);
+    if (error) return { ok: false, error: error.message };
+    if (!data?.token) return { ok: false, error: "Supabase returned no upload token." };
+
+    const { data: pub } = supabase.storage.from("media").getPublicUrl(path);
+    if (!pub?.publicUrl) {
+      return { ok: false, error: "Supabase returned no public URL for that path." };
+    }
+
+    return { ok: true, path, token: data.token, publicUrl: pub.publicUrl };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Could not start the upload" };
+  }
+}
+
 export async function saveProject(formData: FormData): Promise<ActionResult & { slug?: string }> {
   try {
     const { supabase } = await authorize("marketing.update");
@@ -221,20 +321,23 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
     const client = String(formData.get("client") ?? "").trim();
     if (!client) return { ok: false, error: "Client is required" };
 
-    const liveUrl = String(formData.get("liveUrl") ?? "").trim();
+    const rawLiveUrl = String(formData.get("liveUrl") ?? "").trim();
     const permissionLivePreview = formData.get("permissionLivePreview") === "on";
 
     // §09.2: liveUrl must be a valid URL when permissionLivePreview is on.
+    // This used to call `new URL(raw)` directly, which throws on a bare domain —
+    // so typing "auxion.xyz" was refused as "not a valid http(s) URL". The
+    // shared normaliser assumes https for a bare host, exactly as the browser
+    // does, and still refuses javascript: and data:. Same function the form
+    // runs in the browser, so the two can never disagree.
+    let liveUrl = "";
     if (permissionLivePreview) {
-      if (!liveUrl) {
+      if (!rawLiveUrl) {
         return { ok: false, error: "A live URL is required when live preview is permitted" };
       }
-      try {
-        const u = new URL(liveUrl);
-        if (u.protocol !== "http:" && u.protocol !== "https:") throw new Error("bad protocol");
-      } catch {
-        return { ok: false, error: "Live URL must be a valid http(s) URL" };
-      }
+      const normalised = normaliseLiveUrl(rawLiveUrl);
+      if ("error" in normalised) return { ok: false, error: normalised.error };
+      liveUrl = normalised.url;
     }
 
     const year = Number(formData.get("year"));
@@ -254,6 +357,9 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
       .slice(0, 12);
 
     const completedDate = String(formData.get("completedDate") ?? "").trim() || null;
+
+    const mediaResult = readProjectMedia(formData);
+    if ("error" in mediaResult) return { ok: false, error: mediaResult.error };
 
     const row = {
       slug,
@@ -277,6 +383,7 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
       summary: String(formData.get("summary") ?? "").trim(),
       challenge: String(formData.get("challenge") ?? "").trim(),
       approach: String(formData.get("approach") ?? "").trim(),
+      media: mediaResult.media,
       testimonial_id: String(formData.get("testimonialId") ?? "").trim() || null,
       seo: {
         title: String(formData.get("seoTitle") ?? "").trim(),
@@ -287,11 +394,21 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
     };
 
     if (existingId) {
-      const { error } = await supabase
+      // `.select()` is not decoration: without it an update matching ZERO rows
+      // comes back as `error: null`, so "saved" and "changed nothing at all"
+      // were the same answer — the same defect that hid a failed publish.
+      const { data, error } = await supabase
         .from("portfolio_projects")
         .update(row)
-        .eq("id", existingId);
+        .eq("id", existingId)
+        .select("id");
       if (error) return { ok: false, error: friendlyDbError(error.message) };
+      if (!data || data.length === 0) {
+        return {
+          ok: false,
+          error: "That project was not saved — it may have been deleted. Reload the list and check.",
+        };
+      }
     } else {
       const { error } = await supabase.from("portfolio_projects").insert({
         ...row,
@@ -302,7 +419,6 @@ export async function saveProject(formData: FormData): Promise<ActionResult & { 
         awards: [],
         hero_slot: "",
         gallery_slots: [],
-        media: [],
         // Undisclosed by default — result numbers have their own guarded action.
         metrics: { disclosed: false },
         order: 0,
@@ -335,8 +451,23 @@ export async function deleteProject(formData: FormData): Promise<ActionResult> {
   try {
     const { supabase } = await authorize("marketing.delete");
     const projectId = String(formData.get("id") ?? "").trim();
-    const { error } = await supabase.from("portfolio_projects").delete().eq("id", projectId);
+    if (!projectId) return { ok: false, error: "No project was selected." };
+
+    // See deleteTestimonial: without .select() a no-op delete is indistinguishable
+    // from a successful one.
+    const { data, error } = await supabase
+      .from("portfolio_projects")
+      .delete()
+      .eq("id", projectId)
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    if (!data || data.length === 0) {
+      return {
+        ok: false,
+        error: "That project was not deleted — it may already be gone. Reload the page and check.",
+      };
+    }
+
     revalidateReputation();
     return { ok: true };
   } catch (e) {
@@ -358,8 +489,22 @@ export async function moderateProject(formData: FormData): Promise<ActionResult>
       patch["featured_on_home"] = formData.get("featuredOnHome") === "true";
     }
 
-    const { error } = await supabase.from("portfolio_projects").update(patch).eq("id", projectId);
+    // `.select()` makes the update REPORT what it changed. Without it Supabase
+    // returns error: null for an update that matched nothing, so "make this
+    // public" could do exactly nothing and still look like it worked — which is
+    // precisely how a case study stays invisible with no explanation.
+    const { data, error } = await supabase
+      .from("portfolio_projects")
+      .update(patch)
+      .eq("id", projectId)
+      .select("id");
     if (error) return { ok: false, error: error.message };
+    if (!data || data.length === 0) {
+      return {
+        ok: false,
+        error: "That project was not updated — it may have been deleted. Reload the page and check.",
+      };
+    }
 
     if (patch["publish"]) {
       await emitEvent({ name: "portfolio.publish", props: { status: String(patch["publish"]) } });

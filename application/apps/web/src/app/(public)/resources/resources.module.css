@@ -1,0 +1,61 @@
+.grid {
+  list-style: none;
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  display: grid;
+  /* auto-fit so five entries reflow without a breakpoint per count. */
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: var(--space-4);
+}
+
+.card {
+  display: flex;
+  min-width: 0;
+}
+
+.cardLink {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-5);
+  border: var(--border-hairline);
+  border-radius: var(--radius-lg);
+  background: var(--surface-card);
+  color: inherit;
+  transition: border-color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
+}
+
+.cardLink:hover,
+.cardLink:focus-visible {
+  border-color: color-mix(in srgb, var(--signal) 42%, var(--line-strong));
+  transform: translateY(-2px);
+}
+
+.cardLink:focus-visible {
+  outline: none;
+  box-shadow: var(--ring-focus);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardLink {
+    transition: none;
+  }
+  .cardLink:hover,
+  .cardLink:focus-visible {
+    transform: none;
+  }
+}
+
+.cardName {
+  font-size: var(--fs-lg);
+  font-weight: var(--fw-semibold);
+  color: var(--text-primary);
+}
+
+.cardBody {
+  color: var(--text-secondary);
+  font-size: var(--fs-sm);
+  line-height: var(--lh-body);
+}

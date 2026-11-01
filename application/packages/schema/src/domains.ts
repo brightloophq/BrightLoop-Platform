@@ -88,6 +88,16 @@ export type BusinessScanCreateInput = z.infer<typeof businessScanCreateInputSche
 export const findingPrioritySchema = z.enum(["low", "medium", "high"]);
 export type FindingPriority = z.infer<typeof findingPrioritySchema>;
 
+/**
+ * Who put this row in the ledger.
+ *
+ * Importing a newer scan retires the previous import's rows — and must never
+ * touch a finding a person typed. That is the only thing this distinction is
+ * for, and it is why it lives in the data rather than being inferred.
+ */
+export const findingSourceSchema = z.enum(["manual", "import"]);
+export type FindingSource = z.infer<typeof findingSourceSchema>;
+
 export const scanFindingSchema = z.object({
   id: idSchema,
   scanId: idSchema,
@@ -96,6 +106,9 @@ export const scanFindingSchema = z.object({
   finding: z.string(),
   baseline: z.string().nullable(),
   priority: findingPrioritySchema,
+  source: findingSourceSchema.default("manual"),
+  /** The scan run an imported row came from. Null for a manual one. */
+  sourceRunId: z.string().nullable().default(null),
   createdAt: timestampSchema,
 });
 export type ScanFinding = z.infer<typeof scanFindingSchema>;
@@ -107,6 +120,8 @@ export const scanFindingCreateInputSchema = z.object({
   finding: z.string().trim().min(1, "A finding is required").max(500),
   baseline: z.string().trim().max(120).optional().transform((v) => (v && v.length > 0 ? v : null)),
   priority: findingPrioritySchema.default("medium"),
+  source: findingSourceSchema.default("manual"),
+  sourceRunId: z.string().min(1).nullable().default(null),
 });
 export type ScanFindingCreateInput = z.infer<typeof scanFindingCreateInputSchema>;
 

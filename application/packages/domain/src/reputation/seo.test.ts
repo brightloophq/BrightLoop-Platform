@@ -63,12 +63,12 @@ function testimonial(over: Partial<Testimonial> = {}): Testimonial {
 describe("canonicalUrl()", () => {
   it("builds portfolio, case-study and testimonials URLs", () => {
     expect(canonicalUrl("portfolio", "verdant-fields")).toBe(
-      "https://brightloop.co/portfolio/verdant-fields",
+      "https://auxion.xyz/portfolio/verdant-fields",
     );
     expect(canonicalUrl("case", "verdant-fields")).toBe(
-      "https://brightloop.co/case-studies/verdant-fields",
+      "https://auxion.xyz/case-studies/verdant-fields",
     );
-    expect(canonicalUrl("testimonials")).toBe("https://brightloop.co/testimonials");
+    expect(canonicalUrl("testimonials")).toBe("https://auxion.xyz/testimonials");
   });
 
   it("accepts an origin override so previews don't emit prod canonicals", () => {
@@ -78,7 +78,7 @@ describe("canonicalUrl()", () => {
   });
 
   it("defaults to the production origin", () => {
-    expect(SITE_ORIGIN).toBe("https://brightloop.co");
+    expect(SITE_ORIGIN).toBe("https://auxion.xyz");
   });
 });
 
@@ -108,13 +108,13 @@ describe("schemaFor() — never emits schema for unpublished content", () => {
       creator: { "@type": "Organization", name: "Auxion" },
       dateCreated: "2026-05-18",
       keywords: "local, identity",
-      url: "https://brightloop.co/portfolio/verdant-fields",
+      url: "https://auxion.xyz/portfolio/verdant-fields",
     });
   });
 
   it("canonical in schema always points at /portfolio/:slug, never /case-studies", () => {
     // /case-studies/:slug is a view of the same record — one canonical.
-    expect(schemaFor(project())?.url).toBe("https://brightloop.co/portfolio/verdant-fields");
+    expect(schemaFor(project())?.url).toBe("https://auxion.xyz/portfolio/verdant-fields");
   });
 });
 

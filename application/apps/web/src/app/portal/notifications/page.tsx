@@ -38,7 +38,7 @@ export default async function PortalNotificationsPage() {
         </div>
 
         {notifications.length === 0 ? (
-          <EmptyState icon="heart" title="You're all caught up" body="Notifications about your project appear here." />
+          <EmptyState title="You're all caught up" body="Notifications about your project appear here." />
         ) : (
           <div className={styles.rows}>
             {notifications.map((n) => (

@@ -19,9 +19,9 @@
     "db:diff": "supabase db diff --workdir ../..",
     "db:test": "supabase test db --workdir ../..",
     "db:verify": "bash ../../scripts/db-verify.sh",
-    "gen:types": "supabase gen types typescript --linked --workdir ../.. > ./generated/database.types.ts",
-    "gen:types:local": "supabase gen types typescript --local --workdir ../.. > ./generated/database.types.ts",
-    "gen:types:check": "supabase gen types typescript --local --workdir ../.. | diff -u ./generated/database.types.ts - && echo \"generated types are in sync\""
+    "gen:types": "supabase gen types typescript --linked --workdir ../.. | perl -0pe 's/(?:\\r?\\n){2,}\\z/\\n/' > ./generated/database.types.ts",
+    "gen:types:local": "supabase gen types typescript --local --workdir ../.. | perl -0pe 's/(?:\\r?\\n){2,}\\z/\\n/' > ./generated/database.types.ts",
+    "gen:types:check": "supabase gen types typescript --local --workdir ../.. | perl -0pe 's/(?:\\r?\\n){2,}\\z/\\n/' | diff -u ./generated/database.types.ts - && echo \"generated types are in sync\""
   },
   "devDependencies": {
     "typescript": "^5.7.2"

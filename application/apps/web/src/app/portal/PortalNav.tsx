@@ -2,13 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Icon } from "@brightloop/ui";
 import styles from "../admin/admin.module.css";
 
 export interface PortalNavItem {
   label: string;
   href: string;
-  icon: string;
   ready: boolean;
   /** Count badge (e.g. actions awaiting the client). */
   badge?: number;
@@ -36,7 +34,6 @@ export function PortalNav({ items }: { items: PortalNavItem[] }) {
                 .join(" ")}
               aria-current={isActive(item.href) ? "page" : undefined}
             >
-              <Icon name={item.icon} size={16} />
               <span className={styles.linkLabel}>{item.label}</span>
               {item.badge ? (
                 <span className={styles.soonTag} style={{ color: "var(--text-accent)", fontWeight: 700 }}>
@@ -51,7 +48,6 @@ export function PortalNav({ items }: { items: PortalNavItem[] }) {
               aria-disabled="true"
               title={`${item.label} — coming soon`}
             >
-              <Icon name={item.icon} size={16} />
               <span className={styles.linkLabel}>{item.label}</span>
               <span className={styles.soonTag}>soon</span>
             </span>

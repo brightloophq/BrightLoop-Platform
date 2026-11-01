@@ -4,7 +4,7 @@
  */
 
 import Link from "next/link";
-import { Badge, EmptyState, Icon } from "@brightloop/ui";
+import { Badge, EmptyState } from "@brightloop/ui";
 import { loadRuntimes } from "@/lib/runtime-data";
 import styles from "../pages.module.css";
 
@@ -15,7 +15,7 @@ const healthTone = (h: string): "success" | "warning" | "danger" | "neutral" =>
 
 export default async function RuntimesPage() {
   const data = await loadRuntimes();
-  if (data === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (data === null) return <EmptyState title="Session expired" body="Please sign in again." />;
 
   return (
     <>
@@ -23,11 +23,11 @@ export default async function RuntimesPage() {
         <div><h1 className={styles.pageTitle}>Runtimes</h1><p className={styles.pageSub}>External execution runtimes. Auxion stays the system of record — runtimes only execute.</p></div>
       </div>
       {data.runtimes.length === 0
-        ? <EmptyState icon="workflow" title="No runtimes yet" body="Your team registers an execution runtime (e.g. n8n) to deploy approved automations. Registered runtimes appear here." />
+        ? <EmptyState title="No runtimes yet" body="Your team registers an execution runtime (e.g. n8n) to deploy approved automations. Registered runtimes appear here." />
         : <div className={styles.list}>{data.runtimes.map((r) => (
             <Link key={r.id} href={`/workspace/runtimes/${r.id}`} className={styles.row}>
               <div className={styles.rowMain}>
-                <div className={styles.rowTitle}><Icon name="workflow" size={15} /> {r.displayName}</div>
+                <div className={styles.rowTitle}> {r.displayName}</div>
                 <div className={styles.rowMeta}>{r.provider} · {r.environment} · {r.providerVersion ?? "version unknown"} · {r.supportedCapabilities.length} capabilities</div>
               </div>
               <div className={styles.rowRight}>

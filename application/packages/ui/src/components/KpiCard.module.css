@@ -34,11 +34,6 @@
   gap: var(--space-2);
   min-width: 0;
 }
-.icon {
-  display: inline-flex;
-  color: var(--kpi-accent);
-  flex: none;
-}
 .label {
   font-size: var(--fs-xs);
   color: var(--text-secondary);
@@ -106,7 +101,14 @@
 .delta_positive { color: var(--positive); }
 .delta_negative { color: var(--critical); }
 .delta_neutral { color: var(--text-muted); }
-.arrowDown { transform: rotate(90deg); }
+/* The direction word. Uppercase + tracked so it reads as a label beside the
+   figure rather than as prose, and it inherits the delta's tone colour. */
+.deltaWord {
+  font-size: var(--fs-xs);
+  letter-spacing: var(--ls-wide);
+  text-transform: uppercase;
+  opacity: 0.85;
+}
 
 .previous {
   font-size: var(--fs-xs);

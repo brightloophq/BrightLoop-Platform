@@ -10,7 +10,6 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Icon } from "@brightloop/ui";
 import {
   activateAction, approveDeploymentAction, deployAction, pauseAction, reconcileAction, requestApprovalAction,
   resumeAction, retryAction, rollbackAction, validateDeploymentAction, type ActionResult,
@@ -30,22 +29,22 @@ export function DeploymentControls({ deploymentId, status, workspaceId, previous
     start(async () => { const r = await fn(); if (r.ok) { setMsg(ok); router.refresh(); } else setError(r.error ?? "That action could not be completed."); });
   };
 
-  const btn = (label: string, icon: string, fn: () => Promise<ActionResult>, okMsg: string, cls = "") => (
-    <button className={`${controls.btn} ${cls}`} disabled={pending} onClick={() => act(fn, okMsg)}><Icon name={icon} size={14} /> {label}</button>
+  const btn = (label: string, fn: () => Promise<ActionResult>, okMsg: string, cls = "") => (
+    <button className={`${controls.btn} ${cls}`} disabled={pending} onClick={() => act(fn, okMsg)}>{label}</button>
   );
 
   return (
     <div className={controls.bar}>
-      {(status === "draft" || status === "validating") && btn("Validate", "check-circle", () => validateDeploymentAction(deploymentId), "Validated.")}
-      {status === "awaiting_approval" && btn("Approve", "check-circle", () => approveDeploymentAction(deploymentId), "Approved — ready to deploy.", controls.btnPrimary)}
-      {(status === "draft" || status === "validating") && btn("Request approval", "lock", () => requestApprovalAction(deploymentId), "Approval requested.")}
-      {status === "queued" && btn("Deploy", "rocket", () => deployAction(deploymentId), "Deployed.", controls.btnPrimary)}
-      {status === "deployed" && btn("Activate", "check-circle", () => activateAction(deploymentId), "Activated.", controls.btnPrimary)}
-      {status === "active" && btn("Pause", "lock", () => pauseAction(deploymentId), "Paused — new runs blocked.")}
-      {status === "paused" && btn("Resume", "rocket", () => resumeAction(deploymentId), "Resumed.")}
-      {status === "failed" && btn("Retry", "arrow-right", () => retryAction(deploymentId), "Retried.")}
-      {(status === "deployed" || status === "active" || status === "degraded") && btn("Reconcile", "activity", () => reconcileAction(deploymentId), "Reconciled.")}
-      {status === "active" && previousDeploymentId && btn("Roll back", "arrow-left", () => rollbackAction(workspaceId, deploymentId, previousDeploymentId, "manual rollback"), "Rolled back to the previous version.", controls.btnDanger)}
+      {(status === "draft" || status === "validating") && btn("Validate", () => validateDeploymentAction(deploymentId), "Validated.")}
+      {status === "awaiting_approval" && btn("Approve", () => approveDeploymentAction(deploymentId), "Approved — ready to deploy.", controls.btnPrimary)}
+      {(status === "draft" || status === "validating") && btn("Request approval", () => requestApprovalAction(deploymentId), "Approval requested.")}
+      {status === "queued" && btn("Deploy", () => deployAction(deploymentId), "Deployed.", controls.btnPrimary)}
+      {status === "deployed" && btn("Activate", () => activateAction(deploymentId), "Activated.", controls.btnPrimary)}
+      {status === "active" && btn("Pause", () => pauseAction(deploymentId), "Paused — new runs blocked.")}
+      {status === "paused" && btn("Resume", () => resumeAction(deploymentId), "Resumed.")}
+      {status === "failed" && btn("Retry", () => retryAction(deploymentId), "Retried.")}
+      {(status === "deployed" || status === "active" || status === "degraded") && btn("Reconcile", () => reconcileAction(deploymentId), "Reconciled.")}
+      {status === "active" && previousDeploymentId && btn("Roll back", () => rollbackAction(workspaceId, deploymentId, previousDeploymentId, "manual rollback"), "Rolled back to the previous version.", controls.btnDanger)}
       {msg && <span className={controls.ok}>{msg}</span>}
       {error && <span className={controls.err}>{error}</span>}
     </div>

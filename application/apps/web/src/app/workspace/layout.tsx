@@ -5,12 +5,26 @@
  * notifications + workspaces derived from existing read models. No business logic.
  */
 
+import type { Metadata } from "next";
 import { requireSurface } from "@/lib/auth";
 import { loadNotificationInputs, resolveWorkspaces } from "@/lib/workspace-data";
 import { deriveNotifications } from "@/lib/workspace/notifications";
 import { WorkspaceShell } from "./WorkspaceShell";
 
 export const dynamic = "force-dynamic";
+
+/**
+ * Never indexable.
+ *
+ * This surface used to inherit `noindex` from the root layout's site-wide rule.
+ * That rule is gone now the public site is indexable, so the guard is declared
+ * where it belongs — on the surface it protects. It is a crawler hint, not
+ * access control: middleware, `requireSurface()` and RLS are what actually keep
+ * this private.
+ */
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   await requireSurface("workspace");

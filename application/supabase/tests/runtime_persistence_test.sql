@@ -16,6 +16,7 @@ select no_plan();
 
 -- ---- SETUP (seeding superuser — RLS bypassed) ------------------------------
 insert into public.clients (id, company) values ('cli_R1', 'Runtime Org A'), ('cli_R2', 'Runtime Org B');
+insert into public.leads (id, name, email) values ('lead_R1', 'Runtime Lead', 'runtime-lead@x.co');
 insert into public.users (id, auth_user_id, name, email, role, client_id, status) values
   ('usr_rt_owner', null, 'RT Owner', 'rto@x.co', 'owner',        null,     'active'),
   ('usr_rt_client', null, 'RT Client', 'rtc@x.co', 'client_admin', 'cli_R1', 'active');
@@ -34,6 +35,7 @@ select has_table('public', 'proposal_versions',            'proposal_versions ex
 select has_table('public', 'narrative_versions',           'narrative_versions exists');
 select has_table('public', 'runtime_events',               'runtime_events exists');
 select has_table('public', 'job_queue',                    'job_queue exists');
+select has_column('public', 'intelligence_runs', 'lead_id', 'intelligence_runs has lead ownership');
 
 -- ---- RLS enabled on every runtime table ------------------------------------
 select ok((select relrowsecurity from pg_class where oid = 'public.intelligence_runs'::regclass),            'RLS on intelligence_runs');
@@ -58,6 +60,39 @@ select lives_ok(
   $$ insert into public.intelligence_runs (id, client_id, scan_id, status, idempotency_key, created_by)
      values ('run_1', 'cli_R1', 'scan_1', 'pending', 'idem_run_1', 'usr_rt_owner') $$,
   'internal owner can INSERT an intelligence_run');
+
+select lives_ok(
+  $$ insert into public.intelligence_runs (id, lead_id, scan_id, status, idempotency_key, created_by)
+     values ('run_lead', 'lead_R1', 'scan_lead', 'pending', 'idem_run_lead', 'usr_rt_owner') $$,
+  'internal owner can INSERT a lead-owned intelligence_run without a client');
+
+select throws_ok(
+  $$ insert into public.intelligence_runs (id, client_id, lead_id, scan_id, status, idempotency_key)
+     values ('run_both', 'cli_R1', 'lead_R1', 'scan_both', 'pending', 'idem_run_both') $$,
+  '23514', null,
+  'an intelligence_run cannot belong to both a client and lead');
+
+select throws_ok(
+  $$ insert into public.intelligence_runs (id, scan_id, status, idempotency_key)
+     values ('run_neither', 'scan_neither', 'pending', 'idem_run_neither') $$,
+  '23514', null,
+  'an intelligence_run cannot omit both client and lead ownership');
+
+select throws_ok(
+  $$ insert into public.intelligence_runs (id, lead_id, scan_id, status, idempotency_key)
+     values ('run_bad_lead', 'lead_missing', 'scan_bad_lead', 'pending', 'idem_run_bad_lead') $$,
+  '23503', null,
+  'a lead-owned intelligence_run requires an existing lead');
+
+select lives_ok(
+  $$ insert into public.intelligence_run_stages (id, run_id, scan_id, stage, status, attempt, idempotency_key)
+     values ('stg_lead', 'run_lead', 'scan_lead', 'discovery_planning', 'running', 0, 'idem_stg_lead') $$,
+  'lead-owned runtime stages continue through run_id without duplicated lead ownership');
+
+select lives_ok(
+  $$ insert into public.intelligence_artifacts (id, run_id, scan_id, kind, version, checksum, validation_status, idempotency_key)
+     values ('art_lead', 'run_lead', 'scan_lead', 'evidence_bundle', 1, 'chk_lead', 'valid', 'idem_art_lead') $$,
+  'lead-owned artifacts continue through run_id without duplicated lead ownership');
 
 select lives_ok(
   $$ insert into public.intelligence_run_stages (id, run_id, client_id, scan_id, stage, status, attempt, idempotency_key)

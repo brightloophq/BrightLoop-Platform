@@ -7,8 +7,6 @@ export type ButtonSize = "sm" | "md" | "lg";
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
-  leftIcon?: ReactNode;
-  rightIcon?: ReactNode;
   block?: boolean;
   loading?: boolean;
   /**
@@ -23,14 +21,16 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 /**
  * Button — prop surface per handoff §04.6 component inventory.
  *
+ * There are no `leftIcon`/`rightIcon` slots: the platform carries no icon set,
+ * so a button says what it does in words. `loading` still renders a spinner,
+ * which is drawn in CSS.
+ *
  * Note: submit is disabled only while `loading` (submitting), never merely
  * because a form is invalid — per handoff §09.1, let submit surface errors.
  */
 export function Button({
   variant = "primary",
   size = "md",
-  leftIcon,
-  rightIcon,
   block = false,
   loading = false,
   asChild = false,
@@ -51,15 +51,10 @@ export function Button({
     .join(" ");
 
   if (asChild && isValidElement<{ className?: string; children?: ReactNode }>(children)) {
+    // Only the className is overridden — with the icon slots gone there is
+    // nothing to wrap the child's own children in.
     return cloneElement(children, {
       className: [classes, children.props.className].filter(Boolean).join(" "),
-      children: (
-        <>
-          {leftIcon}
-          {children.props.children}
-          {rightIcon}
-        </>
-      ),
     });
   }
 
@@ -71,9 +66,8 @@ export function Button({
       aria-busy={loading || undefined}
       {...rest}
     >
-      {loading ? <span className={styles.spinner} aria-hidden="true" /> : leftIcon}
+      {loading ? <span className={styles.spinner} aria-hidden="true" /> : null}
       {children}
-      {rightIcon}
     </button>
   );
 }

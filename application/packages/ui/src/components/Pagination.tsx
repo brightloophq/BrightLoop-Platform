@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Icon } from "./Icon";
 import { pageWindow } from "./pageWindow";
 import styles from "./Pagination.module.css";
 
@@ -31,7 +30,6 @@ export function Pagination({ page, pages, hrefFor }: PaginationProps) {
         tabIndex={prevDisabled ? -1 : undefined}
         rel="prev"
       >
-        <Icon name="arrow-left" size={14} />
         Previous
       </Link>
 
@@ -63,7 +61,6 @@ export function Pagination({ page, pages, hrefFor }: PaginationProps) {
         rel="next"
       >
         Next
-        <Icon name="arrow-right" size={14} />
       </Link>
     </nav>
   );

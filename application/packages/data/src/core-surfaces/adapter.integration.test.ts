@@ -63,9 +63,25 @@ describe.skipIf(!LIVE)("SupabaseCoreSurfaceRepository (live DB)", () => {
     expect(activated.currentScore).toBe(90);
 
     const finding = await repo.createFinding({
-      id: uid(), scanId: scan.id, clientId, domainKey: "sales", finding: "No structured pipeline", baseline: "38%", priority: "high", createdAt: now(),
+      id: uid(), scanId: scan.id, clientId, domainKey: "sales", finding: "No structured pipeline",
+      baseline: "38%", priority: "high", source: "manual", sourceRunId: null, createdAt: now(),
     });
     expect(finding.priority).toBe("high");
+    expect(finding.source).toBe("manual");
+    expect(finding.sourceRunId).toBeNull();
+    expect(await repo.listFindings(scan.id)).toHaveLength(1);
+
+    const imported = await repo.createFinding({
+      id: uid(), scanId: scan.id, clientId, domainKey: "web", finding: "Thin content base",
+      baseline: "Observed 38/100", priority: "high", source: "import", sourceRunId: "run_42", createdAt: now(),
+    });
+    expect(imported.source).toBe("import");
+    expect(imported.sourceRunId).toBe("run_42");
+
+    // The no-op semantics that make the boolean necessary: deleting a row that
+    // is not there reports false rather than a silent success.
+    expect(await repo.deleteFinding("fnd_does_not_exist")).toBe(false);
+    expect(await repo.deleteFinding(imported.id)).toBe(true);
     expect(await repo.listFindings(scan.id)).toHaveLength(1);
 
     expect((await repo.latestScan(clientId))?.id).toBe(scan.id);

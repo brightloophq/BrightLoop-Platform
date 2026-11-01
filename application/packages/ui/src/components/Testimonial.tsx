@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { Card } from "./Card";
-import { Icon } from "./Icon";
 import { Stars } from "./Stars";
 import styles from "./Testimonial.module.css";
 
@@ -57,7 +56,6 @@ export function Testimonial({
         {projectHref ? (
           <Link href={projectHref} className={styles.link}>
             {projectLabel}
-            <Icon name="arrow-right" size={12} />
           </Link>
         ) : null}
       </figcaption>

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Icon } from "@brightloop/ui";
 import {
   signalsHref,
   SIGNAL_STATUS_FILTERS,
@@ -60,7 +59,6 @@ export function SignalsControls({
     <>
       <div className={styles.controlRow}>
         <div className={styles.searchWrap}>
-          <Icon name="search" size={16} className={styles.searchIcon} />
           <input
             type="search"
             className={styles.search}
@@ -127,7 +125,6 @@ export function SignalsControls({
           {activeFilters.map((f) => (
             <Link key={f.key} href={signalsHref(f.clearedQuery)} className={styles.chip} scroll={false}>
               {f.label}
-              <Icon name="x" size={13} />
             </Link>
           ))}
           <Link

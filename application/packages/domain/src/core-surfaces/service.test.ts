@@ -24,6 +24,12 @@ function fakeRepo() {
     async setScanStatus(id, status) { const s = scans.find((x) => x.id === id)!; s.status = status; return s; },
     async createFinding(r) { findings.push(r); return r; },
     async listFindings(sid) { return findings.filter((f) => f.scanId === sid); },
+    async deleteFinding(id) {
+      const at = findings.findIndex((f) => f.id === id);
+      if (at === -1) return false;
+      findings.splice(at, 1);
+      return true;
+    },
     async upsertDomain(r) { domains.push(r); return r; },
     async listDomains(cid) { return domains.filter((d) => d.clientId === cid); },
     async listAllDomains() { return domains; },

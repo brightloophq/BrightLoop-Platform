@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { Badge } from "./Badge";
 import { Card } from "./Card";
-import { Icon } from "./Icon";
 import styles from "./CaseStudyCard.module.css";
 
 export interface CaseStudyFact {
@@ -69,10 +68,7 @@ export function CaseStudyCard({
             </div>
           ) : null}
 
-          <span className={styles.cta}>
-            {ctaLabel}
-            <Icon name="arrow-right" size={14} className={styles.ctaArrow} />
-          </span>
+          <span className={styles.cta}>{ctaLabel}</span>
         </div>
 
         <div className={styles.media}>

@@ -4,7 +4,7 @@
  */
 
 import Link from "next/link";
-import { Badge, EmptyState, Icon } from "@brightloop/ui";
+import { Badge, EmptyState } from "@brightloop/ui";
 import { loadExecutionDetail } from "@/lib/runtime-data";
 import styles from "../../pages.module.css";
 
@@ -13,14 +13,14 @@ export const dynamic = "force-dynamic";
 export default async function ExecutionDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const data = await loadExecutionDetail(id);
-  if (data === null) return <EmptyState icon="lock" title="Execution not found" body="It may have been removed, or you may not have access." />;
+  if (data === null) return <EmptyState title="Execution not found" body="It may have been removed, or you may not have access." />;
   const { execution: e, failures, attempts } = data;
 
   return (
     <>
       <div className={styles.pageHead}>
         <div>
-          <Link href="/workspace/executions" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="arrow-left" size={13} /> Executions</Link>
+          <Link href="/workspace/executions" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}> Executions</Link>
           <h1 className={styles.pageTitle}>Execution {e.externalExecutionId}</h1>
           <p className={styles.pageSub}>{e.triggerType ?? "trigger"} · {e.durationMs}ms · {attempts} attempt{attempts === 1 ? "" : "s"} · deployment {e.deploymentId.slice(0, 12)}</p>
         </div>

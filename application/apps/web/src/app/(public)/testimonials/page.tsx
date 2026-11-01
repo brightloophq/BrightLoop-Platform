@@ -1,17 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { aggregateSchema, canonicalUrl } from "@brightloop/domain";
-import {
-  Alert,
-  Badge,
-  Card,
-  CategoryRatings,
-  Container,
-  Eyebrow,
-  Icon,
-  Section,
-  Stars,
-} from "@brightloop/ui";
+import { Alert, Badge, Card, CategoryRatings, Container, Eyebrow, Section, Stars } from "@brightloop/ui";
 import { getReputationRepository } from "@/lib/repositories";
 import { safeJsonLd } from "@/lib/json-ld";
 import home from "../home.module.css";
@@ -137,7 +127,6 @@ export default async function TestimonialsPage({ searchParams }: PageProps) {
 
                   <details className={styles.details}>
                     <summary className={styles.summary}>
-                      <Icon name="chevron-down" size={12} />
                       Rated by category
                     </summary>
                     <div className={styles.detailsBody}>

@@ -12,21 +12,36 @@ import type { AppContext } from "../context.js";
 import { authorize, SCAN_WRITE_CAP } from "../context.js";
 import type { CreateScanRequest, ScanDTO } from "../dto.js";
 import { toScanDTO } from "../dto.js";
+import { NotFoundError, ValidationError } from "../errors.js";
 import { unwrap } from "../runtime-result.js";
 import { optionalIso, optionalRecord, requireIdLike, requireObject } from "../validate.js";
 
 /** Validate a raw request body into a typed `CreateScanRequest`. */
 export function parseCreateScanRequest(body: unknown): CreateScanRequest {
   const obj = requireObject(body);
-  return {
-    clientId: requireIdLike(obj["clientId"], "clientId"),
+  const hasClient = obj["clientId"] !== undefined && obj["clientId"] !== null && obj["clientId"] !== "";
+  const hasLead = obj["leadId"] !== undefined && obj["leadId"] !== null && obj["leadId"] !== "";
+  if (hasClient === hasLead) {
+    throw new ValidationError("Choose exactly one scan subject", { subject: "exactly_one_required" });
+  }
+  const options = {
     metadata: optionalRecord(obj["metadata"], "metadata"),
     deadline: optionalIso(obj["deadline"], "deadline"),
   };
+  return hasClient
+    ? { ...options, clientId: requireIdLike(obj["clientId"], "clientId") }
+    : { ...options, leadId: requireIdLike(obj["leadId"], "leadId") };
 }
 
 export async function createScan(ctx: AppContext, input: CreateScanRequest): Promise<ScanDTO> {
-  authorize(ctx.actor, SCAN_WRITE_CAP, input.clientId);
+  const clientId = "clientId" in input ? input.clientId ?? null : null;
+  const leadId = "leadId" in input ? input.leadId ?? null : null;
+  authorize(ctx.actor, SCAN_WRITE_CAP, clientId);
+
+  if (leadId !== null) {
+    const exists = unwrap(await ctx.services.runs.leadExists(leadId));
+    if (!exists) throw new NotFoundError("lead");
+  }
 
   // A scan IS a run; the runtime keys the run on this scan id, so a duplicate
   // create for the same generated id replays rather than forking. We mint a fresh
@@ -35,7 +50,8 @@ export async function createScan(ctx: AppContext, input: CreateScanRequest): Pro
 
   const created = unwrap(
     await ctx.services.coordinator.initializeRun({
-      clientId: input.clientId,
+      clientId,
+      leadId,
       scanId,
       metadata: input.metadata ?? {},
       deadline: input.deadline ?? null,

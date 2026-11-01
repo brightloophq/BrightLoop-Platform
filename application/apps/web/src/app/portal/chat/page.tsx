@@ -85,6 +85,7 @@ export default async function PortalChatPage() {
       .from("quotes")
       .select("id, title, status, total, client_note, quote_items(id, label, quantity, amount, sort)")
       .eq("conversation_id", conversation.id)
+      .eq("commercial_mode", "legacy_client_quote")
       .order("created_at", { ascending: false });
     quotes = (rawQuotes ?? []).map((q) => ({
       id: q.id, title: q.title, status: q.status, total: q.total, client_note: q.client_note,
@@ -102,7 +103,6 @@ export default async function PortalChatPage() {
         {!conversation ? (
           <Card>
             <EmptyState
-              icon="mail"
               title="Talk to your Auxion strategist"
               body="Start a conversation and a real member of our team will pick it up — no bots. They'll already have your assessment and recommended plan in front of them."
             />

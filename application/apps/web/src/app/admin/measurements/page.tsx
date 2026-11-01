@@ -7,7 +7,6 @@ export default function MeasurementsPage() {
   return (
     <ComingSoon
       title="Measurements"
-      icon="line-chart"
       description="Did the move work? Targets versus observed outcomes, and the learnings they produce."
     />
   );

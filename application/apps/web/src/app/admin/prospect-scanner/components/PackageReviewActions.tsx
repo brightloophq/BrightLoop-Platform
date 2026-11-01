@@ -3,6 +3,7 @@
 import type { CommercialReviewBinding } from "@brightloop/schema";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Alert, Button } from "@brightloop/ui";
 import { readPackageReviewUpdate, type PackageReviewUpdate } from "@/lib/prospect-scanner";
 import styles from "../scanner.module.css";
@@ -20,9 +21,11 @@ export function PackageReviewActions({ runId, decision, expectedBinding, onRevie
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [promotion, setPromotion] = useState<{ quoteId: string; itemCount: number; outcome: string } | null>(null);
 
   const decide = useCallback(
     async (action: "approve" | "request_revision" | "reject") => {
+      setPromotion(null);
       setBusy(action);
       setError(null);
       try {
@@ -32,8 +35,13 @@ export function PackageReviewActions({ runId, decision, expectedBinding, onRevie
           body: JSON.stringify({ runId, action, expectedBinding, note: note.trim() || undefined }),
         });
         if (!res.ok) {
+          const failure = await res.json().catch(() => null) as { error?: string } | null;
           if (res.status === 409) onReviewConflict();
-          setError(res.status === 409 ? "The package changed. Reload the workspace and review the current versions." : res.status === 403 ? "You do not have permission to review this package." : "The review action could not be recorded.");
+          setError(res.status === 409
+            ? failure?.error ?? "The package changed. Reload the workspace and review the current versions."
+            : failure?.error ?? (res.status === 403
+              ? "You do not have permission to review this package."
+              : "The review action could not be recorded."));
           setBusy(null);
           return;
         }
@@ -50,6 +58,38 @@ export function PackageReviewActions({ runId, decision, expectedBinding, onRevie
     },
     [runId, note, router, expectedBinding, onReviewed, onReviewConflict],
   );
+
+  const promote = useCallback(async () => {
+    setBusy("promote");
+    setError(null);
+    try {
+      const res = await fetch("/api/internal/runtime/package-promotion", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ runId }),
+      });
+      // The route distinguishes several refusals — the decision is not approved,
+      // the approval pins no proposal version, the database refused — and every
+      // one arrived here in `error` and was replaced with one fixed sentence,
+      // which is why a blocked promotion gave the operator nothing to act on.
+      const body = await res.json() as {
+        quoteId?: string;
+        itemCount?: number;
+        outcome?: string;
+        error?: string;
+      };
+      if (!res.ok || body.quoteId === undefined) {
+        setError(body.error ?? "The approved package could not be promoted.");
+        return;
+      }
+      setPromotion({ quoteId: body.quoteId, itemCount: body.itemCount ?? 0, outcome: body.outcome ?? "created" });
+      router.refresh();
+    } catch {
+      setError("The approved package could not be promoted.");
+    } finally {
+      setBusy(null);
+    }
+  }, [runId]);
 
   return (
     <div className={styles.reviewActions}>
@@ -76,6 +116,18 @@ export function PackageReviewActions({ runId, decision, expectedBinding, onRevie
           {busy === "reject" ? "Rejecting…" : "Reject"}
         </Button>
       </div>
+      {decision === "approved" ? (
+        <div className={styles.badgeRow}>
+          <Button variant="secondary" onClick={promote} disabled={busy !== null}>
+            {busy === "promote" ? "Creating draft…" : "Create draft quote"}
+          </Button>
+        </div>
+      ) : null}
+      {promotion !== null ? (
+        <Alert tone="info" title={promotion.outcome === "already_promoted" ? "Already promoted" : "Draft quote created"}>
+          Quote ID: <Link href={`/admin/quotes/${promotion.quoteId}`}>{promotion.quoteId}</Link>. Promoted items: {promotion.itemCount}.
+        </Alert>
+      ) : null}
       {decision !== "pending" ? <span className={styles.stageReason}>Current decision: {decision.replace("_", " ")}. A new decision supersedes it.</span> : null}
       {error !== null ? (
         <Alert tone="warning" title="Could not record the decision">

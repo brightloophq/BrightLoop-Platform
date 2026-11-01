@@ -1,4 +1,5 @@
 import { Alert, Badge, EmptyWorkspace, MetricCard, OperationalPanel, OperationalTable, SectionRule, type OperationalColumn } from "@brightloop/ui";
+import { freshnessView } from "@/lib/evidence-freshness";
 import type { EvidenceItemView, EvidenceView } from "@/lib/prospect-scanner";
 import styles from "../scanner.module.css";
 
@@ -17,7 +18,6 @@ export function EvidenceCoverage({ evidence }: EvidenceCoverageProps) {
       <OperationalPanel>
         <SectionRule index="06" label="Evidence" meta="not normalized" />
         <EmptyWorkspace
-          icon="layers"
           title="No evidence yet"
           body="Run the evidence normalization stage after discovery. Evidence is derived only from pages that were actually fetched."
         />
@@ -35,7 +35,23 @@ export function EvidenceCoverage({ evidence }: EvidenceCoverageProps) {
       label: "State",
       render: (i) => <Badge status={i.state === "observed" ? "active" : "pending"}>{i.state}</Badge>,
     },
-    { key: "freshness", header: "Freshness", label: "Freshness", hideOnMobile: true, render: (i) => <span className={styles.mono}>{i.freshness ?? "unknown"}</span> },
+    {
+      key: "freshness",
+      header: "Freshness",
+      label: "Freshness",
+      hideOnMobile: true,
+      // `i.freshness ?? "unknown"` read backwards: a static 404 sends
+      // Last-Modified and a dynamic 200 does not, so failures looked better
+      // dated than captures. See evidence-freshness.ts.
+      render: (i) => {
+        const view = freshnessView(i);
+        return (
+          <span className={styles.mono} title={view.title}>
+            {view.label}
+          </span>
+        );
+      },
+    },
     { key: "checksum", header: "Checksum", label: "Checksum", hideOnMobile: true, render: (i) => <span className={styles.mono}>{i.checksum ?? "—"}</span> },
     { key: "reason", header: "Note", label: "Note", hideOnMobile: true, render: (i) => <span className={styles.mono}>{i.reason ?? "—"}</span> },
   ];
@@ -45,10 +61,10 @@ export function EvidenceCoverage({ evidence }: EvidenceCoverageProps) {
       <SectionRule index="06" label="Evidence" meta={`${evidence.observed} observed of ${evidence.total}`} />
 
       <div className={styles.metrics}>
-        <MetricCard label="Evidence items" value={evidence.total} icon="layers" />
-        <MetricCard label="Observed" value={evidence.observed} icon="check-circle" emphasis="hero" />
-        <MetricCard label="Unavailable" value={evidence.unavailable} icon="x" />
-        <MetricCard label="Conflicts" value={evidence.conflicts} icon="bell" />
+        <MetricCard label="Evidence items" value={evidence.total} />
+        <MetricCard label="Observed" value={evidence.observed} emphasis="hero" />
+        <MetricCard label="Unavailable" value={evidence.unavailable} />
+        <MetricCard label="Conflicts" value={evidence.conflicts} />
       </div>
 
       <div className={styles.switches} style={{ marginTop: "var(--space-4)" }}>

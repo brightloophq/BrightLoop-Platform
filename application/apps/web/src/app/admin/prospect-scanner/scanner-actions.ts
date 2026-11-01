@@ -48,10 +48,9 @@ export async function createProspectScanAction(formData: FormData): Promise<Scan
     const ctx = await buildAppContext();
     if (ctx === null) return { ok: false, error: "You are not signed in." };
 
-    const scan = await createScan(ctx, {
-      clientId: parsed.value.clientId,
-      metadata: parsed.value.metadata,
-    });
+    const scan = await createScan(ctx, parsed.value.leadId !== undefined
+      ? { leadId: parsed.value.leadId, metadata: parsed.value.metadata }
+      : { clientId: parsed.value.clientId!, metadata: parsed.value.metadata });
 
     revalidatePath(SCANNER_PATH);
     return { ok: true, id: scan.id };

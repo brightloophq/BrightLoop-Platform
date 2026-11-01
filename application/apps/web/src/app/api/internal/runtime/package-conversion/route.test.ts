@@ -40,42 +40,18 @@ describe("scanner sales conversion API", () => {
     expect(mock.rpc).not.toHaveBeenCalled();
   });
 
-  it("rejects missing or malformed conversion identifiers", async () => {
-    expect((await POST(request({ runId: "run-a", idempotencyKey: "short" }))).status).toBe(422);
+  it("fails closed even when legacy conversion identifiers are well formed", async () => {
+    expect((await POST(request({ runId: "run-a", idempotencyKey: "0123456789abcdef" }))).status).toBe(409);
     expect(mock.rpc).not.toHaveBeenCalled();
   });
 
-  it("checks readiness server-side and passes no browser target IDs to the RPC", async () => {
-    mock.rpc.mockResolvedValue({ data: { proposalId: "prp-real", replayed: false }, error: null });
-    const response = await POST(request({ runId: "run-a", idempotencyKey: "0123456789abcdef", clientId: "forged", proposalId: "forged" }));
-    expect(response.status).toBe(200);
-    expect(mock.review).toHaveBeenCalledWith(expect.anything(), "run-a");
-    expect(mock.scan).toHaveBeenCalledWith(expect.anything(), "run-a");
-    expect(mock.rpc).toHaveBeenCalledWith("bl_convert_scanner_package", { p_run_id: "run-a", p_idempotency_key: "0123456789abcdef" });
-  });
-
-  it("returns a recoverable 409 when server readiness is false", async () => {
-    mock.review.mockResolvedValue({ readiness: { clientReady: false, reason: "Commercial terms have expired." } });
+  it("retires the direct-to-proposal write path without invoking its RPC", async () => {
     const response = await POST(request({ runId: "run-a", idempotencyKey: "0123456789abcdef" }));
     expect(response.status).toBe(409);
-    expect(await response.json()).toMatchObject({ error: { message: "Commercial terms have expired." } });
+    expect((await response.json()).error.message).toMatch(/canonical quote promotion/i);
     expect(mock.rpc).not.toHaveBeenCalled();
   });
 
-  it("blocks runs that are not scoped to an existing client", async () => {
-    mock.scan.mockResolvedValue({ clientId: null });
-    const response = await POST(request({ runId: "run-a", idempotencyKey: "0123456789abcdef" }));
-    expect(response.status).toBe(409);
-    expect((await response.json()).error.message).toMatch(/existing client/);
-    expect(mock.rpc).not.toHaveBeenCalled();
-  });
-
-  it("maps an atomic stale-state RPC rejection to 409", async () => {
-    mock.rpc.mockResolvedValue({ data: null, error: { code: "40001", message: "stale" } });
-    const response = await POST(request({ runId: "run-a", idempotencyKey: "0123456789abcdef" }));
-    expect(response.status).toBe(409);
-    expect((await response.json()).error.message).toMatch(/package changed/i);
-  });
 
   it("returns existing private conversion status to the authorized admin UI", async () => {
     mock.conversion.mockResolvedValue({ data: { id: "scv-1", proposal_id: "prp-1", converted_at: "now" }, error: null });

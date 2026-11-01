@@ -4,7 +4,7 @@
  */
 
 import Link from "next/link";
-import { Badge, EmptyState, Icon } from "@brightloop/ui";
+import { Badge, EmptyState } from "@brightloop/ui";
 import { loadDeploymentDetail } from "@/lib/runtime-data";
 import { resolveWorkspaces } from "@/lib/workspace-data";
 import { DeploymentControls } from "./DeploymentControls";
@@ -18,7 +18,7 @@ const driftTone = (d: string): "success" | "warning" | "danger" | "neutral" =>
 export default async function DeploymentDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const [data, workspaces] = await Promise.all([loadDeploymentDetail(id), resolveWorkspaces()]);
-  if (data === null) return <EmptyState icon="lock" title="Deployment not found" body="It may have been removed, or you may not have access." />;
+  if (data === null) return <EmptyState title="Deployment not found" body="It may have been removed, or you may not have access." />;
   const { detail, logs } = data;
   const d = detail.deployment;
   const workspaceId = workspaces[0]?.id ?? "";
@@ -27,7 +27,7 @@ export default async function DeploymentDetailPage({ params }: { params: Promise
     <>
       <div className={styles.pageHead}>
         <div>
-          <Link href="/workspace/deployments" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="arrow-left" size={13} /> Deployments</Link>
+          <Link href="/workspace/deployments" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}> Deployments</Link>
           <h1 className={styles.pageTitle}>Deployment v{d.deploymentVersion}</h1>
           <p className={styles.pageSub}>{d.targetEnvironment} · {d.provider} · package {d.deploymentPackageId.slice(0, 12)} · hash {d.packageHash.slice(0, 12)}{d.externalWorkflowId ? ` · workflow ${d.externalWorkflowId}` : ""}</p>
         </div>

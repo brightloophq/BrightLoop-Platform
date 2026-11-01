@@ -14,7 +14,7 @@
 import { useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Badge, Icon } from "@brightloop/ui";
+import { Badge } from "@brightloop/ui";
 import type { CopilotActionDTO, CopilotCitationDTO, CopilotConversationDTO, CopilotMessageDTO } from "@brightloop/application";
 import {
   groupConversations, isStreaming, parseSmartInput, renderMarkdown, streamingLabel, suggestCommands,
@@ -141,7 +141,7 @@ export function CopilotConsole(props: Props) {
     <div className={styles.console} data-dock={props.dock ? "true" : "false"}>
       {!props.dock && (
         <div className={styles.rail}>
-          <button className={styles.newBtn} onClick={startConversation} disabled={pending}><Icon name="sparkles" size={15} /> New conversation</button>
+          <button className={styles.newBtn} onClick={startConversation} disabled={pending}> New conversation</button>
           <div className={styles.railGroup}>
             {groups.pinned.length > 0 && <span className={styles.railLabel}>Pinned</span>}
             {groups.pinned.map((c) => <Link key={c.id} href={`/workspace/copilot?c=${c.id}`} className={styles.railItem} data-active={c.id === props.activeId}>{c.title}</Link>)}
@@ -154,16 +154,15 @@ export function CopilotConsole(props: Props) {
 
       <div className={styles.panel}>
         <div className={styles.panelHead}>
-          <Icon name="sparkles" size={16} />
           <span className={styles.panelTitle}>{props.activeTitle ?? "Auxion Copilot"}</span>
-          {props.dock && <Link href="/workspace/copilot" className={styles.headBtn}><Icon name="arrow-up-right" size={12} /> Full page</Link>}
+          {props.dock && <Link href="/workspace/copilot" className={styles.headBtn}> Full page</Link>}
         </div>
 
         {props.activeId === null ? (
           <div className={styles.empty}>
             <div>
               <p style={{ marginBottom: "var(--space-4)" }}>Ask about your reports, missions, strategy, approvals and automations — the Copilot answers from your live workspace and cites what it used.</p>
-              <button className={styles.newBtn} onClick={startConversation} disabled={pending}><Icon name="sparkles" size={15} /> Start a conversation</button>
+              <button className={styles.newBtn} onClick={startConversation} disabled={pending}> Start a conversation</button>
             </div>
           </div>
         ) : (
@@ -182,8 +181,7 @@ export function CopilotConsole(props: Props) {
                     <div className={styles.cites}>
                       {citationsFor(m.id).map((c) => (
                         <Link key={c.id} href={c.href || "#"} className={styles.cite}>
-                          <span className={styles.citeKind}>{c.kind}</span>{c.title || c.refId}<Icon name="external-link" size={11} />
-                        </Link>
+                          <span className={styles.citeKind}>{c.kind}</span>{c.title || c.refId}                        </Link>
                       ))}
                     </div>
                   )}
@@ -195,7 +193,7 @@ export function CopilotConsole(props: Props) {
               <div className={styles.actions}>
                 {suggestions.map((a) => (
                   <button key={a.id} className={styles.action} onClick={() => runAction(a)} disabled={!a.enabled || pending} title={a.enabled ? a.label : `Requires ${a.requiredPermission ?? "additional permission"}`}>
-                    {a.enabled ? <Icon name="check-circle" size={12} /> : <Icon name="lock" size={12} />}
+                    {a.enabled ? null : <span className={styles.locked}>Locked</span>}
                     {a.label}
                     {a.requiresApproval && <span className={styles.approvalTag}>· needs approval</span>}
                   </button>
@@ -217,7 +215,7 @@ export function CopilotConsole(props: Props) {
               <div className={styles.inputRow}>
                 <textarea className={styles.input} value={input} placeholder="Ask anything, or type / for commands…" rows={1}
                   onChange={(e) => { setInput(e.target.value); setCmdCursor(0); }} onKeyDown={onKeyDown} aria-label="Message the Copilot" disabled={pending} />
-                <button className={styles.sendBtn} onClick={submit} disabled={pending || input.trim() === ""} aria-label="Send"><Icon name="arrow-up-right" size={18} /></button>
+                <button className={styles.sendBtn} onClick={submit} disabled={pending || input.trim() === ""}>Send</button>
               </div>
               <span className={styles.hint}>Answers cite your live reports, missions and strategy. Enter to send · Shift+Enter for a new line.</span>
             </div>

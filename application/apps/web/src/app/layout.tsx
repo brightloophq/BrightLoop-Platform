@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Space_Grotesk, IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google";
 import { ThemeProvider, ThemeScript } from "@brightloop/ui";
+import { SITE_DESCRIPTION, siteOrigin } from "@/lib/site";
 import "@brightloop/ui/tokens.css";
 
 /**
@@ -16,14 +17,30 @@ const plexSans = IBM_Plex_Sans({ subsets: ["latin"], weight: ["400", "500", "600
 const plexMono = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "500", "600"], variable: "--font-plex-mono", display: "swap" });
 
 export const metadata: Metadata = {
+  // Without a metadataBase, every relative canonical and Open Graph URL below
+  // resolves against localhost at build time and is dropped in production, so
+  // pages that declared a canonical shipped without one.
+  metadataBase: new URL(siteOrigin()),
   title: {
     default: "Auxion",
     template: "%s · Auxion",
   },
-  description: "Brands. Systems. Growth.",
-  // Site-wide noindex while content is placeholder; flip on at launch (see
-  // docs/PRE-LAUNCH.md).
-  robots: { index: false, follow: false },
+  description: SITE_DESCRIPTION,
+  /**
+   * The site is indexable.
+   *
+   * It was `index: false` site-wide while the content was placeholder — which
+   * meant auxion.xyz could not appear in a search result at all, however much
+   * real work was published on it. Flipped deliberately, at the owner's
+   * instruction, now that the portfolio, reviews and written pages are real.
+   *
+   * THIS IS THE ONLY GUARD THAT USED TO COVER THE PRIVATE SURFACES. /portal,
+   * /admin and /workspace inherited their `noindex` from this line and declared
+   * none of their own, so each now sets its own in its layout — robots.txt is a
+   * crawl hint and never a substitute. /start, /legal/*, the auth pages and the
+   * funnel's result steps likewise carry their own.
+   */
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

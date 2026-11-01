@@ -26,6 +26,52 @@ Each integration works as a deterministic **mock** until its key is set, then se
 - ⚠️ **Email** (`EMAIL_PROVIDER_API_KEY`): pipeline + consent gate are real; the concrete provider adapter (and a template strategy — templates are delegated to the provider/n8n) still needed for real sends. Supabase's built-in mailer is capped at ~2/hour; set custom SMTP in the Supabase dashboard to lift it.
 - ✅ **n8n automations** (`N8N_WEBHOOK_SECRET`): signed callback receiver built; point it at your n8n instance.
 
+## 2b. Deploying — migrations
+
+✅ **A pull request that adds migrations says so**, on the PR, with the command to
+run — the `migrations · manual push reminder` check. No setup, no credentials.
+
+🔧 **Optionally, CI can apply them on merge**
+(`.github/workflows/migrate-production.yml`) once `SUPABASE_ACCESS_TOKEN`,
+`SUPABASE_PROJECT_REF` and `SUPABASE_DB_PASSWORD` are set. Unset, it stands down
+green and records the manual command — applying them by hand stays supported.
+
+⚠️ **Ordering is improved, not guaranteed.** The hosts build from their own git
+integrations on the same push. Migrations apply in seconds against a build that
+takes minutes, so the schema normally lands first; enforcing it means turning off
+automatic git deploys and deploying from a step after the migration job.
+
+This mattered: app code that read a new column deployed before the migration
+reached the database, and the Business Scan page stopped loading at request time —
+nothing at build time could have caught it.
+
+```bash
+cd application
+export SUPABASE_ACCESS_TOKEN=<personal access token>   # or: supabase login
+supabase link --project-ref <ref>                      # prompts for the DB password
+supabase db push                                       # applies every unapplied migration
+```
+
+⚠️ **Version numbers are the identity, not filenames.** `db push` records the
+numeric prefix. If two working copies ever create different migrations under the
+same prefix, whichever is pushed first claims that version and the other is
+skipped FOREVER, silently — `supabase migration list` shows the version in both
+columns, which is what makes it invisible. This happened at `20260812000100`
+(`media_bucket_limits` here vs `quote_proposal_statuses` in a diverged copy);
+the repair was to re-issue the skipped statement under a fresh version
+(`20260815000100`), not to rewrite history on a live database.
+
+⚠️ **Never push from a working copy that is not current `main`.** Anything it
+applies that is not committed here becomes production schema this repository
+cannot reproduce — invisible to CI, to the generated types, and to anyone
+rebuilding the database from migrations.
+
+This has bitten once already: `scan_findings.source` shipped with the app before
+its migration reached the database and the Business Scan page stopped loading.
+The admin pages now name a schema mismatch and the command that fixes it rather
+than dying (`apps/web/src/lib/schema-drift.ts`), but the ordering is still the
+real fix.
+
 ## 3. Security
 
 - ✅ **RLS coverage**: verified live — all 34 public tables have RLS enabled + at least one policy (see `bl_rls_audit()`). No anon-readable holes; only published marketing content is public.
@@ -38,8 +84,10 @@ Each integration works as a deterministic **mock** until its key is set, then se
 
 ## 4. SEO / indexing
 
-- �flip **Site-wide `robots: index:false`** (`apps/web/src/app/layout.tsx`): the whole site is `noindex` while content is placeholder. **Flip to index once real content is in** — keep `/portal`, `/admin`, `/start` noindex (they already are, and are behind auth).
-- ✅ Sitemap, robots.txt, canonical, OG, JSON-LD (portfolio/testimonials) are wired.
+- ✅ **Site-wide indexing is ON** (`apps/web/src/app/layout.tsx`): flipped to `index: true` once the portfolio, reviews and written pages were real. The private surfaces used to inherit their `noindex` from that one line and declared none of their own, so `/portal`, `/admin` and `/workspace` now each set it in their own layout; `/start`, `/legal/*`, the auth pages and the funnel's result steps (`/recommendation`, `/roadmap`) carry their own too, and robots.txt disallows all of them. ⚠️ Legal copy is still unissued — the documents say so on their own pages and are excluded from the sitemap, but they are now reachable on an indexable site.
+- ✅ Sitemap, robots.txt, canonical (every public page), OG, and JSON-LD are wired: `Organization` + `WebSite` from the public layout, `Article` on each written page, `CreativeWork`/review schema on portfolio and testimonials.
+- ✅ **Canonical origin** is `auxion.xyz` (`SITE_ORIGIN`). It named `brightloop.co` until the site was launched, which pointed every canonical, sitemap URL and JSON-LD `url` at another domain. Override per deployment with `NEXT_PUBLIC_SITE_ORIGIN` so previews do not emit production canonicals.
+- ✅ **Social profiles** (`apps/web/src/lib/site.ts`, `SOCIAL_PROFILES`): Instagram, TikTok and Facebook, linked in the footer and emitted as `sameAs`. ⚠️ The Facebook entry is a personal profile, not a business Page — swap it when a Page exists.
 - ⚠️ Set real production hostnames (`NEXT_PUBLIC_PUBLIC_HOST` / `PORTAL_HOST` / `ADMIN_HOST`) — middleware routes surfaces by subdomain.
 
 ## 5. Accessibility (WCAG 2.1 AA)

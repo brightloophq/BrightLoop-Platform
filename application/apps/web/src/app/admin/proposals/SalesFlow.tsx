@@ -138,6 +138,8 @@ export function SalesFlow({ proposal, contract, invoice, delivery, revisionConte
               })() : null}
             </>}
           </div>
+        ) : isScannerConverted && proposal.status === "issued" ? (
+          <p role="status" style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>Published in the client portal. No email was sent.</p>
         ) : proposal.status === "sent" || proposal.status === "viewed" ? (
           <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>{isScannerConverted ? "Published to the client portal. No email was sent." : "Awaiting the client&apos;s decision."}</p>
         ) : proposal.status === "change_requested" ? (
@@ -165,7 +167,7 @@ export function SalesFlow({ proposal, contract, invoice, delivery, revisionConte
       </Card>
 
       {/* ---- contract ---- */}
-      {proposal.status === "accepted" || contract ? (
+      {!isScannerConverted && (proposal.status === "accepted" || contract) ? (
         <Card>
           <div style={{ ...row, marginBottom: "var(--space-2)" }}>
             <strong>Contract</strong>
@@ -183,13 +185,13 @@ export function SalesFlow({ proposal, contract, invoice, delivery, revisionConte
               <Button variant="primary" size="sm" disabled={busy} onClick={() => run(() => countersignContract(contract.id))}>Countersign &amp; activate</Button>
             </div>
           ) : (
-            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-success, #1a7f4b)" }}>Contract {contract.status.replace(/_/g, " ")}.</p>
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--positive)" }}>Contract {contract.status.replace(/_/g, " ")}.</p>
           )}
         </Card>
       ) : null}
 
       {/* ---- deposit invoice ---- */}
-      {proposal.status === "accepted" || contract ? (
+      {!isScannerConverted && (proposal.status === "accepted" || contract) ? (
         <Card>
           <div style={{ ...row, marginBottom: "var(--space-2)" }}>
             <strong>Deposit invoice</strong>
@@ -203,14 +205,14 @@ export function SalesFlow({ proposal, contract, invoice, delivery, revisionConte
               <Button variant="primary" size="sm" disabled={busy} onClick={() => run(() => sendInvoice(invoice.id))}>Send invoice</Button>
             </div>
           ) : invoice.status === "paid" ? (
-            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-success, #1a7f4b)" }}>Deposit paid.</p>
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--positive)" }}>Deposit paid.</p>
           ) : (
             <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)" }}>Invoice {invoice.status} — awaiting payment.</p>
           )}
         </Card>
       ) : null}
 
-      {error ? <p style={{ color: "var(--text-danger, #c0392b)", fontSize: "var(--fs-sm)" }}>{error}</p> : null}
+      {error ? <p style={{ color: "var(--critical)", fontSize: "var(--fs-sm)" }}>{error}</p> : null}
     </div>
   );
 }

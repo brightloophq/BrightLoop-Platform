@@ -25,7 +25,79 @@ guard, RLS policies, the auth claims hook, and storage buckets.
 Order is load-bearing: `0400` defines `bl_is_internal()` / `bl_client_id()`, which
 `0600` and `0700` depend on.
 
+## ⚠️ One repair still owed to production
+
+`feat/canonical-proposal-issuance` is merged. Two of the three closing steps were
+part of that merge; **the third needs production credentials and has not run.**
+
+Production applied `20260812000100_quote_proposal_statuses` and
+`20260812000200_canonical_proposal_issuance` from a working copy whose history had
+diverged from this repository. Two consequences followed, both now settled in the
+repo:
+
+| Version | Was | Now |
+| --- | --- | --- |
+| `20260812000100` | claimed by `quote_proposal_statuses` in production, while `main` held a different `media_bucket_limits` under the same number | `main`'s dead file is deleted; `20260815000100_media_bucket_limits_reissue.sql` carries that statement under a version nothing claimed |
+| `20260812000200` | marked **reverted** in `schema_migrations` so a push from `main` could proceed — while its objects stayed in the database | file is on `main`; the bookkeeping row is still missing |
+
+### The step that is still owed
+
+```bash
+supabase migration repair --status applied 20260812000200
+```
+
+This edits one bookkeeping row. It creates and drops nothing.
+
+**Until it runs, the next `supabase db push` fails.** It will treat
+`canonical_proposal_issuance.sql` as unapplied and re-run it against objects that
+already exist, dying on `create type public.proposal_kind` — which is not
+idempotent, and neither are the `add column`, `create table` and `create trigger`
+statements after it.
+
+That failure is **loud and harmless**: each migration runs in a transaction, so the
+push aborts and applies nothing. Nothing is corrupted. But every later migration is
+blocked behind it until the repair is run, which is how the last Business Scan
+outage started.
+
+Verify with `supabase migration list` — local and remote should agree through
+`20260815000100`, with no version appearing in only one column.
+
 ## Applying
+
+Two things happen, and **only one of them needs any setup**.
+
+### Always on — the pull request tells you
+
+A pull request that adds a migration gets a `migrations · manual push reminder`
+check listing the files and the command. No credentials, no database access: it
+reads the diff. The incident this prevents did not need automation to prevent —
+nobody had forgotten how to run `db push`, nobody knew there was one to run.
+
+### Opt-in — CI applies them on merge
+
+`.github/workflows/migrate-production.yml` runs on merges to `main` that touch
+`application/supabase/migrations/**`. **With no secrets set it stands down green**
+and records what to run by hand; applying migrations yourself is a legitimate
+choice and a red X on every migration merge would be noise. To switch it on:
+
+| Secret | What it is |
+| --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | A personal access token (Supabase dashboard → Account → Access Tokens) |
+| `SUPABASE_PROJECT_REF` | The project ref from the project's URL |
+| `SUPABASE_DB_PASSWORD` | The database password, so `link` does not prompt |
+
+Point the job's `production` environment at a protection rule if you want a human
+approval before any production DDL.
+
+⚠️ **Even switched on, ordering is improved, not guaranteed.** Vercel and Netlify
+build from their own git integrations on the same push, in parallel. Migrations
+apply in seconds and a build takes minutes, so the schema normally lands first —
+but only turning off the host's automatic deploys and deploying from a step after
+the migration would actually enforce it.
+
+### By hand
+
+Still the path for a backlog, a recovery, or a project the workflow is not linked to:
 
 ```bash
 export SUPABASE_ACCESS_TOKEN=<personal access token>   # or: supabase login

@@ -28,7 +28,7 @@ export default async function AdminContractsPage() {
           </div>
         </div>
         {rows.length === 0 ? (
-          <EmptyState icon="check-circle" title="No contracts yet" body="A contract is created from an accepted proposal." />
+          <EmptyState title="No contracts yet" body="A contract is created from an accepted proposal." />
         ) : (
           <div className={styles.rows}>
             {rows.map((c) => (

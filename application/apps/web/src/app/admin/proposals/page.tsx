@@ -15,7 +15,7 @@ export default async function AdminProposalsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("proposals")
-    .select("id, status, total, currency, client_id, clients(company)")
+    .select("id, proposal_kind, proposal_number, status, total, currency, client_id, clients(company)")
     .order("sent_at", { ascending: false, nullsFirst: true });
   const rows = data ?? [];
 
@@ -30,7 +30,7 @@ export default async function AdminProposalsPage() {
           </div>
         </div>
         {rows.length === 0 ? (
-          <EmptyState icon="search" title="No proposals yet" body="Accept a quote in a discovery conversation to create one." />
+          <EmptyState title="No proposals yet" body="Accept a quote in a discovery conversation to create one." />
         ) : (
           <div className={styles.rows}>
             {rows.map((p) => (
@@ -41,7 +41,8 @@ export default async function AdminProposalsPage() {
                       {(p.clients as unknown as { company: string } | null)?.company ?? p.client_id}
                     </Link>
                     <Badge tone="neutral" dot>{p.status.replace(/_/g, " ")}</Badge>
-                    <span className={styles.rowMeta}>{money(p.total, p.currency)}</span>
+                    {p.proposal_kind === "canonical_issued" ? <Badge tone="success">{p.proposal_number ?? "canonical"}</Badge> : null}
+                    <span className={styles.rowMeta}>{money(p.total, p.currency ?? "USD")}</span>
                   </div>
                 </div>
               </Card>

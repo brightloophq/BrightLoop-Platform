@@ -31,7 +31,7 @@ export default async function AdminInvoicesPage() {
           </div>
         </div>
         {rows.length === 0 ? (
-          <EmptyState icon="trending-up" title="No invoices yet" body="Create a deposit invoice from an accepted proposal." />
+          <EmptyState title="No invoices yet" body="Create a deposit invoice from an accepted proposal." />
         ) : (
           <div className={styles.rows}>
             {rows.map((i) => (

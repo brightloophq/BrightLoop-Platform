@@ -45,6 +45,12 @@ async function internal() {
   return { actor, supabase };
 }
 
+async function requireLegacyProposal(supabase: Awaited<ReturnType<typeof createClient>>, proposalId: string): Promise<string | null> {
+  const { data, error } = await supabase.from("proposals").select("proposal_kind").eq("id", proposalId).maybeSingle();
+  if (error || !data) return "Proposal not found";
+  return data.proposal_kind === "legacy_sales" ? null : "Canonical issued proposals are read-only";
+}
+
 const CAP_SALES = "clients.update"; // owner/admin, not team_member
 const CAP_FINANCE = "finance.update"; // owner/admin
 
@@ -54,6 +60,8 @@ export async function setProposalDeposit(formData: FormData): Promise<SalesResul
   try {
     const { supabase } = await internal();
     const proposalId = String(formData.get("proposalId") ?? "").trim();
+    const kindError = await requireLegacyProposal(supabase, proposalId);
+    if (kindError) return { ok: false, error: kindError };
     const deposit = parseUsdMinorUnits(String(formData.get("depositDollars") ?? "0"));
     if (deposit === null) return { ok: false, error: "Enter a USD deposit with at most two decimal places and within the supported range." };
     const { data: proposal, error: readError } = await supabase.from("proposals").select("currency").eq("id", proposalId).maybeSingle();
@@ -69,18 +77,16 @@ export async function setProposalDeposit(formData: FormData): Promise<SalesResul
 }
 
 export async function sendProposal(proposalId: string): Promise<SalesResult> {
-  // Converted scanner drafts require the explicit confirmation form and the
-  // database publication RPC. This legacy transition is retained for ordinary
-  // proposals; the database trigger independently rejects a bypass attempt.
+  // Scanner-origin proposals use the explicit publication path. Keep both
+  // origin and proposal-kind checks so legacy status transitions cannot publish them.
   try {
     const { supabase } = await internal();
+    const kindError = await requireLegacyProposal(supabase, proposalId);
+    if (kindError) return { ok: false, error: kindError };
     const { data: conversion, error } = await supabase.from("scanner_sales_conversions")
       .select("id").eq("proposal_id", proposalId).maybeSingle();
     if (error) return { ok: false, error: "Could not verify proposal origin." };
     if (conversion) return { ok: false, error: "Use the confirmed portal publication action for scanner proposals." };
-    const { data: proposal, error: proposalError } = await supabase.from("proposals").select("currency").eq("id", proposalId).maybeSingle();
-    if (proposalError || !proposal) return { ok: false, error: "Proposal could not be loaded." };
-    if (proposal.currency !== "USD") return { ok: false, error: "Only USD proposals can be published until invoice currency support is available." };
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Failed" };
   }
@@ -93,55 +99,13 @@ export async function sendProposal(proposalId: string): Promise<SalesResult> {
 }
 
 export async function publishScannerSalesProposal(input: ScannerPublicationConfirmation): Promise<SalesResult> {
-  try {
-    const { supabase } = await internal();
-    if (!input.proposalId || !input.clientId || !input.recipientUserId || input.currency !== "USD"
-      || !Number.isSafeInteger(input.totalMinor) || input.totalMinor < 0
-      || !/^\d{4}-\d{2}-\d{2}$/.test(input.validUntil)) {
-      return { ok: false, error: "Review the current recipient and proposal terms before publishing." };
-    }
-    const { error } = await supabase.rpc("bl_publish_scanner_sales_proposal", {
-      p_proposal_id: input.proposalId,
-      p_expected_client_id: input.clientId,
-      p_recipient_user_id: input.recipientUserId,
-      p_expected_currency: input.currency,
-      p_expected_total_minor: input.totalMinor,
-      p_expected_valid_until: input.validUntil,
-    });
-    if (error) {
-      if (error.code === "42501") return { ok: false, error: "Owner or admin authorization is required to publish." };
-      if (error.code === "40001") return { ok: false, error: error.message };
-      if (error.code === "22023") return { ok: false, error: error.message };
-      return { ok: false, error: "Publication could not be completed. Reload the proposal and try again." };
-    }
-    revalidatePath(`/admin/proposals/${input.proposalId}`);
-    revalidatePath("/admin/proposals", "layout");
-    revalidatePath("/portal/proposals");
-    return { ok: true, id: input.proposalId };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Publication failed" };
-  }
+  void input;
+  return { ok: false, error: "Scanner proposal publication is paused until the canonical quote issuance and publication migration is installed." };
 }
 
 export async function createScannerSalesRevision(predecessorProposalId: string): Promise<SalesResult> {
-  try {
-    const { supabase } = await internal();
-    const { data, error } = await supabase.rpc("bl_create_scanner_sales_revision", {
-      p_predecessor_proposal_id: predecessorProposalId,
-    });
-    if (error) {
-      if (error.code === "42501") return { ok: false, error: "Owner or admin authorization is required to prepare a revision." };
-      if (error.code === "40001" || error.code === "55000" || error.code === "22023") return { ok: false, error: error.message };
-      return { ok: false, error: "A private revision could not be prepared. Reload the proposal and try again." };
-    }
-    const proposalId = data && typeof data === "object" && "proposalId" in data ? String(data.proposalId) : "";
-    if (!proposalId) return { ok: false, error: "The server did not return a revision proposal." };
-    revalidatePath(`/admin/proposals/${predecessorProposalId}`);
-    revalidatePath("/admin/proposals", "layout");
-    return { ok: true, id: proposalId };
-  } catch {
-    return { ok: false, error: "A private revision could not be prepared." };
-  }
+  void predecessorProposalId;
+  return { ok: false, error: "Quote-backed scanner revisions are unavailable until the canonical revision migration is installed." };
 }
 
 /* ---- contracts ------------------------------------------------------------- */
@@ -149,8 +113,9 @@ export async function createScannerSalesRevision(predecessorProposalId: string):
 export async function createContractForProposal(proposalId: string): Promise<SalesResult> {
   try {
     const { supabase } = await internal();
-    const { data: proposal } = await supabase.from("proposals").select("id, client_id, status").eq("id", proposalId).maybeSingle();
+    const { data: proposal } = await supabase.from("proposals").select("id, client_id, status, proposal_kind").eq("id", proposalId).maybeSingle();
     if (!proposal) return { ok: false, error: "Proposal not found" };
+    if (proposal.proposal_kind !== "legacy_sales") return { ok: false, error: "Canonical issued proposals cannot create contracts" };
     if (proposal.status !== "accepted") return { ok: false, error: "Only an accepted proposal becomes a contract" };
 
     // One contract per proposal.
@@ -224,8 +189,9 @@ export async function createDepositInvoice(proposalId: string): Promise<SalesRes
     assertCapability(actor, CAP_FINANCE);
     const supabase = await createClient();
 
-    const { data: proposal } = await supabase.from("proposals").select("client_id, deposit").eq("id", proposalId).maybeSingle();
+    const { data: proposal } = await supabase.from("proposals").select("client_id, deposit, proposal_kind").eq("id", proposalId).maybeSingle();
     if (!proposal) return { ok: false, error: "Proposal not found" };
+    if (proposal.proposal_kind !== "legacy_sales") return { ok: false, error: "Canonical issued proposals cannot create invoices" };
     if (!proposal.deposit || proposal.deposit <= 0) return { ok: false, error: "Set a deposit on the proposal first" };
 
     const invoiceId = id("inv");

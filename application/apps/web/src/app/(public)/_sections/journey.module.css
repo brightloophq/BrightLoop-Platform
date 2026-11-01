@@ -84,9 +84,11 @@
   fill: var(--text-primary);
 }
 
+/* The loop's core. The first of the two `fill` declarations here used to be a
+   dead --grad-loop-fallback that the second immediately overrode; only the
+   surface fill ever painted, so the dead line is gone. */
 .core {
-  fill: var(--grad-loop-fallback, var(--signal));
-  fill: var(--surface-raised, var(--surface-card));
+  fill: var(--surface-card);
   stroke: var(--signal);
   stroke-width: 1;
 }
@@ -118,12 +120,13 @@
 }
 
 .stepNum {
-  font-family: var(--font-display);
-  font-weight: var(--fw-bold);
-  font-size: var(--fs-h3);
-  color: var(--signal);
+  font-family: var(--font-mono);
+  font-weight: var(--fw-semibold);
+  font-size: var(--fs-sm);
+  letter-spacing: var(--ls-wide);
+  color: var(--text-accent);
   line-height: 1;
-  opacity: 0.5;
+  padding-top: 0.55em;
 }
 
 .stepDiscipline {
@@ -138,7 +141,9 @@
 
 .stepTitle {
   margin: var(--space-2) 0 var(--space-3);
-  font-size: var(--fs-h3);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
   color: var(--text-primary);
 }
 

@@ -22,7 +22,7 @@
   --opacity-scrim:    0.72; /* @kind other */ /* overlay backdrop */
 
   /* ---- Overlay scrim (single source; overlays must reference this, not raw rgba) ---- */
-  --scrim: rgba(6, 10, 19, var(--opacity-scrim)); /* @kind color */ /* drawer / mobile-nav backdrop */
+  --scrim: rgba(3, 3, 3, var(--opacity-scrim)); /* @kind color */ /* drawer / mobile-nav backdrop */
 
   /* ---- Z-index scale ---- */
   --z-base:      0;    /* @kind other */
@@ -39,14 +39,15 @@
   --border-width-thick:2px;   /* @kind other */
   --border-hairline:   1px solid var(--border-subtle);  /* @kind other */
   --border-default:    1px solid var(--border-strong);  /* @kind other */
-  --border-accent:     1px solid var(--signal);         /* @kind other — amber accent */
+  --border-accent:     1px solid var(--signal);         /* @kind other — gold accent */
   --border-focus:      2px solid var(--focus-ring);     /* @kind other */
+  --rule-metal:        1px;                             /* @kind other — height of a --grad-metal hairline rule */
 
-  /* ---- Focus ring (composable) — amber signal per canon ---- */
+  /* ---- Focus ring (composable) — gold signal per canon ---- */
   --ring-focus: 0 0 0 3px color-mix(in srgb, var(--signal) 35%, transparent); /* @kind shadow */
 }
 
-/* Dark surfaces (heroes, footer, CTA bands) use the deeper navy shadow scale. */
+/* Dark surfaces (heroes, footer, CTA bands) use the deeper black shadow scale. */
 [data-theme="dark"],
 .bl-theme-dark {
   --elevation-1: var(--shadow-sm);

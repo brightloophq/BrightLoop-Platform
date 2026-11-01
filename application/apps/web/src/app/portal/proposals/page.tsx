@@ -25,7 +25,7 @@ export default async function PortalProposalsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("proposals")
-    .select("id, status, subtotal, total, deposit, line_items, currency, discount_minor, valid_until")
+    .select("id, proposal_kind, proposal_number, title, currency, issued_at, valid_until, status, subtotal, total, deposit, discount, discount_minor, line_items")
     .order("sent_at", { ascending: false });
 
   const { data: snapshotData } = await supabase.rpc("bl_client_scanner_proposal_contents");
@@ -39,8 +39,10 @@ export default async function PortalProposalsPage() {
   }
 
   const proposals: PortalProposal[] = (data ?? []).map((p) => ({
-    id: p.id, status: p.status, subtotal: p.subtotal, total: p.total, deposit: p.deposit,
-    currency: p.currency, discountMinor: p.discount_minor, validUntil: p.valid_until,
+    id: p.id, proposal_kind: p.proposal_kind, proposal_number: p.proposal_number, title: p.title,
+    status: p.status, subtotal: p.subtotal, total: p.total, deposit: p.deposit,
+    currency: p.currency ?? "USD", discountMinor: p.discount_minor ?? p.discount ?? 0,
+    validUntil: p.valid_until,
     line_items: (p.line_items as PortalProposal["line_items"] | null) ?? [],
     clientSnapshot: scannerSnapshots.get(p.id),
     snapshotChecksum: scannerSnapshots.get(p.id)?.snapshotChecksum,
@@ -52,7 +54,7 @@ export default async function PortalProposalsPage() {
       <div className={shell.topbar}><h1 className={shell.topTitle}>Proposals</h1></div>
       <div className={shell.content}>
         {proposals.length === 0 ? (
-          <EmptyState icon="search" title="No proposals yet" body="When your strategist sends a proposal, it appears here to review and accept." />
+          <EmptyState title="No proposals yet" body="When your strategist sends a proposal, it appears here to review and accept." />
         ) : (
           <ProposalReview proposals={proposals} />
         )}

@@ -6,7 +6,7 @@
  */
 
 import Link from "next/link";
-import { Badge, EmptyState, Icon } from "@brightloop/ui";
+import { Badge, EmptyState } from "@brightloop/ui";
 import { loadInstallationDetail } from "@/lib/integration-data";
 import { ConnectorControls } from "./ConnectorControls";
 import styles from "../../pages.module.css";
@@ -19,13 +19,13 @@ const healthTone = (h: string): "success" | "warning" | "danger" | "neutral" =>
 export default async function InstallationDetailPage({ params }: { params: Promise<{ installationId: string }> }) {
   const { installationId } = await params;
   const data = await loadInstallationDetail(installationId);
-  if (data === null) return <EmptyState icon="search" title="Connector not found" body="This installation does not exist or you cannot access it." action={<Link href="/workspace/integrations" className={styles.sectionLink}>Back to integrations</Link>} />;
+  if (data === null) return <EmptyState title="Connector not found" body="This installation does not exist or you cannot access it." action={<Link href="/workspace/integrations" className={styles.sectionLink}>Back to integrations</Link>} />;
   const { installation: i, recentEvents, recentHealth, recentAudit } = data;
 
   return (
     <>
       <div style={{ marginBottom: "var(--space-4)" }}>
-        <Link href="/workspace/integrations" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="arrow-left" size={13} /> Integrations</Link>
+        <Link href="/workspace/integrations" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}> Integrations</Link>
       </div>
       <div className={styles.pageHead}>
         <div>

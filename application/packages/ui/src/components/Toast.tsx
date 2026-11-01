@@ -3,7 +3,6 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { toastEnter, toastExit } from "../motion/presets";
 import { useReducedMotion } from "../motion/useReducedMotion";
-import { Icon } from "./Icon";
 import styles from "./Toast.module.css";
 
 export type ToastTone = "success" | "danger" | "info";
@@ -27,10 +26,12 @@ export function useToast(): ToastApi {
 }
 
 const AUTO_DISMISS_MS = 4200;
-const TONE_ICON: Record<ToastTone, string> = {
-  success: "check-circle",
-  danger: "bell",
-  info: "activity",
+/* The tone word that replaced the pictogram. Rendered, not aria-only, so the
+   tone is legible as well as announced. */
+const TONE_WORD: Record<ToastTone, string> = {
+  success: "Done",
+  danger: "Error",
+  info: "Note",
 };
 
 let toastCounter = 0;
@@ -94,7 +95,7 @@ function ToastItem({ tone, message, onDone }: { tone: ToastTone; message: string
       role={assertive ? "alert" : "status"}
       aria-live={assertive ? "assertive" : "polite"}
     >
-      <Icon name={TONE_ICON[tone]} size={16} className={styles.icon} />
+      <span className={styles.tone}>{TONE_WORD[tone]}</span>
       <span className={styles.message}>{message}</span>
     </div>
   );

@@ -37,13 +37,38 @@ describe("canonical design tokens", () => {
       expect(colors, `missing ${t}`).toContain(`${t}:`);
     }
   });
-  it("resolves --signal amber in BOTH themes (light #B4571A, dark #E8912F)", () => {
-    expect(colors).toMatch(/--signal:\s*#B4571A/i);
-    expect(colors).toMatch(/--signal:\s*#E8912F/i);
+  it("declares the full gold ramp the identity is sampled from", () => {
+    for (const step of ["--gold-950", "--gold-800", "--gold-700", "--gold-500",
+                        "--gold-300", "--gold-200", "--gold-100", "--gold-050"]) {
+      expect(colors, `missing ${step}`).toContain(`${step}:`);
+    }
   });
-  it("resolves the neutral canvas in BOTH themes (light #F3F1EC, dark #0B0C0F)", () => {
-    expect(colors).toMatch(/--bg:\s*#F3F1EC/i);
-    expect(colors).toMatch(/--bg:\s*#0B0C0F/i);
+  it("resolves --signal to gold in BOTH themes (light --gold-500, dark --gold-200)", () => {
+    expect(colors).toMatch(/--signal:\s*var\(--gold-500\)/);
+    expect(colors).toMatch(/--signal:\s*var\(--gold-200\)/);
+    expect(colors).toMatch(/--gold-500:\s*#8A6218/i);
+    expect(colors).toMatch(/--gold-200:\s*#D9BB72/i);
+  });
+  it("resolves the neutral canvas in BOTH themes (light #F5F2EA, dark #050505)", () => {
+    expect(colors).toMatch(/--bg:\s*#F5F2EA/i);
+    expect(colors).toMatch(/--bg:\s*#050505/i);
+  });
+  it("declares the metallic gradient set", () => {
+    for (const g of ["--grad-gold", "--grad-metal", "--grad-gold-soft", "--grad-sheen", "--grad-signal"]) {
+      expect(colors, `missing ${g}`).toContain(`${g}:`);
+    }
+  });
+  it("has fully removed the retired BrightLoop primitive scales", () => {
+    // Not merely re-pointed — deleted, with every consumer migrated to a canon
+    // token. A reintroduced --bl-*/--navy-*/--blue-*/--cyan-*/--slate-* scale is
+    // a regression, because those names outlive whatever value they point at.
+    for (const scale of ["--bl-blue", "--bl-cyan", "--bl-navy", "--bl-white",
+                         "--navy-900", "--blue-500", "--cyan-500", "--slate-600"]) {
+      expect(colors, `${scale} is back`).not.toContain(`${scale}:`);
+    }
+    for (const retired of ["#1B54E4", "#5B83EF", "#152238", "#0E1626", "#69707C"]) {
+      expect(colors, `${retired} still present`).not.toContain(retired);
+    }
   });
   it("retains deprecated compatibility aliases, clearly marked", () => {
     expect(colors).toMatch(/@deprecated/i);
@@ -102,6 +127,11 @@ describe("safeguard: no non-canonical color leaks in shared UI", () => {
   it("contains no legacy teal rgba(34, 211, 238) anywhere in @brightloop/ui", () => {
     const offenders = cssFiles.filter((f) => /34,\s*211,\s*238/.test(readFileSync(f, "utf8")));
     expect(offenders, `teal in: ${offenders.join(", ")}`).toEqual([]);
+  });
+  it("contains no retired BrightLoop blue hex anywhere in @brightloop/ui", () => {
+    const blues = /#(1B54E4|5B83EF|2A4A86|17274D|152238|0E1626)\b/i;
+    const offenders = cssFiles.filter((f) => blues.test(readFileSync(f, "utf8")));
+    expect(offenders, `blue in: ${offenders.join(", ")}`).toEqual([]);
   });
   it("uses no 'Sora' font anywhere in @brightloop/ui", () => {
     const offenders = cssFiles.filter((f) => /\bSora\b/i.test(readFileSync(f, "utf8")));

@@ -43,7 +43,7 @@ describe.skipIf(!LIVE)("SupabaseRuntimeRepository (live DB)", () => {
   const runRecord = (over: Partial<RuntimeRun> = {}): RuntimeRun => {
     const id = uid();
     return {
-      id, clientId, scanId: uid(), status: "pending", currentStage: null, failedStage: null,
+      id, clientId, leadId: null, scanId: uid(), status: "pending", currentStage: null, failedStage: null,
       version: 1, idempotencyKey: `idem_${id}`, metadata: {}, checksum: "chk_1", deadline: null,
       cancelled: false, createdBy: null, createdAt: nowIso(), updatedAt: null, startedAt: null,
       completedAt: null, failedAt: null, cancelledAt: null, ...over,

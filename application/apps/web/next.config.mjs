@@ -32,12 +32,56 @@ const csp = [
   "upgrade-insecure-requests",
 ].join("; ");
 
+/**
+ * `Last-Modified` for the pages whose content is fixed at build time.
+ *
+ * These routes render from code and compiled data, so the moment the bundle was
+ * built IS the moment their content last changed — which is exactly what the
+ * header means. It is deliberately NOT applied to the home page, /portfolio or
+ * /testimonials: those read published CMS rows and revalidate on their own, so
+ * a build timestamp there would claim a page had not changed when it had.
+ *
+ * A host that terminates in front of the app may override this on its own
+ * responses; where it passes through, caches and crawlers get an accurate date
+ * instead of none at all.
+ */
+const BUILD_TIME = new Date().toUTCString();
+
+const IMMUTABLE_PAGES = [
+  "/about",
+  "/blog",
+  "/blog/:path*",
+  "/careers",
+  "/contact",
+  "/legal",
+  "/legal/:path*",
+  "/packages",
+  "/resources",
+  "/services",
+  "/services/:path*",
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   // The design system ships TS + CSS Modules from source; Next compiles it.
   transpilePackages: ["@brightloop/ui"],
+  /**
+   * Conventional paths that already exist under another name.
+   *
+   * `/pricing` was a 404 while `/packages` served the three plans — so a
+   * prospect (and any crawler, ours included) concluded the site had no pricing
+   * page at all. Permanent, because the canonical URL is `/packages`.
+   */
+  async redirects() {
+    return [
+      { source: "/pricing", destination: "/packages", permanent: true },
+      { source: "/plans", destination: "/packages", permanent: true },
+      { source: "/work", destination: "/portfolio", permanent: true },
+      { source: "/reviews", destination: "/testimonials", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {
@@ -57,6 +101,10 @@ const nextConfig = {
         source: "/(portal|admin)/:path*",
         headers: [{ key: "Cache-Control", value: "no-store, must-revalidate" }],
       },
+      ...IMMUTABLE_PAGES.map((source) => ({
+        source,
+        headers: [{ key: "Last-Modified", value: BUILD_TIME }],
+      })),
     ];
   },
 };

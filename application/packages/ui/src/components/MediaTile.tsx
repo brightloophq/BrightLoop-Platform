@@ -1,4 +1,4 @@
-import { Icon } from "./Icon";
+import { resolveEmbed } from "./mediaEmbed";
 import styles from "./MediaTile.module.css";
 
 export interface MediaTileProps {
@@ -9,47 +9,67 @@ export interface MediaTileProps {
   slot?: string;
 }
 
-const KIND_ICON: Record<string, string> = {
-  image: "layout-grid",
-  video: "mouse-pointer-click",
-  youtube: "mouse-pointer-click",
-  loom: "mouse-pointer-click",
-  audio: "mouse-pointer-click",
-  pdf: "search",
-  website: "external-link",
-};
-
 /**
- * MediaTile — a gallery/media item.
+ * MediaTile — a gallery/media item: a video, an image, or a link to live work.
  *
- * Every tile currently renders its PLACEHOLDER state: the design bundle supplies
- * drag-and-drop image *slots*, not images (handoff §13 — "Real photography" is
- * outstanding). Rather than an empty grey box, the tile names what is missing and
- * which slot it belongs to, so the gap is legible instead of looking broken.
+ * It used to render the PLACEHOLDER state unconditionally, because the design
+ * bundle supplied drag-and-drop image *slots* rather than images. That made the
+ * portfolio structurally complete but visually empty: a case study with a real
+ * YouTube walkthrough and a real live URL still showed "Asset pending". Now the
+ * URL decides — `resolveEmbed` maps it to an embed, a playable file, an image or
+ * a link — and the placeholder is what remains when there genuinely is nothing,
+ * naming the slot so the gap stays legible instead of looking broken.
  *
- * Alt text is required on every real image (handoff §10.1) — that is enforced in
- * the Media Library when real assets are uploaded (Sprint 4).
+ * Only allow-listed providers are ever framed; see the security note in
+ * `mediaEmbed.ts`. Everything else degrades to a link.
+ *
+ * Alt text: `label` is the catalogued human description of the item, so it is
+ * the image's alt. A tile with no real label would be a content bug, not a
+ * rendering one.
  */
 export function MediaTile({ kind, label, url, slot }: MediaTileProps) {
-  const isExternal = Boolean(url && url !== "#");
+  const embed = resolveEmbed(url);
 
   return (
     <figure className={styles.tile}>
-      <div className={styles.frame}>
-        <span className={styles.kind}>
-          <Icon name={KIND_ICON[kind] ?? "layout-grid"} size={14} />
-          {kind}
-        </span>
-        <span className={styles.pending}>
-          {slot ? `Asset pending — slot “${slot}”` : "Asset pending"}
-        </span>
+      <div className={embed.kind === "pending" ? styles.frame : styles.media}>
+        {embed.kind === "iframe" ? (
+          <iframe
+            className={styles.fill}
+            src={embed.src}
+            title={`${label} — ${embed.provider} video`}
+            loading="lazy"
+            // Only what a video player needs. No allow-same-origin, no scripts
+            // beyond the provider's own player surface.
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            referrerPolicy="strict-origin-when-cross-origin"
+            allowFullScreen
+          />
+        ) : embed.kind === "video" ? (
+          // No autoplay: a gallery that starts talking at you is hostile, and
+          // it would also fight a screen reader.
+          <video className={styles.fill} src={embed.src} controls preload="metadata" playsInline />
+        ) : embed.kind === "image" ? (
+          <img className={styles.fill} src={embed.src} alt={label} loading="lazy" />
+        ) : embed.kind === "link" ? (
+          <a className={styles.linkFrame} href={embed.src} target="_blank" rel="noopener noreferrer">
+            <span className={styles.kind}>{kind}</span>
+            <span className={styles.linkHost}>{embed.provider ?? "Open"}</span>
+          </a>
+        ) : (
+          <>
+            <span className={styles.kind}>{kind}</span>
+            <span className={styles.pending}>
+              {slot ? `Asset pending — slot “${slot}”` : "Asset pending"}
+            </span>
+          </>
+        )}
       </div>
       <figcaption className={styles.caption}>
         <span>{label}</span>
-        {isExternal ? (
-          <a href={url} className={styles.link} target="_blank" rel="noopener noreferrer">
+        {embed.src ? (
+          <a href={embed.src} className={styles.link} target="_blank" rel="noopener noreferrer">
             Open
-            <Icon name="external-link" size={12} />
           </a>
         ) : null}
       </figcaption>

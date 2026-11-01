@@ -1,5 +1,7 @@
 import "server-only";
 
+import { newestPerBusiness, type ScanChoice } from "./importable-scans";
+
 import {
   advanceCommercialWorkflow,
   getScan,
@@ -311,10 +313,59 @@ export async function loadProposalPreview(runId: string): Promise<{ runId: strin
   return { runId, preview };
 }
 
-/** Organizations the operator can attach a prospect scan to. */
-export async function listScanOrganizations(): Promise<{ id: string; name: string }[]> {
+export interface ScanSubjectOption {
+  id: string;
+  name: string;
+  kind: "client" | "lead";
+}
+
+/** Existing clients and pre-client leads available as explicit scan subjects. */
+export async function listScanSubjects(): Promise<ScanSubjectOption[]> {
   const { createClient } = await import("./supabase/server");
   const supabase = await createClient();
-  const { data } = await supabase.from("clients").select("id, company").order("company", { ascending: true }).limit(200);
-  return (data ?? []).map((r) => ({ id: r.id, name: r.company }));
+  const [{ data: clients }, { data: leads }] = await Promise.all([
+    supabase.from("clients").select("id, company").order("company", { ascending: true }).limit(200),
+    supabase.from("leads").select("id, name, company").order("created_at", { ascending: false }).limit(200),
+  ]);
+  return [
+    ...(clients ?? []).map((r) => ({ id: r.id, name: r.company, kind: "client" as const })),
+    ...(leads ?? []).map((r) => ({ id: r.id, name: r.company || r.name, kind: "lead" as const })),
+  ];
+}
+
+/** The Business Scan's name for a scan it can offer as a baseline source. */
+export type ImportableScan = ScanChoice;
+
+/**
+ * This client's scans that are far enough along to have an assessment.
+ *
+ * The Business Scan offers these as a baseline source. A scan still in flight
+ * has no report to read, so listing it would only produce a refusal after the
+ * click — the filter is on `completed` for that reason, not for tidiness.
+ */
+export async function listImportableScans(clientId: string): Promise<ImportableScan[]> {
+  const ctx = await buildAppContext();
+  if (ctx === null) return [];
+
+  try {
+    const scans = await listScans(ctx, { clientId, limit: 50 });
+    return newestPerBusiness(
+      scans
+        .filter((scan) => scan.lifecycle === "completed")
+        .map((scan) => {
+          const identity = readIdentity(scan.metadata);
+          return {
+            id: scan.id,
+            label: identity.businessName ?? identity.websiteUrl ?? scan.scanId,
+            businessName: identity.businessName,
+            websiteUrl: identity.websiteUrl,
+            completedAt: scan.completedAt,
+          };
+        }),
+    );
+  } catch {
+    // A read failure here must not take the whole Business Scan down with it —
+    // importing is an offer, not the page.
+    return [];
+  }
 }

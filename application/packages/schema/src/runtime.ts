@@ -97,6 +97,7 @@ const auditShape = {
 export const runtimeRunSchema = z.object({
   id: z.string(),
   clientId: z.string().nullable(),
+  leadId: z.string().nullable(),
   scanId: z.string(),
   status: runtimeRunStatusSchema.default("pending"),
   currentStage: z.string().nullable().default(null),

@@ -18,6 +18,7 @@ import {
   type BusinessScan,
   type ScanFinding,
   type FindingPriority,
+  type FindingSource,
 } from "@brightloop/schema";
 import type { Actor } from "../capabilities.js";
 import { assertCapability } from "../capabilities.js";
@@ -110,12 +111,17 @@ export function buildSystemMapView(
 const PRIORITY_RANK: Record<FindingPriority, number> = { high: 0, medium: 1, low: 2 };
 
 export interface ScanFindingRow {
+  /** The row's own id — the ledger has a remove control, so it needs one. */
+  id: string;
   domainKey: DomainKey;
   domainCode: string;
   domainLabel: string;
   finding: string;
   baseline: string | null;
   priority: FindingPriority;
+  /** Whether a person wrote this or an import did. Shown, and it decides
+   *  whether a newer scan may retire the row. */
+  source: FindingSource;
 }
 
 export interface BusinessScanView {
@@ -134,11 +140,13 @@ export function buildBusinessScanView(
 ): BusinessScanView {
   const rows: ScanFindingRow[] = findings
     .map((f) => ({
+      id: f.id,
       domainKey: f.domainKey,
       domainCode: DOMAIN_META[f.domainKey].code,
       domainLabel: DOMAIN_META[f.domainKey].label,
       finding: f.finding,
       baseline: f.baseline,
+      source: f.source,
       priority: f.priority,
     }))
     .sort((a, b) => PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]);

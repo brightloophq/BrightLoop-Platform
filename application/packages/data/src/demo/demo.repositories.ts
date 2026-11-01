@@ -111,6 +111,9 @@ export class DemoCoreSurfaceRepository implements CoreSurfaceRepository {
   async createFinding(): Promise<ScanFinding> {
     throw new DemoModeError("createFinding");
   }
+  async deleteFinding(): Promise<boolean> {
+    throw new DemoModeError("deleteFinding");
+  }
   async upsertDomain(): Promise<Domain> {
     throw new DemoModeError("upsertDomain");
   }

@@ -6,7 +6,7 @@
  */
 
 import Link from "next/link";
-import { Badge, EmptyState, Icon } from "@brightloop/ui";
+import { Badge, EmptyState } from "@brightloop/ui";
 import { loadMarketplace } from "@/lib/integration-data";
 import styles from "../../pages.module.css";
 
@@ -14,7 +14,7 @@ export const dynamic = "force-dynamic";
 
 export default async function MarketplacePage() {
   const data = await loadMarketplace();
-  if (data === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (data === null) return <EmptyState title="Session expired" body="Please sign in again." />;
   const installed = new Set(data.installedConnectorIds);
 
   return (
@@ -31,7 +31,7 @@ export default async function MarketplacePage() {
         {data.catalogue.map((c) => (
           <Link key={c.id} href={`/workspace/integrations/marketplace/${c.id}`} className={styles.agentCard} style={{ textDecoration: "none", color: "inherit" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "var(--space-2)" }}>
-              <span className={styles.agentAvatar} aria-hidden><Icon name="plug" size={16} /></span>
+              <span className={styles.agentAvatar} aria-hidden="true" />
               <span style={{ flex: 1, minWidth: 0 }}>
                 <span className={styles.agentName}>{c.name}</span><br />
                 <span className={styles.agentRole}>{c.category} · {c.authMethod}</span>

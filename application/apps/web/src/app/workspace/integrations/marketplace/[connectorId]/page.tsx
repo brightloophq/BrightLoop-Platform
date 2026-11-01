@@ -5,7 +5,7 @@
  */
 
 import Link from "next/link";
-import { Alert, Badge, EmptyState, Icon } from "@brightloop/ui";
+import { Alert, Badge, EmptyState } from "@brightloop/ui";
 import { loadConnectorDescriptor } from "@/lib/integration-data";
 import { InstallForm } from "./InstallForm";
 import styles from "../../../pages.module.css";
@@ -15,12 +15,12 @@ export const dynamic = "force-dynamic";
 export default async function ConnectorDetailPage({ params }: { params: Promise<{ connectorId: string }> }) {
   const { connectorId } = await params;
   const c = await loadConnectorDescriptor(connectorId);
-  if (c === null) return <EmptyState icon="search" title="Connector not found" body="This connector is not in the registry." action={<Link href="/workspace/integrations/marketplace" className={styles.sectionLink}>Back to marketplace</Link>} />;
+  if (c === null) return <EmptyState title="Connector not found" body="This connector is not in the registry." action={<Link href="/workspace/integrations/marketplace" className={styles.sectionLink}>Back to marketplace</Link>} />;
 
   return (
     <>
       <div style={{ marginBottom: "var(--space-4)" }}>
-        <Link href="/workspace/integrations/marketplace" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="arrow-left" size={13} /> Marketplace</Link>
+        <Link href="/workspace/integrations/marketplace" className={styles.rowMeta} style={{ display: "inline-flex", alignItems: "center", gap: 4 }}> Marketplace</Link>
       </div>
       <div className={styles.pageHead}>
         <div>

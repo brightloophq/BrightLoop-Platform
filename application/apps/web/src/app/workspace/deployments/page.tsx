@@ -5,7 +5,7 @@
  */
 
 import Link from "next/link";
-import { Badge, EmptyState, Icon } from "@brightloop/ui";
+import { Badge, EmptyState } from "@brightloop/ui";
 import { loadDeployments } from "@/lib/runtime-data";
 import styles from "../pages.module.css";
 
@@ -16,7 +16,7 @@ const statusTone = (s: string): "success" | "warning" | "danger" | "neutral" | "
 
 export default async function DeploymentsPage() {
   const data = await loadDeployments();
-  if (data === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (data === null) return <EmptyState title="Session expired" body="Please sign in again." />;
 
   return (
     <>
@@ -31,11 +31,11 @@ export default async function DeploymentsPage() {
       </div>
 
       {data.deployments.length === 0
-        ? <EmptyState icon="rocket" title="No deployments yet" body="Once an automation package is approved, deploy it to a runtime from your AI team. Deployments appear here." />
+        ? <EmptyState title="No deployments yet" body="Once an automation package is approved, deploy it to a runtime from your AI team. Deployments appear here." />
         : <div className={styles.list}>{data.deployments.map((d) => (
             <Link key={d.id} href={`/workspace/deployments/${d.id}`} className={styles.row}>
               <div className={styles.rowMain}>
-                <div className={styles.rowTitle}><Icon name="rocket" size={15} /> Deployment v{d.deploymentVersion}</div>
+                <div className={styles.rowTitle}> Deployment v{d.deploymentVersion}</div>
                 <div className={styles.rowMeta}>{d.targetEnvironment} · {d.provider} · hash {d.packageHash.slice(0, 10)} · {d.deployedAt ? `deployed ${d.deployedAt}` : "not yet deployed"}</div>
               </div>
               <div className={styles.rowRight}>

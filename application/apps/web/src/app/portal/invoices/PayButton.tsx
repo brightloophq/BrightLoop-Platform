@@ -31,7 +31,7 @@ export function PayButton({ invoiceId }: { invoiceId: string }) {
       >
         {busy ? "Processing…" : "Pay now"}
       </Button>
-      {error ? <span style={{ color: "var(--text-danger, #c0392b)", fontSize: "var(--fs-xs)" }}>{error}</span> : null}
+      {error ? <span style={{ color: "var(--critical)", fontSize: "var(--fs-xs)" }}>{error}</span> : null}
     </span>
   );
 }

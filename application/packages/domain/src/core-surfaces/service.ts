@@ -16,6 +16,7 @@ import {
   type DomainStatus,
   type ScanFinding,
   type FindingPriority,
+  type FindingSource,
 } from "@brightloop/schema";
 import { type Actor, assertCapability } from "../capabilities.js";
 import { systemClock, type Clock } from "../guard.js";
@@ -42,6 +43,9 @@ export interface NewFinding {
   finding: string;
   baseline?: string | null;
   priority?: FindingPriority;
+  /** Defaults to `manual`: a row is only an import when the caller says so. */
+  source?: FindingSource;
+  sourceRunId?: string | null;
 }
 
 export class CoreSurfaceService {
@@ -101,9 +105,23 @@ export class CoreSurfaceService {
       finding: input.finding,
       baseline: input.baseline ?? null,
       priority: input.priority ?? "medium",
+      source: input.source ?? "manual",
+      sourceRunId: input.source === "import" ? (input.sourceRunId ?? null) : null,
       createdAt: this.clock(),
     });
     return this.repo.createFinding(record);
+  }
+
+  /**
+   * Remove a diagnosis finding.
+   *
+   * Returns false when nothing was removed — a row RLS refused, or one already
+   * gone. The caller reports that rather than claiming a deletion that did not
+   * happen.
+   */
+  async removeFinding(actor: Actor, id: string): Promise<boolean> {
+    assertCapability(actor, SCAN_WRITE_CAP);
+    return this.repo.deleteFinding(id);
   }
 
   /** Seed/refresh a domain node (baseline from a scan, or a live current score). */

@@ -19,12 +19,14 @@ const T0 = "2026-08-09T00:00:00.000Z";
 const OWNER: Actor = { userId: "u_owner", role: "owner", clientId: null };
 const TEAM: Actor = { userId: "u_team", role: "team_member", clientId: null };
 const CLIENT: Actor = { userId: "u_client", role: "client_admin", clientId: "t_acme" };
+const TEST_LEAD_ID = "lead_commercial_fixture";
 
 function harness() {
   const now = () => T0;
   let counter = 0;
   const ids = (prefix: string) => `${prefix}_${(++counter).toString().padStart(4, "0")}`;
   const repo = new InMemoryRuntimeRepository(now);
+  repo.addLead(TEST_LEAD_ID);
   const services = createRuntimeServices({ repo, ids, clock: now, actorId: "u_owner" });
   const ctx = (actor: Actor): AppContext => ({ services, actor, ids, clock: now });
   return { services, ctx, repo };
@@ -32,7 +34,7 @@ function harness() {
 
 /** Seed a COMPLETED core scan with the artifacts + core queue jobs a real run has. */
 async function seedCompletedCoreScan(services: RuntimeServices): Promise<string> {
-  const run = await services.runs.createRun({ clientId: null, scanId: "scan-live" });
+  const run = await services.runs.createRun({ clientId: null, leadId: TEST_LEAD_ID, scanId: "scan-live" });
   if (!run.ok) throw new Error("run");
   const runId = run.value.id;
   const b = { runId, clientId: null, scanId: "scan-live", version: 1 as const };
@@ -62,7 +64,7 @@ async function seedPackage(services: RuntimeServices): Promise<string> {
 
 /** Seed a run with a FULL commercial proposal draft (two required work items). */
 async function seedPricableProposal(services: RuntimeServices): Promise<string> {
-  const run = await services.runs.createRun({ clientId: null, scanId: "scan-p" });
+  const run = await services.runs.createRun({ clientId: null, leadId: TEST_LEAD_ID, scanId: "scan-p" });
   if (!run.ok) throw new Error("run");
   const runId = run.value.id;
   const proposal = {
@@ -367,7 +369,7 @@ describe("advanceCommercialWorkflow — server-authoritative kickoff", () => {
 
   it("skips (no enqueue) when the core run is not completed", async () => {
     const { services, ctx, repo } = harness();
-    const run = await services.runs.createRun({ clientId: null, scanId: "scan-pending" });
+    const run = await services.runs.createRun({ clientId: null, leadId: TEST_LEAD_ID, scanId: "scan-pending" });
     const runId = run.ok ? run.value.id : "";
     const advance = await advanceCommercialWorkflow(ctx(OWNER), runId);
     expect(advance.kickoff).toBe("skipped");

@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import { PUBLISH, type PublishStatus } from "@brightloop/schema";
 import { Alert, Badge, Card, EmptyState, Stars } from "@brightloop/ui";
+import { explainAdminLoadError } from "@/lib/admin-error";
 import { createClient } from "@/lib/supabase/server";
 import { toPortfolioProject, toTestimonial } from "@brightloop/data";
+import { DeleteRow } from "./DeleteRow";
 import { ModerationControls } from "./ModerationControls";
-import { NewTestimonialForm } from "./NewTestimonialForm";
+import { TestimonialForm } from "./TestimonialForm";
 import styles from "../cms.module.css";
 import shell from "../admin.module.css";
 
@@ -53,20 +55,20 @@ export default async function ReviewsPage() {
               toward the aggregate rating.
             </p>
           </div>
-          <NewTestimonialForm projectSlugs={projectSlugs} />
+          <TestimonialForm projectSlugs={projectSlugs} />
         </div>
 
         {tErr ? (
           <div className={styles.notice}>
             <Alert tone="danger" title="Couldn't load reviews">
-              {tErr.message}. If this says permission denied, the custom access token hook may not be
-              registered — your JWT would carry no role and every policy denies.
+              {tErr.message}
+              {explainAdminLoadError(tErr) ? ` — ${explainAdminLoadError(tErr)}` : null}
             </Alert>
           </div>
         ) : null}
 
         <div className={styles.notice}>
-          <Alert tone="info" title="Before you publish a review" icon="lock">
+          <Alert tone="info" title="Before you publish a review">
             It must be a real client&apos;s own words, attributed to them, and they must have agreed
             to it being published with their name and company. Everything you enter starts as a
             draft.
@@ -75,7 +77,6 @@ export default async function ReviewsPage() {
 
         {testimonials.length === 0 ? (
           <EmptyState
-            icon="heart"
             title="No reviews yet"
             body="Add a testimonial to get started. It saves as a draft — you decide when it goes public."
           />
@@ -110,6 +111,13 @@ export default async function ReviewsPage() {
                         Linked to {t.projectSlug}
                       </p>
                     ) : null}
+
+                    <div className={styles.rowActions}>
+                      {/* Editing leaves publish status alone, so correcting a
+                          live review does not pull it off the site. */}
+                      <TestimonialForm projectSlugs={projectSlugs} testimonial={t} />
+                      <DeleteRow kind="testimonial" id={t.id} label={t.author} />
+                    </div>
                   </div>
 
                   <ModerationControls

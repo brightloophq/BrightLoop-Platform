@@ -962,26 +962,37 @@ export interface CommercialProposalView {
   needsPricing: boolean;
   workItemCount: number;
   summary: string;
-  /** The recommended work items + any admin pricing already set (for the editor). */
+  /** The recommended work items + any admin price line already set. */
   workItems: CommercialWorkItemView[];
-  /** Persisted proposal-level pricing fields (null/defaults until priced). */
   currency: string | null;
   discountMinor: number;
   validUntil: string | null;
   commercialNotes: string;
   totalOneTimeMinor: number;
   totalRecurringMonthlyMinor: number;
+  observedSituation: string;
+  keyIssues: ProposalPoint[];
+  opportunities: ProposalPoint[];
+  recommendedWork: ProposalWorkItem[];
+  proposedNextStep: string;
 }
 
-export function emptyCommercialProposalView(): CommercialProposalView {
-  return { present: false, version: null, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet.", workItems: [], currency: null, discountMinor: 0, validUntil: null, commercialNotes: "", totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 0 };
+export interface ProposalPoint { title: string; detail: string; evidenceCount: number }
+export interface ProposalWorkItem { title: string; solution: string; priority: string; effort: string; evidenceCount: number }
+
+function text(value: unknown, max: number): string {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  return trimmed.length > max ? `${trimmed.slice(0, max - 1).trimEnd()}…` : trimmed;
 }
-
-const readStr = (v: unknown, fallback = ""): string => (typeof v === "string" ? v : fallback);
-const readInt = (v: unknown, fallback = 0): number => (typeof v === "number" && Number.isFinite(v) ? Math.trunc(v) : fallback);
-
-/** Format integer minor units as a currency string (e.g. 45000, "USD" → "$450.00").
- * Falls back to a plain decimal + code for currencies Intl can't render. */
+function readStr(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+function readInt(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? Math.trunc(value) : fallback;
+}
+function evidenceCount(value: unknown): number { return Array.isArray(value) ? value.length : 0; }
+/** Format persisted minor-unit amounts for the scanner's commercial surfaces. */
 export function formatMinor(minor: number, currency: string): string {
   const major = minor / 100;
   try {
@@ -989,6 +1000,36 @@ export function formatMinor(minor: number, currency: string): string {
   } catch {
     return `${major.toFixed(2)} ${currency}`;
   }
+}
+export function readProposalPoints(value: unknown, limit = 6): ProposalPoint[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, limit).flatMap((raw) => {
+    if (raw === null || typeof raw !== "object") return [];
+    const row = raw as Record<string, unknown>;
+    const title = text(row["title"], 160);
+    return title ? [{ title, detail: text(row["detail"], 400), evidenceCount: evidenceCount(row["evidenceIds"]) }] : [];
+  });
+}
+export function readProposalWork(value: unknown, limit = 8): ProposalWorkItem[] {
+  if (!Array.isArray(value)) return [];
+  return value.slice(0, limit).flatMap((raw) => {
+    if (raw === null || typeof raw !== "object") return [];
+    const row = raw as Record<string, unknown>;
+    const title = text(row["title"], 160);
+    return title ? [{ title, solution: text(row["solution"], 400), priority: text(row["priority"], 24),
+      effort: text(row["effort"], 24), evidenceCount: evidenceCount(row["evidenceIds"]) }] : [];
+  });
+}
+
+export function emptyCommercialProposalView(): CommercialProposalView {
+  return {
+    present: false, version: null, status: "not_started", statusLabel: commercialStatusLabel("not_started"),
+    draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null,
+    needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet.",
+    workItems: [], currency: null, discountMinor: 0, validUntil: null, commercialNotes: "",
+    totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 0, observedSituation: "", keyIssues: [],
+    opportunities: [], recommendedWork: [], proposedNextStep: "",
+  };
 }
 
 /** Build the proposal-draft surface from a persisted proposal_version DTO. */
@@ -1042,6 +1083,11 @@ export function buildCommercialProposalView(dto: ArtifactDTO | null): Commercial
     commercialNotes: pricing ? readStr(pricing["commercialNotes"]) : "",
     totalOneTimeMinor: pricing ? readInt(pricing["totalOneTimeMinor"]) : 0,
     totalRecurringMonthlyMinor: pricing ? readInt(pricing["totalRecurringMonthlyMinor"]) : 0,
+    observedSituation: text(c["observedSituation"], 1000),
+    keyIssues: readProposalPoints(c["keyIssues"]),
+    opportunities: readProposalPoints(c["opportunities"]),
+    recommendedWork: readProposalWork(c["recommendedWork"]),
+    proposedNextStep: text(c["proposedNextStep"], 400),
   };
 }
 
@@ -1065,42 +1111,60 @@ export interface ProposalPreviewView {
   validUntil: string | null;
   commercialNotes: string;
   nextStep: string;
-  /** True when every required item is priced — otherwise the preview flags it. */
   pricingComplete: boolean;
 }
 
-/**
- * Compose the CLIENT-FACING proposal deterministically from the persisted commercial
- * proposal (the intelligence producer) + admin pricing + the prospect identity.
- * PRESENTATION ONLY — it introduces no new facts, generates no AI copy, and invents
- * no numbers: every field is copied from an already-persisted artifact. A prospect
- * name falls back to the website, then the scan id — never a fabricated business name.
- */
-export function buildProposalPreview(content: unknown, identity: { businessName: string | null; websiteUrl: string | null }, scanId: string): ProposalPreviewView {
+/** Build the client-facing preview only from persisted scanner content and pricing. */
+export function buildProposalPreview(
+  content: unknown,
+  identity: { businessName: string | null; websiteUrl: string | null },
+  scanId: string,
+): ProposalPreviewView {
   const empty: ProposalPreviewView = {
-    present: false, prospectName: identity.businessName ?? identity.websiteUrl ?? scanId, website: identity.websiteUrl,
-    executiveSummary: "", observedSituation: "", keyIssues: [], opportunities: [], work: [],
-    currency: null, oneTimeLabel: null, monthlyLabel: null, validUntil: null, commercialNotes: "", nextStep: "", pricingComplete: false,
+    present: false,
+    prospectName: identity.businessName ?? identity.websiteUrl ?? scanId,
+    website: identity.websiteUrl,
+    executiveSummary: "",
+    observedSituation: "",
+    keyIssues: [],
+    opportunities: [],
+    work: [],
+    currency: null,
+    oneTimeLabel: null,
+    monthlyLabel: null,
+    validUntil: null,
+    commercialNotes: "",
+    nextStep: "",
+    pricingComplete: false,
   };
   if (content === null || typeof content !== "object") return empty;
-  const view = buildCommercialProposalView({ id: "", kind: "proposal", version: 1, status: "valid", createdAt: "", content: content as Record<string, unknown> });
+
+  const view = buildCommercialProposalView({
+    id: "",
+    kind: "proposal",
+    version: 1,
+    status: "valid",
+    createdAt: "",
+    content: content as Record<string, unknown>,
+  });
   if (!view.draftReady) return empty;
   const c = content as Record<string, unknown>;
-
   const points = (key: string): ProposalPreviewPoint[] =>
-    (Array.isArray(c[key]) ? (c[key] as Array<Record<string, unknown>>) : []).slice(0, 6).map((p) => ({ title: readStr(p["title"]), detail: readStr(p["detail"]) }));
+    (Array.isArray(c[key]) ? (c[key] as Array<Record<string, unknown>>) : [])
+      .slice(0, 6)
+      .map((point) => ({ title: readStr(point["title"]), detail: readStr(point["detail"]) }));
 
-  const currency = view.currency ?? null;
-  const work: ProposalPreviewWork[] = view.workItems.map((w) => ({
-    title: w.title,
-    reason: w.reason,
+  const currency = view.currency;
+  const work: ProposalPreviewWork[] = view.workItems.map((item) => ({
+    title: item.title,
+    reason: item.reason,
     priceLabel:
-      w.amountMinor === null || currency === null
+      item.amountMinor === null || currency === null
         ? null
-        : w.pricingType === "recurring"
-          ? `${formatMinor(w.amountMinor, currency)}/mo`
-          : formatMinor(w.amountMinor, currency),
-    optional: w.optional,
+        : item.pricingType === "recurring"
+          ? `${formatMinor(item.amountMinor, currency)}/mo`
+          : formatMinor(item.amountMinor, currency),
+    optional: item.optional,
   }));
 
   return {

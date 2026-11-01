@@ -6009,6 +6009,7 @@ export type Database = {
           failed_stage: string | null
           id: string
           idempotency_key: string
+          lead_id: string | null
           metadata: Json
           scan_id: string
           started_at: string | null
@@ -6030,6 +6031,7 @@ export type Database = {
           failed_stage?: string | null
           id: string
           idempotency_key: string
+          lead_id?: string | null
           metadata?: Json
           scan_id: string
           started_at?: string | null
@@ -6051,6 +6053,7 @@ export type Database = {
           failed_stage?: string | null
           id?: string
           idempotency_key?: string
+          lead_id?: string | null
           metadata?: Json
           scan_id?: string
           started_at?: string | null
@@ -6071,6 +6074,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "intelligence_runs_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
             referencedColumns: ["id"]
           },
         ]
@@ -6663,6 +6673,7 @@ export type Database = {
           email: string
           id: string
           industry: string | null
+          message: string | null
           name: string
           owner_id: string | null
           source: string | null
@@ -6675,6 +6686,7 @@ export type Database = {
           email: string
           id: string
           industry?: string | null
+          message?: string | null
           name: string
           owner_id?: string | null
           source?: string | null
@@ -6687,6 +6699,7 @@ export type Database = {
           email?: string
           id?: string
           industry?: string | null
+          message?: string | null
           name?: string
           owner_id?: string | null
           source?: string | null
@@ -7881,6 +7894,62 @@ export type Database = {
           },
         ]
       }
+      proposal_items: {
+        Row: {
+          amount: number
+          description: string
+          id: string
+          label: string
+          optional: boolean
+          pricing_type: string
+          proposal_id: string
+          quantity: number
+          recurrence_cadence: string | null
+          sort: number
+          source_evidence_refs: Json
+          source_work_item_id: string | null
+          unit_amount: number
+        }
+        Insert: {
+          amount: number
+          description?: string
+          id: string
+          label: string
+          optional?: boolean
+          pricing_type: string
+          proposal_id: string
+          quantity: number
+          recurrence_cadence?: string | null
+          sort?: number
+          source_evidence_refs?: Json
+          source_work_item_id?: string | null
+          unit_amount: number
+        }
+        Update: {
+          amount?: number
+          description?: string
+          id?: string
+          label?: string
+          optional?: boolean
+          pricing_type?: string
+          proposal_id?: string
+          quantity?: number
+          recurrence_cadence?: string | null
+          sort?: number
+          source_evidence_refs?: Json
+          source_work_item_id?: string | null
+          unit_amount?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "proposal_items_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       proposal_versions: {
         Row: {
           checksum: string
@@ -7962,16 +8031,35 @@ export type Database = {
         Row: {
           change_note: string | null
           client_id: string
+          client_note: string
           configuration_id: string | null
-          currency: string
+          currency: string | null
           decided_at: string | null
           deposit: number
+          discount: number
           discount_minor: number
           id: string
+          issuance_key: string | null
+          issued_at: string | null
+          issued_by: string | null
+          lead_origin_id: string | null
           line_items: Json
+          optional_one_time_total: number
+          optional_recurring_total: number
+          proposal_kind: Database["public"]["Enums"]["proposal_kind"]
+          proposal_number: string | null
+          recurring_cadence: string | null
+          recurring_total: number
+          revision_number: number | null
           sent_at: string | null
+          source_proposal_version_id: string | null
+          source_quote_id: string | null
+          source_review_event_id: string | null
+          source_run_id: string | null
           status: Database["public"]["Enums"]["proposal_status"]
           subtotal: number
+          supersedes_proposal_id: string | null
+          title: string | null
           total: number
           valid_until: string | null
           viewed_at: string | null
@@ -7979,16 +8067,35 @@ export type Database = {
         Insert: {
           change_note?: string | null
           client_id: string
+          client_note?: string
           configuration_id?: string | null
-          currency?: string
+          currency?: string | null
           decided_at?: string | null
           deposit?: number
+          discount?: number
           discount_minor?: number
           id: string
+          issuance_key?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          lead_origin_id?: string | null
           line_items?: Json
+          optional_one_time_total?: number
+          optional_recurring_total?: number
+          proposal_kind?: Database["public"]["Enums"]["proposal_kind"]
+          proposal_number?: string | null
+          recurring_cadence?: string | null
+          recurring_total?: number
+          revision_number?: number | null
           sent_at?: string | null
+          source_proposal_version_id?: string | null
+          source_quote_id?: string | null
+          source_review_event_id?: string | null
+          source_run_id?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
           subtotal?: number
+          supersedes_proposal_id?: string | null
+          title?: string | null
           total?: number
           valid_until?: string | null
           viewed_at?: string | null
@@ -7996,16 +8103,35 @@ export type Database = {
         Update: {
           change_note?: string | null
           client_id?: string
+          client_note?: string
           configuration_id?: string | null
-          currency?: string
+          currency?: string | null
           decided_at?: string | null
           deposit?: number
+          discount?: number
           discount_minor?: number
           id?: string
+          issuance_key?: string | null
+          issued_at?: string | null
+          issued_by?: string | null
+          lead_origin_id?: string | null
           line_items?: Json
+          optional_one_time_total?: number
+          optional_recurring_total?: number
+          proposal_kind?: Database["public"]["Enums"]["proposal_kind"]
+          proposal_number?: string | null
+          recurring_cadence?: string | null
+          recurring_total?: number
+          revision_number?: number | null
           sent_at?: string | null
+          source_proposal_version_id?: string | null
+          source_quote_id?: string | null
+          source_review_event_id?: string | null
+          source_run_id?: string | null
           status?: Database["public"]["Enums"]["proposal_status"]
           subtotal?: number
+          supersedes_proposal_id?: string | null
+          title?: string | null
           total?: number
           valid_until?: string | null
           viewed_at?: string | null
@@ -8023,6 +8149,55 @@ export type Database = {
             columns: ["configuration_id"]
             isOneToOne: false
             referencedRelation: "configurations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_issued_by_fkey"
+            columns: ["issued_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_lead_origin_id_fkey"
+            columns: ["lead_origin_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_source_proposal_version_id_fkey"
+            columns: ["source_proposal_version_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_source_quote_id_fkey"
+            columns: ["source_quote_id"]
+            isOneToOne: false
+            referencedRelation: "quotes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_source_review_event_id_fkey"
+            columns: ["source_review_event_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_source_run_id_fkey"
+            columns: ["source_run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "proposals_supersedes_proposal_id_fkey"
+            columns: ["supersedes_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
             referencedColumns: ["id"]
           },
         ]
@@ -8123,37 +8298,52 @@ export type Database = {
       }
       quote_items: {
         Row: {
-          amount: number
+          amount: number | null
           description: string
           id: string
           label: string
           module_id: string | null
+          optional: boolean
+          pricing_type: string
           quantity: number
           quote_id: string
+          recurrence_cadence: string | null
           sort: number
-          unit_amount: number
+          source_evidence_refs: Json
+          source_work_item_id: string | null
+          unit_amount: number | null
         }
         Insert: {
-          amount?: number
+          amount?: number | null
           description?: string
           id: string
           label: string
           module_id?: string | null
+          optional?: boolean
+          pricing_type?: string
           quantity?: number
           quote_id: string
+          recurrence_cadence?: string | null
           sort?: number
-          unit_amount?: number
+          source_evidence_refs?: Json
+          source_work_item_id?: string | null
+          unit_amount?: number | null
         }
         Update: {
-          amount?: number
+          amount?: number | null
           description?: string
           id?: string
           label?: string
           module_id?: string | null
+          optional?: boolean
+          pricing_type?: string
           quantity?: number
           quote_id?: string
+          recurrence_cadence?: string | null
           sort?: number
-          unit_amount?: number
+          source_evidence_refs?: Json
+          source_work_item_id?: string | null
+          unit_amount?: number | null
         }
         Relationships: [
           {
@@ -8212,17 +8402,30 @@ export type Database = {
       }
       quotes: {
         Row: {
-          client_id: string
+          client_id: string | null
           client_note: string
-          conversation_id: string
+          commercial_approved_at: string | null
+          commercial_approved_by: string | null
+          commercial_approved_state: string | null
+          commercial_mode: string
+          conversation_id: string | null
           created_at: string
           created_by: string | null
           currency: string
           decided_at: string | null
           discount: number
           id: string
+          lead_id: string | null
+          optional_one_time_total: number
+          optional_recurring_total: number
+          promotion_key: string | null
           proposal_id: string | null
+          recurring_cadence: string | null
+          recurring_total: number
           sent_at: string | null
+          source_proposal_version_id: string | null
+          source_review_event_id: string | null
+          source_run_id: string | null
           status: Database["public"]["Enums"]["quote_status"]
           subtotal: number
           title: string
@@ -8231,17 +8434,30 @@ export type Database = {
           valid_until: string | null
         }
         Insert: {
-          client_id: string
+          client_id?: string | null
           client_note?: string
-          conversation_id: string
+          commercial_approved_at?: string | null
+          commercial_approved_by?: string | null
+          commercial_approved_state?: string | null
+          commercial_mode?: string
+          conversation_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           decided_at?: string | null
           discount?: number
           id: string
+          lead_id?: string | null
+          optional_one_time_total?: number
+          optional_recurring_total?: number
+          promotion_key?: string | null
           proposal_id?: string | null
+          recurring_cadence?: string | null
+          recurring_total?: number
           sent_at?: string | null
+          source_proposal_version_id?: string | null
+          source_review_event_id?: string | null
+          source_run_id?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           title?: string
@@ -8250,17 +8466,30 @@ export type Database = {
           valid_until?: string | null
         }
         Update: {
-          client_id?: string
+          client_id?: string | null
           client_note?: string
-          conversation_id?: string
+          commercial_approved_at?: string | null
+          commercial_approved_by?: string | null
+          commercial_approved_state?: string | null
+          commercial_mode?: string
+          conversation_id?: string | null
           created_at?: string
           created_by?: string | null
           currency?: string
           decided_at?: string | null
           discount?: number
           id?: string
+          lead_id?: string | null
+          optional_one_time_total?: number
+          optional_recurring_total?: number
+          promotion_key?: string | null
           proposal_id?: string | null
+          recurring_cadence?: string | null
+          recurring_total?: number
           sent_at?: string | null
+          source_proposal_version_id?: string | null
+          source_review_event_id?: string | null
+          source_run_id?: string | null
           status?: Database["public"]["Enums"]["quote_status"]
           subtotal?: number
           title?: string
@@ -8277,6 +8506,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "quotes_commercial_approved_by_fkey"
+            columns: ["commercial_approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "quotes_conversation_id_fkey"
             columns: ["conversation_id"]
             isOneToOne: false
@@ -8288,6 +8524,41 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_proposal_fk"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_source_proposal_version_id_fkey"
+            columns: ["source_proposal_version_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_source_review_event_id_fkey"
+            columns: ["source_review_event_id"]
+            isOneToOne: false
+            referencedRelation: "runtime_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotes_source_run_id_fkey"
+            columns: ["source_run_id"]
+            isOneToOne: false
+            referencedRelation: "intelligence_runs"
             referencedColumns: ["id"]
           },
         ]
@@ -10110,6 +10381,8 @@ export type Database = {
           id: string
           priority: Database["public"]["Enums"]["finding_priority"]
           scan_id: string
+          source: Database["public"]["Enums"]["finding_source"]
+          source_run_id: string | null
         }
         Insert: {
           baseline?: string | null
@@ -10120,6 +10393,8 @@ export type Database = {
           id: string
           priority?: Database["public"]["Enums"]["finding_priority"]
           scan_id: string
+          source?: Database["public"]["Enums"]["finding_source"]
+          source_run_id?: string | null
         }
         Update: {
           baseline?: string | null
@@ -10130,6 +10405,8 @@ export type Database = {
           id?: string
           priority?: Database["public"]["Enums"]["finding_priority"]
           scan_id?: string
+          source?: Database["public"]["Enums"]["finding_source"]
+          source_run_id?: string | null
         }
         Relationships: [
           {
@@ -12231,6 +12508,18 @@ export type Database = {
     }
     Functions: {
       bl_activate_client: { Args: { p_client_id: string }; Returns: boolean }
+      bl_bind_proposal_quote_client: {
+        Args: {
+          p_client_id: string
+          p_expected_updated_at: string
+          p_quote_id: string
+        }
+        Returns: {
+          client_id: string
+          quote_id: string
+          updated_at: string
+        }[]
+      }
       bl_can_activate: { Args: { p_client_id: string }; Returns: boolean }
       bl_client_contract_sign: {
         Args: { p_contract_id: string; p_signature: string }
@@ -12271,6 +12560,15 @@ export type Database = {
       bl_in_conversation: { Args: { conv_id: string }; Returns: boolean }
       bl_is_finance: { Args: never; Returns: boolean }
       bl_is_internal: { Args: never; Returns: boolean }
+      bl_issue_canonical_proposal: {
+        Args: { p_expected_updated_at: string; p_quote_id: string }
+        Returns: {
+          item_count: number
+          outcome: string
+          proposal_id: string
+          proposal_number: string
+        }[]
+      }
       bl_lease_next_job: {
         Args: {
           p_client_id?: string
@@ -12308,26 +12606,20 @@ export type Database = {
         }
       }
       bl_publish_scanner_sales_proposal: {
-        Args: {
-          p_expected_client_id: string
-          p_expected_currency: string
-          p_expected_total_minor: number
-          p_expected_valid_until: string
-          p_proposal_id: string
-          p_recipient_user_id: string
-        }
+        Args: { p_expected_client_id: string; p_expected_currency: string; p_expected_total_minor: number; p_expected_valid_until: string; p_proposal_id: string; p_recipient_user_id: string }
         Returns: Json
       }
       bl_publish_scanner_sales_proposal_original: {
-        Args: {
-          p_expected_client_id: string
-          p_expected_currency: string
-          p_expected_total_minor: number
-          p_expected_valid_until: string
-          p_proposal_id: string
-          p_recipient_user_id: string
-        }
+        Args: { p_expected_client_id: string; p_expected_currency: string; p_expected_total_minor: number; p_expected_valid_until: string; p_proposal_id: string; p_recipient_user_id: string }
         Returns: Json
+      }
+      bl_promote_scanner_package: {
+        Args: { p_promotion_key: string; p_proposal_version_id: string; p_quote_id: string; p_review_event_id: string; p_run_id: string }
+        Returns: { item_count: number; outcome: string; quote_id: string }[]
+      }
+      bl_review_proposal_quote: {
+        Args: { p_action: string; p_expected_updated_at: string; p_quote_id: string }
+        Returns: { quote_id: string; status: Database["public"]["Enums"]["quote_status"]; updated_at: string }[]
       }
       bl_rls_audit: {
         Args: never
@@ -12338,21 +12630,17 @@ export type Database = {
         }[]
       }
       bl_role: { Args: never; Returns: string }
-      bl_scanner_sales_current_binding: {
-        Args: { p_run_id: string }
-        Returns: Json
+      bl_scanner_sales_current_binding: { Args: { p_run_id: string }; Returns: Json }
+      bl_scanner_sales_delivery_preview: { Args: { p_proposal_id: string }; Returns: Json }
+      bl_scanner_sales_revision_context: { Args: { p_proposal_id: string }; Returns: Json }
+      bl_scanner_sales_revision_preview: { Args: { p_proposal_id: string }; Returns: Json }
+      bl_save_quote_commercial: {
+        Args: { p_client_note: string; p_currency: string; p_discount: number; p_expected_updated_at: string; p_items: Json; p_quote_id: string; p_title: string; p_valid_until: string }
+        Returns: { discount: number; item_count: number; optional_one_time_total: number; optional_recurring_total: number; persisted_items: Json; pricing_complete: boolean; quote_id: string; recurring_cadence: string; recurring_total: number; subtotal: number; total: number; updated_at: string }[]
       }
-      bl_scanner_sales_delivery_preview: {
-        Args: { p_proposal_id: string }
-        Returns: Json
-      }
-      bl_scanner_sales_revision_context: {
-        Args: { p_proposal_id: string }
-        Returns: Json
-      }
-      bl_scanner_sales_revision_preview: {
-        Args: { p_proposal_id: string }
-        Returns: Json
+      bl_submit_contact_enquiry: {
+        Args: { p_company: string; p_email: string; p_message: string; p_name: string }
+        Returns: string
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
     }
@@ -12405,6 +12693,7 @@ export type Database = {
       execution_record_status: "queued" | "running" | "succeeded" | "failed"
       file_upload_status: "queued" | "uploading" | "success" | "failed"
       finding_priority: "low" | "medium" | "high"
+      finding_source: "manual" | "import"
       insight_status: "generated" | "endorsed" | "dismissed"
       invoice_status:
         | "draft"
@@ -12464,6 +12753,7 @@ export type Database = {
         | "in_review"
         | "completed"
         | "post_launch"
+      proposal_kind: "legacy_sales" | "canonical_issued"
       proposal_status:
         | "draft"
         | "sent"
@@ -12472,6 +12762,7 @@ export type Database = {
         | "change_requested"
         | "revised"
         | "expired"
+        | "issued"
       publish_status: "featured" | "public" | "draft" | "private"
       quote_status:
         | "draft"
@@ -12484,6 +12775,8 @@ export type Database = {
         | "rejected"
         | "expired"
         | "converted"
+        | "approved"
+        | "issued"
       recommendation_status: "proposed" | "adjusted" | "accepted" | "rejected"
       risk_likelihood:
         | "rare"
@@ -12576,12 +12869,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -12605,11 +12898,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -12630,11 +12923,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -12655,11 +12948,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -12672,11 +12965,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -12745,6 +13038,7 @@ export const Constants = {
       execution_record_status: ["queued", "running", "succeeded", "failed"],
       file_upload_status: ["queued", "uploading", "success", "failed"],
       finding_priority: ["low", "medium", "high"],
+      finding_source: ["manual", "import"],
       insight_status: ["generated", "endorsed", "dismissed"],
       invoice_status: [
         "draft",
@@ -12812,6 +13106,7 @@ export const Constants = {
         "completed",
         "post_launch",
       ],
+      proposal_kind: ["legacy_sales", "canonical_issued"],
       proposal_status: [
         "draft",
         "sent",
@@ -12820,6 +13115,7 @@ export const Constants = {
         "change_requested",
         "revised",
         "expired",
+        "issued",
       ],
       publish_status: ["featured", "public", "draft", "private"],
       quote_status: [
@@ -12833,6 +13129,8 @@ export const Constants = {
         "rejected",
         "expired",
         "converted",
+        "approved",
+        "issued",
       ],
       recommendation_status: ["proposed", "adjusted", "accepted", "rejected"],
       risk_likelihood: [
@@ -12921,4 +13219,3 @@ export const Constants = {
     },
   },
 } as const
-

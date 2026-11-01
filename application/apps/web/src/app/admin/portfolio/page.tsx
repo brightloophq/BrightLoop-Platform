@@ -4,7 +4,9 @@ import { PUBLISH, type PublishStatus } from "@brightloop/schema";
 import { disclosedMetrics } from "@brightloop/domain";
 import { toPortfolioProject } from "@brightloop/data";
 import { Alert, Badge, Button, Card, EmptyState } from "@brightloop/ui";
+import { explainAdminLoadError } from "@/lib/admin-error";
 import { createClient } from "@/lib/supabase/server";
+import { DeleteRow } from "../reviews/DeleteRow";
 import { ModerationControls } from "../reviews/ModerationControls";
 import styles from "../cms.module.css";
 import shell from "../admin.module.css";
@@ -57,15 +59,14 @@ export default async function AdminPortfolioPage() {
         {error ? (
           <div className={styles.notice}>
             <Alert tone="danger" title="Couldn't load projects">
-              {error.message}. If this says permission denied, the custom access token hook may not
-              be registered — your JWT would carry no role and every policy denies.
+              {error.message}
+              {explainAdminLoadError(error) ? ` — ${explainAdminLoadError(error)}` : null}
             </Alert>
           </div>
         ) : null}
 
         {projects.length === 0 ? (
           <EmptyState
-            icon="star"
             title="No case studies yet"
             body="Add your first one. It saves as a draft — nothing reaches the public site until you publish it."
             action={
@@ -121,6 +122,10 @@ export default async function AdminPortfolioPage() {
                         </>
                       ) : null}
                     </p>
+
+                    <div className={styles.rowActions}>
+                      <DeleteRow kind="project" id={p.id} label={p.client || p.name} />
+                    </div>
                   </div>
 
                   <ModerationControls

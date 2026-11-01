@@ -10,7 +10,7 @@ import styles from "../../pages.module.css";
 export default async function MissionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const detail = await loadMission(id);
-  if (detail === null) return <EmptyState icon="search" title="Mission not found" body="This mission may belong to another workspace or has been archived." />;
+  if (detail === null) return <EmptyState title="Mission not found" body="This mission may belong to another workspace or has been archived." />;
   const { mission, tasks, delegations, approvals, artifacts, evaluations, failures } = detail;
   const evaluation = evaluations.find((e) => e.targetKind === "mission");
 
@@ -36,7 +36,7 @@ export default async function MissionPage({ params }: { params: Promise<{ id: st
         <div>
           <section className={styles.section}>
             <div className={styles.sectionHead}><span className={styles.sectionTitle}>Task graph</span></div>
-            {tasks.length === 0 ? <EmptyState icon="workflow" title="No tasks" body="The plan has not been generated yet." />
+            {tasks.length === 0 ? <EmptyState title="No tasks" body="The plan has not been generated yet." />
               : <div className={styles.list}>{tasks.map((t) => (
                   <div key={t.id} className={styles.row}>
                     <div className={styles.rowMain}><div className={styles.rowTitle}>{t.title}</div><div className={styles.rowMeta}>{t.assignedRole.replace(/_/g, " ")}{t.dependsOn.length > 0 ? ` · depends on ${t.dependsOn.length}` : ""}{t.approvalGated ? " · approval gate" : ""}</div></div>
@@ -56,7 +56,7 @@ export default async function MissionPage({ params }: { params: Promise<{ id: st
         <div>
           <section className={styles.section}>
             <div className={styles.sectionHead}><span className={styles.sectionTitle}>Approvals</span></div>
-            {approvals.length === 0 ? <EmptyState icon="check-circle" title="No approvals" body="No approval gates on this mission." />
+            {approvals.length === 0 ? <EmptyState title="No approvals" body="No approval gates on this mission." />
               : <div className={styles.list}>{approvals.map((a) => (
                   <div key={a.id} className={styles.row}><div className={styles.rowMain}><div className={styles.rowTitle}>{a.approvalClass.replace(/_/g, " ")}</div><div className={styles.rowMeta}>task {a.taskKey}</div></div><Badge status={a.status}>{a.status}</Badge></div>))}</div>}
           </section>

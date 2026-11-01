@@ -10,11 +10,9 @@ import styles from "./coming-soon.module.css";
 export function ComingSoon({
   title,
   description,
-  icon = "sparkles",
 }: {
   title: string;
   description: string;
-  icon?: string;
 }) {
   return (
     <PageTransition className={styles.wrap}>
@@ -23,7 +21,7 @@ export function ComingSoon({
         <h1 className={styles.title}>{title}</h1>
       </header>
       <div className={styles.card}>
-        <EmptyState icon={icon} title={`${title} is coming soon`} body={description} />
+        <EmptyState title={`${title} is coming soon`} body={description} />
       </div>
     </PageTransition>
   );

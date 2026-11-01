@@ -7,7 +7,6 @@ export default function KnowledgePage() {
   return (
     <ComingSoon
       title="Knowledge"
-      icon="book-open"
       description="Reusable playbooks, lessons and policies captured from the transformation work."
     />
   );

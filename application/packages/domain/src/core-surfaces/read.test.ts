@@ -54,7 +54,7 @@ describe("buildSystemMapView (deterministic, always 7 nodes)", () => {
 describe("buildBusinessScanView", () => {
   const scan: BusinessScan = { id: "scn_1", clientId: "cli_A", status: "diagnosed", baselineIndex: 34, targetIndex: 92, createdBy: "u1", createdAt: NOW };
   function finding(over: Partial<ScanFinding>): ScanFinding {
-    return { id: "fnd", scanId: "scn_1", clientId: "cli_A", domainKey: "web", finding: "x", baseline: null, priority: "medium", createdAt: NOW, ...over };
+    return { id: "fnd", scanId: "scn_1", clientId: "cli_A", domainKey: "web", finding: "x", baseline: null, priority: "medium", source: "manual", sourceRunId: null, createdAt: NOW, ...over };
   }
   it("orders findings high→low and counts non-low gaps", () => {
     const v = buildBusinessScanView(scan, [], [finding({ priority: "low" }), finding({ priority: "high" }), finding({ priority: "medium" })]);

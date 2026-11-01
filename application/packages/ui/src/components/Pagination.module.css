@@ -34,7 +34,9 @@
 .current {
   background: var(--action-primary);
   border-color: var(--action-primary);
-  color: var(--bl-white);
+  /* --action-primary flips ink↔paper with the theme, so the text on it must
+     be --action-fg; a literal white vanished in dark mode. */
+  color: var(--action-fg);
 }
 
 .disabled {

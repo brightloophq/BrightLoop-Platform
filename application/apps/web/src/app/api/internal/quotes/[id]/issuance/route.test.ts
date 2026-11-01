@@ -1,0 +1,13 @@
+import {beforeEach,describe,expect,it,vi} from "vitest";
+import type {Actor} from "@brightloop/domain";
+const state=vi.hoisted(()=>({actor:null as Actor|null,rpc:vi.fn()}));
+vi.mock("server-only",()=>({}));vi.mock("@/lib/auth",()=>({getActor:async()=>state.actor}));vi.mock("@/lib/supabase/server",()=>({createClient:async()=>({rpc:state.rpc})}));
+import {POST} from "./route";
+const req=(action:string)=>new Request("http://local",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action,expectedUpdatedAt:"2026-09-07T00:00:00Z",clientId:"cli_1"})});
+const context={params:Promise.resolve({id:"qte_1"})};
+describe("canonical proposal issuance route",()=>{beforeEach(()=>{state.rpc.mockReset();state.rpc.mockResolvedValue({data:[{quote_id:"qte_1",updated_at:"later",status:"approved",proposal_id:"prp_1",proposal_number:"AUX-P-000001",outcome:"created",item_count:1}],error:null});});
+ it("returns 401 without authentication",async()=>{state.actor=null;expect((await POST(req("issue"),context)).status).toBe(401);});
+ it("returns 403 when capabilities are missing",async()=>{state.actor={userId:"team",role:"team_member",clientId:null};expect((await POST(req("approve"),context)).status).toBe(403);expect((await POST(req("bind"),context)).status).toBe(403);});
+ it("requires both capabilities for issuance and invokes session RPC",async()=>{state.actor={userId:"admin",role:"admin",clientId:null};const response=await POST(req("issue"),context);expect(response.status).toBe(200);expect(state.rpc).toHaveBeenCalledWith("bl_issue_canonical_proposal",{p_quote_id:"qte_1",p_expected_updated_at:"2026-09-07T00:00:00Z"});expect(await response.json()).toMatchObject({proposalId:"prp_1",outcome:"created"});});
+ it("maps stale editor conflicts to 409",async()=>{state.actor={userId:"owner",role:"owner",clientId:null};state.rpc.mockResolvedValue({data:null,error:{code:"40001",message:"stale"}});expect((await POST(req("approve"),context)).status).toBe(409);});
+});

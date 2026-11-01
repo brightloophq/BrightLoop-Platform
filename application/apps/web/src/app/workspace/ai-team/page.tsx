@@ -20,7 +20,7 @@ const ROSTER: { role: string; name: string; blurb: string }[] = [
 
 export default async function AiTeamPage() {
   const data = await loadAiTeam();
-  if (data === null) return <EmptyState icon="lock" title="Session expired" body="Please sign in again." />;
+  if (data === null) return <EmptyState title="Session expired" body="Please sign in again." />;
   const active = data.missions.find((m) => m.status === "running" || m.status === "planning");
 
   return (

@@ -8,14 +8,22 @@
   border-radius: var(--radius-md);
 }
 
+/* The tone pill. It used to hold a 15px pictogram in a 28px square; it now
+   holds the severity word itself, so the row states its severity in text. */
 .chip {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: var(--radius-md);
+  min-width: 48px;
+  height: 24px;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
   flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: var(--fw-semibold);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .label {
@@ -32,7 +40,7 @@
   color: var(--text-primary);
 }
 
-/* Tone: tint the chip; keep the row calm. Icon + colour carry severity. */
+/* Tone: tint the chip; keep the row calm. The word + colour carry severity. */
 .danger .chip {
   color: var(--danger);
   background: color-mix(in srgb, var(--danger) 12%, transparent);

@@ -25,7 +25,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
   const { id } = await params;
   const workspaces = await resolveWorkspaces();
   const workspace = workspaces.find((w) => w.id === id) ?? null;
-  if (workspace === null) return <EmptyState icon="search" title="Project not found" body="This project may belong to another workspace." />;
+  if (workspace === null) return <EmptyState title="Project not found" body="This project may belong to another workspace." />;
 
   return (
     <>

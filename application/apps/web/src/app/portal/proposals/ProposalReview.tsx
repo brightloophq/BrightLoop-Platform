@@ -8,6 +8,9 @@ import { proposalAction } from "../../portal-sales-actions";
 export interface ProposalLine { label: string; amount?: number; quantity?: number; unitAmountMinor?: number; description?: string; pricingType?: string; cadence?: string | null }
 export interface PortalProposal {
   id: string;
+  proposal_kind: "legacy_sales" | "canonical_issued";
+  proposal_number?: string | null;
+  title?: string | null;
   status: string;
   subtotal: number;
   total: number;
@@ -49,7 +52,7 @@ export function ProposalReview({ proposals }: { proposals: PortalProposal[] }) {
 
   // Mark sent proposals viewed on open.
   useEffect(() => {
-    const unseen = proposals.filter((p) => p.status === "sent");
+    const unseen = proposals.filter((p) => p.proposal_kind === "legacy_sales" && p.status === "sent");
     if (unseen.length === 0) return;
     (async () => { for (const p of unseen) await proposalAction(p.id, "view"); router.refresh(); })();
     // Keyed on id:status so it re-runs only when a proposal is added or changes.
@@ -104,7 +107,11 @@ export function ProposalReview({ proposals }: { proposals: PortalProposal[] }) {
           {p.validUntil ? <div style={row}><span>Valid until</span><span>{p.validUntil}</span></div> : null}
           {p.clientSnapshot?.proposal?.proposedNextStep ? <p><strong>Next step:</strong> {p.clientSnapshot.proposal.proposedNextStep}</p> : null}
 
-          {(p.status === "sent" || p.status === "viewed") && p.isCurrent !== false ? (
+          {p.proposal_kind === "canonical_issued" && !p.snapshotChecksum ? (
+            <p style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>
+              Issued proposal {p.proposal_number ?? p.id}. Contact your account team with questions.
+            </p>
+          ) : ((p.status === "sent" || p.status === "viewed" || p.status === "issued") && p.isCurrent !== false) ? (
             <div style={{ display: "flex", gap: "var(--space-2)", marginTop: "var(--space-3)", flexWrap: "wrap" }}>
               {confirmingAcceptance === p.id ? <div role="group" aria-label="Confirm proposal acceptance">
                 <p>You are accepting the published proposal and its exact terms above. This does not create a contract or invoice.</p>
@@ -129,7 +136,8 @@ export function ProposalReview({ proposals }: { proposals: PortalProposal[] }) {
             <p role="status" style={{ fontSize: "var(--fs-sm)", color: "var(--text-muted)", marginTop: "var(--space-2)" }}>This proposal has expired and can no longer be accepted.</p>
           ) : null}
         </Card>
-      ); })}
+        );
+      })}
       {error ? <p style={{ color: "var(--text-danger, #c0392b)", fontSize: "var(--fs-sm)" }}>{error}</p> : null}
     </div>
   );

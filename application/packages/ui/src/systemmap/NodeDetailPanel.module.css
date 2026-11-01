@@ -44,7 +44,8 @@
 .close {
   flex: none;
   display: inline-flex;
-  padding: var(--space-1);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--fs-xs);
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   background: var(--surface);
@@ -83,10 +84,10 @@
   background: var(--surface-inset);
   border-radius: var(--radius-md);
 }
-.statIcon { color: var(--text-muted); display: inline-flex; }
-.stat[data-tone="positive"] .statIcon { color: var(--positive); }
-.stat[data-tone="caution"] .statIcon { color: var(--caution); }
-.stat[data-tone="critical"] .statIcon { color: var(--critical); }
+/* Tone now shows on the VALUE itself — there is no icon left to tint. */
+.stat[data-tone="positive"] .statV { color: var(--positive); }
+.stat[data-tone="caution"] .statV { color: var(--caution); }
+.stat[data-tone="critical"] .statV { color: var(--critical); }
 .statV { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--text-primary); text-transform: capitalize; }
 .statK { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: var(--ls-eyebrow); }
 
@@ -132,7 +133,6 @@
 
 .timeline { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); }
 .tItem { display: flex; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); }
-.tIcon { color: var(--text-muted); display: inline-flex; flex: none; }
 .tLabel { color: var(--text-secondary); flex: 1; min-width: 0; }
 .tTime { color: var(--text-muted); font-family: var(--font-mono); font-size: var(--fs-xs); flex: none; }
 
