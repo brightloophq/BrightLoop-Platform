@@ -18,7 +18,7 @@ insert into public.intelligence_runs (id, client_id, scan_id, idempotency_key) v
   ('ci_review_run', 'ci_review_client', 'ci_scan', 'ci_review_run'),
   ('ci_prop_run', 'ci_prop_client', 'ci_scan', 'ci_prop_run'),
   ('ci_narr_run', 'ci_narr_client', 'ci_scan', 'ci_narr_run'),
-  ('ci_empty_run', null, 'ci_scan', 'ci_empty_run');
+  ('ci_empty_run', 'ci_empty_client', 'ci_scan', 'ci_empty_run');
 
 prepare ci_review(text, text, text, jsonb, bigint) as
   insert into public.runtime_events

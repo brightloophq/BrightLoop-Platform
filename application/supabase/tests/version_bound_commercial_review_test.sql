@@ -3,8 +3,10 @@
 begin;
 create extension if not exists pgtap;
 select no_plan();
-insert into public.intelligence_runs (id, scan_id, status, idempotency_key)
-  values ('vb_run', 'vb_scan', 'completed', 'vb_run');
+insert into public.leads (id, name, company, email)
+  values ('vb_lead', 'Version Binding Lead', 'Version Binding', 'vb-lead@example.invalid');
+insert into public.intelligence_runs (id, lead_id, scan_id, status, idempotency_key)
+  values ('vb_run', 'vb_lead', 'vb_scan', 'completed', 'vb_run');
 insert into public.proposal_versions (id, run_id, scan_id, status, version, checksum, idempotency_key)
   values ('vb_p1', 'vb_run', 'vb_scan', 'needs_review', 1, 'p1', 'vb_p1');
 insert into public.narrative_versions (id, run_id, scan_id, audience, status, version, checksum, idempotency_key)

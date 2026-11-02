@@ -52,23 +52,24 @@ values
   ('pv_promo_pk_collision', 'run_promo_pk_collision', null, 'scan_promo_pk_collision', 'needs_review', 1, 'checksum-pk-collision',
    '{"status":"draft_ready","recommendedWork":[{"sourceId":"w","title":"Collision work","solution":"Do it","evidenceIds":["e"]}]}'::jsonb, 'idem_pv_pk_collision', 'usr_promo_owner');
 
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"30000000-0000-0000-0000-000000000001","app_metadata":{"role":"owner"}}', true);
 insert into public.runtime_events
   (id, event_type, run_id, aggregate_id, aggregate_type, client_id, scan_id, sequence, payload, actor)
 values
-  ('evt_promo_lead', 'runtime.review.approved', 'run_promo_lead', 'run_promo_lead', 'intelligence_run', null, 'scan_promo_lead', 1, '{"proposalVersionId":"pv_promo_lead","proposalChecksum":"checksum-lead"}', 'usr_promo_owner'),
-  ('evt_promo_client', 'runtime.review.approved', 'run_promo_client', 'run_promo_client', 'intelligence_run', 'cli_promo', 'scan_promo_client', 1, '{"proposalVersionId":"pv_promo_client","proposalChecksum":"checksum-client"}', 'usr_promo_owner'),
-  ('evt_promo_bad_status', 'runtime.review.approved', 'run_promo_bad_status', 'run_promo_bad_status', 'intelligence_run', null, 'scan_promo_bad_status', 1, '{"proposalVersionId":"pv_promo_bad_status","proposalChecksum":"checksum-bad-run"}', 'usr_promo_owner'),
-  ('evt_super_approved', 'runtime.review.approved', 'run_promo_superseded', 'run_promo_superseded', 'intelligence_run', null, 'scan_promo_superseded', 1, '{"proposalVersionId":"pv_promo_superseded","proposalChecksum":"checksum-super"}', 'usr_promo_owner'),
-  ('evt_super_revision', 'runtime.review.revision_requested', 'run_promo_superseded', 'run_promo_superseded', 'intelligence_run', null, 'scan_promo_superseded', 2, '{}', 'usr_promo_owner'),
-  ('evt_rejected', 'runtime.review.rejected', 'run_promo_rejected', 'run_promo_rejected', 'intelligence_run', null, 'scan_promo_rejected', 1, '{}', 'usr_promo_owner'),
-  ('evt_missing_version', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 1, '{"proposalChecksum":"checksum-missing"}', 'usr_promo_owner'),
-  ('evt_missing_checksum', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 2, '{"proposalVersionId":"pv_promo_missing"}', 'usr_promo_owner'),
-  ('evt_checksum_bad', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 3, '{"proposalVersionId":"pv_promo_missing","proposalChecksum":"wrong"}', 'usr_promo_owner'),
-  ('evt_not_review', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 4, '{"proposalVersionId":"pv_promo_not_review","proposalChecksum":"checksum-not-review"}', 'usr_promo_owner'),
-  ('evt_not_ready', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 5, '{"proposalVersionId":"pv_promo_not_ready","proposalChecksum":"checksum-not-ready"}', 'usr_promo_owner'),
-  ('evt_empty', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 6, '{"proposalVersionId":"pv_promo_empty","proposalChecksum":"checksum-empty"}', 'usr_promo_owner'),
-  ('evt_promo_rollback', 'runtime.review.approved', 'run_promo_rollback', 'run_promo_rollback', 'intelligence_run', null, 'scan_promo_rollback', 1, '{"proposalVersionId":"pv_promo_rollback","proposalChecksum":"checksum-rollback"}', 'usr_promo_owner'),
-  ('evt_promo_pk_collision', 'runtime.review.approved', 'run_promo_pk_collision', 'run_promo_pk_collision', 'intelligence_run', null, 'scan_promo_pk_collision', 1, '{"proposalVersionId":"pv_promo_pk_collision","proposalChecksum":"checksum-pk-collision"}', 'usr_promo_owner');
+  ('evt_promo_lead', 'runtime.review.approved', 'run_promo_lead', 'run_promo_lead', 'intelligence_run', null, 'scan_promo_lead', 1, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_lead","proposalChecksum":"checksum-lead"}'::jsonb), null),
+  ('evt_promo_client', 'runtime.review.approved', 'run_promo_client', 'run_promo_client', 'intelligence_run', 'cli_promo', 'scan_promo_client', 1, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_client","proposalChecksum":"checksum-client"}'::jsonb), null),
+  ('evt_promo_bad_status', 'runtime.review.approved', 'run_promo_bad_status', 'run_promo_bad_status', 'intelligence_run', null, 'scan_promo_bad_status', 1, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_bad_status","proposalChecksum":"checksum-bad-run"}'::jsonb), null),
+  ('evt_super_approved', 'runtime.review.approved', 'run_promo_superseded', 'run_promo_superseded', 'intelligence_run', null, 'scan_promo_superseded', 1, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_superseded","proposalChecksum":"checksum-super"}'::jsonb), null),
+  ('evt_super_revision', 'runtime.review.revision_requested', 'run_promo_superseded', 'run_promo_superseded', 'intelligence_run', null, 'scan_promo_superseded', 2, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{}'::jsonb), null),
+  ('evt_rejected', 'runtime.review.rejected', 'run_promo_rejected', 'run_promo_rejected', 'intelligence_run', null, 'scan_promo_rejected', 1, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{}'::jsonb), null),
+  ('evt_missing_version', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 1, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalChecksum":"checksum-missing"}'::jsonb), null),
+  ('evt_missing_checksum', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 2, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_missing"}'::jsonb), null),
+  ('evt_checksum_bad', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 3, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_missing","proposalChecksum":"wrong"}'::jsonb), null),
+  ('evt_not_review', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 4, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_not_review","proposalChecksum":"checksum-not-review"}'::jsonb), null),
+  ('evt_not_ready', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 5, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_not_ready","proposalChecksum":"checksum-not-ready"}'::jsonb), null),
+  ('evt_empty', 'runtime.review.approved', 'run_promo_missing', 'run_promo_missing', 'intelligence_run', null, 'scan_promo_missing', 6, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_empty","proposalChecksum":"checksum-empty"}'::jsonb), null),
+  ('evt_promo_rollback', 'runtime.review.approved', 'run_promo_rollback', 'run_promo_rollback', 'intelligence_run', null, 'scan_promo_rollback', 1, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_rollback","proposalChecksum":"checksum-rollback"}'::jsonb), null),
+  ('evt_promo_pk_collision', 'runtime.review.approved', 'run_promo_pk_collision', 'run_promo_pk_collision', 'intelligence_run', null, 'scan_promo_pk_collision', 1, (jsonb_build_object('by','30000000-0000-0000-0000-000000000001') || '{"proposalVersionId":"pv_promo_pk_collision","proposalChecksum":"checksum-pk-collision"}'::jsonb), null);
 
 select set_config('request.jwt.claims', '{"sub":"30000000-0000-0000-0000-000000000001","app_metadata":{"role":"owner"}}', true);
 set local role authenticated;
@@ -130,7 +131,8 @@ select is((select count(*)::int from public.quote_items where quote_id='qte_prom
 select is((select count(*)::int from public.runtime_events where event_type='runtime.commercial.package_promoted' and aggregate_id='run_promo_lead'), 1, 'retry does not duplicate audit event');
 
 insert into public.runtime_events (id,event_type,run_id,aggregate_id,aggregate_type,scan_id,sequence,payload,actor)
-values ('evt_promo_lead_reapproved','runtime.review.approved','run_promo_lead','run_promo_lead','intelligence_run','scan_promo_lead',3,'{"proposalVersionId":"pv_promo_lead","proposalChecksum":"checksum-lead"}','usr_promo_owner');
+values ('evt_promo_lead_reapproved','runtime.review.approved','run_promo_lead','run_promo_lead','intelligence_run','scan_promo_lead',3,
+  '{"by":"30000000-0000-0000-0000-000000000001","proposalVersionId":"pv_promo_lead","proposalChecksum":"checksum-lead"}',null);
 select throws_ok(
   $$ select * from public.bl_promote_scanner_package('run_promo_lead','pv_promo_lead','evt_promo_lead_reapproved','not-deterministic','qte_wrong_key') $$,
   '23514', 'Invalid promotion key', 'promotion rejects a non-deterministic key'
@@ -148,7 +150,8 @@ values
    '{"status":"draft_ready","recommendedWork":[{"sourceId":"work:v2","title":"New version work","solution":"Deliver the new scope","evidenceIds":["ev:v2"]}]}'::jsonb,
    'idem_pv_lead_v2', 'usr_promo_owner');
 insert into public.runtime_events (id,event_type,run_id,aggregate_id,aggregate_type,scan_id,sequence,payload,actor)
-values ('evt_promo_lead_v2','runtime.review.approved','run_promo_lead','run_promo_lead','intelligence_run','scan_promo_lead',4,'{"proposalVersionId":"pv_promo_lead_v2","proposalChecksum":"checksum-lead-v2"}','usr_promo_owner');
+values ('evt_promo_lead_v2','runtime.review.approved','run_promo_lead','run_promo_lead','intelligence_run','scan_promo_lead',4,
+  '{"by":"30000000-0000-0000-0000-000000000001","proposalVersionId":"pv_promo_lead_v2","proposalChecksum":"checksum-lead-v2"}',null);
 select results_eq(
   $$ select outcome, quote_id, item_count from public.bl_promote_scanner_package('run_promo_lead','pv_promo_lead_v2','evt_promo_lead_v2','promo:run_promo_lead:pv_promo_lead_v2:evt_promo_lead_v2','qte_promo_lead_v2') $$,
   $$ values ('created'::text, 'qte_promo_lead_v2'::text, 1::integer) $$,
@@ -175,13 +178,16 @@ select throws_ok($$ select * from public.bl_promote_scanner_package('run_promo_l
 select throws_ok($$ select * from public.bl_promote_scanner_package('run_promo_lead','pv_promo_lead','evt_promo_client','promo:run_promo_lead:pv_promo_lead:evt_promo_client','qte_wrong_review_run') $$, '23514', 'Review event is not the authoritative decision', 'wrong-run review event is rejected');
 
 insert into public.runtime_events (id,event_type,run_id,aggregate_id,aggregate_type,scan_id,sequence,payload,actor)
-values ('evt_missing_version_latest','runtime.review.approved','run_promo_missing','run_promo_missing','intelligence_run','scan_promo_missing',7,'{"proposalChecksum":"checksum-missing"}','usr_promo_owner');
+values ('evt_missing_version_latest','runtime.review.approved','run_promo_missing','run_promo_missing','intelligence_run','scan_promo_missing',7,
+  '{"by":"30000000-0000-0000-0000-000000000001","proposalChecksum":"checksum-missing"}',null);
 select throws_ok($$ select * from public.bl_promote_scanner_package('run_promo_missing','pv_promo_missing','evt_missing_version_latest','promo:run_promo_missing:pv_promo_missing:evt_missing_version_latest','qte_missing_version') $$, '23514', 'Approval does not pin proposal version', 'current approval without proposalVersionId is rejected');
 insert into public.runtime_events (id,event_type,run_id,aggregate_id,aggregate_type,scan_id,sequence,payload,actor)
-values ('evt_missing_checksum_latest','runtime.review.approved','run_promo_missing','run_promo_missing','intelligence_run','scan_promo_missing',8,'{"proposalVersionId":"pv_promo_missing"}','usr_promo_owner');
+values ('evt_missing_checksum_latest','runtime.review.approved','run_promo_missing','run_promo_missing','intelligence_run','scan_promo_missing',8,
+  '{"by":"30000000-0000-0000-0000-000000000001","proposalVersionId":"pv_promo_missing"}',null);
 select throws_ok($$ select * from public.bl_promote_scanner_package('run_promo_missing','pv_promo_missing','evt_missing_checksum_latest','promo:run_promo_missing:pv_promo_missing:evt_missing_checksum_latest','qte_missing_checksum') $$, '23514', 'Approval proposal checksum mismatch', 'current approval without proposalChecksum is rejected');
 insert into public.runtime_events (id,event_type,run_id,aggregate_id,aggregate_type,scan_id,sequence,payload,actor)
-values ('evt_checksum_bad_latest','runtime.review.approved','run_promo_missing','run_promo_missing','intelligence_run','scan_promo_missing',9,'{"proposalVersionId":"pv_promo_missing","proposalChecksum":"wrong"}','usr_promo_owner');
+values ('evt_checksum_bad_latest','runtime.review.approved','run_promo_missing','run_promo_missing','intelligence_run','scan_promo_missing',9,
+  '{"by":"30000000-0000-0000-0000-000000000001","proposalVersionId":"pv_promo_missing","proposalChecksum":"wrong"}',null);
 select throws_ok($$ select * from public.bl_promote_scanner_package('run_promo_missing','pv_promo_missing','evt_checksum_bad_latest','promo:run_promo_missing:pv_promo_missing:evt_checksum_bad_latest','qte_checksum') $$, '23514', 'Approval proposal checksum mismatch', 'checksum is compared with proposal_versions.checksum');
 select throws_ok($$ select * from public.bl_promote_scanner_package('run_promo_missing','pv_promo_empty','evt_empty','wrong-key','qte_wrong_key') $$, '23514', 'Proposal has no recommended work', 'invalid package remains rejected before key use');
 

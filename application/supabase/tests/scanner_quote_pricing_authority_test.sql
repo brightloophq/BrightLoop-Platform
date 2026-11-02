@@ -54,6 +54,10 @@ select results_eq($$select subtotal,discount,total,recurring_total,optional_one_
 select results_eq($$select optional,selected,was_optional,unit_amount,quantity from public.quote_items where quote_id='qte_qpa' order by sort$$,
   $$values (false,false,false,100::bigint,2),(true,false,true,300::bigint,1),(true,false,true,75::bigint,2)$$,
   'optional identity and unselected state survive promotion');
+select is((select count(*)::int from public.quote_items qi join public.quotes q on q.id=qi.quote_id
+  where q.commercial_mode='proposal_only' and q.source_run_id='run_qpa' and qi.source_work_item_id is not null
+    and qi.unit_amount=0 and qi.amount=0),0,
+  'guarded promotion replaces no scanner line with an ambiguous zero-price placeholder');
 select is((select client_note from public.quotes where id='qte_qpa'),'Public note','client commercial note is copied from approved terms');
 select is((select internal_note from public.quote_items where quote_id='qte_qpa' and sort=1),'private optional note','admin pricing note remains internal on quote');
 
@@ -134,10 +138,16 @@ select is((public.bl_client_scanner_proposal_response(
   public.bl_client_scanner_proposal_contents()->0->>'proposalId','accept',
   public.bl_client_scanner_proposal_contents()->0->>'snapshotChecksum','')->>'status'),
   'accepted','client acceptance is bound to the exact published snapshot');
-select is((select count(*)::int from public.scanner_sales_client_responses where response_kind='accepted'),1,
-  'acceptance appends one immutable response record');
+-- Client callers append acceptance through the RPC but cannot read the internal
+-- response ledger directly. Verify the authoritative record as an owner.
 reset role;
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"91000000-0000-4000-8000-000000000001","app_metadata":{"role":"owner"}}',true);
+set local role authenticated;
+select is((select count(*)::int from public.scanner_sales_client_responses where response_kind='accepted'),1,
+  'authorized internal identity verifies one immutable acceptance response');
+reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"91000000-0000-4000-8000-000000000001","app_metadata":{"role":"owner"}}',true);
+set local role authenticated;
 select is((select count(*)::int from public.invoices),0,'publication and acceptance do not issue invoices');
 select is((select count(*)::int from public.payments),0,'publication and acceptance do not collect payments');
 
