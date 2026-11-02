@@ -139,11 +139,25 @@ select throws_ok(
        ('q_duplicate_key', 'proposal_only', 'lead_qline', 'run_qboth', 'pv_qboth', 'evt_qboth', 'promo:run_qclient:pv_qclient:evt_qclient') $$,
   '23505', null, 'non-null promotion_key remains independently unique'
 );
+-- Give the foreign-key assertion its own valid, unpromoted source version so
+-- the existing one-quote-per-version uniqueness constraint cannot mask it.
+insert into public.proposal_versions
+  (id,run_id,scan_id,status,version,checksum,envelope,idempotency_key,created_by)
+values ('pv_qbad_fk','run_qbad','scan_qbad','needs_review',4,'chk_qbad_fk',
+  '{"status":"draft_ready","commercialState":"priced","recommendedWork":[{"sourceId":"work:qbad-fk","title":"FK fixture","solution":"Isolate lead FK","evidenceIds":[]}],"pricing":{"pricingModelVersion":2,"currency":"USD","validUntil":"2099-12-31","discountMinor":0,"subtotalOneTimeMinor":100,"totalOneTimeMinor":100,"totalRecurringMonthlyMinor":0,"items":[{"sourceId":"work:qbad-fk","pricingType":"one_time","amountMinor":100,"quantity":1,"optional":false,"selected":false,"cadence":null}]}}'::jsonb,
+  'pv_idem_qbad_fk','usr_qowner');
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"10000000-0000-0000-0000-000000000001","app_metadata":{"role":"owner"}}',true);
+set local role authenticated;
+insert into public.runtime_events
+  (id,event_type,run_id,aggregate_id,aggregate_type,scan_id,sequence,actor,payload)
+values ('evt_qbad_fk','runtime.review.approved','run_qbad','run_qbad','intelligence_run','scan_qbad',1,null,
+  jsonb_build_object('by','10000000-0000-0000-0000-000000000001','binding',public.bl_scanner_sales_current_binding('run_qbad')));
+reset role;
 select throws_ok(
   $$ insert into public.quotes
        (id, commercial_mode, lead_id, source_run_id, source_proposal_version_id, source_review_event_id, promotion_key)
      values
-       ('q_bad_lead', 'proposal_only', 'lead_missing', 'run_qlead', 'pv_qlead', 'evt_qlead', 'promote_bad_lead') $$,
+       ('q_bad_lead', 'proposal_only', 'lead_missing', 'run_qbad', 'pv_qbad_fk', 'evt_qbad_fk', 'promote_bad_lead') $$,
   '23503', null, 'invalid lead lineage FK is rejected'
 );
 select throws_ok(
@@ -287,7 +301,7 @@ select set_config(
 );
 set local role authenticated;
 select is((select count(*)::int from public.quotes where commercial_mode = 'proposal_only'), 3, 'internal owner can read proposal_only quotes');
-select is((select count(*)::int from public.quote_items where id = 'qit_proposal'), 1, 'internal owner can read proposal_only items');
+select is((select count(*)::int from public.quote_items where id = 'q_proposal_client:item:1'), 1, 'internal owner can read proposal_only items');
 reset role;
 
 select set_config(

@@ -8,12 +8,16 @@ insert into auth.users (id,aud,role,email,encrypted_password,email_confirmed_at,
 values
  ('00000000-0000-4000-8000-000000000071','authenticated','authenticated','s1f-owner@example.invalid','',now(),'{}','{}',now(),now()),
  ('00000000-0000-4000-8000-000000000072','authenticated','authenticated','s1f-client@example.invalid','',now(),'{"role":"client_admin","client_id":"s1f_client"}','{}',now(),now()),
+ ('00000000-0000-4000-8000-000000000073','authenticated','authenticated','s1f-team@example.invalid','',now(),'{"role":"team_member"}','{}',now(),now()),
+ ('00000000-0000-4000-8000-000000000075','authenticated','authenticated','s1f-suspended@example.invalid','',now(),'{"role":"owner"}','{}',now(),now()),
  ('00000000-0000-4000-8000-000000000074','authenticated','authenticated','s1f-admin@example.invalid','',now(),'{"role":"admin"}','{}',now(),now())
 on conflict (id) do nothing;
 insert into public.clients(id,company,industry,lifecycle) values ('s1f_client','S1F Example Co','Services','member');
 insert into public.users(id,auth_user_id,name,email,role,client_id,status) values
  ('s1f_owner','00000000-0000-4000-8000-000000000071','S1F Owner','s1f-owner@example.invalid','owner',null,'active'),
  ('s1f_admin','00000000-0000-4000-8000-000000000074','S1F Admin','s1f-admin@example.invalid','admin',null,'active'),
+ ('s1f_team','00000000-0000-4000-8000-000000000073','S1F Team Member','s1f-team@example.invalid','team_member',null,'active'),
+ ('s1f_suspended_owner','00000000-0000-4000-8000-000000000075','Suspended Owner','s1f-suspended@example.invalid','owner',null,'suspended'),
  ('s1f_client_user','00000000-0000-4000-8000-000000000072','S1F Client','s1f-client@example.invalid','client_admin','s1f_client','active');
 insert into public.intelligence_runs(id,client_id,scan_id,status,idempotency_key,metadata)
 values ('s1f_run','s1f_client','s1f_scan','completed','s1f_run_key',
@@ -41,13 +45,33 @@ values ('s1f_approved','runtime.review.approved','s1f_run','s1f_run','intelligen
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000073","app_metadata":{"role":"team_member"}}',true);
 set local role authenticated;
 select throws_ok($$select * from public.bl_promote_scanner_package('s1f_run','s1f_proposal_v1','s1f_approved','s1f-team-promo','qte_s1f_team')$$,
- '42501',null,'team member cannot promote an approved scanner package');
+ '42501','Internal actor required','active team member cannot promote an approved scanner package');
+reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000073","app_metadata":{"role":"owner"}}',true);
+set local role authenticated;
+select throws_ok($$select * from public.bl_promote_scanner_package('s1f_run','s1f_proposal_v1','s1f_approved','s1f-role-mismatch','qte_s1f_role_mismatch')$$,
+ '42501','Internal actor required','owner claim cannot authorize a database team-member identity');
+reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000075","app_metadata":{"role":"owner"}}',true);
+set local role authenticated;
+select throws_ok($$select * from public.bl_promote_scanner_package('s1f_run','s1f_proposal_v1','s1f_approved','s1f-suspended-promo','qte_s1f_suspended')$$,
+ '42501','Internal actor required','suspended owner identity cannot promote an approved scanner package');
 reset role;
 select set_config('request.jwt.claims','{"role":"service_role","sub":"00000000-0000-4000-8000-000000000071","app_metadata":{"role":"owner"}}',true);
 set local role service_role;
 select throws_ok($$select * from public.bl_promote_scanner_package('s1f_run','s1f_proposal_v1','s1f_approved','s1f-service-promo','qte_s1f_service')$$,
  '42501',null,'service-role metadata cannot forge an authenticated owner');
 reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000072","app_metadata":{"role":"client_admin","client_id":"s1f_client"}}',true);
+set local role authenticated;
+select throws_ok($$select * from public.bl_promote_scanner_package('s1f_run','s1f_proposal_v1','s1f_approved','s1f-client-promo','qte_s1f_client_denied')$$,
+ '42501','Internal actor required','authenticated client cannot promote an approved scanner package');
+reset role;
+select is((select count(*)::int from public.quotes where source_run_id='s1f_run'),0,'rejected actors create no scanner quote');
+select is((select count(*)::int from public.proposals where source_run_id='s1f_run'),0,'rejected actors create no canonical proposal');
+select is((select count(*)::int from public.scanner_sales_conversions where run_id='s1f_run'),0,'rejected actors create no publication conversion');
+select is((select count(*)::int from public.scanner_sales_publications where proposal_id in (select id from public.proposals where source_run_id='s1f_run')),0,'rejected actors create no publication evidence');
+select is((select count(*)::int from public.runtime_events where event_type='runtime.commercial.package_promoted' and aggregate_id='s1f_run'),0,'rejected actors append no promotion audit event');
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000071","app_metadata":{"role":"owner"}}',true);
 set local role authenticated;
 select results_eq(
@@ -75,6 +99,15 @@ select results_eq($$select quote_id,outcome,item_count from public.bl_promote_sc
  'promotion retry is idempotent and returns the original private quote');
 select is((select count(*)::int from public.quotes where source_run_id='s1f_run'),1,
  'retry cannot create a second quote for the scanner run');
+
+reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000074","app_metadata":{"role":"admin"}}',true);
+set local role authenticated;
+select results_eq($$select quote_id,outcome,item_count from public.bl_promote_scanner_package('s1f_run','s1f_proposal_v1','s1f_approved','promo:s1f_run:s1f_proposal_v1:s1f_approved','qte_s1f_admin_retry')$$,
+ $$values ('qte_s1f'::text,'already_promoted'::text,2::integer)$$,
+ 'active admin identity may invoke the promotion RPC idempotently');
+select is((select count(*)::int from public.quotes where source_run_id='s1f_run'),1,'admin retry does not create a duplicate quote');
+select is((select count(*)::int from public.runtime_events where event_type='runtime.commercial.package_promoted' and aggregate_id='s1f_run'),1,'admin retry does not append a duplicate promotion audit event');
 
 reset role;
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000072","app_metadata":{"role":"client_admin","client_id":"s1f_client"}}',true);

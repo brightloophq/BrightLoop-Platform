@@ -95,8 +95,8 @@ select is((select total from public.proposals where id=(select result->>'proposa
 select is((select recurring_total from public.proposals where id=(select result->>'proposalId' from issued_result)),500::bigint,'recurring total is snapshotted');
 select is((select optional_recurring_total from public.proposals where id=(select result->>'proposalId' from issued_result)),300::bigint,'optional recurring total is snapshotted separately');
 select is((select count(*)::int from public.proposal_items where proposal_id=(select result->>'proposalId' from issued_result)),3,'all approved items are issued');
-select is((select source_work_item_id from public.proposal_items where proposal_id=(select result->>'proposalId' from issued_result) and sort=0),'work:issue','work coordinate is copied');
-select is((select source_evidence_refs from public.proposal_items where proposal_id=(select result->>'proposalId' from issued_result) and sort=0),'["ev:issue"]'::jsonb,'evidence coordinate is copied');
+select is((select source_work_item_id from public.proposal_items where proposal_id=(select result->>'proposalId' from issued_result) and sort=0),null,'internal work coordinate is not copied to client-readable proposal items');
+select is((select source_evidence_refs from public.proposal_items where proposal_id=(select result->>'proposalId' from issued_result) and sort=0),'[]'::jsonb,'internal evidence coordinates are not copied to client-readable proposal items');
 select matches((select result->>'proposalNumber' from issued_result),'^AUX-P-[0-9]{6}$','human-readable proposal number is generated');
 select is((select proposal_id from public.quotes where id='qte_issue'),(select result->>'proposalId' from issued_result),'quote links to the issued proposal');
 select is((select count(*)::int from public.scanner_sales_publications where proposal_id=(select result->>'proposalId' from issued_result)),1,'publication evidence is appended exactly once');

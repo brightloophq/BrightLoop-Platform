@@ -60,9 +60,9 @@ select is((public.bl_scanner_quote_publication_preview('qte_s1g')->>'eligible'):
 select throws_ok($$select public.bl_publish_scanner_quote('qte_s1g',(select updated_at from public.quotes where id='qte_s1g'),'s1g_client','s1g_client_user','USD',9000,'2099-12-31')$$,
  '40001','An onboarded client account is required','unonboarded prospect cannot publish');
 select throws_ok($$select public.bl_publish_scanner_quote('qte_s1g',(select updated_at from public.quotes where id='qte_s1g'),'s1g_client','s1g_invited','USD',9000,'2099-12-31')$$,
- '40001','Recipient must be active, authenticated, and belong to quote client','invited user without authenticated identity cannot publish');
+ '40001','Recipient must be active, authenticated, and belong to the quote client','invited user without authenticated identity cannot publish');
 select throws_ok($$select public.bl_publish_scanner_quote('qte_s1g',(select updated_at from public.quotes where id='qte_s1g'),'s1g_client','s1g_wrong_user','USD',9000,'2099-12-31')$$,
- '40001','Recipient must be active, authenticated, and belong to quote client','cross-client recipient cannot publish');
+ '40001','Recipient must be active, authenticated, and belong to the quote client','cross-client recipient cannot publish');
 
 reset role;
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000082","app_metadata":{"role":"client_admin","client_id":"s1g_client"}}',true);
@@ -96,14 +96,16 @@ select throws_ok($$update public.proposals set deposit=100 where id='s1g_legacy_
  '22023','Non-USD deposits are unavailable until invoice currency support is added',
  'legacy non-USD deposits remain blocked');
 insert into public.runtime_events(id,event_type,run_id,stage,aggregate_id,aggregate_type,client_id,scan_id,sequence,payload)
-values ('s1g_stage_failed','runtime.commercial.stage_failed','s1g_run','proposal_generation','s1g_run','intelligence_run','s1g_client','s1g_scan',3,'{"failure":"test blocker"}');
+values ('s1g_stage_failed','runtime.commercial.stage_failed','s1g_run','proposal_generation','s1g_run','intelligence_run','s1g_client','s1g_scan',
+ coalesce((select max(sequence)+1 from public.runtime_events where aggregate_type='intelligence_run' and aggregate_id='s1g_run'),1),'{"failure":"test blocker"}');
 select ok((public.bl_scanner_quote_publication_preview('qte_s1g')->>'eligible')::boolean=false,
  'unresolved commercial pipeline failure disables publication');
 select throws_ok($$select public.bl_publish_scanner_quote('qte_s1g',(select updated_at from public.quotes where id='qte_s1g'),
  's1g_client','s1g_client_user','USD',9000,'2099-12-31')$$,
  '40001','An unresolved scanner stage failure blocks publication','unresolved stage failure prevents atomic issuance');
 insert into public.runtime_events(id,event_type,run_id,stage,aggregate_id,aggregate_type,client_id,scan_id,sequence,payload)
-values ('s1g_stage_resolved','runtime.commercial.stage_completed','s1g_run','proposal_generation','s1g_run','intelligence_run','s1g_client','s1g_scan',4,'{"status":"completed"}');
+values ('s1g_stage_resolved','runtime.commercial.stage_completed','s1g_run','proposal_generation','s1g_run','intelligence_run','s1g_client','s1g_scan',
+ coalesce((select max(sequence)+1 from public.runtime_events where aggregate_type='intelligence_run' and aggregate_id='s1g_run'),1),'{"status":"completed"}');
 create temporary table s1g_first_publication as
 select public.bl_publish_scanner_quote('qte_s1g',(select updated_at from public.quotes where id='qte_s1g'),
  's1g_client','s1g_client_user','USD',9000,'2099-12-31') as result;
@@ -152,6 +154,36 @@ select is(jsonb_array_length(public.bl_client_scanner_proposal_contents()),0,'cr
 reset role;
 
 -- A material pricing revision is a new immutable scanner version and needs a new source approval.
+select is(has_function_privilege('anon','public.bl_create_scanner_sales_revision(text)','EXECUTE'),false,
+ 'anonymous sessions cannot execute the revision RPC');
+select is(has_function_privilege('service_role','public.bl_create_scanner_sales_revision(text)','EXECUTE'),false,
+ 'service-role sessions cannot execute the revision RPC');
+reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000087","app_metadata":{"role":"team_member"}}',true);
+set local role authenticated;
+select throws_ok(format('select public.bl_create_scanner_sales_revision(%L)',(select proposal_id from s1g_original_offer)),
+ '42501',null,'active team member cannot prepare a scanner sales revision');
+reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000082","app_metadata":{"role":"client_admin","client_id":"s1g_client"}}',true);
+set local role authenticated;
+select throws_ok(format('select public.bl_create_scanner_sales_revision(%L)',(select proposal_id from s1g_original_offer)),
+ '42501',null,'client admin cannot prepare a scanner sales revision');
+reset role;
+select set_config('request.jwt.claims','{"role":"service_role","sub":"00000000-0000-4000-8000-000000000081","app_metadata":{"role":"owner"}}',true);
+set local role service_role;
+select throws_ok(format('select public.bl_create_scanner_sales_revision(%L)',(select proposal_id from s1g_original_offer)),
+ '42501',null,'service-role metadata cannot invoke the revision RPC as an owner');
+reset role;
+select is((select count(*)::int from public.scanner_sales_quote_revisions where predecessor_proposal_id=(select proposal_id from s1g_original_offer)),0,
+ 'unauthorized revision requests create no revision lineage');
+select is((select count(*)::int from public.quotes where source_run_id='s1g_run'),1,
+ 'unauthorized revision requests create no quote');
+select is((select count(*)::int from public.proposals where source_run_id='s1g_run'),1,
+ 'unauthorized revision requests create no canonical proposal');
+select is((select count(*)::int from public.scanner_sales_publications where client_id='s1g_client'),1,
+ 'unauthorized revision requests create no publication');
+select is((select count(*)::int from public.runtime_events where event_type='runtime.commercial.package_promoted' and aggregate_id='s1g_run'),1,
+ 'unauthorized revision requests append no promotion audit event');
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000081","app_metadata":{"role":"owner"}}',true);
 set local role authenticated;
 insert into public.proposal_versions(id,run_id,client_id,scan_id,status,supersedes_id,version,checksum,envelope,idempotency_key,created_by)
@@ -165,7 +197,8 @@ select throws_ok($$select * from public.bl_promote_scanner_package('s1g_run','s1
  '40001','Promotion requires exact current version-bound scanner approval',
  'a commercial revision cannot reuse the predecessor approval');
 insert into public.runtime_events(id,event_type,run_id,aggregate_id,aggregate_type,client_id,scan_id,sequence,actor,payload)
-values ('s1g_revision_approved','runtime.review.approved','s1g_run','s1g_run','intelligence_run','s1g_client','s1g_scan',5,null,
+values ('s1g_revision_approved','runtime.review.approved','s1g_run','s1g_run','intelligence_run','s1g_client','s1g_scan',
+ coalesce((select max(sequence)+1 from public.runtime_events where aggregate_type='intelligence_run' and aggregate_id='s1g_run'),1),null,
  jsonb_build_object('by','00000000-0000-4000-8000-000000000081','binding',public.bl_scanner_sales_current_binding('s1g_run')));
 create temporary table s1g_revision as
 select public.bl_create_scanner_sales_revision((select proposal_id from s1g_original_offer)) as result;
@@ -178,6 +211,17 @@ select is((select count(*)::int from public.scanner_sales_publications where cli
 select is((select status::text from public.proposals where id=(select proposal_id from s1g_original_offer)),'issued',
  'change request and private revision leave the original offer published');
 reset role;
+select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000084","app_metadata":{"role":"admin"}}',true);
+set local role authenticated;
+select lives_ok(format('select public.bl_create_scanner_sales_revision(%L)',(select proposal_id from s1g_original_offer)),
+ 'active admin can invoke the revision RPC for an approved private revision');
+reset role;
+select is((select count(*)::int from public.scanner_sales_quote_revisions where predecessor_proposal_id=(select proposal_id from s1g_original_offer)),1,
+ 'admin revision retry preserves one immutable lineage record');
+select is((select count(*)::int from public.quotes where source_run_id='s1g_run'),2,
+ 'admin revision retry creates no duplicate private quote');
+select is((select count(*)::int from public.scanner_sales_publications where client_id='s1g_client'),1,
+ 'admin revision retry does not publish or supersede the current offer');
 select set_config('request.jwt.claims','{"role":"authenticated","sub":"00000000-0000-4000-8000-000000000082","app_metadata":{"role":"client_admin","client_id":"s1g_client"}}',true);
 set local role authenticated;
 select is((select count(*)::int from public.proposals),1,'unpublished successor does not become client-visible');
