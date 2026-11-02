@@ -9,6 +9,11 @@
 -- =============================================================================
 
 begin;
+-- This RPC intentionally leases across all tenants. Adapter/browser fixtures may
+-- already have eligible jobs in a reused disposable database. Defer only those
+-- pre-existing jobs inside this transaction, before inserting our test jobs.
+-- ROLLBACK below restores every original value; production queue logic is untouched.
+update public.job_queue set available_at = 'infinity'::timestamptz where status = 'queued';
 create extension if not exists pgtap;
 select no_plan();
 

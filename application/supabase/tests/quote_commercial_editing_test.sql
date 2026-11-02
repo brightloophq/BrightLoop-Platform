@@ -15,15 +15,8 @@ insert into public.users (id, auth_user_id, name, email, role, client_id) values
   ('usr_edit_team', '40000000-0000-0000-0000-000000000003', 'Team', 'team-edit@example.test', 'team_member', null);
 insert into public.conversation_participants (conversation_id, user_id) values ('conv_edit', 'usr_edit_client');
 
-insert into public.intelligence_runs (id, lead_id, scan_id, status, idempotency_key, created_by)
-values ('run_edit', 'lead_edit', 'scan_edit', 'completed', 'idem_run_edit', 'usr_edit_owner');
-insert into public.proposal_versions (id, run_id, scan_id, status, version, checksum, envelope, idempotency_key, created_by)
-values ('pv_edit', 'run_edit', 'scan_edit', 'needs_review', 1, 'sum-edit', '{"status":"draft_ready","recommendedWork":[{"sourceId":"work:edit","title":"Original work","solution":"Original scope","evidenceIds":["ev:edit"]}]}'::jsonb, 'idem_pv_edit', 'usr_edit_owner');
-insert into public.runtime_events (id,event_type,run_id,aggregate_id,aggregate_type,scan_id,sequence,payload,actor)
-values ('evt_edit','runtime.review.approved','run_edit','run_edit','intelligence_run','scan_edit',1,'{"proposalVersionId":"pv_edit","proposalChecksum":"sum-edit"}','usr_edit_owner');
-
-insert into public.quotes (id, lead_id, commercial_mode, title, status, source_run_id, source_proposal_version_id, source_review_event_id, promotion_key, created_by)
-values ('qte_edit', 'lead_edit', 'proposal_only', 'Commercial scope', 'draft', 'run_edit', 'pv_edit', 'evt_edit', 'promo:run_edit:pv_edit:evt_edit', 'usr_edit_owner');
+insert into public.quotes (id, conversation_id, client_id, commercial_mode, title, status, created_by)
+values ('qte_edit', 'conv_edit', 'cli_edit', 'legacy_client_quote', 'Commercial scope', 'draft', 'usr_edit_owner');
 insert into public.quote_items (id, quote_id, label, description, quantity, unit_amount, amount, sort, source_work_item_id, source_evidence_refs)
 values ('qit_edit_source', 'qte_edit', 'Original work', 'Original scope', 1, null, null, 0, 'work:edit', '["ev:edit"]');
 
@@ -33,16 +26,8 @@ insert into public.quote_items (id, quote_id, label, quantity, unit_amount, amou
 values ('qit_edit_legacy', 'qte_edit_legacy', 'Legacy item', 1, 100, 100);
 
 select is((select commercial_mode from public.quotes where id='qte_edit_legacy'), 'legacy_client_quote', 'legacy mode remains unchanged');
-select is((select unit_amount from public.quote_items where id='qit_edit_source'), null, 'proposal-only scanner item starts unpriced');
+select is((select unit_amount from public.quote_items where id='qit_edit_source'), null, 'legacy quote item starts unpriced');
 select is((select amount from public.quote_items where id='qit_edit_source'), null, 'unpriced amount is null');
-select is(
-  (select count(*)::int from public.quote_items qi join public.quotes q on q.id=qi.quote_id
-   where q.commercial_mode='proposal_only' and qi.source_work_item_id is not null
-     and qi.unit_amount=0 and qi.amount=0),
-  0,
-  'clean migration replay leaves no scanner-sourced proposal item in ambiguous placeholder 0/0 state'
-);
-
 select set_config('request.jwt.claims', '{"sub":"40000000-0000-0000-0000-000000000001","app_metadata":{"role":"owner"}}', true);
 set local role authenticated;
 
@@ -59,8 +44,8 @@ select is((select title from public.quotes where id='qte_edit'), 'Priced scope',
 select is((select currency from public.quotes where id='qte_edit'), 'USD', 'quote owns uppercase currency');
 select is((select valid_until::text from public.quotes where id='qte_edit'), '2026-12-31', 'validity is stored on quote');
 select is((select amount from public.quote_items where id='qit_edit_source'), 2000::bigint, 'amount is server-derived from quantity and unit amount');
-select is((select source_work_item_id from public.quote_items where id='qit_edit_source'), 'work:edit', 'existing scanner item updates in place with work lineage');
-select is((select source_evidence_refs from public.quote_items where id='qit_edit_source'), '["ev:edit"]'::jsonb, 'existing scanner evidence lineage remains intact');
+select is((select source_work_item_id from public.quote_items where id='qit_edit_source'), 'work:edit', 'existing quote item retains its supplied work coordinate');
+select is((select source_evidence_refs from public.quote_items where id='qit_edit_source'), '["ev:edit"]'::jsonb, 'existing quote evidence coordinate remains intact');
 select is((select count(*)::int from public.quote_items where quote_id='qte_edit' and source_work_item_id is null), 4, 'operator-created items have no scanner work lineage');
 select is(
   (select persisted_items->0->>'id' from public.bl_save_quote_commercial(
@@ -162,7 +147,7 @@ select lives_ok(
   $$ select * from public.bl_save_quote_commercial('qte_edit',(select updated_at from public.quotes where id='qte_edit'),'Incomplete','', 'USD',0,null,'[{"id":"qit_edit_source","label":"Required","description":"","quantity":1,"unitAmount":null,"pricingType":"one_time","recurrenceCadence":null,"optional":false}]'::jsonb) $$,
   'required scope may be saved unpriced while still draft'
 );
-select lives_ok($$ update public.quotes set status='internal_review' where id='qte_edit' $$, 'proposal-only internal review is not blocked by incomplete pricing');
+select lives_ok($$ update public.quotes set status='internal_review' where id='qte_edit' $$, 'legacy quote internal review is not blocked by incomplete pricing');
 
 insert into public.quote_items (
   id, quote_id, label, description, quantity, unit_amount, amount, sort,
@@ -178,9 +163,9 @@ select lives_ok(
   ) $$,
   'explicit sourced-item removal succeeds without a lineage mutation error'
 );
-select is((select count(*)::int from public.quote_items where id='qit_edit_source'), 0, 'omitted sourced item is deleted');
-select is((select source_work_item_id from public.quote_items where id='qit_edit_source_keep'), 'work:keep', 'remaining sourced item retains work-item lineage');
-select is((select source_evidence_refs from public.quote_items where id='qit_edit_source_keep'), '["ev:keep"]'::jsonb, 'remaining sourced item retains evidence lineage');
+select is((select count(*)::int from public.quote_items where id='qit_edit_source'), 0, 'omitted quote item is deleted');
+select is((select source_work_item_id from public.quote_items where id='qit_edit_source_keep'), 'work:keep', 'remaining quote item retains its work coordinate');
+select is((select source_evidence_refs from public.quote_items where id='qit_edit_source_keep'), '["ev:keep"]'::jsonb, 'remaining quote item retains its evidence coordinate');
 select results_eq(
   $$ select subtotal,total from public.quotes where id='qte_edit' $$,
   $$ values (100::bigint,100::bigint) $$,
@@ -202,8 +187,8 @@ select throws_ok(
   $$ select * from public.bl_save_quote_commercial('qte_edit_legacy',(select updated_at from public.quotes where id='qte_edit_legacy'),'Nope','', 'USD',0,null,'[]'::jsonb) $$,
   '42501', 'Commercial quote editing requires clients.update', 'client caller is rejected by RPC'
 );
-select is((select count(*)::int from public.quotes where id='qte_edit'), 0, 'client still cannot read proposal-only quote');
-select is((select count(*)::int from public.quote_items where quote_id='qte_edit'), 0, 'client still cannot read proposal-only items');
+select is((select count(*)::int from public.quotes where id='qte_edit'), 0, 'client cannot read an internal-review legacy quote');
+select is((select count(*)::int from public.quote_items where quote_id='qte_edit'), 0, 'client cannot read internal-review legacy quote items');
 
 reset role;
 select * from finish();

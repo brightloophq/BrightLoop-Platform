@@ -58,13 +58,9 @@ jobs:
         run: pnpm build
 
   db-verify:
-    name: migrate · pgTAP · RLS · adapter · type-drift
+    name: migrate · pgTAP · approval races · browser · type-drift
     runs-on: ubuntu-latest
-    # Live database gate: spins up a real ephemeral Supabase (Postgres) via the
-    # Supabase CLI + Docker, applies every migration from a clean DB, then runs
-    # the pgTAP suite, the cross-tenant RLS tests, and the Sprint 2 transformation
-    # adapter integration tests against it. No production keys — every credential
-    # comes from the local stack's own `supabase status`.
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: application
@@ -83,56 +79,54 @@ jobs:
           cache: pnpm
           cache-dependency-path: application/pnpm-lock.yaml
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install dependencies (no lifecycle scripts)
+        run: pnpm install --frozen-lockfile --ignore-scripts
 
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.116.0
 
-      - name: Start Supabase (Docker)
-        run: supabase start
+      - name: Check local-target guard regressions
+        run: node --test scripts/with-local-db.test.mjs
 
-      # Clean apply of every migration + seed. Fails the job on any migration error.
-      - name: Reset database (clean migrate + seed)
-        run: supabase db reset
+      - name: Prepare an unlinked disposable project
+        run: node scripts/prepare-ci-db.mjs
 
-      # Transition guards + RLS / cross-tenant coverage. Fails on any failed assertion.
+      # Fresh workdir + unique project: start applies all migrations, no reset.
+      - name: Start disposable Supabase and apply migration chain
+        run: supabase start --workdir "$AUXION_DB_WORKDIR"
+
       - name: Run pgTAP tests
-        run: supabase test db
+        run: supabase test db --local --workdir "$AUXION_DB_WORKDIR"
 
-      # The integration suite runs `packages/data` from source, but its workspace
-      # dependencies are consumed as COMPILED output (`exports` → `./dist`). Type-only
-      # imports are erased and need nothing, so this job historically got away
-      # without a build — an adapter that imports a runtime VALUE from
-      # @brightloop/domain (e.g. the runtime result helpers) cannot resolve without
-      # it. Build the two packages data actually loads at runtime; @brightloop/db is
-      # types-only and needs no build.
-      - name: Build workspace dependencies for the integration run
-        run: pnpm --filter @brightloop/schema --filter @brightloop/domain build
+      - name: Build workspace dependencies
+        run: pnpm -r --filter @brightloop/schema --filter @brightloop/domain --filter @brightloop/application --filter @brightloop/data --filter @brightloop/providers --filter @brightloop/crawler build
 
-      # Exercise the real Supabase transformation adapter (Sprint 2) end-to-end,
-      # including the human-approval gate, idempotent execution, and cross-tenant
-      # isolation. Credentials are pulled from the running local stack only.
-      - name: Run adapter integration tests
-        run: |
-          set -a
-          eval "$(supabase status -o env)"
-          export SUPABASE_TEST_URL="$API_URL"
-          export SUPABASE_TEST_SERVICE_KEY="$SERVICE_ROLE_KEY"
-          export SUPABASE_TEST_ANON_KEY="$ANON_KEY"
-          export SUPABASE_TEST_JWT_SECRET="$JWT_SECRET"
-          set +a
-          pnpm --filter @brightloop/data test:integration
+      # The wrapper verifies loopback ports and the actual Docker project label,
+      # masks local credentials, and sets SUPABASE_TEST_DB_CONTAINER. Missing
+      # container configuration is fatal, so both concurrency cases must execute.
+      - name: Run adapter integration tests including real approval races
+        run: node scripts/with-local-db.mjs -- pnpm --filter @brightloop/data test:integration
 
-      # Regenerate types from the live migrated schema.
-      - name: Regenerate generated types
-        run: pnpm --filter @brightloop/db gen:types:local
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
 
-      # Publish the freshly generated file so a genuine drift can be resolved by
-      # committing the SUPABASE-GENERATED output (never hand-authored). Uploaded
-      # before the drift gate so it is captured even when the gate fails.
+      - name: Build browser acceptance app against local Supabase
+        run: node scripts/with-local-db.mjs -- pnpm --filter @brightloop/web build
+
+      - name: Run commercial browser acceptance
+        run: node scripts/with-local-db.mjs -- pnpm test:browser
+
+      # These suites must also pass with persistent adapter/browser fixtures.
+      - name: Run full SQL suite after adapters and browser tests
+        if: always() && env.AUXION_DB_WORKDIR != ''
+        run: supabase test db --local --workdir "$AUXION_DB_WORKDIR"
+
+      - name: Regenerate generated types from disposable database
+        if: always() && env.AUXION_DB_WORKDIR != ''
+        run: supabase gen types typescript --local --workdir "$AUXION_DB_WORKDIR" > packages/db/generated/database.types.ts
+
       - name: Upload generated types
         if: always()
         uses: actions/upload-artifact@v4
@@ -141,16 +135,12 @@ jobs:
           path: application/packages/db/generated/database.types.ts
           if-no-files-found: error
 
-      # Fail if the regenerated types drift from the committed file (stale
-      # generated types must never merge).
       - name: Fail on generated-type drift
-        run: |
-          git diff --exit-code -- packages/db/generated/database.types.ts \
-            || (echo "::error::Generated database types are stale. Download the 'generated-db-types' artifact (or run 'pnpm --filter @brightloop/db gen:types:local' locally) and commit packages/db/generated/database.types.ts." && exit 1)
+        run: git diff --exit-code -- packages/db/generated/database.types.ts
 
-      - name: Stop Supabase
-        if: always()
-        run: supabase stop
+      - name: Stop only the disposable project
+        if: always() && env.AUXION_DB_WORKDIR != ''
+        run: supabase stop --workdir "$AUXION_DB_WORKDIR"
 
   secret-scan:
     name: gitleaks secret scan

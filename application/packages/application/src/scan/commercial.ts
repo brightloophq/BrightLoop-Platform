@@ -12,18 +12,17 @@
  * Nothing here sends, publishes, or contacts the prospect.
  * ========================================================================== */
 
-import { COMMERCIAL_STAGE_ORDER, RUNTIME_EVENTS, type RuntimeEventName } from "@brightloop/domain";
+import { COMMERCIAL_STAGE_ORDER, RUNTIME_EVENTS, computePricingCompleteness, computeProposalPricingTotals } from "@brightloop/domain";
+import { commercialProposalSchema, proposalItemPricingSchema, proposalPricingSchema, setProposalPricingInputSchema, type SetProposalPricingInput } from "@brightloop/schema";
 import type { AppContext } from "../context.js";
-import { PACKAGE_REVIEW_CAP, SCAN_READ_CAP } from "../context.js";
+import { SCAN_READ_CAP, SCAN_WRITE_CAP } from "../context.js";
 import type { ArtifactDTO, NarrativeDTO } from "../dto.js";
 import { toProposalDTO, toNarrativeDTO } from "../dto.js";
-import { NotFoundError, ValidationError } from "../errors.js";
+import { ConflictError, NotFoundError, ValidationError } from "../errors.js";
 import { unwrap } from "../runtime-result.js";
 import { loadAuthorizedRun } from "./shared.js";
-import type { PackageReviewDecision } from "./package-readiness.js";
 
 const CLIENT_AUDIENCE = "client";
-const NOTE_MAX = 500;
 
 export type CommercialKickoffOutcome = "created" | "replayed" | "skipped" | "failed";
 
@@ -83,82 +82,94 @@ export async function getScanClientNarrative(ctx: AppContext, rawRunId: unknown)
   return toNarrativeDTO(latest);
 }
 
-export interface ProspectPackageReviewDTO {
-  decision: PackageReviewDecision;
-  reviewEventId: string | null;
-  proposalVersionId: string | null;
-  proposalChecksum: string | null;
-  narrativeVersionId: string | null;
-  decidedBy: string | null;
-  decidedAt: string | null;
-  note: string | null;
-}
+/* ---- Admin pricing ----------------------------------------------------------
+ * Admin-entered pricing is authoritative — AI never sets a final price. The client
+ * supplies price lines only; the server computes the totals (integer minor units),
+ * derives completeness, and SUPERSEDES the proposal version so history is preserved
+ * and the change is attributed. Pricing NEVER approves the proposal — status is
+ * carried through unchanged; approval remains a separate, explicit human action.
+ * -------------------------------------------------------------------------- */
 
-const REVIEW_EVENT_DECISION: Record<string, PackageReviewDecision> = {
-  [RUNTIME_EVENTS.reviewApproved]: "approved",
-  [RUNTIME_EVENTS.reviewRevisionRequested]: "revision_requested",
-  [RUNTIME_EVENTS.reviewRejected]: "rejected",
-};
-
-/** The current review decision — a deterministic fold of the append-only event log. */
-export async function getProspectPackageReview(ctx: AppContext, rawRunId: unknown): Promise<ProspectPackageReviewDTO> {
-  const run = await loadAuthorizedRun(ctx, rawRunId, SCAN_READ_CAP);
-  const events = unwrap(await ctx.services.events.list({ aggregateType: "intelligence_run", aggregateId: run.id }));
-  // Latest decision wins (events are monotonically sequenced per aggregate).
-  const decisions = events.filter((e) => e.eventType in REVIEW_EVENT_DECISION).sort((a, b) => a.sequence - b.sequence);
-  const last = decisions[decisions.length - 1];
-  if (last === undefined) return { decision: "pending", reviewEventId: null, proposalVersionId: null, proposalChecksum: null, narrativeVersionId: null, decidedBy: null, decidedAt: null, note: null };
-  const by = typeof last.payload["by"] === "string" ? (last.payload["by"] as string) : null;
-  return {
-    decision: REVIEW_EVENT_DECISION[last.eventType]!,
-    reviewEventId: last.id,
-    proposalVersionId: typeof last.payload["proposalVersionId"] === "string" ? last.payload["proposalVersionId"] as string : null,
-    proposalChecksum: typeof last.payload["proposalChecksum"] === "string" ? last.payload["proposalChecksum"] as string : null,
-    narrativeVersionId: typeof last.payload["narrativeVersionId"] === "string" ? last.payload["narrativeVersionId"] as string : null,
-    decidedBy: last.actor ?? by,
-    decidedAt: last.occurredAt,
-    note: typeof last.payload["note"] === "string" ? (last.payload["note"] as string) : null,
-  };
-}
-
-/** The review actions an admin can take on a generated package. */
-export type PackageReviewAction = "approve" | "request_revision" | "reject";
-const ACTION_EVENT: Record<PackageReviewAction, RuntimeEventName> = {
-  approve: RUNTIME_EVENTS.reviewApproved,
-  request_revision: RUNTIME_EVENTS.reviewRevisionRequested,
-  reject: RUNTIME_EVENTS.reviewRejected,
-};
-
-export interface DecideProspectPackageInput {
-  action: PackageReviewAction;
-  note?: string;
-}
+export type { SetProposalPricingInput };
 
 /**
- * Record a review decision on the prospect package. Requires the grant-authority
- * capability (owner/admin). Appends an auditable runtime event carrying the acting
- * user; it does NOT send or publish anything.
+ * Persist admin pricing for the latest commercial proposal draft. Requires the
+ * internal scan-write capability (owner/admin/team_member); client roles are denied
+ * by the capability + RLS. Validates every priced line against a real recommended
+ * work item (no phantom pricing), computes totals server-side, sets `commercialState`
+ * from completeness, supersedes the version, and appends a safe audit event.
  */
-export async function decideProspectPackage(ctx: AppContext, rawRunId: unknown, input: DecideProspectPackageInput): Promise<ProspectPackageReviewDTO> {
-  const run = await loadAuthorizedRun(ctx, rawRunId, PACKAGE_REVIEW_CAP);
-  const action = input.action;
-  if (action !== "approve" && action !== "request_revision" && action !== "reject") {
-    throw new ValidationError("'action' must be approve | request_revision | reject", { action: "invalid_value" });
-  }
-  const note = typeof input.note === "string" ? input.note.slice(0, NOTE_MAX) : null;
+export async function setProposalPricing(ctx: AppContext, rawRunId: unknown, rawInput: unknown): Promise<ArtifactDTO> {
+  const run = await loadAuthorizedRun(ctx, rawRunId, SCAN_WRITE_CAP);
 
-  // Artifact provenance enriches new decision events, but review remains valid
-  // when commercial artifacts have not been produced or a lookup is unavailable.
-  const [proposalResult, narrativeResult] = await Promise.all([
-    ctx.services.proposals.latest(run.id),
-    ctx.services.narratives.latest(run.id, CLIENT_AUDIENCE),
-  ]);
-  const proposal = proposalResult.ok ? proposalResult.value : null;
-  const narrative = narrativeResult.ok ? narrativeResult.value : null;
+  const parsed = setProposalPricingInputSchema.safeParse(rawInput);
+  if (!parsed.success) {
+    throw new ValidationError("Invalid pricing input", { pricing: parsed.error.issues[0]?.message ?? "invalid" });
+  }
+  const input = parsed.data;
+
+  const prior = unwrap(await ctx.services.proposals.latest(run.id), { not_found: () => new NotFoundError("commercial proposal") });
+  if (prior.version !== input.expectedVersion) {
+    throw new ConflictError("The proposal changed. Reload the current pricing before saving.");
+  }
+  const proposal = commercialProposalSchema.parse(prior.envelope);
+  const priorPricing = proposal.pricing;
+  const priorLines = new Map((priorPricing?.items ?? []).map((line) => [line.sourceId, line]));
+  const items = input.items.map((line) => {
+    const old = priorLines.get(line.sourceId);
+    return proposalItemPricingSchema.parse({
+      ...line,
+      cadence: line.cadence !== undefined ? line.cadence : old?.cadence ?? null,
+      quantity: line.quantity ?? old?.quantity ?? 1,
+      optional: line.optional ?? old?.optional ?? false,
+      adminNotes: line.adminNotes ?? old?.adminNotes ?? "",
+    });
+  });
+
+  // Pricing only applies to a real draft — an insufficient-evidence stub has no
+  // authoritative work to price.
+  if (proposal.status !== "draft_ready") {
+    throw new ValidationError("This proposal has no draft to price", { status: proposal.status });
+  }
+  // Never price phantom work: every line must reference a real recommended item.
+  const workIds = new Set(proposal.recommendedWork.map((w) => w.sourceId));
+  const unknownIds = items.filter((i) => !workIds.has(i.sourceId)).map((i) => i.sourceId);
+  if (unknownIds.length > 0) {
+    throw new ValidationError("Pricing references unknown work items", { sourceIds: unknownIds.join(",") });
+  }
+  // One price line per work item — a duplicate sourceId is ambiguous.
+  const seen = new Set<string>();
+  for (const line of items) {
+    if (seen.has(line.sourceId)) throw new ValidationError("Duplicate pricing for a work item", { sourceId: line.sourceId });
+    seen.add(line.sourceId);
+  }
+
+  const discountMinor = input.discountMinor ?? priorPricing?.discountMinor ?? 0;
+  const totals = computeProposalPricingTotals(items, discountMinor);
+  const pricing = proposalPricingSchema.parse({
+    currency: input.currency ?? priorPricing?.currency ?? "USD",
+    items,
+    discountMinor: totals.discountMinor,
+    subtotalOneTimeMinor: totals.subtotalOneTimeMinor,
+    totalOneTimeMinor: totals.totalOneTimeMinor,
+    totalRecurringMonthlyMinor: totals.totalRecurringMonthlyMinor,
+    validUntil: input.validUntil !== undefined ? input.validUntil : priorPricing?.validUntil ?? null,
+    commercialNotes: input.commercialNotes ?? priorPricing?.commercialNotes ?? "",
+    pricedBy: ctx.actor.userId,
+    pricedAt: ctx.clock(),
+  });
+  const completeness = computePricingCompleteness(proposal.recommendedWork, pricing);
+
+  // Supersede the version with pricing filled in; STATUS IS CARRIED THROUGH — pricing
+  // never approves. Only `commercialState` moves (needs_pricing → priced when complete).
+  const nextEnvelope: Record<string, unknown> = { ...(prior.envelope as Record<string, unknown>), pricing, commercialState: completeness.state };
+  const saved = unwrap(await ctx.services.proposals.supersede(prior, nextEnvelope, prior.status), {
+    conflict: () => new ConflictError("The proposal changed while saving. Reload the current pricing and try again."),
+  });
 
   unwrap(
     await ctx.services.events.emit({
-      eventType: ACTION_EVENT[action],
+      eventType: RUNTIME_EVENTS.proposalPricingUpdated,
       aggregateType: "intelligence_run",
       aggregateId: run.id,
       clientId: run.clientId,
@@ -166,12 +177,21 @@ export async function decideProspectPackage(ctx: AppContext, rawRunId: unknown, 
       scanId: run.scanId,
       payload: {
         by: ctx.actor.userId,
-        ...(note !== null ? { note } : {}),
-        ...(proposal !== null ? { proposalVersionId: proposal.id, proposalChecksum: proposal.checksum } : {}),
-        ...(narrative !== null ? { narrativeVersionId: narrative.id } : {}),
+        proposalVersionId: saved.id,
+        version: saved.version,
+        currency: pricing.currency,
+        pricedItemCount: pricing.items.length,
+        hasRecurring: pricing.totalRecurringMonthlyMinor > 0,
+        hasDiscount: pricing.discountMinor > 0,
+        commercialState: completeness.state,
       },
     }),
   );
 
-  return getProspectPackageReview(ctx, rawRunId);
+  return toProposalDTO(saved);
 }
+
+export {
+  getProspectPackageReview, decideProspectPackage,
+  type ProspectPackageReviewDTO, type PackageReviewAction, type DecideProspectPackageInput,
+} from "./commercial-review.js";

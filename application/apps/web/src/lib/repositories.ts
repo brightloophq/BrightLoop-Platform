@@ -642,4 +642,3 @@ export async function getTransformationService(): Promise<TransformationService>
   const repo = new SupabaseTransformationRepository(client);
   return createTransformationService({ repo, ids: newId });
 }
-

@@ -1,6 +1,7 @@
 import { Badge, OperationalPanel, SectionRule } from "@brightloop/ui";
 import { commercialBadgeStatus, type CommercialProposalView } from "@/lib/prospect-scanner";
 import styles from "../scanner.module.css";
+import { CommercialProposalWorkspace } from "./CommercialProposalWorkspace";
 
 /**
  * §09 — the INTERNAL admin proposal surface.
@@ -12,7 +13,7 @@ import styles from "../scanner.module.css";
  * ready), the review axis (Review required), and the commercial axis (Pricing
  * required). Pricing is never fabricated — `needs_pricing` is the honest default.
  */
-export function CommercialProposalPanel({ proposal }: { proposal: CommercialProposalView }) {
+function CommercialProposalReadout({ proposal }: { proposal: CommercialProposalView }) {
   if (!proposal.present) {
     return (
       <OperationalPanel tone="anchor">
@@ -137,5 +138,16 @@ export function CommercialProposalPanel({ proposal }: { proposal: CommercialProp
         <span>Approve in the Prospect package · nothing is sent</span>
       </div>
     </OperationalPanel>
+  );
+}
+
+
+/** Preserve the intelligence readout and provide the versioned pricing editor. */
+export function CommercialProposalPanel({ runId, proposal }: { runId: string; proposal: CommercialProposalView }) {
+  return (
+    <>
+      <CommercialProposalReadout proposal={proposal} />
+      {proposal.present ? <CommercialProposalWorkspace runId={runId} proposal={proposal} /> : null}
+    </>
   );
 }

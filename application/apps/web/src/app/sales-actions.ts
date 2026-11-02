@@ -6,6 +6,7 @@ import { getActor } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { selectSignatureProvider } from "@/lib/signatures";
 import { performTransition } from "./admin/transition-service";
+import { parseUsdMinorUnits } from "@/lib/sales-money";
 
 /**
  * Admin sales actions (Sprint 6) — proposal → contract → deposit invoice.
@@ -21,6 +22,15 @@ export interface SalesResult {
   ok: boolean;
   error?: string;
   id?: string;
+}
+
+export interface ScannerPublicationConfirmation {
+  proposalId: string;
+  clientId: string;
+  recipientUserId: string;
+  currency: string;
+  totalMinor: number;
+  validUntil: string;
 }
 
 function id(prefix: string): string {
@@ -52,7 +62,11 @@ export async function setProposalDeposit(formData: FormData): Promise<SalesResul
     const proposalId = String(formData.get("proposalId") ?? "").trim();
     const kindError = await requireLegacyProposal(supabase, proposalId);
     if (kindError) return { ok: false, error: kindError };
-    const deposit = Math.max(0, Math.round(Number(formData.get("depositDollars") ?? 0) * 100));
+    const deposit = parseUsdMinorUnits(String(formData.get("depositDollars") ?? "0"));
+    if (deposit === null) return { ok: false, error: "Enter a USD deposit with at most two decimal places and within the supported range." };
+    const { data: proposal, error: readError } = await supabase.from("proposals").select("currency").eq("id", proposalId).maybeSingle();
+    if (readError || !proposal) return { ok: false, error: "Proposal could not be loaded." };
+    if (proposal.currency !== "USD" && deposit > 0) return { ok: false, error: "Non-USD deposits are unavailable until invoice currency support is added." };
     const { error } = await supabase.from("proposals").update({ deposit }).eq("id", proposalId);
     if (error) return { ok: false, error: error.message };
     revalidatePath(`/admin/proposals/${proposalId}`);
@@ -63,17 +77,35 @@ export async function setProposalDeposit(formData: FormData): Promise<SalesResul
 }
 
 export async function sendProposal(proposalId: string): Promise<SalesResult> {
+  // Scanner-origin proposals use the explicit publication path. Keep both
+  // origin and proposal-kind checks so legacy status transitions cannot publish them.
   try {
     const { supabase } = await internal();
     const kindError = await requireLegacyProposal(supabase, proposalId);
     if (kindError) return { ok: false, error: kindError };
-  } catch (e) { return { ok: false, error: e instanceof Error ? e.message : "Failed" }; }
+    const { data: conversion, error } = await supabase.from("scanner_sales_conversions")
+      .select("id").eq("proposal_id", proposalId).maybeSingle();
+    if (error) return { ok: false, error: "Could not verify proposal origin." };
+    if (conversion) return { ok: false, error: "Use the confirmed portal publication action for scanner proposals." };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Failed" };
+  }
   const res = await performTransition({
     table: "proposals", machine: "proposal", entityId: proposalId, to: "sent",
     capability: CAP_SALES, patch: { sent_at: new Date().toISOString() },
   });
   if (res.ok) { revalidatePath("/admin/proposals", "layout"); revalidatePath("/portal/proposals"); }
   return res.ok ? { ok: true, id: proposalId } : { ok: false, error: res.error };
+}
+
+export async function publishScannerSalesProposal(input: ScannerPublicationConfirmation): Promise<SalesResult> {
+  void input;
+  return { ok: false, error: "Scanner proposal publication is paused until the canonical quote issuance and publication migration is installed." };
+}
+
+export async function createScannerSalesRevision(predecessorProposalId: string): Promise<SalesResult> {
+  void predecessorProposalId;
+  return { ok: false, error: "Quote-backed scanner revisions are unavailable until the canonical revision migration is installed." };
 }
 
 /* ---- contracts ------------------------------------------------------------- */

@@ -493,7 +493,9 @@ export class InMemoryRuntimeRepository implements RuntimeRepository {
     const rows = this.events
       .filter((e) => e.aggregateType === query.aggregateType && e.aggregateId === query.aggregateId)
       .filter((e) => (query.fromSequence === undefined ? true : e.sequence >= query.fromSequence))
-      .sort((a, b) => a.sequence - b.sequence);
+      .filter((e) => query.eventTypes === undefined || query.eventTypes.includes(e.eventType))
+      .filter((e) => query.stage === undefined || e.stage === query.stage)
+      .sort((a, b) => query.descending ? b.sequence - a.sequence : a.sequence - b.sequence);
     return ok("found", query.limit === undefined ? rows : rows.slice(0, query.limit));
   }
 

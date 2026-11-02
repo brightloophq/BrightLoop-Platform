@@ -5,12 +5,117 @@ import {
   buildCommercialProposalView,
   buildClientNarrativeView,
   buildCompetitorIntelligenceView,
+  buildProposalPreview,
   buildProspectPackageView,
   emptyCommercialProposalView,
   emptyClientNarrativeView,
   readProposalPoints,
   readProposalWork,
 } from "./prospect-scanner";
+
+const pricedProposalContent = {
+  id: "cp1", scanId: "scan-p", clientId: null, status: "draft_ready", reason: null, commercialState: "priced",
+  executiveSummary: "Lift conversion and search reach.", observedSituation: "Slow pages, thin search presence.",
+  keyIssues: [{ title: "Slow pages", detail: "Home page is slow.", evidenceIds: ["e1"] }],
+  opportunities: [{ title: "SEO gap", detail: "Untapped search demand.", evidenceIds: ["e2"] }],
+  recommendedWork: [
+    { sourceId: "w1", title: "Website redesign", solution: "Rebuild core pages", priority: "high", effort: "Large", evidenceIds: ["e1"] },
+    { sourceId: "w2", title: "SEO management", solution: "Ongoing optimization", priority: "medium", effort: "Medium", evidenceIds: ["e2"] },
+  ],
+  competitorContext: null, proposedNextStep: "Review scope and confirm pricing.", supportingEvidenceIds: ["e1", "e2"],
+  confidence: { value: 70, band: "high" }, reviewRequired: true, sourceArtifacts: ["a1"], checksum: "x", generatedAt: "t",
+  pricing: {
+    currency: "USD",
+    items: [
+      { sourceId: "w1", pricingType: "one_time", amountMinor: 120000, cadence: null, quantity: 1, optional: false, adminNotes: "" },
+      { sourceId: "w2", pricingType: "recurring", amountMinor: 30000, cadence: "monthly", quantity: 1, optional: false, adminNotes: "" },
+    ],
+    discountMinor: 0, subtotalOneTimeMinor: 120000, totalOneTimeMinor: 120000, totalRecurringMonthlyMinor: 30000,
+    validUntil: "2026-09-10", commercialNotes: "Payment on milestones.", pricedBy: "u_owner", pricedAt: "t",
+  },
+};
+
+describe("§09 pricing editor visibility — the view inputs that drive the workspace", () => {
+  // The workspace renders its editable pricing grid whenever `present` is true, one
+  // row per `workItems` entry. These assert the exact view state that makes the
+  // editor appear for an authorized admin on a needs_pricing draft (the live gap
+  // was a STALE preview: the editor is wired at page.tsx → CommercialProposalWorkspace).
+  const draftContent = {
+    id: "cp1", scanId: "s", clientId: null, status: "draft_ready", reason: null, commercialState: "needs_pricing", pricing: null,
+    executiveSummary: "…", observedSituation: "…", keyIssues: [], opportunities: [],
+    recommendedWork: [1, 2, 3, 4, 5].map((n) => ({ sourceId: `w${n}`, title: `Item ${n}`, solution: `Do ${n}`, priority: "medium", effort: "Medium", evidenceIds: [`e${n}`] })),
+    competitorContext: null, proposedNextStep: "…", supportingEvidenceIds: [], confidence: { value: 60, band: "moderate" },
+    reviewRequired: true, sourceArtifacts: [], checksum: "x", generatedAt: "t",
+  };
+  const dto = (content: unknown): ArtifactDTO => ({ id: "cp1", kind: "proposal", version: 1, status: "valid", createdAt: "t", content: content as Record<string, unknown> });
+
+  it("a needs_pricing draft exposes present + draftReady + all five editable work items", () => {
+    const v = buildCommercialProposalView(dto(draftContent));
+    expect(v.present).toBe(true); // → the workspace renders its editor (not the "Not drafted" fallback)
+    expect(v.draftReady).toBe(true);
+    expect(v.needsPricing).toBe(true);
+    expect(v.workItems).toHaveLength(5); // → five editable rows, sourced from the commercial proposal
+    expect(v.workItems.every((w) => w.sourceId !== "" && w.amountMinor === null)).toBe(true); // unpriced, ready to edit
+  });
+
+  it("a persisted price line pre-fills the editor for that item and marks the proposal priced", () => {
+    const priced = { ...draftContent, commercialState: "priced", pricing: { currency: "CAD", items: [{ sourceId: "w1", pricingType: "recurring", amountMinor: 30000, cadence: "monthly", quantity: 4, optional: false, adminNotes: "Preserve line notes" }], discountMinor: 25, subtotalOneTimeMinor: 0, totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 120000, validUntil: "2099-12-31", commercialNotes: "Keep proposal note", pricedBy: "u", pricedAt: "t" } };
+    const v = buildCommercialProposalView(dto(priced));
+    expect(v.currency).toBe("CAD");
+    expect(v.version).toBe(1);
+    expect(v.discountMinor).toBe(25);
+    expect(v.validUntil).toBe("2099-12-31");
+    expect(v.commercialNotes).toBe("Keep proposal note");
+    const w1 = v.workItems.find((w) => w.sourceId === "w1")!;
+    expect(w1.amountMinor).toBe(30000);
+    expect(w1.pricingType).toBe("recurring");
+    expect(w1.cadence).toBe("monthly");
+    expect(w1.quantity).toBe(4);
+    expect(w1.adminNotes).toBe("Preserve line notes");
+    expect(v.needsPricing).toBe(false); // → §09 shows "Pricing complete"
+  });
+
+  it("an absent proposal yields the not-present view (workspace shows the 'Not drafted' fallback, no editor)", () => {
+    expect(buildCommercialProposalView(null).present).toBe(false);
+  });
+});
+
+describe("buildProposalPreview — deterministic client-facing composition", () => {
+  const identity = { businessName: "ZeEvents", websiteUrl: "https://zeevents.xyz" };
+
+  it("composes the preview from the PERSISTED commercial pricing (formatted, no invention)", () => {
+    const p = buildProposalPreview(pricedProposalContent, identity, "scan-p");
+    expect(p.present).toBe(true);
+    expect(p.prospectName).toBe("ZeEvents");
+    expect(p.work.map((w) => w.priceLabel)).toEqual(["$1,200.00", "$300.00/mo"]);
+    expect(p.oneTimeLabel).toBe("$1,200.00");
+    expect(p.monthlyLabel).toBe("$300.00/mo");
+    expect(p.pricingComplete).toBe(true);
+    expect(p.nextStep).toMatch(/review scope/i);
+    expect(p.validUntil).toBe("2026-09-10");
+  });
+
+  it("falls back to website then scanId for the name — never a fabricated business name", () => {
+    const p = buildProposalPreview(pricedProposalContent, { businessName: null, websiteUrl: "https://zeevents.xyz" }, "scan-p");
+    expect(p.prospectName).toBe("https://zeevents.xyz");
+    const p2 = buildProposalPreview(pricedProposalContent, { businessName: null, websiteUrl: null }, "scan-p");
+    expect(p2.prospectName).toBe("scan-p");
+  });
+
+  it("an unpriced draft previews with no price labels and flags pricing required", () => {
+    const unpriced = { ...pricedProposalContent, commercialState: "needs_pricing", pricing: null };
+    const p = buildProposalPreview(unpriced, identity, "scan-p");
+    expect(p.present).toBe(true);
+    expect(p.pricingComplete).toBe(false);
+    expect(p.work.every((w) => w.priceLabel === null)).toBe(true);
+    expect(p.oneTimeLabel).toBeNull();
+  });
+
+  it("an insufficient-evidence stub (no real draft) yields a not-present preview", () => {
+    const p = buildProposalPreview({ status: "insufficient_evidence", recommendedWork: [] }, identity, "scan-p");
+    expect(p.present).toBe(false);
+  });
+});
 
 const proposalDto = (status: string, commercialState = "needs_pricing"): ArtifactDTO => ({
   id: "cp1",
@@ -60,7 +165,7 @@ describe("client narrative view", () => {
 describe("prospect package view", () => {
   const competitorReady = { present: true, status: "ready" as const, statusLabel: "Ready", competitorCount: 2, evidenceCount: 3, confidence: 70, confidenceBand: "high", marketPosition: null, reviewRequired: true, summary: "" };
 
-  it("folds a complete set into ready_for_review and unlocks review", () => {
+  it("does not unlock review from component flags without server-resolved identities", () => {
     const pkg = buildProspectPackageView({
       scanCompleted: true,
       reportPresent: true,
@@ -72,7 +177,7 @@ describe("prospect package view", () => {
       reviewDecision: "pending",
     });
     expect(pkg.state).toBe("ready_for_review");
-    expect(pkg.canReview).toBe(true);
+    expect(pkg.canReview).toBe(false);
     const proposalRow = pkg.components.find((c) => c.key === "proposal")!;
     expect(proposalRow.note).toBe("Pricing required");
   });
@@ -109,13 +214,11 @@ describe("prospect package view", () => {
     expect(pkg.state).not.toBe("approved");
   });
 
-  it("only an explicit review.approved decision yields approved — and stays honest about missing pricing", () => {
+  it("an unbound approval flag cannot make a package approved or client-ready", () => {
     const pkg = buildProspectPackageView(fullInput("approved"));
-    expect(pkg.state).toBe("approved");
-    expect(pkg.pricingRequired).toBe(true);
-    // The UI must never imply a client-ready proposal while pricing is missing.
-    expect(pkg.stateLabel).toBe("Approved · pricing required");
-    expect(pkg.reason).toMatch(/pricing is still required/i);
+    expect(pkg.state).toBe("ready_for_review");
+    expect(pkg.clientReady).toBe(false);
+    expect(pkg.canReview).toBe(false);
   });
 });
 

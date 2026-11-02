@@ -11,10 +11,21 @@ const base = (over: Partial<ProspectPackageInput> = {}): ProspectPackageInput =>
   commercialFailed: false,
   commercialEnqueued: true,
   reviewDecision: "pending",
+  pricingComplete: false,
+  approvalCurrent: true,
+  pricingValid: true,
+  termsValid: true,
   ...over,
 });
 
 describe("computeProspectPackage", () => {
+  it.each([
+    { scanCompleted: false }, { reportPresent: false }, { narrative: "not_started" as const },
+    { competitor: "failed" as const }, { commercialFailed: true }, { approvalCurrent: false },
+    { pricingValid: false }, { termsValid: false },
+  ])("fails closed despite an approval when a delivery prerequisite is missing: %j", (missing) => {
+    expect(computeProspectPackage(base({ reviewDecision: "approved", pricingComplete: true, ...missing })).clientReady).toBe(false);
+  });
   it("competitor ready + proposal + narrative → ready_for_review", () => {
     expect(computeProspectPackage(base()).state).toBe("ready_for_review");
   });
@@ -50,5 +61,23 @@ describe("computeProspectPackage", () => {
 
   it("before the core scan completes → not_started", () => {
     expect(computeProspectPackage(base({ scanCompleted: false })).state).toBe("not_started");
+  });
+
+  it("approved but pricing incomplete → NOT client-ready (approval alone is not client-ready)", () => {
+    const p = computeProspectPackage(base({ reviewDecision: "approved", pricingComplete: false }));
+    expect(p.state).toBe("approved");
+    expect(p.clientReady).toBe(false);
+    expect(p.reason).toMatch(/pricing is still required/i);
+  });
+
+  it("approved AND pricing complete → client-ready", () => {
+    const p = computeProspectPackage(base({ reviewDecision: "approved", pricingComplete: true }));
+    expect(p.state).toBe("approved");
+    expect(p.clientReady).toBe(true);
+    expect(p.reason).toMatch(/client-ready/i);
+  });
+
+  it("pricing complete WITHOUT approval is still not client-ready (human approval required)", () => {
+    expect(computeProspectPackage(base({ reviewDecision: "pending", pricingComplete: true })).clientReady).toBe(false);
   });
 });

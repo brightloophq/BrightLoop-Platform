@@ -26,6 +26,7 @@ import { loadAnthropicConfig } from "@brightloop/providers";
 import { buildAppContext } from "./runtime-api";
 import {
   buildCompetitorIntelligenceView,
+  buildProposalPreview,
   buildProposalIntelligenceView,
   buildNarrativeView,
   buildCommercialProposalView,
@@ -54,6 +55,7 @@ import {
   type EvidenceView,
   type EvidenceValidationView,
   type NextStageView,
+  type ProposalPreviewView,
   type ProspectIdentity,
   type ProspectSummaryView,
   type ReasoningReadinessView,
@@ -241,6 +243,14 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
   const commercialProposal = buildCommercialProposalView(commercialProposalDto ?? null);
   const clientNarrative = buildClientNarrativeView(clientNarrativeDto ?? null);
   const packageReviewDecision: PackageReviewDecision = packageReviewDto?.decision ?? "pending";
+  // Parallel reads must describe the same package the operator actually sees.
+  const binding = packageReviewDto?.currentBinding;
+  const consistentReview = binding && binding.proposal.id === commercialProposalDto?.id &&
+    binding.narrative.id === clientNarrativeDto?.id && binding.report.id === reportArtifact?.id &&
+    (binding.competitor?.id ?? null) === (competitorArtifact?.id ?? null) &&
+    (binding.coreProposal?.id ?? null) === (proposalArtifact?.id ?? null) && !commercialKickoffFailed
+    ? packageReviewDto : null;
+
   const prospectPackage = buildProspectPackageView({
     scanCompleted,
     reportPresent: reportArtifact !== null,
@@ -250,6 +260,7 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     commercialEnqueued,
     commercialFailed,
     reviewDecision: packageReviewDecision,
+    review: consistentReview,
   });
 
   const readiness = computeReasoningReadiness({
@@ -284,6 +295,22 @@ export async function loadScanWorkspace(runId: string): Promise<ScanWorkspaceDat
     reportReviewRequired,
     canAssess: manifestArtifact !== null,
   };
+}
+
+/**
+ * The deterministic client-facing proposal preview for one scan. Composes the
+ * persisted commercial proposal + admin pricing + prospect identity — no AI, no new
+ * facts. Returns null when unauthenticated; an unbuilt/insufficient proposal yields
+ * an empty (not-present) preview rather than an error.
+ */
+export async function loadProposalPreview(runId: string): Promise<{ runId: string; preview: ProposalPreviewView } | null> {
+  const ctx = await buildAppContext();
+  if (ctx === null) return null;
+  const scan = await getScan(ctx, runId);
+  const identity = readIdentity(scan.metadata);
+  const dto = await optional<ArtifactDTO>(getScanCommercialProposal(ctx, runId));
+  const preview = buildProposalPreview(dto?.content ?? null, { businessName: identity.businessName, websiteUrl: identity.websiteUrl }, scan.scanId);
+  return { runId, preview };
 }
 
 export interface ScanSubjectOption {

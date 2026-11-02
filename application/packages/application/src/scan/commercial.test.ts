@@ -11,20 +11,22 @@ import { describe, it, expect } from "vitest";
 import type { Actor, RuntimeServices } from "@brightloop/domain";
 import { createRuntimeServices, InMemoryRuntimeRepository } from "@brightloop/domain";
 import type { AppContext } from "../context.js";
-import { ForbiddenError } from "../errors.js";
+import { ForbiddenError, ValidationError, ConflictError } from "../errors.js";
 import { runCompetitorIntelligence } from "@brightloop/domain";
-import { getScanCommercialProposal, getScanClientNarrative, getProspectPackageReview, decideProspectPackage, advanceCommercialWorkflow } from "./commercial.js";
+import { getScanCommercialProposal, getScanClientNarrative, getProspectPackageReview, decideProspectPackage, advanceCommercialWorkflow, setProposalPricing } from "./commercial.js";
 
 const T0 = "2026-08-09T00:00:00.000Z";
 const OWNER: Actor = { userId: "u_owner", role: "owner", clientId: null };
 const TEAM: Actor = { userId: "u_team", role: "team_member", clientId: null };
 const CLIENT: Actor = { userId: "u_client", role: "client_admin", clientId: "t_acme" };
+const TEST_LEAD_ID = "lead_commercial_fixture";
 
 function harness() {
   const now = () => T0;
   let counter = 0;
   const ids = (prefix: string) => `${prefix}_${(++counter).toString().padStart(4, "0")}`;
   const repo = new InMemoryRuntimeRepository(now);
+  repo.addLead(TEST_LEAD_ID);
   const services = createRuntimeServices({ repo, ids, clock: now, actorId: "u_owner" });
   const ctx = (actor: Actor): AppContext => ({ services, actor, ids, clock: now });
   return { services, ctx, repo };
@@ -32,7 +34,7 @@ function harness() {
 
 /** Seed a COMPLETED core scan with the artifacts + core queue jobs a real run has. */
 async function seedCompletedCoreScan(services: RuntimeServices): Promise<string> {
-  const run = await services.runs.createRun({ clientId: null, leadId: "lead_live", scanId: "scan-live" });
+  const run = await services.runs.createRun({ clientId: null, leadId: TEST_LEAD_ID, scanId: "scan-live" });
   if (!run.ok) throw new Error("run");
   const runId = run.value.id;
   const b = { runId, clientId: null, scanId: "scan-live", version: 1 as const };
@@ -42,7 +44,7 @@ async function seedCompletedCoreScan(services: RuntimeServices): Promise<string>
   await services.artifacts.persist({ ...b, kind: "evidence_bundle", envelope: { scanId: "scan-live", items: [] } });
   const c8 = runCompetitorIntelligence({ scanId: "scan-live", evidence: [], now: T0 }); // no competitor evidence → unavailable
   await services.artifacts.persist({ ...b, kind: "competitor_snapshot", envelope: c8 as unknown as Record<string, unknown>, checksum: c8.checksum });
-  await services.artifacts.persist({ ...b, kind: "internal_intelligence_report", envelope: { kind: "internal_intelligence_report", scanId: "scan-live", executiveOverview: "ZeEvents runs ticketed events.", indexSummary: "Overall maturity 55/100.", risks: [{ title: "Slow pages", severity: "high", category: "performance", description: "Home page slow.", evidenceIds: ["ev1"] }], opportunities: [{ title: "SEO gap", businessImpact: "More traffic", evidenceIds: ["ev2"] }], confidence: { value: 60, band: "moderate" } } });
+  await services.artifacts.persist({ ...b, kind: "internal_intelligence_report", validationStatus: "valid", envelope: { kind: "internal_intelligence_report", scanId: "scan-live", executiveOverview: "ZeEvents runs ticketed events.", indexSummary: "Overall maturity 55/100.", risks: [{ title: "Slow pages", severity: "high", category: "performance", description: "Home page slow.", evidenceIds: ["ev1"] }], opportunities: [{ title: "SEO gap", businessImpact: "More traffic", evidenceIds: ["ev2"] }], confidence: { value: 60, band: "moderate" } } });
   await services.artifacts.persist({ ...b, kind: "proposal", envelope: { status: "available", reason: null, proposals: [{ id: "pi_1", title: "Improve performance", problem: "Slow", recommendedSolution: "Optimize", businessImpact: "Lower bounce", priority: "high", estimatedEffort: "Medium", dependencies: [], risks: [], confidence: { value: 70, band: "high" }, supportingEvidenceIds: ["ev1"], reviewRequired: true, status: "ready" }], counts: { critical: 0, high: 1, medium: 0, low: 0 }, confidence: { value: 70, band: "high" }, summary: "1 proposal", reviewRequired: true } });
 
   // Real runs leave many CORE `advance_stage` queue rows — these must NOT be mistaken
@@ -55,14 +57,143 @@ async function seedCompletedCoreScan(services: RuntimeServices): Promise<string>
 }
 
 async function seedPackage(services: RuntimeServices): Promise<string> {
-  const run = await services.runs.createRun({ clientId: null, leadId: "lead_x", scanId: "scan-x" });
-  if (!run.ok) throw new Error("run");
-  const runId = run.value.id;
-  const b = { runId, clientId: null, scanId: "scan-x", version: 1 as const, sourceArtifactIds: ["a1"] };
-  await services.proposals.save({ ...b, envelope: { status: "draft_ready", commercialState: "needs_pricing" }, checksum: "cp1", status: "needs_review" });
-  await services.narratives.save({ ...b, envelope: { audience: "client", status: "ready" }, checksum: "cn1", audience: "client", status: "needs_review" });
+  const runId = await seedCompletedCoreScan(services);
+  await advanceCommercialWorkflow({ services, actor: OWNER, ids: (p) => p, clock: () => T0 }, runId);
   return runId;
 }
+
+/** Seed a run with a FULL commercial proposal draft (two required work items). */
+async function seedPricableProposal(services: RuntimeServices): Promise<string> {
+  const run = await services.runs.createRun({ clientId: null, leadId: TEST_LEAD_ID, scanId: "scan-p" });
+  if (!run.ok) throw new Error("run");
+  const runId = run.value.id;
+  const proposal = {
+    id: "cp_1", scanId: "scan-p", clientId: null,
+    status: "draft_ready", reason: null, commercialState: "needs_pricing", pricing: null,
+    executiveSummary: "ZeEvents can lift conversion and search reach.",
+    observedSituation: "Slow pages and thin search presence.",
+    keyIssues: [], opportunities: [],
+    recommendedWork: [
+      { sourceId: "w1", title: "Website redesign", solution: "Rebuild core pages", priority: "high", effort: "Large", evidenceIds: ["ev1"] },
+      { sourceId: "w2", title: "SEO setup", solution: "Technical + content", priority: "medium", effort: "Medium", evidenceIds: ["ev2"] },
+    ],
+    competitorContext: null, proposedNextStep: "Review scope and pricing.",
+    supportingEvidenceIds: ["ev1", "ev2"], confidence: { value: 70, band: "high" },
+    reviewRequired: true, sourceArtifacts: ["a1"], checksum: "cp", generatedAt: T0, formulaVersion: "commercial-proposal-1.0",
+  };
+  await services.proposals.save({ runId, clientId: null, scanId: "scan-p", version: 1, sourceArtifactIds: ["a1"], envelope: proposal, checksum: "cp", status: "needs_review" });
+  return runId;
+}
+
+const priceOneTime = (sourceId: string, amountMinor: number) => ({ sourceId, pricingType: "one_time" as const, amountMinor });
+const priceMonthly = (sourceId: string, amountMinor: number) => ({ sourceId, pricingType: "recurring" as const, cadence: "monthly" as const, amountMinor });
+
+describe("setProposalPricing — admin authoritative pricing", () => {
+  it("preserves discounts, expiry, quantities, notes, and untouched lines across a price edit", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPricableProposal(services);
+    const first = await setProposalPricing(ctx(OWNER), runId, {
+      expectedVersion: 1, currency: "USD", discountMinor: 250, validUntil: "2099-12-31", commercialNotes: "Net 30",
+      items: [
+        { ...priceOneTime("w1", 1001), quantity: 3, adminNotes: "Keep this scope note" },
+        { ...priceMonthly("w2", 250), quantity: 2, adminNotes: "Monthly support" },
+      ],
+    });
+    expect(first.version).toBe(2);
+    const second = await setProposalPricing(ctx(OWNER), runId, {
+      expectedVersion: 2,
+      items: [
+        priceOneTime("w1", 1002),
+        { sourceId: "w2", pricingType: "recurring", amountMinor: 250 },
+      ],
+    });
+    const pricing = second.content["pricing"] as { validUntil: string; discountMinor: number; items: Array<Record<string, unknown>>; subtotalOneTimeMinor: number; totalRecurringMonthlyMinor: number };
+    expect(second.version).toBe(3);
+    expect(pricing).toMatchObject({ validUntil: "2099-12-31", discountMinor: 250, subtotalOneTimeMinor: 3006, totalRecurringMonthlyMinor: 500 });
+    expect(pricing.items).toEqual([
+      expect.objectContaining({ sourceId: "w1", amountMinor: 1002, quantity: 3, adminNotes: "Keep this scope note", pricingType: "one_time" }),
+      expect.objectContaining({ sourceId: "w2", amountMinor: 250, quantity: 2, adminNotes: "Monthly support", pricingType: "recurring", cadence: "monthly" }),
+    ]);
+  });
+
+  it("rejects stale saves and invalid calendar dates while allowing an explicit expiry clear", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPricableProposal(services);
+    await setProposalPricing(ctx(OWNER), runId, { expectedVersion: 1, currency: "USD", items: [priceOneTime("w1", 100), priceOneTime("w2", 200)], validUntil: "2099-12-31" });
+    await expect(setProposalPricing(ctx(OWNER), runId, { expectedVersion: 1, currency: "USD", items: [priceOneTime("w1", 200), priceOneTime("w2", 200)] })).rejects.toBeInstanceOf(ConflictError);
+    await expect(setProposalPricing(ctx(OWNER), runId, { expectedVersion: 2, currency: "USD", items: [priceOneTime("w1", 200), priceOneTime("w2", 200)], validUntil: "2026-02-31" })).rejects.toBeInstanceOf(ValidationError);
+    const cleared = await setProposalPricing(ctx(OWNER), runId, { expectedVersion: 2, currency: "USD", items: [priceOneTime("w1", 200), priceOneTime("w2", 200)], validUntil: null });
+    expect((cleared.content["pricing"] as Record<string, unknown>)["validUntil"]).toBeNull();
+  });
+
+  it("persists pricing, computes integer totals, and marks the proposal priced when all required items are priced", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPricableProposal(services);
+    const dto = await setProposalPricing(ctx(OWNER), runId, {
+      expectedVersion: 1,
+      currency: "USD",
+      items: [priceOneTime("w1", 120000), priceMonthly("w2", 30000)],
+    });
+    const pricing = dto.content["pricing"] as Record<string, unknown>;
+    expect(dto.content["commercialState"]).toBe("priced");
+    expect(pricing["totalOneTimeMinor"]).toBe(120000);
+    expect(pricing["totalRecurringMonthlyMinor"]).toBe(30000);
+    expect(pricing["pricedBy"]).toBe("u_owner");
+    // Pricing NEVER approves — status is carried through.
+    expect(dto.status).toBe("needs_review");
+  });
+
+  it("partial pricing leaves the proposal needs_pricing", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPricableProposal(services);
+    const dto = await setProposalPricing(ctx(OWNER), runId, { expectedVersion: 1, currency: "USD", items: [priceOneTime("w1", 120000)] });
+    expect(dto.content["commercialState"]).toBe("needs_pricing");
+  });
+
+  it("supersedes the version and a refresh preserves the pricing", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPricableProposal(services);
+    await setProposalPricing(ctx(OWNER), runId, { expectedVersion: 1, currency: "USD", items: [priceOneTime("w1", 100), priceOneTime("w2", 200)] });
+    const latest = await services.proposals.latest(runId);
+    expect(latest.ok && latest.value.version).toBe(2); // v1 (generated) → v2 (priced)
+    const refreshed = await getScanCommercialProposal(ctx(OWNER), runId);
+    expect((refreshed.content["pricing"] as Record<string, unknown>)["subtotalOneTimeMinor"]).toBe(300);
+  });
+
+  it("does not alter the underlying evidence / recommended work", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPricableProposal(services);
+    const dto = await setProposalPricing(ctx(OWNER), runId, { expectedVersion: 1, currency: "USD", items: [priceOneTime("w1", 100), priceOneTime("w2", 200)] });
+    const work = dto.content["recommendedWork"] as Array<Record<string, unknown>>;
+    expect(work.map((w) => w["sourceId"])).toEqual(["w1", "w2"]);
+    expect(work[0]!["evidenceIds"]).toEqual(["ev1"]);
+    expect(dto.content["supportingEvidenceIds"]).toEqual(["ev1", "ev2"]);
+  });
+
+  it("emits a safe, auditable pricing event (no raw copy)", async () => {
+    const { services, ctx, repo } = harness();
+    const runId = await seedPricableProposal(services);
+    await setProposalPricing(ctx(OWNER), runId, { expectedVersion: 1, currency: "USD", items: [priceOneTime("w1", 120000), priceMonthly("w2", 30000)], discountMinor: 5000 });
+    const ev = repo.allEvents().filter((e) => e.eventType === "runtime.proposal.pricing_updated");
+    expect(ev).toHaveLength(1);
+    expect(ev[0]!.payload).toMatchObject({ by: "u_owner", currency: "USD", pricedItemCount: 2, hasRecurring: true, hasDiscount: true, commercialState: "priced" });
+    // Safe metadata only — no proposal prose / evidence bodies in the event.
+    expect(JSON.stringify(ev[0]!.payload)).not.toMatch(/redesign|evidence|ZeEvents/i);
+  });
+
+  it("rejects pricing that references an unknown work item (no phantom pricing)", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPricableProposal(services);
+    await expect(setProposalPricing(ctx(OWNER), runId, { expectedVersion: 1, currency: "USD", items: [priceOneTime("nope", 100)] })).rejects.toBeInstanceOf(ValidationError);
+  });
+
+  it("allows an internal team_member (scan.write) but DENIES a client role", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPricableProposal(services);
+    await expect(setProposalPricing(ctx(TEAM), runId, { expectedVersion: 1, currency: "USD", items: [priceOneTime("w1", 100), priceOneTime("w2", 200)] })).resolves.toBeDefined();
+    await expect(setProposalPricing(ctx(CLIENT), runId, { expectedVersion: 1, currency: "USD", items: [priceOneTime("w1", 100)] })).rejects.toBeInstanceOf(ForbiddenError);
+  });
+});
 
 describe("commercial package — reads", () => {
   it("exposes the latest draft (any status) to internal reviewers", async () => {
@@ -92,40 +223,94 @@ describe("commercial package — review gate", () => {
   it("only the grant authority (owner/admin) may decide — team_member is forbidden", async () => {
     const { services, ctx } = harness();
     const runId = await seedPackage(services);
-    await expect(decideProspectPackage(ctx(TEAM), runId, { action: "approve" })).rejects.toBeInstanceOf(ForbiddenError);
+    await expect(decideProspectPackage(ctx(TEAM), runId, { expectedBinding: (await getProspectPackageReview(ctx(OWNER), runId)).currentBinding!, action: "approve" })).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   it("owner can approve; the decision is recorded with the actor", async () => {
     const { services, ctx } = harness();
     const runId = await seedPackage(services);
-    const decided = await decideProspectPackage(ctx(OWNER), runId, { action: "approve", note: "looks good" });
+    const decided = await decideProspectPackage(ctx(OWNER), runId, { expectedBinding: (await getProspectPackageReview(ctx(OWNER), runId)).currentBinding!, action: "approve", note: "looks good" });
     expect(decided.decision).toBe("approved");
     expect(decided.decidedBy).toBe("u_owner");
     expect(decided.note).toBe("looks good");
-    expect(decided.proposalVersionId).toMatch(/^prop_/);
-    expect(decided.proposalChecksum).toBe("cp1");
-    expect(decided.narrativeVersionId).toMatch(/^narr_/);
-  });
-
-  it("review decisions remain valid without proposal or narrative artifacts", async () => {
-    const { services, ctx } = harness();
-    const run = await services.runs.createRun({ clientId: null, leadId: "lead_empty", scanId: "scan-empty" });
-    if (!run.ok) throw new Error("run");
-    const decided = await decideProspectPackage(ctx(OWNER), run.value.id, { action: "approve" });
-    expect(decided.decision).toBe("approved");
-    expect(decided.proposalVersionId).toBeNull();
-    expect(decided.proposalChecksum).toBeNull();
-    expect(decided.narrativeVersionId).toBeNull();
   });
 
   it("the fold is last-writer-wins — a later revision request supersedes an approval", async () => {
     const { services, ctx } = harness();
     const runId = await seedPackage(services);
-    await decideProspectPackage(ctx(OWNER), runId, { action: "approve" });
-    await decideProspectPackage(ctx(OWNER), runId, { action: "request_revision", note: "tighten scope" });
+    await decideProspectPackage(ctx(OWNER), runId, { expectedBinding: (await getProspectPackageReview(ctx(OWNER), runId)).currentBinding!, action: "approve" });
+    await decideProspectPackage(ctx(OWNER), runId, { expectedBinding: (await getProspectPackageReview(ctx(OWNER), runId)).currentBinding!, action: "request_revision", note: "tighten scope" });
     const review = await getProspectPackageReview(ctx(OWNER), runId);
     expect(review.decision).toBe("revision_requested");
     expect(review.note).toBe("tighten scope");
+  });
+
+  it("requires re-review for legacy approval without rewriting the event", async () => {
+    const { services, ctx, repo } = harness();
+    const runId = await seedPackage(services);
+    await services.events.emit({ eventType: "runtime.review.approved", aggregateType: "intelligence_run", aggregateId: runId,
+      runId, clientId: null, payload: { by: OWNER.userId } });
+    const before = JSON.stringify(repo.allEvents());
+    const review = await getProspectPackageReview(ctx(OWNER), runId);
+    expect(review).toMatchObject({ decision: "pending", recordedDecision: "approved", bindingStatus: "legacy" });
+    expect(review.readiness.clientReady).toBe(false);
+    expect(JSON.stringify(repo.allEvents())).toBe(before);
+  });
+
+  it.each(["proposal", "narrative", "report", "competitor", "coreProposal"] as const)("a new %s version invalidates the decision and stale browser precondition", async (kind) => {
+    const { services, ctx } = harness();
+    const runId = await seedPackage(services);
+    const expectedBinding = (await getProspectPackageReview(ctx(OWNER), runId)).currentBinding!;
+    await decideProspectPackage(ctx(OWNER), runId, { action: "approve", expectedBinding });
+    if (kind === "proposal") {
+      const prior = await services.proposals.latest(runId);
+      if (!prior.ok) throw new Error("proposal");
+      await services.proposals.supersede(prior.value, { ...prior.value.envelope, executiveSummary: "Revised scope" }, prior.value.status);
+    } else if (kind === "narrative") {
+      const prior = await services.narratives.latest(runId, "client");
+      if (!prior.ok) throw new Error("narrative");
+      await services.narratives.supersede(prior.value, { ...prior.value.envelope, changed: true }, prior.value.status);
+    } else {
+      const artifactKind = kind === "report" ? "internal_intelligence_report" : kind === "competitor" ? "competitor_snapshot" : "proposal";
+      const prior = await services.artifacts.latest(runId, artifactKind);
+      if (!prior.ok || !prior.value) throw new Error("source");
+      await services.artifacts.revise(prior.value, { ...prior.value.envelope, changed: true });
+    }
+    const review = await getProspectPackageReview(ctx(OWNER), runId);
+    expect(review).toMatchObject({ decision: "pending", recordedDecision: "approved", bindingStatus: "stale" });
+    expect(review.readiness.clientReady).toBe(false);
+    await expect(decideProspectPackage(ctx(OWNER), runId, { action: "approve", expectedBinding })).rejects.toBeInstanceOf(ConflictError);
+  });
+
+  it("rejects forged browser identities and preserves a current rejection binding", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPackage(services);
+    const expectedBinding = (await getProspectPackageReview(ctx(OWNER), runId)).currentBinding!;
+    await expect(decideProspectPackage(ctx(OWNER), runId, { action: "approve", expectedBinding: {
+      ...expectedBinding, proposal: { ...expectedBinding.proposal, id: "forged" },
+    } })).rejects.toBeInstanceOf(ConflictError);
+    const review = await decideProspectPackage(ctx(OWNER), runId, { action: "reject", expectedBinding });
+    expect(review).toMatchObject({ decision: "rejected", bindingStatus: "current" });
+    expect(review.currentBinding).toEqual(expectedBinding);
+  });
+
+  it("only current approved, valid, unexpired pricing is client-ready; pricing changes require re-review", async () => {
+    const { services, ctx } = harness();
+    const runId = await seedPackage(services);
+    const draft = await getScanCommercialProposal(ctx(OWNER), runId);
+    const work = draft.content["recommendedWork"] as Array<{ sourceId: string }>;
+    const items = work.map((w) => priceOneTime(w.sourceId, 12000));
+    await setProposalPricing(ctx(OWNER), runId, { expectedVersion: 1, currency: "USD", items, validUntil: "2026-08-30" });
+    const expectedBinding = (await getProspectPackageReview(ctx(OWNER), runId)).currentBinding!;
+    const approved = await decideProspectPackage(ctx(OWNER), runId, { action: "approve", expectedBinding });
+    expect(approved.readiness.clientReady).toBe(true);
+    await setProposalPricing(ctx(OWNER), runId, { expectedVersion: 2, currency: "USD", items, validUntil: "2026-08-01" });
+    expect((await getProspectPackageReview(ctx(OWNER), runId)).bindingStatus).toBe("stale");
+    const expiredBinding = (await getProspectPackageReview(ctx(OWNER), runId)).currentBinding!;
+    const expired = await decideProspectPackage(ctx(OWNER), runId, { action: "approve", expectedBinding: expiredBinding });
+    expect(expired.decision).toBe("approved");
+    expect(expired.readiness.clientReady).toBe(false);
+    expect(expired.readiness.reason).toMatch(/non-expired/);
   });
 });
 
@@ -184,7 +369,7 @@ describe("advanceCommercialWorkflow — server-authoritative kickoff", () => {
 
   it("skips (no enqueue) when the core run is not completed", async () => {
     const { services, ctx, repo } = harness();
-    const run = await services.runs.createRun({ clientId: null, leadId: "lead_pending", scanId: "scan-pending" });
+    const run = await services.runs.createRun({ clientId: null, leadId: TEST_LEAD_ID, scanId: "scan-pending" });
     const runId = run.ok ? run.value.id : "";
     const advance = await advanceCommercialWorkflow(ctx(OWNER), runId);
     expect(advance.kickoff).toBe("skipped");

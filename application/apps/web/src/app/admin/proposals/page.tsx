@@ -8,14 +8,14 @@ import shell from "../admin.module.css";
 export const metadata: Metadata = { title: "Proposals" };
 export const dynamic = "force-dynamic";
 
-const money = (c: number) => `$${(c / 100).toLocaleString("en-US")}`;
+const money = (c: number, currency: string) => new Intl.NumberFormat("en-US", { style: "currency", currency, maximumFractionDigits: 2 }).format(c / 100);
 
 /** Admin proposals list — the sales pipeline. Every proposal, any status. */
 export default async function AdminProposalsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("proposals")
-    .select("id, proposal_kind, proposal_number, status, total, client_id, clients(company)")
+    .select("id, proposal_kind, proposal_number, status, total, currency, client_id, clients(company)")
     .order("sent_at", { ascending: false, nullsFirst: true });
   const rows = data ?? [];
 
@@ -42,7 +42,7 @@ export default async function AdminProposalsPage() {
                     </Link>
                     <Badge tone="neutral" dot>{p.status.replace(/_/g, " ")}</Badge>
                     {p.proposal_kind === "canonical_issued" ? <Badge tone="success">{p.proposal_number ?? "canonical"}</Badge> : null}
-                    <span className={styles.rowMeta}>{money(p.total)}</span>
+                    <span className={styles.rowMeta}>{money(p.total, p.currency ?? "USD")}</span>
                   </div>
                 </div>
               </Card>

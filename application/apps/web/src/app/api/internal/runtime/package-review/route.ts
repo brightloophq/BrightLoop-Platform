@@ -1,7 +1,7 @@
 import "server-only";
 
 import { NextResponse } from "next/server";
-import { hasCapability, isClientRole } from "@brightloop/schema";
+import { hasCapability, isClientRole, commercialReviewBindingSchema, type CommercialReviewBinding } from "@brightloop/schema";
 import { decideProspectPackage, isApplicationError, type PackageReviewAction } from "@brightloop/application";
 import { getActor } from "@/lib/auth";
 import { buildAppContext } from "@/lib/runtime-api";
@@ -21,6 +21,7 @@ const REVIEW_CAPABILITY = "transformation.approve";
 interface Body {
   runId: string;
   action: PackageReviewAction;
+  expectedBinding: CommercialReviewBinding;
   note?: string;
 }
 
@@ -30,7 +31,9 @@ function parseBody(value: unknown): Body | null {
   if (typeof b["runId"] !== "string" || b["runId"] === "") return null;
   const action = b["action"];
   if (action !== "approve" && action !== "request_revision" && action !== "reject") return null;
-  return { runId: b["runId"], action, ...(typeof b["note"] === "string" ? { note: b["note"] } : {}) };
+  const expected = commercialReviewBindingSchema.safeParse(b["expectedBinding"]);
+  if (!expected.success) return null;
+  return { runId: b["runId"], action, expectedBinding: expected.data, ...(typeof b["note"] === "string" ? { note: b["note"] } : {}) };
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
@@ -44,7 +47,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
   const body = parseBody(await req.json().catch(() => null));
   if (body === null) {
-    return NextResponse.json({ error: { code: "validation", message: "runId and a valid action are required" } }, { status: 422 });
+    return NextResponse.json({ error: { code: "validation", message: "runId, action and an expected version binding are required" } }, { status: 422 });
   }
 
   const ctx = await buildAppContext();
@@ -53,7 +56,7 @@ export async function POST(req: Request): Promise<NextResponse> {
   }
 
   try {
-    const review = await decideProspectPackage(ctx, body.runId, { action: body.action, ...(body.note !== undefined ? { note: body.note } : {}) });
+    const review = await decideProspectPackage(ctx, body.runId, { action: body.action, expectedBinding: body.expectedBinding, ...(body.note !== undefined ? { note: body.note } : {}) });
     return NextResponse.json(review, { status: 200 });
   } catch (error) {
     if (isApplicationError(error)) return NextResponse.json(error.toBody(), { status: error.status });

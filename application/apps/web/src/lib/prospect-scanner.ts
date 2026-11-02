@@ -1,3 +1,4 @@
+import { commercialReviewBindingSchema, type CommercialReviewBinding } from "@brightloop/schema";
 /* =============================================================================
  * Prospect Scanner view models (Phase C · Sprint C4) — PURE, allowlist-only.
  *
@@ -12,7 +13,7 @@
  * ========================================================================== */
 
 import { PIPELINE_STAGE_ORDER } from "@brightloop/domain";
-import { computeProspectPackage, type ScanDTO, type TimelineEntryDTO, type ArtifactDTO, type EvidenceValidationDTO, type EvidenceClaimTraceDTO, type EvidenceFindingTraceDTO, type ProspectPackageState, type PackageReviewDecision } from "@brightloop/application";
+import { computeProspectPackage, type ScanDTO, type TimelineEntryDTO, type ArtifactDTO, type EvidenceValidationDTO, type EvidenceClaimTraceDTO, type EvidenceFindingTraceDTO, type ProspectPackageState, type PackageReviewDecision, type ProspectPackageReviewDTO } from "@brightloop/application";
 
 /* ---- primitives -------------------------------------------------------------- */
 
@@ -930,8 +931,24 @@ export function buildCompetitorIntelligenceView(content: unknown, context?: Comp
 
 /* ---- Commercial Proposal + Client Narrative + Package (post-scan commercial) --- */
 
+/** A recommended work item, with any admin price line already set for it. */
+export interface CommercialWorkItemView {
+  sourceId: string;
+  title: string;
+  priority: string;
+  reason: string;
+  /** The persisted price line for this item (null until an admin prices it). */
+  pricingType: "one_time" | "recurring" | null;
+  amountMinor: number | null;
+  cadence: "monthly" | null;
+  optional: boolean;
+  quantity: number;
+  adminNotes: string;
+}
+
 export interface CommercialProposalView {
   present: boolean;
+  version: number | null;
   status: CommercialStatus;
   statusLabel: string;
   /** True when a usable draft was generated (its own artifact status, not the review axis). */
@@ -945,12 +962,14 @@ export interface CommercialProposalView {
   needsPricing: boolean;
   workItemCount: number;
   summary: string;
-  /* ---- the draft itself ----------------------------------------------------
-   * The panel used to show the executive summary and nothing else, so a draft
-   * reported "6 items" and displayed none of them. These carry the actual
-   * proposal. Every field is plain text, bounded, and rendered as text — never
-   * as markup — because this content is machine-assembled.
-   * ----------------------------------------------------------------------- */
+  /** The recommended work items + any admin price line already set. */
+  workItems: CommercialWorkItemView[];
+  currency: string | null;
+  discountMinor: number;
+  validUntil: string | null;
+  commercialNotes: string;
+  totalOneTimeMinor: number;
+  totalRecurringMonthlyMinor: number;
   observedSituation: string;
   keyIssues: ProposalPoint[];
   opportunities: ProposalPoint[];
@@ -958,74 +977,59 @@ export interface CommercialProposalView {
   proposedNextStep: string;
 }
 
-/** An evidenced point from the draft (a key issue or an opportunity). */
-export interface ProposalPoint {
-  title: string;
-  detail: string;
-  evidenceCount: number;
-}
+export interface ProposalPoint { title: string; detail: string; evidenceCount: number }
+export interface ProposalWorkItem { title: string; solution: string; priority: string; effort: string; evidenceCount: number }
 
-/** One recommended work item, with the priority/effort the engine assigned. */
-export interface ProposalWorkItem {
-  title: string;
-  solution: string;
-  priority: string;
-  effort: string;
-  evidenceCount: number;
-}
-
-/** A bounded string from artifact content, or "" — never `undefined`. */
 function text(value: unknown, max: number): string {
   if (typeof value !== "string") return "";
   const trimmed = value.trim();
   return trimmed.length > max ? `${trimmed.slice(0, max - 1).trimEnd()}…` : trimmed;
 }
-
-function evidenceCount(value: unknown): number {
-  return Array.isArray(value) ? value.length : 0;
+function readStr(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
 }
-
-/**
- * Evidenced points from artifact content.
- *
- * Artifact content is `Record<string, unknown>`, so every field is checked
- * rather than cast: a malformed row is dropped, not rendered as "undefined".
- */
+function readInt(value: unknown, fallback = 0): number {
+  return typeof value === "number" && Number.isFinite(value) ? Math.trunc(value) : fallback;
+}
+function evidenceCount(value: unknown): number { return Array.isArray(value) ? value.length : 0; }
+/** Format persisted minor-unit amounts for the scanner's commercial surfaces. */
+export function formatMinor(minor: number, currency: string): string {
+  const major = minor / 100;
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(major);
+  } catch {
+    return `${major.toFixed(2)} ${currency}`;
+  }
+}
 export function readProposalPoints(value: unknown, limit = 6): ProposalPoint[] {
   if (!Array.isArray(value)) return [];
-  const out: ProposalPoint[] = [];
-  for (const raw of value.slice(0, limit)) {
-    if (raw === null || typeof raw !== "object") continue;
+  return value.slice(0, limit).flatMap((raw) => {
+    if (raw === null || typeof raw !== "object") return [];
     const row = raw as Record<string, unknown>;
     const title = text(row["title"], 160);
-    if (title.length === 0) continue;
-    out.push({ title, detail: text(row["detail"], 400), evidenceCount: evidenceCount(row["evidenceIds"]) });
-  }
-  return out;
+    return title ? [{ title, detail: text(row["detail"], 400), evidenceCount: evidenceCount(row["evidenceIds"]) }] : [];
+  });
 }
-
-/** Recommended work items from artifact content, same defensive reading. */
 export function readProposalWork(value: unknown, limit = 8): ProposalWorkItem[] {
   if (!Array.isArray(value)) return [];
-  const out: ProposalWorkItem[] = [];
-  for (const raw of value.slice(0, limit)) {
-    if (raw === null || typeof raw !== "object") continue;
+  return value.slice(0, limit).flatMap((raw) => {
+    if (raw === null || typeof raw !== "object") return [];
     const row = raw as Record<string, unknown>;
     const title = text(row["title"], 160);
-    if (title.length === 0) continue;
-    out.push({
-      title,
-      solution: text(row["solution"], 400),
-      priority: text(row["priority"], 24),
-      effort: text(row["effort"], 24),
-      evidenceCount: evidenceCount(row["evidenceIds"]),
-    });
-  }
-  return out;
+    return title ? [{ title, solution: text(row["solution"], 400), priority: text(row["priority"], 24),
+      effort: text(row["effort"], 24), evidenceCount: evidenceCount(row["evidenceIds"]) }] : [];
+  });
 }
 
 export function emptyCommercialProposalView(): CommercialProposalView {
-  return { present: false, status: "not_started", statusLabel: commercialStatusLabel("not_started"), draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null, needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet.", observedSituation: "", keyIssues: [], opportunities: [], recommendedWork: [], proposedNextStep: "" };
+  return {
+    present: false, version: null, status: "not_started", statusLabel: commercialStatusLabel("not_started"),
+    draftReady: false, generationLabel: "Not drafted", commercialState: null, commercialStateLabel: null,
+    needsPricing: false, workItemCount: 0, summary: "The commercial proposal has not been drafted yet.",
+    workItems: [], currency: null, discountMinor: 0, validUntil: null, commercialNotes: "",
+    totalOneTimeMinor: 0, totalRecurringMonthlyMinor: 0, observedSituation: "", keyIssues: [],
+    opportunities: [], recommendedWork: [], proposedNextStep: "",
+  };
 }
 
 /** Build the proposal-draft surface from a persisted proposal_version DTO. */
@@ -1036,8 +1040,33 @@ export function buildCommercialProposalView(dto: ArtifactDTO | null): Commercial
   const status: CommercialStatus = draftReady ? "needs_review" : "insufficient_evidence";
   const commercialState = typeof c["commercialState"] === "string" ? (c["commercialState"] as string) : null;
   const needsPricing = commercialState === "needs_pricing";
+
+  const work = Array.isArray(c["recommendedWork"]) ? (c["recommendedWork"] as Array<Record<string, unknown>>) : [];
+  const pricing = (c["pricing"] ?? null) as Record<string, unknown> | null;
+  const priceLines = Array.isArray(pricing?.["items"]) ? (pricing!["items"] as Array<Record<string, unknown>>) : [];
+  const lineBySource = new Map<string, Record<string, unknown>>();
+  for (const l of priceLines) lineBySource.set(readStr(l["sourceId"]), l);
+
+  const workItems: CommercialWorkItemView[] = work.map((w) => {
+    const sourceId = readStr(w["sourceId"]);
+    const line = lineBySource.get(sourceId);
+    return {
+      sourceId,
+      title: readStr(w["title"]),
+      priority: readStr(w["priority"]),
+      reason: readStr(w["solution"]),
+      pricingType: line ? (line["pricingType"] === "recurring" ? "recurring" : "one_time") : null,
+      amountMinor: line ? readInt(line["amountMinor"]) : null,
+      cadence: line && line["cadence"] === "monthly" ? "monthly" : null,
+      optional: line?.["optional"] === true,
+      quantity: line ? readInt(line["quantity"], 1) : 1,
+      adminNotes: line ? readStr(line["adminNotes"]) : "",
+    };
+  });
+
   return {
     present: true,
+    version: dto.version,
     status,
     statusLabel: commercialStatusLabel(status),
     draftReady,
@@ -1045,15 +1074,115 @@ export function buildCommercialProposalView(dto: ArtifactDTO | null): Commercial
     commercialState,
     commercialStateLabel: commercialState === null ? null : needsPricing ? "Pricing required" : "Priced",
     needsPricing,
-    // The COUNT was all that survived here, which is why the panel could say
-    // "6 items" and show none of them. The items themselves come through now.
-    workItemCount: Array.isArray(c["recommendedWork"]) ? (c["recommendedWork"] as unknown[]).length : 0,
-    summary: typeof c["executiveSummary"] === "string" ? (c["executiveSummary"] as string) : "",
+    workItemCount: work.length,
+    summary: readStr(c["executiveSummary"]),
+    workItems,
+    currency: pricing ? readStr(pricing["currency"], "USD") : null,
+    discountMinor: pricing ? readInt(pricing["discountMinor"]) : 0,
+    validUntil: pricing && typeof pricing["validUntil"] === "string" ? (pricing["validUntil"] as string) : null,
+    commercialNotes: pricing ? readStr(pricing["commercialNotes"]) : "",
+    totalOneTimeMinor: pricing ? readInt(pricing["totalOneTimeMinor"]) : 0,
+    totalRecurringMonthlyMinor: pricing ? readInt(pricing["totalRecurringMonthlyMinor"]) : 0,
     observedSituation: text(c["observedSituation"], 1000),
     keyIssues: readProposalPoints(c["keyIssues"]),
     opportunities: readProposalPoints(c["opportunities"]),
     recommendedWork: readProposalWork(c["recommendedWork"]),
     proposedNextStep: text(c["proposedNextStep"], 400),
+  };
+}
+
+/* ---- §Preview — deterministic client-facing proposal composition ------------ */
+
+export interface ProposalPreviewPoint { title: string; detail: string }
+export interface ProposalPreviewWork { title: string; reason: string; priceLabel: string | null; optional: boolean }
+
+export interface ProposalPreviewView {
+  present: boolean;
+  prospectName: string;
+  website: string | null;
+  executiveSummary: string;
+  observedSituation: string;
+  keyIssues: ProposalPreviewPoint[];
+  opportunities: ProposalPreviewPoint[];
+  work: ProposalPreviewWork[];
+  currency: string | null;
+  oneTimeLabel: string | null;
+  monthlyLabel: string | null;
+  validUntil: string | null;
+  commercialNotes: string;
+  nextStep: string;
+  pricingComplete: boolean;
+}
+
+/** Build the client-facing preview only from persisted scanner content and pricing. */
+export function buildProposalPreview(
+  content: unknown,
+  identity: { businessName: string | null; websiteUrl: string | null },
+  scanId: string,
+): ProposalPreviewView {
+  const empty: ProposalPreviewView = {
+    present: false,
+    prospectName: identity.businessName ?? identity.websiteUrl ?? scanId,
+    website: identity.websiteUrl,
+    executiveSummary: "",
+    observedSituation: "",
+    keyIssues: [],
+    opportunities: [],
+    work: [],
+    currency: null,
+    oneTimeLabel: null,
+    monthlyLabel: null,
+    validUntil: null,
+    commercialNotes: "",
+    nextStep: "",
+    pricingComplete: false,
+  };
+  if (content === null || typeof content !== "object") return empty;
+
+  const view = buildCommercialProposalView({
+    id: "",
+    kind: "proposal",
+    version: 1,
+    status: "valid",
+    createdAt: "",
+    content: content as Record<string, unknown>,
+  });
+  if (!view.draftReady) return empty;
+  const c = content as Record<string, unknown>;
+  const points = (key: string): ProposalPreviewPoint[] =>
+    (Array.isArray(c[key]) ? (c[key] as Array<Record<string, unknown>>) : [])
+      .slice(0, 6)
+      .map((point) => ({ title: readStr(point["title"]), detail: readStr(point["detail"]) }));
+
+  const currency = view.currency;
+  const work: ProposalPreviewWork[] = view.workItems.map((item) => ({
+    title: item.title,
+    reason: item.reason,
+    priceLabel:
+      item.amountMinor === null || currency === null
+        ? null
+        : item.pricingType === "recurring"
+          ? `${formatMinor(item.amountMinor, currency)}/mo`
+          : formatMinor(item.amountMinor, currency),
+    optional: item.optional,
+  }));
+
+  return {
+    present: true,
+    prospectName: identity.businessName ?? identity.websiteUrl ?? scanId,
+    website: identity.websiteUrl,
+    executiveSummary: view.summary,
+    observedSituation: readStr(c["observedSituation"]),
+    keyIssues: points("keyIssues"),
+    opportunities: points("opportunities"),
+    work,
+    currency,
+    oneTimeLabel: currency && view.totalOneTimeMinor > 0 ? formatMinor(view.totalOneTimeMinor, currency) : null,
+    monthlyLabel: currency && view.totalRecurringMonthlyMinor > 0 ? `${formatMinor(view.totalRecurringMonthlyMinor, currency)}/mo` : null,
+    validUntil: view.validUntil,
+    commercialNotes: view.commercialNotes,
+    nextStep: readStr(c["proposedNextStep"]),
+    pricingComplete: view.commercialState === "priced",
   };
 }
 
@@ -1093,10 +1222,13 @@ export interface ProspectPackageView {
   reason: string;
   components: PackageComponentView[];
   reviewDecision: PackageReviewDecision;
+  reviewBinding: CommercialReviewBinding | null;
   /** True once every required component is present — the review actions unlock. */
   canReview: boolean;
   /** True when the proposal still needs pricing — an approval is NOT client-ready. */
   pricingRequired: boolean;
+  /** Derived: approved AND priced AND narrative present — safe to send to a prospect. */
+  clientReady: boolean;
 }
 
 const PACKAGE_STATE_LABEL: Record<ProspectPackageState, string> = {
@@ -1118,6 +1250,57 @@ const PACKAGE_STATE_BADGE: Record<ProspectPackageState, string> = {
   rejected: "failed",
 };
 
+export type PackageReviewUpdate = Pick<ProspectPackageReviewDTO, "decision" | "bindingStatus" | "currentBinding" | "readiness">;
+/** Null review means an authoritative 409, which invalidates displayed readiness. */
+export interface PackageReviewSnapshot { source: ProspectPackageView; review: PackageReviewUpdate | null }
+
+/** Accept only the display fields of the authoritative same-origin API response. */
+export function readPackageReviewUpdate(value: unknown): PackageReviewUpdate {
+  const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === "object";
+  if (!isRecord(value) || !isRecord(value["readiness"])) throw new Error("Invalid review response");
+  const r = value["readiness"];
+  const binding = value["currentBinding"] === null ? null : commercialReviewBindingSchema.safeParse(value["currentBinding"]);
+  if (!["pending", "approved", "rejected", "revision_requested"].includes(String(value["decision"])) ||
+    !["pending", "legacy", "stale", "current"].includes(String(value["bindingStatus"])) ||
+    typeof r["state"] !== "string" || !Object.hasOwn(PACKAGE_STATE_LABEL, r["state"]) ||
+    typeof r["reason"] !== "string" || typeof r["componentsReady"] !== "boolean" || typeof r["clientReady"] !== "boolean" ||
+    (binding !== null && !binding.success) ||
+    (r["state"] === "approved" && (value["decision"] !== "approved" || value["bindingStatus"] !== "current" || binding === null)) ||
+    (r["clientReady"] && (value["decision"] !== "approved" || value["bindingStatus"] !== "current" || !r["componentsReady"] || r["state"] !== "approved"))) {
+    throw new Error("Invalid review response");
+  }
+  return { decision: value["decision"] as PackageReviewDecision, bindingStatus: value["bindingStatus"] as PackageReviewUpdate["bindingStatus"],
+    currentBinding: binding?.success ? binding.data : null, readiness: {
+      state: r["state"] as ProspectPackageState, reason: r["reason"], componentsReady: r["componentsReady"], clientReady: r["clientReady"],
+    } };
+}
+
+/** Fresh server props supersede a completion snapshot, including revisions/expiry.
+ * A completion for an older render must never overwrite newer server props.
+ */
+export function resolvePackageReviewView(source: ProspectPackageView, snapshot: PackageReviewSnapshot | null): ProspectPackageView {
+  if (snapshot === null || snapshot.source !== source) return source;
+  const review = snapshot.review;
+  if (review === null) return { ...source, state: "blocked", stateLabel: "Package changed", badge: "failed",
+    reason: "The package changed. Reload the workspace and review the current versions.", reviewDecision: "pending", clientReady: false };
+  const a = source.reviewBinding; const b = review.currentBinding;
+  const sameVersions = a !== null && b !== null && (["proposal", "narrative", "report", "competitor", "coreProposal"] as const).every((key) => {
+    const x = a[key]; const y = b[key];
+    return x === null || y === null ? x === y : x.id === y.id && x.version === y.version && x.checksum === y.checksum;
+  });
+  // The API can observe a revision between writing the event and its final read.
+  // Do not attach that newer package's decision to the older details on screen.
+  if (!sameVersions) return { ...source, state: "blocked", stateLabel: "Package changed", badge: "failed",
+    reason: "The package changed. Reload the workspace and review the current versions.", reviewDecision: "pending",
+    reviewBinding: null, canReview: false, clientReady: false };
+  const pkg = review.readiness;
+  return { ...source, state: pkg.state, stateLabel: pkg.clientReady ? "Client ready" : pkg.state === "approved" && source.pricingRequired ? "Approved · pricing required" : PACKAGE_STATE_LABEL[pkg.state],
+    badge: pkg.clientReady ? "completed" : PACKAGE_STATE_BADGE[pkg.state],
+    reason: review.bindingStatus === "stale" ? "The reviewed versions changed. Review the current package again." : review.bindingStatus === "legacy" ? "The earlier decision has no version binding. Review the current package again." : pkg.reason,
+    reviewDecision: review.decision, reviewBinding: review.currentBinding,
+    canReview: pkg.componentsReady && review.currentBinding !== null, clientReady: pkg.clientReady };
+}
+
 export interface PackageViewInput {
   scanCompleted: boolean;
   reportPresent: boolean;
@@ -1127,11 +1310,15 @@ export interface PackageViewInput {
   commercialEnqueued: boolean;
   commercialFailed: boolean;
   reviewDecision: PackageReviewDecision;
+  review?: ProspectPackageReviewDTO | null;
 }
 
 /** Fold the commercial components + review decision into the command-center view. */
 export function buildProspectPackageView(input: PackageViewInput): ProspectPackageView {
-  const pkg = computeProspectPackage({
+  // Pricing is complete only when the mutation moved the draft to `priced` (the
+  // generator never sets it). Derived, not client-trusted.
+  const pricingComplete = input.proposal.commercialState === "priced";
+  const pkg = input.review?.readiness ?? computeProspectPackage({
     scanCompleted: input.scanCompleted,
     reportPresent: input.reportPresent,
     competitor: input.competitor.status,
@@ -1139,14 +1326,15 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
     narrative: input.narrative.status,
     commercialFailed: input.commercialFailed,
     commercialEnqueued: input.commercialEnqueued,
-    reviewDecision: input.reviewDecision,
+    reviewDecision: "pending",
+    pricingComplete,
   });
 
   const components: PackageComponentView[] = [
     { key: "core", label: "Core assessment", status: input.scanCompleted ? "complete" : "running", statusLabel: input.scanCompleted ? "Complete" : "Running", note: null },
     { key: "report", label: "Report", status: input.reportPresent ? "complete" : "running", statusLabel: input.reportPresent ? "Ready" : "Pending", note: null },
     { key: "competitor", label: "Competitor intelligence", status: input.competitor.status, statusLabel: input.competitor.statusLabel, note: null },
-    { key: "proposal", label: "Proposal", status: input.proposal.status, statusLabel: input.proposal.status === "needs_review" ? "Draft ready" : input.proposal.statusLabel, note: input.proposal.needsPricing ? "Pricing required" : null },
+    { key: "proposal", label: "Proposal", status: input.proposal.status, statusLabel: input.proposal.status === "needs_review" ? "Draft ready" : input.proposal.statusLabel, note: input.proposal.needsPricing ? "Pricing required" : pricingComplete ? "Pricing complete" : null },
     { key: "narrative", label: "Narrative", status: input.narrative.status, statusLabel: input.narrative.status === "needs_review" ? "Generated" : input.narrative.statusLabel, note: input.narrative.status === "needs_review" ? "Review required" : null },
   ];
 
@@ -1155,7 +1343,11 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
   // approved state and reason with the outstanding pricing requirement.
   const pricingRequired = input.proposal.needsPricing;
   const approvedButUnpriced = pkg.state === "approved" && pricingRequired;
-  const stateLabel = approvedButUnpriced ? "Approved · pricing required" : PACKAGE_STATE_LABEL[pkg.state];
+  const stateLabel = pkg.clientReady
+    ? "Client ready"
+    : approvedButUnpriced
+      ? "Approved · pricing required"
+      : PACKAGE_STATE_LABEL[pkg.state];
   const reason = approvedButUnpriced
     ? "The intelligence is approved, but commercial pricing is still required before this proposal can be sent."
     : pkg.reason;
@@ -1163,12 +1355,15 @@ export function buildProspectPackageView(input: PackageViewInput): ProspectPacka
   return {
     state: pkg.state,
     stateLabel,
-    badge: PACKAGE_STATE_BADGE[pkg.state],
-    reason,
+    badge: pkg.clientReady ? "completed" : PACKAGE_STATE_BADGE[pkg.state],
+    reason: input.review?.bindingStatus === "legacy" ? "The earlier decision has no version binding. Review the current package again."
+      : input.review?.bindingStatus === "stale" ? "The reviewed versions changed. Review the current package again." : reason,
     components,
-    reviewDecision: input.reviewDecision,
-    canReview: pkg.componentsReady,
+    reviewDecision: input.review?.decision ?? "pending",
+    reviewBinding: input.review?.currentBinding ?? null,
+    canReview: pkg.componentsReady && input.review?.currentBinding != null,
     pricingRequired,
+    clientReady: pkg.clientReady,
   };
 }
 

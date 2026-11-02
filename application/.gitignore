@@ -24,6 +24,9 @@ Thumbs.db
 
 # Test / coverage
 coverage/
+test-results/
+playwright-report/
+playwright/.auth/
 
 # Supabase local
 supabase/.branches/

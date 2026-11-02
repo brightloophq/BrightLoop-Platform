@@ -8037,6 +8037,7 @@ export type Database = {
           decided_at: string | null
           deposit: number
           discount: number
+          discount_minor: number
           id: string
           issuance_key: string | null
           issued_at: string | null
@@ -8072,6 +8073,7 @@ export type Database = {
           decided_at?: string | null
           deposit?: number
           discount?: number
+          discount_minor?: number
           id: string
           issuance_key?: string | null
           issued_at?: string | null
@@ -8107,6 +8109,7 @@ export type Database = {
           decided_at?: string | null
           deposit?: number
           discount?: number
+          discount_minor?: number
           id?: string
           issuance_key?: string | null
           issued_at?: string | null
@@ -10422,6 +10425,362 @@ export type Database = {
           },
         ]
       }
+      scanner_sales_client_responses: {
+        Row: {
+          actor_user_id: string
+          client_id: string
+          conversion_id: string
+          created_at: string
+          id: string
+          note: string
+          proposal_id: string
+          proposal_version_id: string
+          response_kind: string
+          snapshot: Json
+          snapshot_checksum: string
+          source_binding: Json
+        }
+        Insert: {
+          actor_user_id: string
+          client_id: string
+          conversion_id: string
+          created_at?: string
+          id: string
+          note?: string
+          proposal_id: string
+          proposal_version_id: string
+          response_kind: string
+          snapshot: Json
+          snapshot_checksum: string
+          source_binding: Json
+        }
+        Update: {
+          actor_user_id?: string
+          client_id?: string
+          conversion_id?: string
+          created_at?: string
+          id?: string
+          note?: string
+          proposal_id?: string
+          proposal_version_id?: string
+          response_kind?: string
+          snapshot?: Json
+          snapshot_checksum?: string
+          source_binding?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scanner_sales_client_responses_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_client_responses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_client_responses_conversion_id_fkey"
+            columns: ["conversion_id"]
+            isOneToOne: false
+            referencedRelation: "scanner_sales_conversions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_client_responses_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_client_responses_proposal_version_id_fkey"
+            columns: ["proposal_version_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scanner_sales_conversions: {
+        Row: {
+          client_id: string
+          client_safe_snapshot: Json
+          converted_at: string
+          converted_by: string
+          id: string
+          idempotency_key: string
+          proposal_id: string
+          prospect_identity: Json
+          run_id: string
+          source_binding: Json
+        }
+        Insert: {
+          client_id: string
+          client_safe_snapshot: Json
+          converted_at?: string
+          converted_by: string
+          id: string
+          idempotency_key: string
+          proposal_id: string
+          prospect_identity?: Json
+          run_id: string
+          source_binding: Json
+        }
+        Update: {
+          client_id?: string
+          client_safe_snapshot?: Json
+          converted_at?: string
+          converted_by?: string
+          id?: string
+          idempotency_key?: string
+          proposal_id?: string
+          prospect_identity?: Json
+          run_id?: string
+          source_binding?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scanner_sales_conversions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_conversions_converted_by_fkey"
+            columns: ["converted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_conversions_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_conversions_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: true
+            referencedRelation: "intelligence_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scanner_sales_offer_heads: {
+        Row: {
+          client_id: string
+          conversion_id: string
+          proposal_id: string
+          publication_id: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          conversion_id: string
+          proposal_id: string
+          publication_id: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          conversion_id?: string
+          proposal_id?: string
+          publication_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scanner_sales_offer_heads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_offer_heads_conversion_id_fkey"
+            columns: ["conversion_id"]
+            isOneToOne: true
+            referencedRelation: "scanner_sales_conversions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_offer_heads_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_offer_heads_publication_id_fkey"
+            columns: ["publication_id"]
+            isOneToOne: true
+            referencedRelation: "scanner_sales_publications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scanner_sales_proposal_revisions: {
+        Row: {
+          client_safe_snapshot: Json
+          conversion_id: string
+          created_at: string
+          created_by: string
+          id: string
+          narrative_version_id: string
+          predecessor_proposal_id: string
+          proposal_id: string
+          proposal_version_id: string
+          source_binding: Json
+        }
+        Insert: {
+          client_safe_snapshot: Json
+          conversion_id: string
+          created_at?: string
+          created_by: string
+          id: string
+          narrative_version_id: string
+          predecessor_proposal_id: string
+          proposal_id: string
+          proposal_version_id: string
+          source_binding: Json
+        }
+        Update: {
+          client_safe_snapshot?: Json
+          conversion_id?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          narrative_version_id?: string
+          predecessor_proposal_id?: string
+          proposal_id?: string
+          proposal_version_id?: string
+          source_binding?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scanner_sales_proposal_revisions_conversion_id_fkey"
+            columns: ["conversion_id"]
+            isOneToOne: false
+            referencedRelation: "scanner_sales_conversions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_proposal_revisions_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_proposal_revisions_narrative_version_id_fkey"
+            columns: ["narrative_version_id"]
+            isOneToOne: false
+            referencedRelation: "narrative_versions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_proposal_revisions_predecessor_proposal_id_fkey"
+            columns: ["predecessor_proposal_id"]
+            isOneToOne: false
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_proposal_revisions_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_proposal_revisions_proposal_version_id_fkey"
+            columns: ["proposal_version_id"]
+            isOneToOne: false
+            referencedRelation: "proposal_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scanner_sales_publications: {
+        Row: {
+          client_id: string
+          client_safe_snapshot: Json
+          conversion_id: string
+          id: string
+          proposal_id: string
+          published_at: string
+          published_by: string
+          recipient_user_id: string
+          source_binding: Json
+        }
+        Insert: {
+          client_id: string
+          client_safe_snapshot: Json
+          conversion_id: string
+          id: string
+          proposal_id: string
+          published_at?: string
+          published_by: string
+          recipient_user_id: string
+          source_binding: Json
+        }
+        Update: {
+          client_id?: string
+          client_safe_snapshot?: Json
+          conversion_id?: string
+          id?: string
+          proposal_id?: string
+          published_at?: string
+          published_by?: string
+          recipient_user_id?: string
+          source_binding?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scanner_sales_publications_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_publications_conversion_id_fkey"
+            columns: ["conversion_id"]
+            isOneToOne: false
+            referencedRelation: "scanner_sales_conversions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_publications_proposal_id_fkey"
+            columns: ["proposal_id"]
+            isOneToOne: true
+            referencedRelation: "proposals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_publications_published_by_fkey"
+            columns: ["published_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scanner_sales_publications_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       signals: {
         Row: {
           client_id: string
@@ -12175,7 +12534,29 @@ export type Database = {
         Args: { p_action: string; p_quote_id: string }
         Returns: Database["public"]["Enums"]["quote_status"]
       }
+      bl_client_scanner_proposal_contents: { Args: never; Returns: Json }
+      bl_client_scanner_proposal_response: {
+        Args: {
+          p_action: string
+          p_expected_snapshot_checksum: string
+          p_note?: string
+          p_proposal_id: string
+        }
+        Returns: Json
+      }
       bl_conversation_client: { Args: { conv_id: string }; Returns: string }
+      bl_convert_scanner_package: {
+        Args: { p_idempotency_key: string; p_run_id: string }
+        Returns: Json
+      }
+      bl_create_scanner_sales_revision: {
+        Args: { p_predecessor_proposal_id: string }
+        Returns: Json
+      }
+      bl_get_scanner_sales_conversion: {
+        Args: { p_run_id: string }
+        Returns: Json
+      }
       bl_in_conversation: { Args: { conv_id: string }; Returns: boolean }
       bl_is_finance: { Args: never; Returns: boolean }
       bl_is_internal: { Args: never; Returns: boolean }
@@ -12224,31 +12605,21 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      bl_publish_scanner_sales_proposal: {
+        Args: { p_expected_client_id: string; p_expected_currency: string; p_expected_total_minor: number; p_expected_valid_until: string; p_proposal_id: string; p_recipient_user_id: string }
+        Returns: Json
+      }
+      bl_publish_scanner_sales_proposal_original: {
+        Args: { p_expected_client_id: string; p_expected_currency: string; p_expected_total_minor: number; p_expected_valid_until: string; p_proposal_id: string; p_recipient_user_id: string }
+        Returns: Json
+      }
       bl_promote_scanner_package: {
-        Args: {
-          p_promotion_key: string
-          p_proposal_version_id: string
-          p_quote_id: string
-          p_review_event_id: string
-          p_run_id: string
-        }
-        Returns: {
-          item_count: number
-          outcome: string
-          quote_id: string
-        }[]
+        Args: { p_promotion_key: string; p_proposal_version_id: string; p_quote_id: string; p_review_event_id: string; p_run_id: string }
+        Returns: { item_count: number; outcome: string; quote_id: string }[]
       }
       bl_review_proposal_quote: {
-        Args: {
-          p_action: string
-          p_expected_updated_at: string
-          p_quote_id: string
-        }
-        Returns: {
-          quote_id: string
-          status: Database["public"]["Enums"]["quote_status"]
-          updated_at: string
-        }[]
+        Args: { p_action: string; p_expected_updated_at: string; p_quote_id: string }
+        Returns: { quote_id: string; status: Database["public"]["Enums"]["quote_status"]; updated_at: string }[]
       }
       bl_rls_audit: {
         Args: never
@@ -12259,39 +12630,16 @@ export type Database = {
         }[]
       }
       bl_role: { Args: never; Returns: string }
+      bl_scanner_sales_current_binding: { Args: { p_run_id: string }; Returns: Json }
+      bl_scanner_sales_delivery_preview: { Args: { p_proposal_id: string }; Returns: Json }
+      bl_scanner_sales_revision_context: { Args: { p_proposal_id: string }; Returns: Json }
+      bl_scanner_sales_revision_preview: { Args: { p_proposal_id: string }; Returns: Json }
       bl_save_quote_commercial: {
-        Args: {
-          p_client_note: string
-          p_currency: string
-          p_discount: number
-          p_expected_updated_at: string
-          p_items: Json
-          p_quote_id: string
-          p_title: string
-          p_valid_until: string
-        }
-        Returns: {
-          discount: number
-          item_count: number
-          optional_one_time_total: number
-          optional_recurring_total: number
-          persisted_items: Json
-          pricing_complete: boolean
-          quote_id: string
-          recurring_cadence: string
-          recurring_total: number
-          subtotal: number
-          total: number
-          updated_at: string
-        }[]
+        Args: { p_client_note: string; p_currency: string; p_discount: number; p_expected_updated_at: string; p_items: Json; p_quote_id: string; p_title: string; p_valid_until: string }
+        Returns: { discount: number; item_count: number; optional_one_time_total: number; optional_recurring_total: number; persisted_items: Json; pricing_complete: boolean; quote_id: string; recurring_cadence: string; recurring_total: number; subtotal: number; total: number; updated_at: string }[]
       }
       bl_submit_contact_enquiry: {
-        Args: {
-          p_company: string
-          p_email: string
-          p_message: string
-          p_name: string
-        }
+        Args: { p_company: string; p_email: string; p_message: string; p_name: string }
         Returns: string
       }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }

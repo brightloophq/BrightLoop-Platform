@@ -20,11 +20,12 @@ import { EvidenceValidationPanel } from "../components/EvidenceValidationPanel";
 import { ReasoningReadiness } from "../components/ReasoningReadiness";
 import { RuntimeTimeline } from "../components/RuntimeTimeline";
 import { InternalReportView } from "../components/StructuredArtifactView";
-import { CommercialProposalPanel } from "../components/CommercialProposalPanel";
+import { CommercialProposalWorkspace } from "../components/CommercialProposalWorkspace";
 import { CompetitorIntelligencePanel } from "../components/CompetitorIntelligencePanel";
 import { ProposalIntelligencePanel } from "../components/ProposalIntelligencePanel";
 import { NarrativePanel } from "../components/NarrativePanel";
 import { ProspectPackagePanel } from "../components/ProspectPackagePanel";
+import { ScannerSalesConversionAction } from "../components/ScannerSalesConversionAction";
 import { CommercialRunner } from "../components/CommercialRunner";
 import { ProspectSummary } from "../components/ProspectSummary";
 import { assessProspectForm, cancelProspectScanForm, retryProspectScanForm } from "../scanner-actions";
@@ -66,7 +67,7 @@ export default async function ProspectScanWorkspacePage({
       <MotionProvider>
         <div className={styles.canvas}>
           <Suspense fallback={<WorkspaceSkeleton />}>
-            <Workspace runId={id} actionError={actionError} />
+            <Workspace runId={id} actionError={actionError} canConvert={actor.role === "owner" || actor.role === "admin"} />
           </Suspense>
         </div>
       </MotionProvider>
@@ -74,7 +75,7 @@ export default async function ProspectScanWorkspacePage({
   );
 }
 
-async function Workspace({ runId, actionError }: { runId: string; actionError: string | null }) {
+async function Workspace({ runId, actionError, canConvert }: { runId: string; actionError: string | null; canConvert: boolean }) {
   let data: Awaited<ReturnType<typeof loadScanWorkspace>>;
   try {
     data = await loadScanWorkspace(runId);
@@ -194,9 +195,10 @@ async function Workspace({ runId, actionError }: { runId: string; actionError: s
       <CompetitorIntelligencePanel competitor={competitor} />
       <ProposalIntelligencePanel proposal={proposalIntelligence} />
       <NarrativePanel narrative={narrative} />
-      <CommercialProposalPanel proposal={commercialProposal} />
+      <CommercialProposalWorkspace runId={scan.id} proposal={commercialProposal} />
       <CommercialRunner runId={scan.id} coreCompleted={scan.lifecycle === "completed"} packageState={prospectPackage.state} />
       <ProspectPackagePanel pkg={prospectPackage} runId={scan.id} />
+      <ScannerSalesConversionAction runId={scan.id} canConvert={canConvert} />
       <ProspectSummary summary={summary} />
     </>
   );

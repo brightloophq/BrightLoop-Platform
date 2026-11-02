@@ -7,6 +7,16 @@ import shell from "../../admin/admin.module.css";
 export const metadata: Metadata = { title: "Proposals" };
 export const dynamic = "force-dynamic";
 
+type ClientSnapshot = {
+  proposal?: {
+    executiveSummary?: string | null; observedSituation?: string | null;
+    keyIssues?: { title?: string; detail?: string }[];
+    opportunities?: { title?: string; detail?: string }[];
+    proposedNextStep?: string | null;
+  };
+  narrative?: { key?: string; heading?: string; paragraphs?: string[] }[];
+};
+
 /**
  * Client proposal review (handoff §07 / Sprint 6). RLS returns only this org's
  * proposals that have been SENT — a draft proposal is invisible here.
@@ -15,12 +25,28 @@ export default async function PortalProposalsPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("proposals")
-    .select("id, proposal_kind, proposal_number, title, currency, issued_at, valid_until, status, subtotal, total, deposit, line_items")
+    .select("id, proposal_kind, proposal_number, title, currency, issued_at, valid_until, status, subtotal, total, deposit, discount, discount_minor, line_items")
     .order("sent_at", { ascending: false });
 
+  const { data: snapshotData } = await supabase.rpc("bl_client_scanner_proposal_contents");
+  const scannerSnapshots = new Map<string, ClientSnapshot & { snapshotChecksum?: string; isCurrent?: boolean }>();
+  if (Array.isArray(snapshotData)) {
+    for (const item of snapshotData as unknown as { proposalId: string; snapshot: ClientSnapshot; snapshotChecksum?: string; isCurrent?: boolean }[]) {
+      if (item && typeof item.proposalId === "string" && item.snapshot && typeof item.snapshot === "object") {
+        scannerSnapshots.set(item.proposalId, { ...item.snapshot, snapshotChecksum: item.snapshotChecksum, isCurrent: item.isCurrent });
+      }
+    }
+  }
+
   const proposals: PortalProposal[] = (data ?? []).map((p) => ({
-    id: p.id, proposal_kind: p.proposal_kind, proposal_number: p.proposal_number, title: p.title, currency: p.currency, issued_at: p.issued_at, valid_until: p.valid_until, status: p.status, subtotal: p.subtotal, total: p.total, deposit: p.deposit,
+    id: p.id, proposal_kind: p.proposal_kind, proposal_number: p.proposal_number, title: p.title,
+    status: p.status, subtotal: p.subtotal, total: p.total, deposit: p.deposit,
+    currency: p.currency ?? "USD", discountMinor: p.discount_minor ?? p.discount ?? 0,
+    validUntil: p.valid_until,
     line_items: (p.line_items as PortalProposal["line_items"] | null) ?? [],
+    clientSnapshot: scannerSnapshots.get(p.id),
+    snapshotChecksum: scannerSnapshots.get(p.id)?.snapshotChecksum,
+    isCurrent: scannerSnapshots.get(p.id)?.isCurrent,
   }));
 
   return (

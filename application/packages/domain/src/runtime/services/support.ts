@@ -113,6 +113,8 @@ export const RUNTIME_EVENTS = {
   commercialNarrativeGenerated: "runtime.commercial.narrative_generated",
   /** Whole commercial workflow finished and the package is ready for human review. */
   commercialReadyForReview: "runtime.commercial.ready_for_review",
+  // Admin commercial actions on the proposal (append-only audit; safe metadata only).
+  proposalPricingUpdated: "runtime.proposal.pricing_updated",
   // Human review-gate decisions on the prospect package (append-only audit trail).
   reviewNeedsReview: "runtime.review.needs_review",
   reviewApproved: "runtime.review.approved",
